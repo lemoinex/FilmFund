@@ -10,6 +10,7 @@ import {
   lireMontant,
   lireQuantite,
 } from "@/lib/budgets";
+import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 import type { BudgetCategory } from "@/lib/supabase/types";
 
@@ -99,6 +100,11 @@ export async function ouvrirBudget(
   }
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
   const { error } = await supabase
     .from("project_budgets")
     .insert({ project_id: projetId, currency: devise });
@@ -125,6 +131,11 @@ export async function changerDevise(
   }
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
   const { data, error } = await supabase
     .from("project_budgets")
     .update({ currency: devise })
@@ -154,13 +165,11 @@ export async function ajouterLigne(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { erreur: "Votre session a expiré. Reconnectez-vous." };
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
   }
+  const { user } = garde;
 
   const { error } = await supabase
     .from("budget_lines")
@@ -190,6 +199,11 @@ export async function modifierLigne(
   }
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
   const { data, error } = await supabase
     .from("budget_lines")
     .update(resultat.ligne)
@@ -211,6 +225,10 @@ export async function supprimerLigne(formData: FormData) {
   if (!projetId || !ligneId) return;
 
   const supabase = await createClient();
+  if ("erreur" in (await exigerAcces(supabase))) {
+    return;
+  }
+
   await supabase.from("budget_lines").delete().eq("id", ligneId).eq("project_id", projetId);
 
   revalidatePath(`/projets/${projetId}/budget`);

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Message } from "@/components/ui/form";
+import { MESSAGE_INSCRIPTIONS_FERMEES, modePriveActif } from "@/lib/acces-prive";
+
 import { FormulaireInscription } from "./formulaire";
 
 export const metadata: Metadata = {
@@ -10,6 +13,27 @@ export const metadata: Metadata = {
 };
 
 export default function InscriptionPage() {
+  // Le composant du formulaire est conservé tel quel : rouvrir les
+  // inscriptions ne demandera que de lever le mode privé.
+  if (modePriveActif()) {
+    return (
+      <>
+        <h1 className="font-serif text-3xl leading-tight tracking-tight sm:text-4xl">
+          Créer un compte
+        </h1>
+        <div className="mt-8">
+          <Message ton="erreur">{MESSAGE_INSCRIPTIONS_FERMEES}</Message>
+        </div>
+        <p className="text-light-muted mt-8 text-sm">
+          Déjà inscrit ?{" "}
+          <Link href="/connexion" className="text-gold hover:text-gold-bright transition-colors">
+            Se connecter
+          </Link>
+        </p>
+      </>
+    );
+  }
+
   return (
     <>
       <h1 className="font-serif text-3xl leading-tight tracking-tight sm:text-4xl">

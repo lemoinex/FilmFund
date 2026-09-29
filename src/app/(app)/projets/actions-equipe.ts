@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { estRoleAttribuable, normaliserEmail, POSTE_MAX } from "@/lib/equipes";
+import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
 /*
@@ -15,18 +16,23 @@ import { createClient } from "@/lib/supabase/server";
 
 export type EtatInvitation = { erreur: string } | { succes: string } | null;
 
+/*
+ * Mode privé : la gestion des membres est réservée aux administrateurs.
+ * Chaque action vérifie elle-même l'accès (exigerAcces) — masquer les
+ * boutons ne protège rien —, et la base refuse de son côté, par un
+ * déclencheur, toute opération d'équipe venant d'un non-administrateur.
+ */
+
 export async function inviterMembre(
   _etatPrecedent: EtatInvitation,
   formData: FormData,
 ): Promise<EtatInvitation> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { erreur: "Votre session a expiré. Reconnectez-vous." };
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
   }
+  const { user } = garde;
 
   const projetId = String(formData.get("projet") ?? "");
   const email = normaliserEmail(String(formData.get("email") ?? ""));
@@ -84,6 +90,8 @@ export async function annulerInvitation(formData: FormData) {
   if (!id || !projetId) return;
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) return;
   await supabase.from("project_invitations").delete().eq("id", id);
 
   revalidatePath(`/projets/${projetId}`);
@@ -96,6 +104,8 @@ export async function changerRoleMembre(formData: FormData) {
   if (!projetId || !membreId || !estRoleAttribuable(role)) return;
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) return;
   await supabase
     .from("project_members")
     .update({ role })
@@ -111,9 +121,9 @@ export async function retirerMembre(formData: FormData) {
   if (!projetId || !membreId) return;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) return;
+  const { user } = garde;
 
   await supabase
     .from("project_members")
@@ -125,7 +135,7 @@ export async function retirerMembre(formData: FormData) {
   revalidatePath("/tableau-de-bord");
 
   // Qui quitte un projet n'y a plus accès : rester sur sa page mènerait à une 404.
-  if (membreId === user?.id) {
+  if (membreId === user.id) {
     redirect("/projets");
   }
 
@@ -137,6 +147,8 @@ export async function accepterInvitation(formData: FormData) {
   if (!id) return;
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) return;
   const { data: projetId, error } = await supabase.rpc("accepter_invitation", {
     p_invitation_id: id,
   });
@@ -154,6 +166,8 @@ export async function refuserInvitation(formData: FormData) {
   if (!id) return;
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) return;
   await supabase.rpc("refuser_invitation", { p_invitation_id: id });
 
   revalidatePath("/tableau-de-bord");

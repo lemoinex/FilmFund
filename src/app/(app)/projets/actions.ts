@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { estEtapeValide, estFormatValide } from "@/lib/projets";
+import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
 export type EtatProjet = { erreur: string } | null;
@@ -17,13 +18,11 @@ export async function creerProjet(
   formData: FormData,
 ): Promise<EtatProjet> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { erreur: "Votre session a expiré. Reconnectez-vous." };
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
   }
+  const { user } = garde;
 
   const titre = String(formData.get("titre") ?? "").trim();
   const format = String(formData.get("format") ?? "");
@@ -72,6 +71,9 @@ export async function supprimerProjet(formData: FormData) {
   if (!id) return;
 
   const supabase = await createClient();
+  if ("erreur" in (await exigerAcces(supabase))) {
+    return;
+  }
 
   /*
    * Pas de filtre sur le porteur ici : la RLS s'en charge. Une suppression
@@ -116,6 +118,11 @@ export async function mettreAJourProjet(
   }
 
   const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
   const { data, error } = await supabase
     .from("projects")
     .update({ title: titre, format, stage: etape, logline, synopsis })

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { ClapperIcon } from "@/components/icons";
 import { deconnexion } from "@/app/(auth)/actions";
+import { accesAutorise } from "@/lib/acces-prive";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -20,6 +21,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) {
     redirect("/connexion");
+  }
+
+  // Mode privé : même contrôle que le middleware, au plus près de la donnée.
+  if (!accesAutorise(user.email)) {
+    redirect("/acces-refuse");
   }
 
   const { data: profil } = await supabase

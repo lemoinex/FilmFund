@@ -23,6 +23,24 @@ export type Database = {
   };
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          id: boolean;
+          private_admin_only: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          private_admin_only?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          private_admin_only?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       budget_lines: {
         Row: {
           actual_amount: number | null;
@@ -306,6 +324,7 @@ export type Database = {
           role: Database["public"]["Enums"]["project_member_role"];
         }[];
       };
+      mode_prive: { Args: Record<PropertyKey, never>; Returns: boolean };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
     };

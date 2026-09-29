@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { modePriveActif } from "@/lib/acces-prive";
+
 import { FormulaireConnexion } from "./formulaire";
 
 export const metadata: Metadata = {
@@ -36,12 +38,14 @@ export default async function ConnexionPage({
         </Link>
       </p>
 
-      <p className="text-light-muted mt-8 text-sm">
-        Pas encore de compte ?{" "}
-        <Link href="/inscription" className="text-gold hover:text-gold-bright transition-colors">
-          Créer un compte
-        </Link>
-      </p>
+      {modePriveActif() ? null : (
+        <p className="text-light-muted mt-8 text-sm">
+          Pas encore de compte ?{" "}
+          <Link href="/inscription" className="text-gold hover:text-gold-bright transition-colors">
+            Créer un compte
+          </Link>
+        </p>
+      )}
     </>
   );
 }
