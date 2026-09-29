@@ -151,6 +151,57 @@ export type Database = {
           },
         ];
       };
+      project_documents: {
+        Row: {
+          content: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          project_id: string;
+          status: Database["public"]["Enums"]["document_status"];
+          title: string;
+          type: Database["public"]["Enums"]["document_type"];
+          updated_at: string;
+        };
+        Insert: {
+          content?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          project_id: string;
+          status?: Database["public"]["Enums"]["document_status"];
+          title: string;
+          type: Database["public"]["Enums"]["document_type"];
+          updated_at?: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          project_id?: string;
+          status?: Database["public"]["Enums"]["document_status"];
+          title?: string;
+          type?: Database["public"]["Enums"]["document_type"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_documents_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_documents_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_invitations: {
         Row: {
           created_at: string;
@@ -325,6 +376,7 @@ export type Database = {
         }[];
       };
       mode_prive: { Args: Record<PropertyKey, never>; Returns: boolean };
+      peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
     };
@@ -341,6 +393,9 @@ export type Database = {
         | "assurances_divers"
         | "promotion_distribution"
         | "imprevus";
+      document_status: "brouillon" | "en_relecture" | "finalise";
+      document_type:
+        "note_intention" | "traitement" | "scenario" | "biographie" | "lettre" | "autre";
       project_format:
         "long_metrage" | "court_metrage" | "documentaire" | "serie" | "web_serie" | "animation";
       project_member_role: "editor" | "viewer";
@@ -480,6 +535,8 @@ export const Constants = {
         "promotion_distribution",
         "imprevus",
       ],
+      document_status: ["brouillon", "en_relecture", "finalise"],
+      document_type: ["note_intention", "traitement", "scenario", "biographie", "lettre", "autre"],
       project_format: [
         "long_metrage",
         "court_metrage",

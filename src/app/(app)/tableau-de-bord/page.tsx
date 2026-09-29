@@ -10,6 +10,7 @@ import {
   StoryboardIcon,
 } from "@/components/icons";
 import { Onglets } from "@/components/ui/onglets";
+import { compterMots, libelleMots, STATUTS_DOCUMENT } from "@/lib/documents";
 import { ROLES_PROJET } from "@/lib/equipes";
 import { chargerMesProjets, type ResumeProjet } from "@/lib/mes-projets";
 import { ETAPES, FORMATS } from "@/lib/projets";
@@ -73,15 +74,25 @@ export default async function TableauDeBord() {
 async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres: ResumeProjet[] }) {
   const supabase = await createClient();
 
-  // Seules données complémentaires : le synopsis (absent du résumé) et le
-  // droit d'ouvrir le budget, calculé par la même fonction que la RLS.
-  const [{ data: detail }, { data: budgetAutorise }] = await Promise.all([
-    supabase.from("projects").select("synopsis").eq("id", projet.id).maybeSingle(),
-    supabase.rpc("peut_gerer_budget", { p_project_id: projet.id }),
-  ]);
+  // Données complémentaires : le synopsis (absent du résumé), la dernière
+  // note d'intention, et les droits calculés par les mêmes fonctions que la
+  // RLS.
+  const [{ data: detail }, { data: note }, { data: budgetAutorise }, { data: peutEditer }] =
+    await Promise.all([
+      supabase.from("projects").select("synopsis").eq("id", projet.id).maybeSingle(),
+      supabase
+        .from("project_documents")
+        .select("id, status, content")
+        .eq("project_id", projet.id)
+        .eq("type", "note_intention")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase.rpc("peut_gerer_budget", { p_project_id: projet.id }),
+      supabase.rpc("peut_editer_contenu", { p_project_id: projet.id }),
+    ]);
 
   const synopsis = detail?.synopsis?.trim() ?? "";
-  const motsSynopsis = synopsis ? synopsis.split(/\s+/).length : 0;
 
   return (
     <>
@@ -136,12 +147,12 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
         actif="synthese"
         onglets={[
           { cle: "synthese", libelle: "Synthèse", href: "/tableau-de-bord" },
+          { cle: "documents", libelle: "Documents", href: `/projets/${projet.id}/documents` },
+          { cle: "storyboard", libelle: "Storyboard" },
           ...(budgetAutorise
             ? [{ cle: "budget", libelle: "Budget", href: `/projets/${projet.id}/budget` }]
             : []),
           { cle: "equipe", libelle: "Équipe", href: `/projets/${projet.id}#equipe` },
-          { cle: "documents", libelle: "Documents" },
-          { cle: "storyboard", libelle: "Storyboard" },
         ]}
       />
 
@@ -174,20 +185,30 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
             titre="Synopsis"
             icone={<QuillIcon className="size-5" />}
             statut={synopsis ? "Rédigé" : "Non commencé"}
-            detail={
-              synopsis
-                ? `${motsSynopsis} mot${motsSynopsis > 1 ? "s" : ""}`
-                : "Aucun synopsis pour l'instant"
-            }
+            detail={synopsis ? libelleMots(compterMots(synopsis)) : "Aucun synopsis pour l'instant"}
             renseigne={Boolean(synopsis)}
-            lien={{ href: `/projets/${projet.id}`, libelle: `Voir le synopsis de ${projet.title}` }}
+            lien={{ href: `/projets/${projet.id}`, libelle: `le synopsis de ${projet.title}` }}
           />
           <CarteSynthese
             titre="Note d'intention"
             icone={<DocumentIcon className="size-5" />}
-            statut="Non commencé"
-            detail="Aucun document"
-            renseigne={false}
+            statut={note ? STATUTS_DOCUMENT[note.status] : "Non commencé"}
+            detail={note ? libelleMots(compterMots(note.content)) : "Aucun document"}
+            renseigne={Boolean(note)}
+            lien={
+              note
+                ? {
+                    href: `/projets/${projet.id}/documents/${note.id}`,
+                    libelle: `la note d'intention de ${projet.title}`,
+                  }
+                : peutEditer
+                  ? {
+                      href: `/projets/${projet.id}/documents?type=note_intention#nouveau-titre`,
+                      libelle: `la note d'intention de ${projet.title}`,
+                      texte: "Rédiger",
+                    }
+                  : undefined
+            }
           />
           <CarteSynthese
             titre="Storyboard"
@@ -273,7 +294,8 @@ function CarteSynthese({
   statut: string;
   detail: string;
   renseigne: boolean;
-  lien?: { href: string; libelle: string };
+  /** `libelle` complète le texte du lien pour les lecteurs d'écran. */
+  lien?: { href: string; libelle: string; texte?: string };
 }) {
   return (
     <li className="border-app-line bg-surface hover:border-secondary/40 flex h-full flex-col rounded-xl border p-5 transition-colors">
@@ -292,8 +314,8 @@ function CarteSynthese({
             href={lien.href}
             className="text-gold hover:text-gold-bright inline-flex items-center gap-1.5 text-sm transition-colors"
           >
-            Voir
-            <span className="sr-only"> : {lien.libelle}</span>
+            {lien.texte ?? "Voir"}
+            <span className="sr-only"> {lien.libelle}</span>
             <ArrowRightIcon className="size-4" />
           </Link>
         ) : (
