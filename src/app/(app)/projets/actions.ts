@@ -116,13 +116,24 @@ export async function mettreAJourProjet(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .update({ title: titre, format, stage: etape, logline, synopsis })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
 
   if (error) {
     return { erreur: "L'enregistrement a échoué. Réessayez dans un instant." };
+  }
+
+  /*
+   * La RLS ne lève pas d'erreur sur une modification interdite : elle ne
+   * touche simplement aucune ligne. Sans ce contrôle, un lecteur dont le
+   * rôle vient d'être abaissé verrait sa saisie acceptée en silence, puis
+   * perdue.
+   */
+  if (!data?.length) {
+    return { erreur: "Vous n'avez pas le droit de modifier ce projet." };
   }
 
   revalidatePath(`/projets/${id}`);

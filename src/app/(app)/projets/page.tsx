@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { ArrowRightIcon } from "@/components/icons";
+import { ROLES_PROJET } from "@/lib/equipes";
+import { chargerMesProjets, type ResumeProjet } from "@/lib/mes-projets";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,11 +17,17 @@ const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
 
 export default async function ProjetsPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data: projets } = await supabase
-    .from("projects")
-    .select("id, title, format, stage, logline, updated_at")
-    .order("updated_at", { ascending: false });
+  if (!user) {
+    redirect("/connexion");
+  }
+
+  const { possedes, partages, autres } = await chargerMesProjets(supabase, user.id, {
+    inclureAutres: true,
+  });
 
   return (
     <div className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
@@ -28,8 +37,8 @@ export default async function ProjetsPage() {
             Mes projets
           </h1>
           <p className="text-light-muted mt-3 text-sm leading-relaxed">
-            {projets?.length
-              ? `${projets.length} projet${projets.length > 1 ? "s" : ""}.`
+            {possedes.length
+              ? `${possedes.length} projet${possedes.length > 1 ? "s" : ""}.`
               : "Aucun projet pour l'instant."}
           </p>
         </div>
@@ -42,40 +51,76 @@ export default async function ProjetsPage() {
         </Link>
       </div>
 
-      {projets?.length ? (
-        <ul className="border-navy-line mt-10 divide-y divide-[var(--navy-line)] rounded-xl border">
-          {projets.map((projet) => (
-            <li key={projet.id}>
-              <Link
-                href={`/projets/${projet.id}`}
-                className="hover:bg-navy-soft/40 flex flex-wrap items-center justify-between gap-4 p-5 transition-colors"
-              >
-                <div className="min-w-0">
-                  <p className="font-serif text-lg leading-snug text-pretty">{projet.title}</p>
-                  {projet.logline ? (
-                    <p className="text-light-muted mt-1.5 line-clamp-2 max-w-2xl text-sm leading-relaxed">
-                      {projet.logline}
-                    </p>
-                  ) : null}
-                  <p className="text-light-muted mt-2 text-xs">
-                    Modifié le {dateFr.format(new Date(projet.updated_at))}
-                  </p>
-                </div>
-                <div className="text-light-muted flex shrink-0 flex-wrap gap-2 text-xs">
-                  <span className="bg-navy-soft rounded px-2.5 py-1">{FORMATS[projet.format]}</span>
-                  <span className="text-gold bg-gold/10 rounded px-2.5 py-1">
-                    {ETAPES[projet.stage]}
-                  </span>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {possedes.length ? (
+        <ListeProjets projets={possedes} />
       ) : (
         <p className="border-navy-line text-light-muted mt-10 rounded-xl border border-dashed p-10 text-center text-sm">
           Vos projets apparaîtront ici.
         </p>
       )}
+
+      {partages.length ? (
+        <section aria-labelledby="partages-titre" className="mt-16">
+          <h2 id="partages-titre" className="font-serif text-2xl leading-tight tracking-tight">
+            Partagés avec moi
+          </h2>
+          <p className="text-light-muted mt-2 text-sm leading-relaxed">
+            Les projets dont vous faites partie de l&apos;équipe.
+          </p>
+          <ListeProjets projets={partages} />
+        </section>
+      ) : null}
+
+      {autres.length ? (
+        <section aria-labelledby="autres-titre" className="mt-16">
+          <h2 id="autres-titre" className="font-serif text-2xl leading-tight tracking-tight">
+            Autres projets de la plateforme
+          </h2>
+          <p className="text-light-muted mt-2 text-sm leading-relaxed">
+            Visibles au titre de l&apos;administration : consultation et suppression, sans
+            modification.
+          </p>
+          <ListeProjets projets={autres} />
+        </section>
+      ) : null}
     </div>
+  );
+}
+
+function ListeProjets({ projets }: { projets: ResumeProjet[] }) {
+  return (
+    <ul className="border-navy-line mt-8 divide-y divide-[var(--navy-line)] rounded-xl border">
+      {projets.map((projet) => (
+        <li key={projet.id}>
+          <Link
+            href={`/projets/${projet.id}`}
+            className="hover:bg-navy-soft/40 flex flex-wrap items-center justify-between gap-4 p-5 transition-colors"
+          >
+            <div className="min-w-0">
+              <p className="font-serif text-lg leading-snug text-pretty">{projet.title}</p>
+              {projet.logline ? (
+                <p className="text-light-muted mt-1.5 line-clamp-2 max-w-2xl text-sm leading-relaxed">
+                  {projet.logline}
+                </p>
+              ) : null}
+              <p className="text-light-muted mt-2 text-xs">
+                Modifié le {dateFr.format(new Date(projet.updated_at))}
+              </p>
+            </div>
+            <div className="text-light-muted flex shrink-0 flex-wrap gap-2 text-xs">
+              {projet.role ? (
+                <span className="border-navy-line rounded border px-2.5 py-1">
+                  {ROLES_PROJET[projet.role]}
+                </span>
+              ) : null}
+              <span className="bg-navy-soft rounded px-2.5 py-1">{FORMATS[projet.format]}</span>
+              <span className="text-gold bg-gold/10 rounded px-2.5 py-1">
+                {ETAPES[projet.stage]}
+              </span>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

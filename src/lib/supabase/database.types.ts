@@ -47,6 +47,100 @@ export type Database = {
         };
         Relationships: [];
       };
+      project_invitations: {
+        Row: {
+          created_at: string;
+          email: string;
+          id: string;
+          invited_by: string | null;
+          job_title: string;
+          project_id: string;
+          role: Database["public"]["Enums"]["project_member_role"];
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          id?: string;
+          invited_by?: string | null;
+          job_title?: string;
+          project_id: string;
+          role?: Database["public"]["Enums"]["project_member_role"];
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          id?: string;
+          invited_by?: string | null;
+          job_title?: string;
+          project_id?: string;
+          role?: Database["public"]["Enums"]["project_member_role"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_invitations_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_invitations_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_members: {
+        Row: {
+          added_by: string | null;
+          created_at: string;
+          job_title: string;
+          project_id: string;
+          role: Database["public"]["Enums"]["project_member_role"];
+          user_id: string;
+        };
+        Insert: {
+          added_by?: string | null;
+          created_at?: string;
+          job_title?: string;
+          project_id: string;
+          role?: Database["public"]["Enums"]["project_member_role"];
+          user_id: string;
+        };
+        Update: {
+          added_by?: string | null;
+          created_at?: string;
+          job_title?: string;
+          project_id?: string;
+          role?: Database["public"]["Enums"]["project_member_role"];
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_members_added_by_fkey";
+            columns: ["added_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       projects: {
         Row: {
           created_at: string;
@@ -96,15 +190,42 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
+      acces_au_projet: { Args: { p_project_id: string }; Returns: string };
       definir_role: {
         Args: { email_cible: string; nouveau_role: Database["public"]["Enums"]["user_role"] };
         Returns: undefined;
       };
+      email_confirme_courant: { Args: Record<PropertyKey, never>; Returns: string };
+      equipe_du_projet: {
+        Args: { p_project_id: string };
+        Returns: {
+          depuis: string;
+          display_name: string;
+          job_title: string;
+          role: string;
+          user_id: string;
+        }[];
+      };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      mes_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          created_at: string;
+          id: string;
+          invited_by_name: string;
+          job_title: string;
+          project_id: string;
+          project_title: string;
+          role: Database["public"]["Enums"]["project_member_role"];
+        }[];
+      };
+      refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
     };
     Enums: {
       project_format:
         "long_metrage" | "court_metrage" | "documentaire" | "serie" | "web_serie" | "animation";
+      project_member_role: "editor" | "viewer";
       project_stage:
         | "idee"
         | "developpement"
@@ -236,6 +357,7 @@ export const Constants = {
         "web_serie",
         "animation",
       ],
+      project_member_role: ["editor", "viewer"],
       project_stage: [
         "idee",
         "developpement",
