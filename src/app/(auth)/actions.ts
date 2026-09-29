@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+import { accesAutorise, MESSAGE_INSCRIPTIONS_FERMEES, modePriveActif } from "@/lib/acces-prive";
 import { createClient } from "@/lib/supabase/server";
 
 export type EtatFormulaire = { erreur: string } | { message: string } | null;
@@ -47,13 +48,25 @@ export async function connexion(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password: motDePasse,
+  });
 
   if (error) {
     return { erreur: IDENTIFIANTS_INVALIDES };
   }
 
   revalidatePath("/", "layout");
+
+  // Mode privé : un compte hors liste blanche va droit à la page d'accès
+  // réservé. Le laisser partir vers le tableau de bord afficherait cette
+  // page sous l'adresse du tableau de bord, après un détour par le
+  // middleware.
+  if (!accesAutorise(data.user.email)) {
+    redirect("/acces-refuse");
+  }
+
   redirect(destination(formData.get("suite")));
 }
 
@@ -61,6 +74,14 @@ export async function inscription(
   _etatPrecedent: EtatFormulaire,
   formData: FormData,
 ): Promise<EtatFormulaire> {
+  // Refus côté serveur : masquer le formulaire n'empêche pas de poster
+  // l'action directement. Les inscriptions doivent en outre être fermées
+  // dans Supabase (Authentication → « Allow new users to sign up »), seul
+  // rempart contre un appel direct à l'API d'authentification.
+  if (modePriveActif()) {
+    return { erreur: MESSAGE_INSCRIPTIONS_FERMEES };
+  }
+
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ClapperIcon } from "@/components/icons";
+import { modePriveActif } from "@/lib/acces-prive";
 
 /*
  * Ancres absolues (« /#... ») et non relatives : la barre est aussi montee sur
@@ -15,6 +16,10 @@ const NAV_LINKS = [
 ];
 
 export function Navbar() {
+  // Page publique, rendue à la construction : changer le mode privé demande
+  // un redéploiement pour que ce lien disparaisse ou réapparaisse.
+  const inscriptionsOuvertes = !modePriveActif();
+
   return (
     <header className="bg-navy/85 border-navy-line/60 sticky top-0 z-50 border-b backdrop-blur-lg">
       <div className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
@@ -51,12 +56,14 @@ export function Navbar() {
           >
             Se connecter
           </Link>
-          <Link
-            href="/inscription"
-            className="bg-gold text-navy hover:bg-gold-bright rounded-full px-5 py-2.5 text-sm font-medium transition-colors"
-          >
-            Découvrir la plateforme
-          </Link>
+          {inscriptionsOuvertes ? (
+            <Link
+              href="/inscription"
+              className="bg-gold text-navy hover:bg-gold-bright rounded-full px-5 py-2.5 text-sm font-medium transition-colors"
+            >
+              Découvrir la plateforme
+            </Link>
+          ) : null}
         </div>
 
         {/*
@@ -103,12 +110,14 @@ export function Navbar() {
                 >
                   Se connecter
                 </Link>
-                <Link
-                  href="/inscription"
-                  className="bg-gold text-navy block rounded-lg px-4 py-3 text-center font-medium"
-                >
-                  Découvrir la plateforme
-                </Link>
+                {inscriptionsOuvertes ? (
+                  <Link
+                    href="/inscription"
+                    className="bg-gold text-navy block rounded-lg px-4 py-3 text-center font-medium"
+                  >
+                    Découvrir la plateforme
+                  </Link>
+                ) : null}
               </li>
             </ul>
           </nav>

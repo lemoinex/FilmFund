@@ -40,6 +40,12 @@ Ces règles ne se négocient pas.
   nommément (`revoke all ... from public, anon, authenticated`), puis ne rend
   que ceux dont elle a besoin. Une fonction appelable par les comptes connectés
   doit être ajoutée à la liste de `supabase/tests/privileges_fonctions.test.sql`.
+- **Les administrateurs ont accès à tout** : toute nouvelle table donne lecture et écriture
+  aux administrateurs (`public.is_admin()`) dans ses politiques.
+- **Toute nouvelle table reçoit la politique restrictive du mode privé**
+  (« Mode privé : administrateurs uniquement », voir
+  `supabase/migrations/20260929220000_mode_prive_administrateurs.sql`). Sans elle, la table
+  échapperait au verrou ; `supabase/tests/mode_prive.test.sql` le vérifie.
 - Ne jamais pousser la configuration avec `supabase config push` sans passer par
   `supabase config diff` : le fichier local déclare des assouplissements propres
   au développement — confirmation d'e-mail désactivée, MFA désactivé — dont la
