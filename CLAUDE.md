@@ -30,6 +30,13 @@ Ces règles ne se négocient pas.
   politiques. L'ajouter après coup sur une table déjà peuplée coûte bien plus cher.
 - Une migration ne se modifie plus une fois poussée : on en écrit une nouvelle.
 - Les migrations sont réversibles ou, à défaut, documentent explicitement ce qui ne l'est pas.
+- **Toute migration touchant une politique, un rôle ou un privilège s'accompagne
+  d'un test dans `tests/`.** Un test qui ne peut pas échouer ne protège rien :
+  vérifiez qu'il tombe quand la protection est retirée.
+- Ne jamais pousser la configuration avec `supabase config push` sans passer par
+  `supabase config diff` : le fichier local déclare des assouplissements propres
+  au développement — confirmation d'e-mail désactivée, MFA désactivé — dont la
+  propagation en production serait une régression de sécurité.
 
 ## Git
 
