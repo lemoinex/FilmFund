@@ -89,3 +89,30 @@ export async function creerProjet(compte, titre) {
 
   return data;
 }
+
+/** Invitation envoyée par le porteur ; renvoie son identifiant. */
+export async function inviter(porteur, projetId, email, role = "viewer", poste = "") {
+  const { data, error } = await porteur.client
+    .from("project_invitations")
+    .insert({ project_id: projetId, email, role, job_title: poste, invited_by: porteur.id })
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new Error(`Invitation impossible : ${error.message}`);
+  }
+
+  return data.id;
+}
+
+/** Invite puis fait accepter : le compte devient membre du projet. */
+export async function faireEntrer(porteur, projetId, compte, role) {
+  const invitationId = await inviter(porteur, projetId, compte.email, role);
+  const { error } = await compte.client.rpc("accepter_invitation", {
+    p_invitation_id: invitationId,
+  });
+
+  if (error) {
+    throw new Error(`Acceptation impossible : ${error.message}`);
+  }
+}

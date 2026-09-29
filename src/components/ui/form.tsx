@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 /*
  * Briques de formulaire partagées par les pages d'authentification. Mêmes
@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 export function Field({
   label,
   name,
+  id = name,
   type = "text",
   autoComplete,
   required,
@@ -15,9 +16,12 @@ export function Field({
   aide,
   defaultValue,
   maxLength,
+  inputMode,
 }: {
   label: string;
   name: string;
+  /** À préciser quand deux formulaires de la page emploient le même nom de champ. */
+  id?: string;
   type?: string;
   autoComplete?: string;
   required?: boolean;
@@ -25,17 +29,18 @@ export function Field({
   aide?: string;
   defaultValue?: string;
   maxLength?: number;
+  inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
-  const aideId = aide ? `${name}-aide` : undefined;
+  const aideId = aide ? `${id}-aide` : undefined;
 
   return (
     <div>
-      <label htmlFor={name} className="mb-2 block text-sm font-medium">
+      <label htmlFor={id} className="mb-2 block text-sm font-medium">
         {label}
         {!required ? <span className="text-light-muted font-normal"> (facultatif)</span> : null}
       </label>
       <input
-        id={name}
+        id={id}
         name={name}
         type={type}
         autoComplete={autoComplete}
@@ -43,6 +48,7 @@ export function Field({
         placeholder={placeholder}
         defaultValue={defaultValue}
         maxLength={maxLength}
+        inputMode={inputMode}
         aria-describedby={aideId}
         className="border-navy-line bg-navy placeholder:text-light-muted/60 focus:border-gold w-full rounded-lg border px-4 py-3 text-sm transition-colors outline-none"
       />

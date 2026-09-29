@@ -11,8 +11,8 @@ export const ROLES_PROJET: Record<AccesProjet, string> = {
 
 /** Ce que chaque rôle attribuable permet, affiché au moment d'inviter. */
 export const ROLES_ATTRIBUABLES: Record<ProjectMemberRole, string> = {
-  editor: "Éditeur — lit et modifie le projet",
-  viewer: "Lecteur — lit le projet",
+  editor: "Éditeur — lit et modifie le projet et son budget",
+  viewer: "Lecteur — lit le projet, sans accès au budget",
 };
 
 export const POSTE_MAX = 80;

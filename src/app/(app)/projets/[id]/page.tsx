@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supprimerProjet } from "../actions";
 import { Equipe } from "./equipe";
 import { FormulaireEdition } from "./formulaire";
+import { OngletsProjet } from "./onglets";
 
 export const metadata: Metadata = {
   title: "Projet — filmfundAfrica",
@@ -51,6 +52,8 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
   const acces = lireAcces(accesBrut);
   const peutEditer = acces === "owner" || acces === "editor";
   const peutSupprimer = acces === "owner" || estAdmin === true;
+  // Même règle que la fonction SQL peut_gerer_budget, qui a le dernier mot.
+  const peutGererBudget = peutEditer || estAdmin === true;
 
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
@@ -68,6 +71,8 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
           {acces ? `Vous : ${ROLES_PROJET[acces].toLowerCase()}` : "Consultation administrateur"}
         </span>
       </p>
+
+      <OngletsProjet projetId={projet.id} actif="projet" budget={peutGererBudget} />
 
       <div className="mt-10">
         {peutEditer ? <FormulaireEdition projet={projet} /> : <Apercu projet={projet} />}

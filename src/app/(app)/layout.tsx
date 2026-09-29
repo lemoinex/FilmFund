@@ -60,7 +60,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-4">
             <span className="text-light-muted hidden text-sm md:inline">{nom}</span>
             {profil?.role === "admin" ? (
-              <span className="text-gold bg-gold/10 rounded-full px-2.5 py-1 text-xs">
+              // Masqué sur mobile : à 375 px, il repousse le bouton de
+              // déconnexion hors de l'écran.
+              <span className="text-gold bg-gold/10 hidden rounded-full px-2.5 py-1 text-xs sm:inline">
                 Administrateur
               </span>
             ) : null}
