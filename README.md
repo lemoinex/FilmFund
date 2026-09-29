@@ -60,6 +60,7 @@ http://localhost:54323.
 | `npm run typecheck`    | Vérification TypeScript sans émettre de fichier |
 | `npm run format`       | Formate le code avec Prettier                   |
 | `npm run format:check` | Vérifie le formatage sans rien modifier         |
+| `npm test`             | Tests de cloisonnement et de droits             |
 | `npm run db:start`     | Démarre la pile Supabase locale (Docker)        |
 | `npm run db:stop`      | Arrête la pile locale                           |
 | `npm run db:reset`     | Réinitialise la base et rejoue les migrations   |
@@ -75,6 +76,24 @@ prochain déploiement et absente des autres environnements.
 Chaque table active la RLS dans la migration qui la crée, avec ses politiques.
 Après toute migration, régénérez les types avec `npm run db:types`, sinon le typage
 ment sur l'état réel de la base.
+
+## Tests
+
+```bash
+npm run db:start   # la pile locale doit tourner
+npm test
+```
+
+Les tests de `tests/` s'exécutent contre la base locale et créent de vrais comptes :
+la RLS ne se simule pas, elle s'éprouve. Ils ne vérifient pas que les politiques
+existent, ils **tentent de les contourner** — lecture croisée, auto-promotion en
+administrateur, usurpation de propriété, accès anonyme.
+
+Toute migration touchant une politique, un rôle ou un privilège doit s'accompagner
+d'un test qui échoue sans elle. Deux défauts sérieux ont été trouvés ainsi :
+l'impossibilité de créer le premier administrateur, et la perte du droit
+d'exécution sur `is_admin` qui rendait les politiques d'administration
+silencieusement inopérantes.
 
 ## Organisation du code
 

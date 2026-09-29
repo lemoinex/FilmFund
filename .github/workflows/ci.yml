@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Une seule exécution par branche : un nouveau push annule la précédente,
+# qui porte de toute façon sur du code périmé.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualite:
+    name: Lint, types, format et build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run format:check
+
+      # Le build n'appelle pas Supabase : les variables NEXT_PUBLIC_ sont
+      # simplement inscrites dans le bundle. Des valeurs factices suffisent
+      # donc, et évitent d'exposer les vraies dans les journaux de CI.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+  securite:
+    name: Cloisonnement et droits d'administration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Démarre Postgres, Auth et Storage, puis applique les migrations.
+      # Les tests créent de vrais comptes et de vraies lignes : la RLS ne se
+      # simule pas, elle s'éprouve.
+      - name: Démarrer Supabase
+        run: supabase start
+
+      - name: Vérifier que les migrations s'appliquent proprement
+        run: supabase db reset
+
+      - name: Tests
+        run: npm test
+
+      # Les types sont générés depuis le schéma : s'ils divergent, le typage
+      # ment sur l'état réel de la base.
+      - name: Vérifier que les types sont à jour
+        run: |
+          supabase gen types typescript --local > /tmp/types-attendus.ts
+          if ! diff -q /tmp/types-attendus.ts src/lib/supabase/database.types.ts > /dev/null; then
+            echo "::error::Les types generes ne correspondent plus au schema. Lancez 'npm run db:types' et commitez le resultat."
+            diff /tmp/types-attendus.ts src/lib/supabase/database.types.ts || true
+            exit 1
+          fi
+
+      - name: Arrêter Supabase
+        if: always()
+        run: supabase stop
