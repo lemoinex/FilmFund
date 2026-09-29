@@ -23,6 +23,63 @@ export type Database = {
   };
   public: {
     Tables: {
+      budget_lines: {
+        Row: {
+          actual_amount: number | null;
+          category: Database["public"]["Enums"]["budget_category"];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          label: string;
+          project_id: string;
+          quantity: number;
+          total: number | null;
+          unit_cost: number;
+          updated_at: string;
+        };
+        Insert: {
+          actual_amount?: number | null;
+          category: Database["public"]["Enums"]["budget_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label: string;
+          project_id: string;
+          quantity?: number;
+          total?: never;
+          unit_cost: number;
+          updated_at?: string;
+        };
+        Update: {
+          actual_amount?: number | null;
+          category?: Database["public"]["Enums"]["budget_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label?: string;
+          project_id?: string;
+          quantity?: number;
+          total?: never;
+          unit_cost?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "budget_lines_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "budget_lines_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "project_budgets";
+            referencedColumns: ["project_id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -46,6 +103,35 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      project_budgets: {
+        Row: {
+          created_at: string;
+          currency: string;
+          project_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          currency: string;
+          project_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          currency?: string;
+          project_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_budgets_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: true;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       project_invitations: {
         Row: {
@@ -220,9 +306,22 @@ export type Database = {
           role: Database["public"]["Enums"]["project_member_role"];
         }[];
       };
+      peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
     };
     Enums: {
+      budget_category:
+        | "developpement"
+        | "droits"
+        | "equipe_technique"
+        | "interpretation"
+        | "decors_costumes"
+        | "materiel"
+        | "transport_regie"
+        | "postproduction"
+        | "assurances_divers"
+        | "promotion_distribution"
+        | "imprevus";
       project_format:
         "long_metrage" | "court_metrage" | "documentaire" | "serie" | "web_serie" | "animation";
       project_member_role: "editor" | "viewer";
@@ -349,6 +448,19 @@ export const Constants = {
   },
   public: {
     Enums: {
+      budget_category: [
+        "developpement",
+        "droits",
+        "equipe_technique",
+        "interpretation",
+        "decors_costumes",
+        "materiel",
+        "transport_regie",
+        "postproduction",
+        "assurances_divers",
+        "promotion_distribution",
+        "imprevus",
+      ],
       project_format: [
         "long_metrage",
         "court_metrage",

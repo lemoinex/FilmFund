@@ -20,6 +20,7 @@ export type UserRole = Enums<"user_role">;
 export type ProjectFormat = Enums<"project_format">;
 export type ProjectStage = Enums<"project_stage">;
 export type ProjectMemberRole = Enums<"project_member_role">;
+export type BudgetCategory = Enums<"budget_category">;
 
 export type Profile = Tables<"profiles">;
 export type Project = Tables<"projects">;

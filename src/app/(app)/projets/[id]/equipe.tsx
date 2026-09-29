@@ -44,7 +44,7 @@ export async function Equipe({
       </h2>
       <p className="text-light-muted mt-2 text-sm leading-relaxed">
         {estPorteur
-          ? "Les éditeurs modifient le projet, les lecteurs le consultent. Vous seul pouvez inviter, changer un rôle ou supprimer le projet."
+          ? "Les éditeurs modifient le projet et son budget ; les lecteurs consultent le projet, sans accès au budget. Vous seul pouvez inviter, changer un rôle ou supprimer le projet."
           : "Les personnes qui travaillent sur ce projet."}
       </p>
 
