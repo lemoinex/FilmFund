@@ -6,15 +6,12 @@ inscrite avec sa provenance.
 
 ## Statut
 
-**Images générées par intelligence artificielle.** Elles ont été fournies par le
-porteur du projet le 29 septembre 2026 et intégrées au dépôt le même jour.
+**Images générées par ChatGPT (OpenAI).** Elles ont été produites puis fournies
+par le porteur du projet le 29 septembre 2026, et intégrées au dépôt le même
+jour.
 
 Aucune personne réelle n'y est représentée : les visages sont synthétiques, ce
 qui écarte la question du droit à l'image.
-
-L'outil de génération n'est pas documenté. Cette information reste à compléter
-par le porteur du projet, car elle détermine les conditions d'exploitation
-applicables (voir « Points de vigilance » plus bas).
 
 ## Inventaire
 
@@ -36,9 +33,13 @@ Les huit images sont effectivement référencées dans le code : aucune image mo
 Ces points ne sont pas des obstacles, mais ils doivent être tranchés avant la
 mise en production.
 
-- **Conditions de l'outil de génération.** Les conditions d'utilisation varient
-  d'un service à l'autre, notamment sur l'usage commercial et sur l'attribution.
-  Il faut vérifier celles de l'outil employé.
+- **Conditions d'OpenAI.** Ses conditions d'utilisation cèdent à l'utilisateur
+  les droits sur le contenu qu'il génère, usage commercial compris, et
+  n'imposent pas d'attribution. Ces conditions évoluent : elles sont à
+  reconsulter à la date d'exploitation plutôt qu'à s'en remettre à la présente
+  note. Aucune attestation n'est conservée à ce jour ; garder une copie datée
+  des conditions en vigueur au moment de la génération faciliterait une
+  éventuelle démonstration.
 - **Propriété intellectuelle.** Plusieurs juridictions n'accordent pas de droit
   d'auteur aux œuvres produites sans intervention humaine créative. La section 4
   des mentions légales revendique la propriété des éléments visuels du site :
