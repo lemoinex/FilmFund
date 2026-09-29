@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { ArrowRightIcon, ClapperIcon } from "@/components/icons";
+import { ROLES_PROJET } from "@/lib/equipes";
+import { chargerMesProjets } from "@/lib/mes-projets";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
+
+import { InvitationsRecues } from "./invitations";
 
 export const metadata: Metadata = {
   title: "Tableau de bord — filmfundAfrica",
@@ -13,15 +18,22 @@ export const metadata: Metadata = {
 export default async function TableauDeBord() {
   const supabase = await createClient();
 
-  // Inutile de filtrer par porteur : la RLS ne renvoie que les projets de
-  // l'utilisateur courant.
-  const { data: projets } = await supabase
-    .from("projects")
-    .select("id, title, format, stage, logline, updated_at")
-    .order("updated_at", { ascending: false })
-    .limit(5);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const total = projets?.length ?? 0;
+  if (!user) {
+    redirect("/connexion");
+  }
+
+  // Projets possédés et partagés, jamais ceux que l'administration rend
+  // visibles : ce tableau de bord est celui du travail de l'utilisateur.
+  const { possedes, partages } = await chargerMesProjets(supabase, user.id, { limite: 5 });
+  const projets = [...possedes, ...partages].sort((a, b) =>
+    b.updated_at.localeCompare(a.updated_at),
+  );
+
+  const total = projets.length;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
@@ -33,6 +45,8 @@ export default async function TableauDeBord() {
           ? "Votre espace est prêt. Créez votre premier projet pour commencer."
           : `${total} projet${total > 1 ? "s" : ""} récent${total > 1 ? "s" : ""}.`}
       </p>
+
+      <InvitationsRecues />
 
       {total === 0 ? (
         <div className="border-navy-line bg-navy-soft/40 mt-10 rounded-xl border p-10 text-center">
@@ -53,13 +67,18 @@ export default async function TableauDeBord() {
       ) : (
         <>
           <ul className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projets?.map((projet) => (
+            {projets.map((projet) => (
               <li key={projet.id}>
                 <Link
                   href={`/projets/${projet.id}`}
                   className="border-navy-line bg-navy-soft/40 hover:border-gold/50 block h-full rounded-xl border p-5 transition-colors"
                 >
                   <p className="text-light-muted flex flex-wrap gap-2 text-xs">
+                    {projet.role ? (
+                      <span className="border-navy-line rounded border px-2 py-0.5">
+                        {ROLES_PROJET[projet.role]}
+                      </span>
+                    ) : null}
                     <span className="bg-navy rounded px-2 py-0.5">{FORMATS[projet.format]}</span>
                     <span className="text-gold bg-gold/10 rounded px-2 py-0.5">
                       {ETAPES[projet.stage]}
