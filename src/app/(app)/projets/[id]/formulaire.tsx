@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
 import { ETAPES, FORMATS } from "@/lib/projets";
@@ -20,7 +20,21 @@ export function FormulaireEdition({ projet }: { projet: Projet }) {
   const [etat, action, enCours] = useActionState<EtatProjet, FormData>(mettreAJourProjet, null);
 
   return (
-    <form action={action} className="space-y-5">
+    <form
+      /*
+       * Envoi déclenché à la main, et non par `action={action}` : après une
+       * action de formulaire, React réinitialise les champs à leurs valeurs
+       * initiales. Les listes (format, étape) réaffichaient alors l'ancienne
+       * valeur, et l'enregistrement suivant la renvoyait en silence — un
+       * changement d'étape s'annulait à la modification suivante.
+       */
+      onSubmit={(evenement) => {
+        evenement.preventDefault();
+        const donnees = new FormData(evenement.currentTarget);
+        startTransition(() => action(donnees));
+      }}
+      className="space-y-5"
+    >
       <input type="hidden" name="id" value={projet.id} />
 
       {etat?.erreur ? <Message ton="erreur">{etat.erreur}</Message> : null}

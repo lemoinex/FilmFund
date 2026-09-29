@@ -132,6 +132,19 @@ describe("Mode privé", () => {
       assert.equal(promotion?.length ?? 0, 0);
     });
 
+    it("ne lit ni n'écrit de document", async () => {
+      const { data } = await membre.client.from("project_documents").select("id");
+      assert.equal(data.length, 0);
+
+      const { error } = await membre.client.from("project_documents").insert({
+        project_id: projetDuMembre.id,
+        type: "note_intention",
+        title: "Pendant le verrou",
+        created_by: membre.id,
+      });
+      assert.ok(error, "la création doit être refusée");
+    });
+
     it("un éditeur d'équipe perd l'accès au projet partagé", async () => {
       const { data } = await equipier.client.from("projects").select("id").eq("id", projetAdmin.id);
       assert.equal(data.length, 0);

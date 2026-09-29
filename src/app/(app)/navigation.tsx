@@ -27,7 +27,7 @@ type Rubrique = {
 const RUBRIQUES: Rubrique[] = [
   { libelle: "Tableau de bord", icone: KanbanIcon, href: "/tableau-de-bord" },
   { libelle: "Mes projets", icone: ClapperIcon, href: "/projets" },
-  { libelle: "Documents", icone: DocumentIcon },
+  { libelle: "Documents", icone: DocumentIcon, href: "/documents" },
   { libelle: "Storyboard", icone: StoryboardIcon },
   { libelle: "Assistant IA", icone: SparkIcon },
   { libelle: "Ressources", icone: QuillIcon },

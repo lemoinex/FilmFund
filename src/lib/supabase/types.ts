@@ -21,6 +21,8 @@ export type ProjectFormat = Enums<"project_format">;
 export type ProjectStage = Enums<"project_stage">;
 export type ProjectMemberRole = Enums<"project_member_role">;
 export type BudgetCategory = Enums<"budget_category">;
+export type DocumentType = Enums<"document_type">;
+export type DocumentStatus = Enums<"document_status">;
 
 export type Profile = Tables<"profiles">;
 export type Project = Tables<"projects">;
