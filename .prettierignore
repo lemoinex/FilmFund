@@ -7,3 +7,7 @@ coverage/
 package-lock.json
 next-env.d.ts
 public/
+
+# Prettier n'a pas de parseur SQL : les migrations sont formatees a la main.
+*.sql
+supabase/.temp/

@@ -46,13 +46,13 @@ export function Navbar() {
 
         <div className="hidden shrink-0 items-center gap-3 lg:flex">
           <Link
-            href="/#contact"
+            href="/connexion"
             className="border-navy-line hover:border-light-muted hover:bg-navy-soft rounded-full border px-5 py-2.5 text-sm transition-colors"
           >
             Se connecter
           </Link>
           <Link
-            href="/#plateforme"
+            href="/inscription"
             className="bg-gold text-navy hover:bg-gold-bright rounded-full px-5 py-2.5 text-sm font-medium transition-colors"
           >
             Découvrir la plateforme
@@ -98,13 +98,13 @@ export function Navbar() {
               ))}
               <li className="border-navy-line mt-2 space-y-2 border-t pt-2">
                 <Link
-                  href="/#contact"
+                  href="/connexion"
                   className="border-navy-line block rounded-lg border px-4 py-3 text-center"
                 >
                   Se connecter
                 </Link>
                 <Link
-                  href="/#plateforme"
+                  href="/inscription"
                   className="bg-gold text-navy block rounded-lg px-4 py-3 text-center font-medium"
                 >
                   Découvrir la plateforme
