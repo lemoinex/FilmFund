@@ -28,6 +28,20 @@
   --light: #ffffff;
   --light-muted: #b7bbc5;
 
+  /*
+   * Espace connecté : fenêtre applicative sombre posée sur un fond clair.
+   * Même famille que les bleus de la landing, légèrement plus froide pour
+   * distinguer l'outil de travail de la vitrine. L'accent reste l'or.
+   */
+  --canvas: #e6e9ee;
+  --app-bg: #101722;
+  --sidebar-bg: #0d1420;
+  --surface: #141d2a;
+  --surface-hover: #1b2635;
+  --app-line: #2a3646;
+  /* 6.8:1 sur --app-bg, 6.4:1 sur --surface, 5.8:1 au survol : au-dessus du seuil AA. */
+  --text-secondary: #93a1b2;
+
   --background: var(--navy);
   --foreground: var(--light);
 }
@@ -45,6 +59,13 @@
   --color-gold-deep: var(--gold-deep);
   --color-light: var(--light);
   --color-light-muted: var(--light-muted);
+  --color-canvas: var(--canvas);
+  --color-app: var(--app-bg);
+  --color-sidebar: var(--sidebar-bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-app-line: var(--app-line);
+  --color-secondary: var(--text-secondary);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);

@@ -6,6 +6,8 @@ import { deconnexion } from "@/app/(auth)/actions";
 import { accesAutorise } from "@/lib/acces-prive";
 import { createClient } from "@/lib/supabase/server";
 
+import { MenuMobile, NavigationLaterale } from "./navigation";
+
 /**
  * Coque de l'espace connecté.
  *
@@ -36,55 +38,56 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const nom = profil?.display_name?.trim() || user.email?.split("@")[0] || "Vous";
 
+  const compte = (
+    <div className="space-y-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm">{nom}</p>
+        {profil?.role === "admin" ? <p className="text-gold mt-1 text-xs">Administrateur</p> : null}
+      </div>
+      <form action={deconnexion}>
+        <button
+          type="submit"
+          className="border-app-line text-secondary hover:bg-surface-hover hover:text-light w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors"
+        >
+          Se déconnecter
+        </button>
+      </form>
+    </div>
+  );
+
+  const marque = (
+    <Link href="/tableau-de-bord" className="flex items-center gap-2.5 tracking-tight">
+      <ClapperIcon className="text-gold size-7" />
+      <span className="font-medium">
+        filmfund<span className="text-gold font-semibold">Africa</span>
+      </span>
+    </Link>
+  );
+
+  /*
+   * Fenêtre applicative sombre, posée sur un fond clair : l'espace de travail
+   * se lit comme un outil, distinct de la vitrine. `overflow-clip` et non
+   * `overflow-hidden` pour arrondir les angles : le second créerait un
+   * conteneur de défilement et empêcherait la barre latérale de rester fixe.
+   */
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-navy-line/60 bg-navy/85 sticky top-0 z-50 border-b backdrop-blur-lg">
-        <div className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
-          <div className="flex items-center gap-8">
-            <Link href="/tableau-de-bord" className="flex items-center gap-2.5 tracking-tight">
-              <ClapperIcon className="text-gold size-7" />
-              <span className="font-medium">
-                filmfund<span className="text-gold font-semibold">Africa</span>
-              </span>
-            </Link>
-            <nav aria-label="Navigation de l'espace de travail" className="hidden sm:block">
-              <ul className="text-light-muted flex items-center gap-6 text-sm">
-                <li>
-                  <Link href="/tableau-de-bord" className="hover:text-light transition-colors">
-                    Tableau de bord
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/projets" className="hover:text-light transition-colors">
-                    Mes projets
-                  </Link>
-                </li>
-              </ul>
-            </nav>
+    <div className="bg-canvas min-h-screen p-2 sm:p-4 lg:p-6">
+      <div className="bg-app border-app-line/60 mx-auto flex min-h-[calc(100vh-1rem)] max-w-[1440px] flex-col overflow-clip rounded-2xl border shadow-[0_24px_60px_-28px_rgba(16,23,34,0.55)] sm:min-h-[calc(100vh-2rem)] lg:min-h-[calc(100vh-3rem)] lg:flex-row">
+        <aside className="bg-sidebar border-app-line hidden w-64 shrink-0 flex-col gap-8 border-r px-4 py-6 lg:sticky lg:top-6 lg:flex lg:h-[calc(100vh-3rem)]">
+          <div className="px-2">{marque}</div>
+          <div className="flex-1 overflow-y-auto">
+            <NavigationLaterale />
           </div>
+          <div className="border-app-line border-t px-2 pt-5">{compte}</div>
+        </aside>
 
-          <div className="flex items-center gap-4">
-            <span className="text-light-muted hidden text-sm md:inline">{nom}</span>
-            {profil?.role === "admin" ? (
-              // Masqué sur mobile : à 375 px, il repousse le bouton de
-              // déconnexion hors de l'écran.
-              <span className="text-gold bg-gold/10 hidden rounded-full px-2.5 py-1 text-xs sm:inline">
-                Administrateur
-              </span>
-            ) : null}
-            <form action={deconnexion}>
-              <button
-                type="submit"
-                className="border-navy-line hover:border-light-muted hover:bg-navy-soft rounded-full border px-4 py-2 text-sm transition-colors"
-              >
-                Se déconnecter
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+        <header className="bg-sidebar border-app-line relative z-40 flex h-16 items-center justify-between border-b px-4 lg:hidden">
+          {marque}
+          <MenuMobile>{compte}</MenuMobile>
+        </header>
 
-      <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
     </div>
   );
 }
