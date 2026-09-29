@@ -6,7 +6,14 @@ import type { Database } from "@/lib/supabase/types";
 /** Préfixes réservés aux utilisateurs connectés. */
 const ROUTES_PROTEGEES = ["/tableau-de-bord", "/projets"];
 
-/** Pages d'authentification, inutiles une fois connecté. */
+/**
+ * Pages d'authentification, inutiles une fois connecté.
+ *
+ * `/nouveau-mot-de-passe` n'y figure pas volontairement : le lien de
+ * réinitialisation ouvre une session de récupération avant d'y mener. L'y
+ * ajouter renverrait l'utilisateur au tableau de bord sans qu'il ait pu
+ * changer son mot de passe, et rendrait le parcours inutilisable.
+ */
 const ROUTES_INVITE = ["/connexion", "/inscription"];
 
 /**
