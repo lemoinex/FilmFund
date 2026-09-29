@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/*
+ * Palette cinematographique premium. Les valeurs vivent ici et nulle part
+ * ailleurs : aucun composant ne doit ecrire une couleur en dur.
+ */
+:root {
+  /* Fonds sombres */
+  --navy: #10141c;
+  --navy-soft: #202a38;
+  --navy-line: #2c3644;
+
+  /* Fond clair editorial */
+  --ivory: #f5f3ee;
+  --ivory-soft: #eceae3;
+  --ink: #20242c;
+  /* Assombri pour rester au-dessus de 4.5:1 y compris sur les fonds ivoire
+     legerement teintes, comme les champs surlignes des pages legales. */
+  --ink-muted: #4f555c;
+
+  /* Accents or */
+  --gold: #d4a84b;
+  --gold-bright: #f1c45e;
+  /* Or assombri : le gold standard n'atteint pas 4.5:1 sur ivoire. */
+  --gold-deep: #8a6b1f;
+
+  /* Textes sur fond sombre */
+  --light: #ffffff;
+  --light-muted: #b7bbc5;
+
+  --background: var(--navy);
+  --foreground: var(--light);
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-navy-line: var(--navy-line);
+  --color-ivory: var(--ivory);
+  --color-ivory-soft: var(--ivory-soft);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-gold-deep: var(--gold-deep);
+  --color-light: var(--light);
+  --color-light-muted: var(--light-muted);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-playfair);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--navy);
+  color: var(--light);
+}
+
+/* Focus visible sur toute la page, sans l'imposer au clic souris. */
+:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Surtitres : meme traitement partout, sombre comme clair. */
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/*
+ * Motif discret pour les sections premium : trame geometrique inspiree des
+ * textures tissees, assez faible pour ne jamais concurrencer le texte.
+ */
+.pattern-weave::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(212, 168, 75, 0.05) 0 1px, transparent 1px 14px),
+    repeating-linear-gradient(-45deg, rgba(212, 168, 75, 0.05) 0 1px, transparent 1px 14px);
+}
+
+/* Perforations de pellicule, purement decoratives. */
+.pattern-film::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0 44px,
+    rgba(212, 168, 75, 0.14) 44px 58px,
+    transparent 58px 102px
+  );
+  mask-image: linear-gradient(to bottom, black 0 12%, transparent 12% 88%, black 88% 100%);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/*
+ * Apparition a l'entree dans le viewport, en CSS seul : aucun JavaScript,
+ * donc les sections restent des composants serveur. Les navigateurs sans
+ * `animation-timeline` affichent simplement le contenu, sans animation.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .reveal {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

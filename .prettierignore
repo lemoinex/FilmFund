@@ -1,0 +1,9 @@
+# Généré ou installé : jamais reformaté
+node_modules/
+.next/
+out/
+build/
+coverage/
+package-lock.json
+next-env.d.ts
+public/
