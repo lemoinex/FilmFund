@@ -1,0 +1,50 @@
+# Dépendances
+node_modules/
+.pnpm-store/
+
+# Builds et caches
+.next/
+out/
+dist/
+build/
+.turbo/
+.cache/
+coverage/
+*.tsbuildinfo
+
+# Variables d'environnement : jamais dans Git
+.env
+.env.*
+!.env.example
+
+# Vercel / Railway (dossiers locaux des CLI)
+.vercel/
+.railway/
+
+# Supabase (fichiers locaux de la CLI)
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# Tests end-to-end
+playwright-report/
+test-results/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Clés et certificats
+*.pem
+*.key
+
+# Systèmes d'exploitation et éditeurs
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
