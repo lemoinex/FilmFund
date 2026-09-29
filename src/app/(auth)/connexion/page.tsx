@@ -27,6 +27,15 @@ export default async function ConnexionPage({
         <FormulaireConnexion suite={suite} />
       </div>
 
+      <p className="text-light-muted mt-6 text-sm">
+        <Link
+          href="/mot-de-passe-oublie"
+          className="hover:text-light underline underline-offset-2 transition-colors"
+        >
+          Mot de passe oublié ?
+        </Link>
+      </p>
+
       <p className="text-light-muted mt-8 text-sm">
         Pas encore de compte ?{" "}
         <Link href="/inscription" className="text-gold hover:text-gold-bright transition-colors">

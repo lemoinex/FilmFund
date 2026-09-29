@@ -1,31 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { destinationInterne, ouvrirSessionDepuisLien } from "@/lib/supabase/ouvrir-session";
 
 /**
  * Point d'arrivée des liens de confirmation d'adresse e-mail.
  *
- * Supabase renvoie ici avec un jeton à usage unique, que l'on échange contre
- * une session.
+ * Accepte les deux formats de lien émis par Supabase — `code` (PKCE) et
+ * `token_hash` — car le format dépend de la configuration du projet et des
+ * modèles d'e-mail. N'en gérer qu'un seul revient à rejeter comme invalides
+ * des liens que l'utilisateur vient pourtant de recevoir.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
-  const token_hash = searchParams.get("token_hash");
-  const type = searchParams.get("type");
-  const suite = searchParams.get("suite");
+  const { origin, searchParams } = request.nextUrl;
 
-  // Redirection toujours interne : un paramètre `suite` absolu permettrait
-  // d'expédier l'utilisateur ailleurs depuis un lien d'apparence légitime.
-  const destination =
-    suite && suite.startsWith("/") && !suite.startsWith("//") ? suite : "/tableau-de-bord";
+  // Redirection toujours interne : un paramètre absolu permettrait d'expédier
+  // l'utilisateur ailleurs depuis un lien d'apparence légitime.
+  const destination = destinationInterne(searchParams.get("suite"), "/tableau-de-bord");
 
-  if (token_hash && type === "email") {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash });
-
-    if (!error) {
-      return NextResponse.redirect(new URL(destination, origin));
-    }
+  if (await ouvrirSessionDepuisLien(request, "email")) {
+    return NextResponse.redirect(new URL(destination, origin));
   }
 
   const echec = new URL("/connexion", origin);

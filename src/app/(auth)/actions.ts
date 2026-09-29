@@ -109,3 +109,82 @@ export async function deconnexion() {
   revalidatePath("/", "layout");
   redirect("/");
 }
+
+/*
+ * Message unique, affiché que l'adresse existe ou non. Répondre « aucun
+ * compte avec cette adresse » transformerait ce formulaire en outil
+ * d'énumération des comptes inscrits, accessible sans authentification.
+ */
+const DEMANDE_ENREGISTREE =
+  "Si un compte existe avec cette adresse, un lien de réinitialisation vient d'y être envoyé. Pensez à vérifier vos indésirables.";
+
+export async function demanderReinitialisation(
+  _etatPrecedent: EtatFormulaire,
+  formData: FormData,
+): Promise<EtatFormulaire> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (!email) {
+    return { erreur: "Renseignez votre adresse e-mail." };
+  }
+
+  const supabase = await createClient();
+
+  /*
+   * `redirectTo` doit figurer dans les Redirect URLs du projet Supabase,
+   * sans quoi le lien reçu par e-mail renverra vers la Site URL par défaut.
+   */
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reinitialisation`,
+  });
+
+  // L'erreur éventuelle n'est délibérément pas remontée : elle révélerait
+  // l'existence ou l'absence du compte.
+  return { message: DEMANDE_ENREGISTREE };
+}
+
+export async function definirNouveauMotDePasse(
+  _etatPrecedent: EtatFormulaire,
+  formData: FormData,
+): Promise<EtatFormulaire> {
+  const motDePasse = String(formData.get("motDePasse") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "");
+
+  if (motDePasse !== confirmation) {
+    return { erreur: "Les deux mots de passe ne correspondent pas." };
+  }
+
+  const probleme = validerMotDePasse(motDePasse);
+  if (probleme) {
+    return { erreur: probleme };
+  }
+
+  const supabase = await createClient();
+
+  /*
+   * À ce stade, la session de récupération a été ouverte par la route
+   * /auth/reinitialisation. On revérifie néanmoins qu'un utilisateur est bien
+   * authentifié : sans cela, un accès direct à cette page permettrait de
+   * soumettre le formulaire sans jeton valide.
+   */
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      erreur: "Votre lien de réinitialisation a expiré. Demandez-en un nouveau.",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: motDePasse });
+
+  if (error) {
+    return { erreur: "La modification du mot de passe a échoué. Réessayez dans un instant." };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/tableau-de-bord");
+}
