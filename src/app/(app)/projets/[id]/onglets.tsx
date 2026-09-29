@@ -1,10 +1,12 @@
-import Link from "next/link";
+import { Onglets, type Onglet } from "@/components/ui/onglets";
 
 /**
- * Navigation entre les rubriques d'un projet.
+ * Rubriques d'un projet.
  *
  * L'onglet Budget n'apparaît qu'à qui peut l'ouvrir : le proposer à un
- * lecteur ne mènerait qu'à une page introuvable.
+ * lecteur ne mènerait qu'à une page introuvable. Équipe renvoie à la section
+ * de la page du projet ; Documents et Storyboard sont annoncés, sans lien,
+ * tant qu'ils n'existent pas.
  */
 export function OngletsProjet({
   projetId,
@@ -15,38 +17,13 @@ export function OngletsProjet({
   actif: "projet" | "budget";
   budget: boolean;
 }) {
-  const onglets = [
-    { cle: "projet", libelle: "Projet", href: `/projets/${projetId}` },
+  const onglets: Onglet[] = [
+    { cle: "projet", libelle: "Synthèse", href: `/projets/${projetId}` },
     ...(budget ? [{ cle: "budget", libelle: "Budget", href: `/projets/${projetId}/budget` }] : []),
+    { cle: "equipe", libelle: "Équipe", href: `/projets/${projetId}#equipe` },
+    { cle: "documents", libelle: "Documents" },
+    { cle: "storyboard", libelle: "Storyboard" },
   ];
 
-  // Un seul onglet n'est pas une navigation.
-  if (onglets.length < 2) {
-    return null;
-  }
-
-  return (
-    <nav aria-label="Rubriques du projet" className="border-navy-line mt-8 border-b">
-      <ul className="-mb-px flex gap-6 text-sm">
-        {onglets.map((onglet) => {
-          const courant = onglet.cle === actif;
-          return (
-            <li key={onglet.cle}>
-              <Link
-                href={onglet.href}
-                aria-current={courant ? "page" : undefined}
-                className={`inline-block border-b-2 pb-3 transition-colors ${
-                  courant
-                    ? "border-gold text-light"
-                    : "text-light-muted hover:text-light border-transparent"
-                }`}
-              >
-                {onglet.libelle}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+  return <Onglets onglets={onglets} actif={actif} libelle="Rubriques du projet" className="mt-8" />;
 }

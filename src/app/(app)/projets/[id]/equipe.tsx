@@ -38,7 +38,11 @@ export async function Equipe({
   ]);
 
   return (
-    <section aria-labelledby="equipe-titre" className="border-navy-line mt-16 border-t pt-12">
+    <section
+      id="equipe"
+      aria-labelledby="equipe-titre"
+      className="border-navy-line mt-16 scroll-mt-8 border-t pt-12"
+    >
       <h2 id="equipe-titre" className="font-serif text-2xl leading-tight tracking-tight">
         Équipe
       </h2>
