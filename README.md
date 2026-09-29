@@ -17,12 +17,12 @@ Plateforme SaaS pour aider les professionnels du cinéma africain à développer
 
 ## Stack
 
-| Rôle | Service |
-|---|---|
-| Code, branches, pull requests, CI | GitHub |
-| Front-end | Vercel |
+| Rôle                                                    | Service  |
+| ------------------------------------------------------- | -------- |
+| Code, branches, pull requests, CI                       | GitHub   |
+| Front-end                                               | Vercel   |
 | Base PostgreSQL, authentification, stockage, migrations | Supabase |
-| Services backend, tâches de fond, cron jobs | Railway |
+| Services backend, tâches de fond, cron jobs             | Railway  |
 
 ## Règles du dépôt
 
@@ -33,8 +33,37 @@ Plateforme SaaS pour aider les professionnels du cinéma africain à développer
 
 ## Démarrage local
 
+Prérequis : Node 20.9 ou plus (la version testée est indiquée dans `.nvmrc`) et npm.
+
 ```bash
+npm install
 cp .env.example .env.local   # puis renseigner les valeurs localement
+npm run dev
 ```
 
-Les instructions d'installation et les scripts seront ajoutés avec l'ossature de l'application.
+L'application est servie sur http://localhost:3000.
+
+## Scripts
+
+| Script                 | Rôle                                            |
+| ---------------------- | ----------------------------------------------- |
+| `npm run dev`          | Serveur de développement                        |
+| `npm run build`        | Build de production                             |
+| `npm run start`        | Sert le build de production                     |
+| `npm run lint`         | ESLint                                          |
+| `npm run typecheck`    | Vérification TypeScript sans émettre de fichier |
+| `npm run format`       | Formate le code avec Prettier                   |
+| `npm run format:check` | Vérifie le formatage sans rien modifier         |
+
+## Organisation du code
+
+```
+src/
+├── app/           Routes (App Router), layouts et pages
+└── components/    Composants réutilisables
+public/            Fichiers statiques servis tels quels
+```
+
+Stack technique : Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
+
+Les conventions de développement et les règles de sécurité sont détaillées dans `CLAUDE.md`.
