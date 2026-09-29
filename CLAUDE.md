@@ -32,7 +32,14 @@ Ces règles ne se négocient pas.
 - Les migrations sont réversibles ou, à défaut, documentent explicitement ce qui ne l'est pas.
 - **Toute migration touchant une politique, un rôle ou un privilège s'accompagne
   d'un test dans `tests/`.** Un test qui ne peut pas échouer ne protège rien :
-  vérifiez qu'il tombe quand la protection est retirée.
+  vérifiez qu'il tombe quand la protection est retirée. Ce qui ne s'observe pas
+  par l'API — droits d'exécution, état du catalogue — se teste en SQL (pgTAP)
+  dans `supabase/tests/`, avec `supabase test db`.
+- **Supabase accorde l'exécution de toute nouvelle fonction à `anon` et
+  `authenticated`.** Une fonction `security definer` retire ces droits
+  nommément (`revoke all ... from public, anon, authenticated`), puis ne rend
+  que ceux dont elle a besoin. Une fonction appelable par les comptes connectés
+  doit être ajoutée à la liste de `supabase/tests/privileges_fonctions.test.sql`.
 - Ne jamais pousser la configuration avec `supabase config push` sans passer par
   `supabase config diff` : le fichier local déclare des assouplissements propres
   au développement — confirmation d'e-mail désactivée, MFA désactivé — dont la

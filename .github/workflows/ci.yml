@@ -68,6 +68,11 @@ jobs:
       - name: Tests
         run: npm test
 
+      # Tests SQL (pgTAP) : ce qui ne s'observe pas par l'API, comme les
+      # droits d'exécution des fonctions, se vérifie dans le catalogue.
+      - name: Tests de la base
+        run: supabase test db
+
       # Les types sont générés depuis le schéma : s'ils divergent, le typage
       # ment sur l'état réel de la base.
       #
