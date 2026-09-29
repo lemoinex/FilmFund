@@ -70,12 +70,18 @@ jobs:
 
       # Les types sont générés depuis le schéma : s'ils divergent, le typage
       # ment sur l'état réel de la base.
+      #
+      # On régénère par-dessus le fichier commité, puis on applique Prettier
+      # avant de comparer. La CLI produit du code non formaté, alors que le
+      # dépôt le stocke formaté : sans cette étape, la comparaison échouerait
+      # sur la seule mise en forme.
       - name: Vérifier que les types sont à jour
         run: |
-          supabase gen types typescript --local > /tmp/types-attendus.ts
-          if ! diff -q /tmp/types-attendus.ts src/lib/supabase/database.types.ts > /dev/null; then
-            echo "::error::Les types generes ne correspondent plus au schema. Lancez 'npm run db:types' et commitez le resultat."
-            diff /tmp/types-attendus.ts src/lib/supabase/database.types.ts || true
+          npm run db:types
+          npx prettier --write src/lib/supabase/database.types.ts
+          if ! git diff --quiet src/lib/supabase/database.types.ts; then
+            echo "::error::Les types ne correspondent plus au schema. Lancez 'npm run db:types', formatez, puis commitez le resultat."
+            git --no-pager diff src/lib/supabase/database.types.ts
             exit 1
           fi
 

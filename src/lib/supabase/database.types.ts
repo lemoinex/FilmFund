@@ -96,6 +96,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      definir_role: {
+        Args: { email_cible: string; nouveau_role: Database["public"]["Enums"]["user_role"] };
+        Returns: undefined;
+      };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
     };
     Enums: {
