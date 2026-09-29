@@ -1,0 +1,24 @@
+/**
+ * Types de la base de données, à usage de l'application.
+ *
+ * `database.types.ts` est généré depuis le schéma par `npm run db:types` et ne
+ * se modifie jamais à la main. Ce fichier-ci ne fait que le réexporter et lui
+ * donner des noms courts : il reste stable même quand la génération change de
+ * forme, ce qui évite de reprendre tous les imports à chaque régénération.
+ */
+
+import type { Database } from "./database.types";
+
+export type { Database };
+
+export type Tables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"];
+
+export type Enums<T extends keyof Database["public"]["Enums"]> = Database["public"]["Enums"][T];
+
+export type UserRole = Enums<"user_role">;
+export type ProjectFormat = Enums<"project_format">;
+export type ProjectStage = Enums<"project_stage">;
+
+export type Profile = Tables<"profiles">;
+export type Project = Tables<"projects">;

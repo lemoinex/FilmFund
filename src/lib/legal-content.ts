@@ -444,6 +444,19 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
+          text: "**Accès interne.** Les comptes disposant du rôle d'administrateur au sein de filmfundAfrica peuvent consulter les profils et les projets de l'ensemble des utilisateurs, et supprimer un projet. Cet accès sert à l'assistance, à la modération des contenus signalés et au traitement des demandes d'effacement. Il est limité aux personnes désignées par l'éditeur. Un administrateur ne peut pas modifier le contenu d'un projet dont il n'est pas le porteur.",
+        },
+        {
+          type: "fields",
+          fields: [
+            {
+              label: "Personnes disposant du rôle d'administrateur",
+              value: "[À COMPLÉTER]",
+            },
+          ],
+        },
+        {
+          type: "paragraph",
           text: "Les prestataires d'infrastructure suivants sont **envisagés** pour l'hébergement et le fonctionnement du service. À la date de la présente politique, **aucun d'eux n'est configuré ni en service** :",
         },
         {
