@@ -62,6 +62,10 @@ Ces règles ne se négocient pas.
 - Messages de commit en français, au format Conventional Commits :
   `feat: ajoute la page de connexion`, `fix: corrige le calcul du budget total`.
 - `npm run lint` et `npm run build` doivent être verts avant tout commit.
+- **Les commits sont signés** (clé SSH, configuration locale du dépôt). Le projet Vercel
+  exige des commits vérifiés par GitHub : un commit non signé voit son déploiement de
+  prévisualisation annulé, et la pull request affiche un check Vercel en échec. Les commits
+  de fusion, signés par GitHub, se déploient normalement.
 - Rien n'est commité, poussé ni déployé sans accord explicite de l'utilisateur.
 
 ## Code
