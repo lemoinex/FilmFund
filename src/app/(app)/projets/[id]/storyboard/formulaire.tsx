@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import {
   CADRAGES,
   DECORS,
@@ -42,17 +43,19 @@ export function FormulaireScene({ projetId, scene }: { projetId: string; scene?:
     scene ? modifierScene : ajouterScene,
     null,
   );
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   // Identifiants préfixés : le formulaire d'ajout et celui d'une scène en
   // cours de modification coexistent sur la page.
   const p = scene ? `scene-${scene.id}` : "nouvelle-scene";
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formulaire} action={action} className="space-y-5">
       <input type="hidden" name="projet" value={projetId} />
       {scene ? <input type="hidden" name="scene" value={scene.id} /> : null}
 
-      {etat?.erreur ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message?.erreur ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <Field
         label="Intitulé"
