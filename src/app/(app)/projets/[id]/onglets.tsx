@@ -13,7 +13,7 @@ export function OngletsProjet({
   budget,
 }: {
   projetId: string;
-  actif: "projet" | "budget" | "documents" | "storyboard" | "planning";
+  actif: "projet" | "budget" | "documents" | "storyboard" | "planning" | "financements";
   budget: boolean;
 }) {
   const onglets: Onglet[] = [
@@ -21,7 +21,17 @@ export function OngletsProjet({
     { cle: "documents", libelle: "Documents", href: `/projets/${projetId}/documents` },
     { cle: "storyboard", libelle: "Storyboard", href: `/projets/${projetId}/storyboard` },
     { cle: "planning", libelle: "Planning", href: `/projets/${projetId}/planning` },
-    ...(budget ? [{ cle: "budget", libelle: "Budget", href: `/projets/${projetId}/budget` }] : []),
+    // Budget et financements : mêmes droits, montants confidentiels.
+    ...(budget
+      ? [
+          { cle: "budget", libelle: "Budget", href: `/projets/${projetId}/budget` },
+          {
+            cle: "financements",
+            libelle: "Financements",
+            href: `/projets/${projetId}/financements`,
+          },
+        ]
+      : []),
     { cle: "equipe", libelle: "Équipe", href: `/projets/${projetId}#equipe` },
   ];
 

@@ -170,6 +170,19 @@ describe("Mode privé", () => {
       assert.ok(error, "la création doit être refusée");
     });
 
+    it("ne lit ni n'écrit de candidature", async () => {
+      const { data } = await membre.client.from("project_fundings").select("id");
+      assert.equal(data.length, 0);
+
+      const { error } = await membre.client.from("project_fundings").insert({
+        project_id: projetDuMembre.id,
+        funder: "Pendant le verrou",
+        currency: "XOF",
+        created_by: membre.id,
+      });
+      assert.ok(error, "la création doit être refusée");
+    });
+
     it("un éditeur d'équipe perd l'accès au projet partagé", async () => {
       const { data } = await equipier.client.from("projects").select("id").eq("id", projetAdmin.id);
       assert.equal(data.length, 0);

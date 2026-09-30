@@ -27,6 +27,8 @@ export type SceneSetting = Enums<"scene_setting">;
 export type SceneTime = Enums<"scene_time">;
 export type ShotType = Enums<"shot_type">;
 export type MilestoneStatus = Enums<"milestone_status">;
+export type FundingKind = Enums<"funding_kind">;
+export type FundingStatus = Enums<"funding_status">;
 
 export type Profile = Tables<"profiles">;
 export type Project = Tables<"projects">;

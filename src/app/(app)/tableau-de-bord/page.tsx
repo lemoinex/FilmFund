@@ -182,7 +182,14 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
           { cle: "storyboard", libelle: "Storyboard", href: `/projets/${projet.id}/storyboard` },
           { cle: "planning", libelle: "Planning", href: `/projets/${projet.id}/planning` },
           ...(budgetAutorise
-            ? [{ cle: "budget", libelle: "Budget", href: `/projets/${projet.id}/budget` }]
+            ? [
+                { cle: "budget", libelle: "Budget", href: `/projets/${projet.id}/budget` },
+                {
+                  cle: "financements",
+                  libelle: "Financements",
+                  href: `/projets/${projet.id}/financements`,
+                },
+              ]
             : []),
           { cle: "equipe", libelle: "Équipe", href: `/projets/${projet.id}#equipe` },
         ]}
