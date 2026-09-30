@@ -23,6 +23,33 @@ export type Database = {
   };
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          created_at: string;
+          details: NonNullable<Json>;
+          id: number;
+          project_id: string | null;
+        };
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          id?: never;
+          project_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          id?: never;
+          project_id?: string | null;
+        };
+        Relationships: [];
+      };
       app_settings: {
         Row: {
           id: boolean;
@@ -593,6 +620,10 @@ export type Database = {
         }[];
       };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      journaliser: {
+        Args: { p_action: string; p_details: Json; p_project_id: string };
+        Returns: undefined;
+      };
       mes_invitations: {
         Args: Record<PropertyKey, never>;
         Returns: {

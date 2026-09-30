@@ -5,24 +5,24 @@ réellement validé. Deux statuts de fin sont distincts : **validé localement**
 navigateur sur la pile locale) et **validé en recette** (conditions réelles, fournisseurs
 réels).
 
-| Lot | Ticket                                                                                         | Statut  | Bloqué par       |
-| --- | ---------------------------------------------------------------------------------------------- | ------- | ---------------- |
-| A   | Journal des actions d'administration                                                           | à faire | —                |
-| B   | Versions de documents                                                                          | à faire | —                |
-| C   | Envois d'images orphelins                                                                      | à faire | —                |
-| D   | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré) | à faire | —                |
-| E   | Modèle studio                                                                                  | bloqué  | Décision 1       |
-| F   | Plans, profils, registres distincts                                                            | bloqué  | Décisions 1, 5   |
-| G   | Devis, réservation atomique, idempotence                                                       | bloqué  | F                |
-| H   | Tâches persistantes, outbox, rapprochement                                                     | bloqué  | Décision 4, G    |
-| I   | Passerelle IA et premier agent (WEAVER)                                                        | bloqué  | Décision 3, B, H |
-| J   | Autres agents                                                                                  | bloqué  | I                |
-| K   | BOARD (quota image, croquis noir et blanc)                                                     | bloqué  | I, décision 7    |
-| L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                    | bloqué  | I, décision 7    |
-| M   | Exports PDF                                                                                    | bloqué  | Décision 8       |
-| N   | Paiements                                                                                      | bloqué  | Décision 6, F    |
-| O   | Interface des quotas et incidents                                                              | bloqué  | F à N            |
-| P   | Recette intégrée avant ouverture commerciale                                                   | bloqué  | Tous             |
+| Lot | Ticket                                                                                         | Statut            | Bloqué par       |
+| --- | ---------------------------------------------------------------------------------------------- | ----------------- | ---------------- |
+| A   | Journal des actions d'administration                                                           | validé localement | —                |
+| B   | Versions de documents                                                                          | à faire           | —                |
+| C   | Envois d'images orphelins                                                                      | à faire           | —                |
+| D   | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré) | à faire           | —                |
+| E   | Modèle studio                                                                                  | bloqué            | Décision 1       |
+| F   | Plans, profils, registres distincts                                                            | bloqué            | Décisions 1, 5   |
+| G   | Devis, réservation atomique, idempotence                                                       | bloqué            | F                |
+| H   | Tâches persistantes, outbox, rapprochement                                                     | bloqué            | Décision 4, G    |
+| I   | Passerelle IA et premier agent (WEAVER)                                                        | bloqué            | Décision 3, B, H |
+| J   | Autres agents                                                                                  | bloqué            | I                |
+| K   | BOARD (quota image, croquis noir et blanc)                                                     | bloqué            | I, décision 7    |
+| L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                    | bloqué            | I, décision 7    |
+| M   | Exports PDF                                                                                    | bloqué            | Décision 8       |
+| N   | Paiements                                                                                      | bloqué            | Décision 6, F    |
+| O   | Interface des quotas et incidents                                                              | bloqué            | F à N            |
+| P   | Recette intégrée avant ouverture commerciale                                                   | bloqué            | Tous             |
 
 ## Décisions attendues
 
