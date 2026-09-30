@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -10,6 +11,7 @@ import {
   StoryboardIcon,
 } from "@/components/icons";
 import { BarreAvancement } from "@/components/ui/avancement";
+import { Couverture } from "@/components/ui/couverture";
 import { Onglets } from "@/components/ui/onglets";
 import { compterMots, libelleMots, STATUTS_DOCUMENT } from "@/lib/documents";
 import { ROLES_PROJET } from "@/lib/equipes";
@@ -22,6 +24,7 @@ import {
   formaterJour,
 } from "@/lib/planning";
 import { ETAPES, FORMATS } from "@/lib/projets";
+import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
 import { InvitationsRecues } from "./invitations";
@@ -55,6 +58,8 @@ export default async function TableauDeBord() {
   // travaille, sans qu'aucune préférence ne soit stockée.
   const [projet, ...autres] = projets;
 
+  const visuels = projet ? await chargerVisuels(supabase, projet.id) : null;
+
   return (
     <div className="flex min-h-full">
       <div className="min-w-0 flex-1 px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
@@ -71,15 +76,70 @@ export default async function TableauDeBord() {
 
         <InvitationsRecues />
 
-        {projet ? <ProjetEnCours projet={projet} autres={autres} /> : <AucunProjet />}
+        {projet ? (
+          <ProjetEnCours projet={projet} autres={autres} couverture={visuels?.couverture ?? null} />
+        ) : (
+          <AucunProjet />
+        )}
       </div>
 
-      <Apercus />
+      <Apercus projet={projet ?? null} visuels={visuels} />
     </div>
   );
 }
 
-async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres: ResumeProjet[] }) {
+type Visuels = {
+  couverture: string | null;
+  planches: { id: string; url: string; titre: string; numero: string }[];
+};
+
+/**
+ * Couverture et planches illustrées du projet mis en avant.
+ *
+ * Trois planches au plus, dans l'ordre du storyboard : la colonne est un
+ * aperçu, pas une galerie. Les liens sont signés avec la session de
+ * l'utilisateur ; une image qu'il ne peut pas lire est simplement absente.
+ */
+async function chargerVisuels(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+): Promise<Visuels> {
+  const [{ data: projet }, { data: scenes }] = await Promise.all([
+    supabase.from("projects").select("cover_path").eq("id", projetId).maybeSingle(),
+    supabase
+      .from("storyboard_scenes")
+      .select("id, title, position, image_path")
+      .eq("project_id", projetId)
+      .order("position"),
+  ]);
+
+  const toutes = scenes ?? [];
+  const illustrees = toutes.filter((s) => s.image_path).slice(0, 3);
+  const liens = await liensSignes(supabase, [
+    projet?.cover_path,
+    ...illustrees.map((s) => s.image_path),
+  ]);
+
+  return {
+    couverture: projet?.cover_path ? (liens.get(projet.cover_path) ?? null) : null,
+    planches: illustrees.flatMap((scene) => {
+      const url = scene.image_path ? liens.get(scene.image_path) : undefined;
+      // Numéro calculé sur l'ensemble du storyboard, comme sur sa page.
+      const numero = String(toutes.indexOf(scene) + 1).padStart(2, "0");
+      return url ? [{ id: scene.id, url, titre: scene.title, numero }] : [];
+    }),
+  };
+}
+
+async function ProjetEnCours({
+  projet,
+  autres,
+  couverture,
+}: {
+  projet: ResumeProjet;
+  autres: ResumeProjet[];
+  couverture: string | null;
+}) {
   const supabase = await createClient();
 
   // Données complémentaires : le synopsis (absent du résumé), la dernière
@@ -129,7 +189,7 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
     <>
       <section aria-labelledby="projet-titre" className="mt-8">
         <div className="flex flex-wrap items-start gap-5">
-          <Couverture />
+          <Couverture url={couverture} titre={projet.title} prioritaire />
 
           {/*
            * Largeur minimale : sur mobile, c'est le bouton qui passe à la
@@ -358,23 +418,6 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
   );
 }
 
-/**
- * Couverture du projet.
- *
- * Les projets n'ont pas encore d'image : un emplacement sombre, décoratif,
- * tient la place sans charger de ressource externe.
- */
-function Couverture() {
-  return (
-    <div
-      aria-hidden="true"
-      className="border-app-line relative flex h-28 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-[linear-gradient(160deg,var(--surface-hover),var(--sidebar-bg))] sm:h-32 sm:w-24"
-    >
-      <ClapperIcon className="text-gold/70 size-8" />
-    </div>
-  );
-}
-
 function CarteSynthese({
   titre,
   icone,
@@ -441,14 +484,16 @@ function AucunProjet() {
 }
 
 /**
- * Colonne d'aperçus visuels.
+ * Colonne d'aperçus visuels : la couverture et les premières planches
+ * illustrées du projet mis en avant, chacune menant à sa page.
  *
- * Aucun visuel de projet n'existe encore en base (ni couverture, ni planche
- * de storyboard). Plutôt que d'y montrer les images de la vitrine, qui ne
- * sont pas celles du projet, trois emplacements décoratifs annoncent ce que
- * la colonne accueillera. Non interactifs, ignorés des lecteurs d'écran.
+ * Sans aucun visuel, trois emplacements décoratifs annoncent ce que la
+ * colonne accueillera — jamais les images de la vitrine, qui ne sont pas
+ * celles du projet.
  */
-function Apercus() {
+function Apercus({ projet, visuels }: { projet: ResumeProjet | null; visuels: Visuels | null }) {
+  const aDesVisuels = Boolean(visuels?.couverture || visuels?.planches.length);
+
   return (
     <aside
       aria-labelledby="apercus-titre"
@@ -457,19 +502,67 @@ function Apercus() {
       <h2 id="apercus-titre" className="text-secondary text-xs font-medium tracking-wide uppercase">
         Aperçus visuels
       </h2>
-      <div aria-hidden="true" className="mt-5 space-y-4">
-        {["aspect-[4/3]", "aspect-[3/4]", "aspect-[4/3]"].map((format, index) => (
-          <div
-            key={index}
-            className={`${format} border-app-line relative overflow-hidden rounded-xl border bg-[linear-gradient(150deg,var(--surface-hover),var(--surface)_55%,var(--sidebar-bg))]`}
-          >
-            <div className="pattern-film absolute inset-0" />
+
+      {projet && visuels && aDesVisuels ? (
+        <ul className="mt-5 space-y-4">
+          {visuels.couverture ? (
+            <li>
+              <Link
+                href={`/projets/${projet.id}`}
+                className="border-app-line hover:border-gold/60 relative block aspect-[3/4] overflow-hidden rounded-xl border transition-colors"
+              >
+                <Image
+                  src={visuels.couverture}
+                  alt={`Couverture du projet ${projet.title}`}
+                  fill
+                  unoptimized
+                  sizes="176px"
+                  className="object-cover"
+                />
+              </Link>
+            </li>
+          ) : null}
+          {visuels.planches.map((planche) => (
+            <li key={planche.id}>
+              <Link
+                href={`/projets/${projet.id}/storyboard#scene-${planche.id}`}
+                className="border-app-line hover:border-gold/60 relative block aspect-video overflow-hidden rounded-xl border transition-colors"
+              >
+                <Image
+                  src={planche.url}
+                  alt={`Planche de la scène ${planche.numero} : ${planche.titre}`}
+                  fill
+                  unoptimized
+                  sizes="176px"
+                  className="object-cover"
+                />
+                <span
+                  aria-hidden="true"
+                  className="bg-app/80 text-gold absolute top-2 left-2 rounded px-1.5 font-serif text-sm"
+                >
+                  {planche.numero}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <>
+          <div aria-hidden="true" className="mt-5 space-y-4">
+            {["aspect-[4/3]", "aspect-[3/4]", "aspect-[4/3]"].map((format, index) => (
+              <div
+                key={index}
+                className={`${format} border-app-line relative overflow-hidden rounded-xl border bg-[linear-gradient(150deg,var(--surface-hover),var(--surface)_55%,var(--sidebar-bg))]`}
+              >
+                <div className="pattern-film absolute inset-0" />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <p className="text-secondary mt-5 text-xs leading-relaxed">
-        Les couvertures et planches de storyboard apparaîtront ici.
-      </p>
+          <p className="text-secondary mt-5 text-xs leading-relaxed">
+            La couverture et les planches illustrées du storyboard apparaîtront ici.
+          </p>
+        </>
+      )}
     </aside>
   );
 }

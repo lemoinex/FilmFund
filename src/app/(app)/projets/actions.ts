@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { estEtapeValide, estFormatValide } from "@/lib/projets";
+import { COMPARTIMENT_IMAGES } from "@/lib/images";
 import { exigerAcces } from "@/lib/supabase/garde";
+import { supprimerImages } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
 export type EtatProjet = { erreur: string } | null;
@@ -76,9 +78,34 @@ export async function supprimerProjet(formData: FormData) {
   }
 
   /*
-   * Pas de filtre sur le porteur ici : la RLS s'en charge. Une suppression
-   * portant sur le projet d'autrui ne touchera aucune ligne.
+   * Images d'abord, projet ensuite. Une fois le projet supprimé, la
+   * politique de stockage ne reconnaît plus son porteur, qui ne pourrait
+   * plus effacer ses fichiers : ils resteraient orphelins. On vérifie donc
+   * le droit de suppression avant de toucher aux fichiers — mêmes règles que
+   * les politiques de la table : porteur ou administrateur.
    */
+  const [{ data: acces }, { data: estAdmin }] = await Promise.all([
+    supabase.rpc("acces_au_projet", { p_project_id: id }),
+    supabase.rpc("is_admin"),
+  ]);
+
+  if (acces !== "owner" && estAdmin !== true) {
+    return;
+  }
+
+  const dossiers = await Promise.all(
+    ["couverture", "scenes"].map((dossier) =>
+      supabase.storage.from(COMPARTIMENT_IMAGES).list(`${id}/${dossier}`, { limit: 1000 }),
+    ),
+  );
+  await supprimerImages(
+    supabase,
+    dossiers.flatMap(({ data }, index) =>
+      (data ?? []).map((f) => `${id}/${index === 0 ? "couverture" : "scenes"}/${f.name}`),
+    ),
+  );
+
+  // La RLS reste le dernier mot : sans droit, aucune ligne ne serait touchée.
   await supabase.from("projects").delete().eq("id", id);
 
   revalidatePath("/projets");

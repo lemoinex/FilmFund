@@ -37,6 +37,7 @@ describe("Mode privé", () => {
   let projetDuMembre;
   let projetAdmin;
   let invitationEnAttente;
+  let imageDuMembre;
 
   before(async () => {
     // Mise en place mode levé : les comptes et l'équipe existent déjà quand
@@ -52,6 +53,12 @@ describe("Mode privé", () => {
     projetAdmin = await creerProjet(administrateur, "Projet d'un administrateur");
     await faireEntrer(administrateur, projetAdmin.id, equipier, "editor");
     invitationEnAttente = await inviter(administrateur, projetAdmin.id, membre.email);
+
+    imageDuMembre = `${projetDuMembre.id}/couverture/avant-le-verrou.png`;
+    const { error: envoi } = await membre.client.storage
+      .from("project-images")
+      .upload(imageDuMembre, Buffer.from("iVBORw0KGgo=", "base64"), { contentType: "image/png" });
+    assert.equal(envoi, null, envoi?.message);
 
     await definirModePrive(true);
   });
@@ -181,6 +188,20 @@ describe("Mode privé", () => {
         created_by: membre.id,
       });
       assert.ok(error, "la création doit être refusée");
+    });
+
+    it("n'obtient plus de lien vers ses propres images, ni n'en envoie", async () => {
+      const { error: lien } = await membre.client.storage
+        .from("project-images")
+        .createSignedUrl(imageDuMembre, 60);
+      assert.ok(lien, "le stockage suit le verrou, comme les tables");
+
+      const { error: envoi } = await membre.client.storage
+        .from("project-images")
+        .upload(`${projetDuMembre.id}/scenes/pendant.png`, Buffer.from("x"), {
+          contentType: "image/png",
+        });
+      assert.ok(envoi, "l'envoi doit être refusé");
     });
 
     it("un éditeur d'équipe perd l'accès au projet partagé", async () => {
