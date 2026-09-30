@@ -296,6 +296,63 @@ export type Database = {
           },
         ];
       };
+      project_milestones: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          due_on: string | null;
+          id: string;
+          notes: string;
+          phase: Database["public"]["Enums"]["project_stage"];
+          project_id: string;
+          starts_on: string | null;
+          status: Database["public"]["Enums"]["milestone_status"];
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          due_on?: string | null;
+          id?: string;
+          notes?: string;
+          phase?: Database["public"]["Enums"]["project_stage"];
+          project_id: string;
+          starts_on?: string | null;
+          status?: Database["public"]["Enums"]["milestone_status"];
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          due_on?: string | null;
+          id?: string;
+          notes?: string;
+          phase?: Database["public"]["Enums"]["project_stage"];
+          project_id?: string;
+          starts_on?: string | null;
+          status?: Database["public"]["Enums"]["milestone_status"];
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_milestones_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       projects: {
         Row: {
           created_at: string;
@@ -457,6 +514,7 @@ export type Database = {
       document_status: "brouillon" | "en_relecture" | "finalise";
       document_type:
         "note_intention" | "traitement" | "scenario" | "biographie" | "lettre" | "autre";
+      milestone_status: "a_faire" | "en_cours" | "termine";
       project_format:
         "long_metrage" | "court_metrage" | "documentaire" | "serie" | "web_serie" | "animation";
       project_member_role: "editor" | "viewer";
@@ -610,6 +668,7 @@ export const Constants = {
       ],
       document_status: ["brouillon", "en_relecture", "finalise"],
       document_type: ["note_intention", "traitement", "scenario", "biographie", "lettre", "autre"],
+      milestone_status: ["a_faire", "en_cours", "termine"],
       project_format: [
         "long_metrage",
         "court_metrage",
