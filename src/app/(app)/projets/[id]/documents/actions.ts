@@ -132,6 +132,46 @@ export async function enregistrerDocument(
   return { enregistreLe: data[0].updated_at };
 }
 
+export type EtatRestauration = { erreur: string } | null;
+
+/*
+ * La restauration passe par une fonction de la base, soumise à la RLS de
+ * l'appelant : elle réenregistre le titre et le texte de la version, ce qui
+ * crée une nouvelle version marquée comme restauration.
+ */
+export async function restaurerVersion(
+  _etatPrecedent: EtatRestauration,
+  formData: FormData,
+): Promise<EtatRestauration> {
+  const projetId = String(formData.get("projet") ?? "");
+  const documentId = String(formData.get("document") ?? "");
+  const versionId = String(formData.get("version") ?? "");
+
+  if (!projetId || !documentId || !versionId) {
+    return { erreur: "Version introuvable." };
+  }
+
+  const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
+  const { error } = await supabase.rpc("restaurer_version_document", { p_version_id: versionId });
+
+  if (error) {
+    if (error.code === "42501") return { erreur: REFUS };
+    if (error.code === "P0002") return { erreur: "Version introuvable." };
+    return { erreur: "La restauration a échoué. Réessayez dans un instant." };
+  }
+
+  revalidatePath(`/projets/${projetId}/documents`);
+  revalidatePath(`/projets/${projetId}/documents/${documentId}`);
+  revalidatePath("/tableau-de-bord");
+  revalidatePath("/documents");
+  redirect(`/projets/${projetId}/documents/${documentId}`);
+}
+
 export async function supprimerDocument(formData: FormData) {
   const projetId = String(formData.get("projet") ?? "");
   const documentId = String(formData.get("document") ?? "");

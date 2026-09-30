@@ -15,7 +15,13 @@ import {
 } from "@/lib/documents";
 import type { DocumentStatus, DocumentType } from "@/lib/supabase/types";
 
-import { creerDocument, enregistrerDocument, type EtatDocument } from "./actions";
+import {
+  creerDocument,
+  enregistrerDocument,
+  restaurerVersion,
+  type EtatDocument,
+  type EtatRestauration,
+} from "./actions";
 
 const CLASSES_SELECT =
   "border-app-line bg-app focus:border-gold w-full rounded-lg border px-4 py-3 text-sm transition-colors outline-none";
@@ -74,6 +80,39 @@ export function FormulaireNouveauDocument({
 
       <div className="w-full sm:w-auto sm:max-w-xs">
         <SubmitButton enCours={enCours}>Créer le document</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Restauration d'une version. Sans confirmation : rien ne se perd, le texte
+ * actuel restant dans l'historique.
+ */
+export function FormulaireRestauration({
+  projetId,
+  documentId,
+  versionId,
+}: {
+  projetId: string;
+  documentId: string;
+  versionId: string;
+}) {
+  const [etat, action, enCours] = useActionState<EtatRestauration, FormData>(
+    restaurerVersion,
+    null,
+  );
+
+  return (
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="projet" value={projetId} />
+      <input type="hidden" name="document" value={documentId} />
+      <input type="hidden" name="version" value={versionId} />
+
+      {etat ? <Message ton="erreur">{etat.erreur}</Message> : null}
+
+      <div className="w-full sm:w-auto sm:max-w-xs">
+        <SubmitButton enCours={enCours}>Restaurer cette version</SubmitButton>
       </div>
     </form>
   );

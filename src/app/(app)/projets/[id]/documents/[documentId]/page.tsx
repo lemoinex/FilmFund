@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supprimerDocument } from "../actions";
 import { EditeurDocument } from "../formulaires";
 import { BadgeStatut } from "../statut";
+import { HistoriqueVersions } from "./historique";
 
 export const metadata: Metadata = {
   title: "Document — filmfundAfrica",
@@ -65,10 +66,12 @@ export default async function DocumentPage({
             <EditeurDocument projetId={projet.id} document={document} />
           </div>
 
+          <HistoriqueVersions projetId={projet.id} documentId={document.id} />
+
           <section className="border-app-line mt-16 rounded-xl border border-dashed p-5">
             <h2 className="text-sm font-medium">Supprimer ce document</h2>
             <p className="text-secondary mt-2 mb-4 text-sm leading-relaxed">
-              La suppression est définitive.
+              La suppression est définitive, historique des versions compris.
             </p>
             <BoutonConfirme
               action={supprimerDocument}
@@ -94,6 +97,8 @@ export default async function DocumentPage({
           </div>
         </article>
       )}
+
+      {peutEditer ? null : <HistoriqueVersions projetId={projet.id} documentId={document.id} />}
     </div>
   );
 }
