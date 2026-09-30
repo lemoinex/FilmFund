@@ -38,6 +38,7 @@ describe("Mode privé", () => {
   let projetAdmin;
   let invitationEnAttente;
   let imageDuMembre;
+  let versionDuMembre;
 
   before(async () => {
     // Mise en place mode levé : les comptes et l'équipe existent déjà quand
@@ -59,6 +60,25 @@ describe("Mode privé", () => {
       .from("project-images")
       .upload(imageDuMembre, Buffer.from("iVBORw0KGgo=", "base64"), { contentType: "image/png" });
     assert.equal(envoi, null, envoi?.message);
+
+    const { data: document, error: erreurDocument } = await membre.client
+      .from("project_documents")
+      .insert({
+        project_id: projetDuMembre.id,
+        type: "note_intention",
+        title: "Avant le verrou",
+        content: "Texte écrit avant le verrou.",
+        created_by: membre.id,
+      })
+      .select("id")
+      .single();
+    assert.equal(erreurDocument, null, erreurDocument?.message);
+    const { data: versionsAvant } = await membre.client
+      .from("project_document_versions")
+      .select("id")
+      .eq("document_id", document.id);
+    assert.equal(versionsAvant.length, 1);
+    versionDuMembre = versionsAvant[0].id;
 
     await definirModePrive(true);
   });
@@ -150,6 +170,16 @@ describe("Mode privé", () => {
         created_by: membre.id,
       });
       assert.ok(error, "la création doit être refusée");
+    });
+
+    it("ne lit ni ne restaure de version de document", async () => {
+      const { data } = await membre.client.from("project_document_versions").select("id");
+      assert.equal(data.length, 0);
+
+      const { error } = await membre.client.rpc("restaurer_version_document", {
+        p_version_id: versionDuMembre,
+      });
+      assert.ok(error, "la restauration doit être refusée");
     });
 
     it("ne lit ni n'écrit de scène", async () => {

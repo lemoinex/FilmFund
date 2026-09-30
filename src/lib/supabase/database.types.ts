@@ -214,6 +214,57 @@ export type Database = {
           },
         ];
       };
+      project_document_versions: {
+        Row: {
+          content: string;
+          created_at: string;
+          created_by: string | null;
+          document_id: string;
+          id: string;
+          project_id: string;
+          restored_from: number | null;
+          title: string;
+          version_number: number;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          created_by?: string | null;
+          document_id: string;
+          id?: string;
+          project_id: string;
+          restored_from?: number | null;
+          title: string;
+          version_number: number;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          created_by?: string | null;
+          document_id?: string;
+          id?: string;
+          project_id?: string;
+          restored_from?: number | null;
+          title?: string;
+          version_number?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "version_du_document";
+            columns: ["document_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "project_documents";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "version_restauree_existante";
+            columns: ["document_id", "restored_from"];
+            isOneToOne: false;
+            referencedRelation: "project_document_versions";
+            referencedColumns: ["document_id", "version_number"];
+          },
+        ];
+      };
       project_documents: {
         Row: {
           content: string;
@@ -641,6 +692,7 @@ export type Database = {
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
       projet_du_chemin: { Args: { p_chemin: string }; Returns: string };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
+      restaurer_version_document: { Args: { p_version_id: string }; Returns: undefined };
     };
     Enums: {
       budget_category:
