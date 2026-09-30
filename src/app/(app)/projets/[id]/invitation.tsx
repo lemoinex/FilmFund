@@ -1,20 +1,23 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import { POSTE_MAX, ROLES_ATTRIBUABLES } from "@/lib/equipes";
 import { inviterMembre, type EtatInvitation } from "../actions-equipe";
 
 export function FormulaireInvitation({ projetId }: { projetId: string }) {
   const [etat, action, enCours] = useActionState<EtatInvitation, FormData>(inviterMembre, null);
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formulaire} action={action} className="space-y-5">
       <input type="hidden" name="projet" value={projetId} />
 
-      {etat && "erreur" in etat ? <Message ton="erreur">{etat.erreur}</Message> : null}
-      {etat && "succes" in etat ? <Message ton="succes">{etat.succes}</Message> : null}
+      {message && "erreur" in message ? <Message ton="erreur">{message.erreur}</Message> : null}
+      {message && "succes" in message ? <Message ton="succes">{message.succes}</Message> : null}
 
       <Field
         label="Adresse e-mail"

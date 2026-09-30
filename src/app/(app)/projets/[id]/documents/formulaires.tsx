@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import {
   compterMots,
   CONTENU_DOCUMENT_MAX,
@@ -27,13 +28,15 @@ export function FormulaireNouveauDocument({
   typeParDefaut?: DocumentType;
 }) {
   const [etat, action, enCours] = useActionState<EtatDocument, FormData>(creerDocument, null);
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
   const [type, setType] = useState<DocumentType>(typeParDefaut);
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formulaire} action={action} className="space-y-5">
       <input type="hidden" name="projet" value={projetId} />
 
-      {etat && "erreur" in etat ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message && "erreur" in message ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
@@ -100,6 +103,8 @@ export function EditeurDocument({
   document: DocumentEditable;
 }) {
   const [etat, action, enCours] = useActionState<EtatDocument, FormData>(enregistrerDocument, null);
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   const [titre, setTitre] = useState(document.title);
   const [type, setType] = useState(document.type);
@@ -146,6 +151,7 @@ export function EditeurDocument({
 
   return (
     <form
+      ref={formulaire}
       /*
        * Envoi déclenché à la main, et non par `action={action}` : après une
        * action de formulaire, React réinitialise ses champs. Les listes
@@ -164,7 +170,7 @@ export function EditeurDocument({
       <input type="hidden" name="projet" value={projetId} />
       <input type="hidden" name="document" value={document.id} />
 
-      {etat && "erreur" in etat ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message && "erreur" in message ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <div>
         <label htmlFor="titre" className="mb-2 block text-sm font-medium">

@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import type { ProjectFormat, ProjectStage } from "@/lib/supabase/types";
 import { mettreAJourProjet, type EtatProjet } from "../actions";
@@ -18,9 +19,12 @@ type Projet = {
 
 export function FormulaireEdition({ projet }: { projet: Projet }) {
   const [etat, action, enCours] = useActionState<EtatProjet, FormData>(mettreAJourProjet, null);
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   return (
     <form
+      ref={formulaire}
       /*
        * Envoi déclenché à la main, et non par `action={action}` : après une
        * action de formulaire, React réinitialise les champs à leurs valeurs
@@ -37,7 +41,7 @@ export function FormulaireEdition({ projet }: { projet: Projet }) {
     >
       <input type="hidden" name="id" value={projet.id} />
 
-      {etat?.erreur ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message?.erreur ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <Field label="Titre du projet" name="titre" required defaultValue={projet.title} />
 

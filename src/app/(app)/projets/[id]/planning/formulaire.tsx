@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import { NOTES_ETAPE_MAX, PHASES, STATUTS_ETAPE, TITRE_ETAPE_MAX } from "@/lib/planning";
 import { ETAPES } from "@/lib/projets";
 import type { MilestoneStatus, ProjectStage } from "@/lib/supabase/types";
@@ -43,15 +44,17 @@ export function FormulaireEtape({
     etape ? modifierEtape : ajouterEtape,
     null,
   );
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   const p = etape ? `etape-${etape.id}` : "nouvelle-etape";
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formulaire} action={action} className="space-y-5">
       <input type="hidden" name="projet" value={projetId} />
       {etape ? <input type="hidden" name="etape" value={etape.id} /> : null}
 
-      {etat?.erreur ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message?.erreur ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <Field
         label="Intitulé"

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import { DEVISES, montantPourSaisie } from "@/lib/budgets";
 import {
   NOTES_FINANCEMENT_MAX,
@@ -56,16 +57,18 @@ export function FormulaireCandidature({
     candidature ? modifierCandidature : ajouterCandidature,
     null,
   );
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   const p = candidature ? `candidature-${candidature.id}` : "nouvelle-candidature";
   const devise = candidature?.currency ?? deviseParDefaut ?? "";
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formulaire} action={action} className="space-y-5">
       <input type="hidden" name="projet" value={projetId} />
       {candidature ? <input type="hidden" name="candidature" value={candidature.id} /> : null}
 
-      {etat?.erreur ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message?.erreur ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field

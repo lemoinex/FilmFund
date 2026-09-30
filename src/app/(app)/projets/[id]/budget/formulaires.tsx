@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import { DEVISES, LIBELLE_MAX, montantPourSaisie, ORDRE_POSTES, POSTES } from "@/lib/budgets";
 import type { BudgetCategory } from "@/lib/supabase/types";
 
@@ -48,17 +49,19 @@ export function FormulaireLigne({
     ligne ? modifierLigne : ajouterLigne,
     null,
   );
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   // Préfixe des identifiants : le formulaire d'ajout et celui d'une ligne en
   // cours de modification coexistent sur la page.
   const p = ligne ? `ligne-${ligne.id}` : "nouvelle";
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formulaire} action={action} className="space-y-5">
       <input type="hidden" name="projet" value={projetId} />
       {ligne ? <input type="hidden" name="ligne" value={ligne.id} /> : null}
 
-      {etat?.erreur ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message?.erreur ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
@@ -150,12 +153,14 @@ export function FormulaireDevise({
     deviseActuelle ? changerDevise : ouvrirBudget,
     null,
   );
+  const formulaire = useRef<HTMLFormElement>(null);
+  const message = useMessageFormulaire(etat, formulaire);
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formulaire} action={action} className="space-y-5">
       <input type="hidden" name="projet" value={projetId} />
 
-      {etat?.erreur ? <Message ton="erreur">{etat.erreur}</Message> : null}
+      {message?.erreur ? <Message ton="erreur">{message.erreur}</Message> : null}
 
       <div>
         <label htmlFor="devise" className="mb-2 block text-sm font-medium">
