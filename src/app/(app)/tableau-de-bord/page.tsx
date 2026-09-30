@@ -77,20 +77,30 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
   // Données complémentaires : le synopsis (absent du résumé), la dernière
   // note d'intention, et les droits calculés par les mêmes fonctions que la
   // RLS.
-  const [{ data: detail }, { data: note }, { data: budgetAutorise }, { data: peutEditer }] =
-    await Promise.all([
-      supabase.from("projects").select("synopsis").eq("id", projet.id).maybeSingle(),
-      supabase
-        .from("project_documents")
-        .select("id, status, content")
-        .eq("project_id", projet.id)
-        .eq("type", "note_intention")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase.rpc("peut_gerer_budget", { p_project_id: projet.id }),
-      supabase.rpc("peut_editer_contenu", { p_project_id: projet.id }),
-    ]);
+  const [
+    { data: detail },
+    { data: note },
+    { count: nombreScenes },
+    { data: budgetAutorise },
+    { data: peutEditer },
+  ] = await Promise.all([
+    supabase.from("projects").select("synopsis").eq("id", projet.id).maybeSingle(),
+    supabase
+      .from("project_documents")
+      .select("id, status, content")
+      .eq("project_id", projet.id)
+      .eq("type", "note_intention")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Nombre seul, sans rapatrier les scènes.
+    supabase
+      .from("storyboard_scenes")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", projet.id),
+    supabase.rpc("peut_gerer_budget", { p_project_id: projet.id }),
+    supabase.rpc("peut_editer_contenu", { p_project_id: projet.id }),
+  ]);
 
   const synopsis = detail?.synopsis?.trim() ?? "";
 
@@ -148,7 +158,7 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
         onglets={[
           { cle: "synthese", libelle: "Synthèse", href: "/tableau-de-bord" },
           { cle: "documents", libelle: "Documents", href: `/projets/${projet.id}/documents` },
-          { cle: "storyboard", libelle: "Storyboard" },
+          { cle: "storyboard", libelle: "Storyboard", href: `/projets/${projet.id}/storyboard` },
           ...(budgetAutorise
             ? [{ cle: "budget", libelle: "Budget", href: `/projets/${projet.id}/budget` }]
             : []),
@@ -203,7 +213,7 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
                   }
                 : peutEditer
                   ? {
-                      href: `/projets/${projet.id}/documents?type=note_intention#nouveau-titre`,
+                      href: `/projets/${projet.id}/documents?type=note_intention#ajout-document`,
                       libelle: `la note d'intention de ${projet.title}`,
                       texte: "Rédiger",
                     }
@@ -213,9 +223,25 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
           <CarteSynthese
             titre="Storyboard"
             icone={<StoryboardIcon className="size-5" />}
-            statut="Non commencé"
-            detail="Aucune scène"
-            renseigne={false}
+            statut={nombreScenes ? "Commencé" : "Non commencé"}
+            detail={
+              nombreScenes ? `${nombreScenes} scène${nombreScenes > 1 ? "s" : ""}` : "Aucune scène"
+            }
+            renseigne={Boolean(nombreScenes)}
+            lien={
+              nombreScenes
+                ? {
+                    href: `/projets/${projet.id}/storyboard`,
+                    libelle: `le storyboard de ${projet.title}`,
+                  }
+                : peutEditer
+                  ? {
+                      href: `/projets/${projet.id}/storyboard#ajout-scene`,
+                      libelle: `le storyboard de ${projet.title}`,
+                      texte: "Commencer",
+                    }
+                  : undefined
+            }
           />
         </ul>
       </section>

@@ -340,6 +340,66 @@ export type Database = {
           },
         ];
       };
+      storyboard_scenes: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          id: string;
+          location: string;
+          position: number;
+          project_id: string;
+          setting: Database["public"]["Enums"]["scene_setting"];
+          shot: Database["public"]["Enums"]["shot_type"] | null;
+          time_of_day: Database["public"]["Enums"]["scene_time"];
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          location?: string;
+          position: number;
+          project_id: string;
+          setting?: Database["public"]["Enums"]["scene_setting"];
+          shot?: Database["public"]["Enums"]["shot_type"] | null;
+          time_of_day?: Database["public"]["Enums"]["scene_time"];
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          location?: string;
+          position?: number;
+          project_id?: string;
+          setting?: Database["public"]["Enums"]["scene_setting"];
+          shot?: Database["public"]["Enums"]["shot_type"] | null;
+          time_of_day?: Database["public"]["Enums"]["scene_time"];
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "storyboard_scenes_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "storyboard_scenes_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -351,6 +411,7 @@ export type Database = {
         Args: { email_cible: string; nouveau_role: Database["public"]["Enums"]["user_role"] };
         Returns: undefined;
       };
+      deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       email_confirme_courant: { Args: Record<PropertyKey, never>; Returns: string };
       equipe_du_projet: {
         Args: { p_project_id: string };
@@ -407,6 +468,18 @@ export type Database = {
         | "production"
         | "postproduction"
         | "termine";
+      scene_setting: "int" | "ext" | "int_ext";
+      scene_time: "jour" | "nuit" | "aube" | "crepuscule";
+      shot_type:
+        | "plan_ensemble"
+        | "plan_large"
+        | "plan_moyen"
+        | "plan_americain"
+        | "plan_rapproche"
+        | "gros_plan"
+        | "tres_gros_plan"
+        | "insert"
+        | "plan_sequence";
       user_role: "member" | "admin";
     };
     CompositeTypes: {
@@ -554,6 +627,19 @@ export const Constants = {
         "production",
         "postproduction",
         "termine",
+      ],
+      scene_setting: ["int", "ext", "int_ext"],
+      scene_time: ["jour", "nuit", "aube", "crepuscule"],
+      shot_type: [
+        "plan_ensemble",
+        "plan_large",
+        "plan_moyen",
+        "plan_americain",
+        "plan_rapproche",
+        "gros_plan",
+        "tres_gros_plan",
+        "insert",
+        "plan_sequence",
       ],
       user_role: ["member", "admin"],
     },

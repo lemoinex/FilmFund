@@ -145,6 +145,19 @@ describe("Mode privé", () => {
       assert.ok(error, "la création doit être refusée");
     });
 
+    it("ne lit ni n'écrit de scène", async () => {
+      const { data } = await membre.client.from("storyboard_scenes").select("id");
+      assert.equal(data.length, 0);
+
+      const { error } = await membre.client.from("storyboard_scenes").insert({
+        project_id: projetDuMembre.id,
+        position: 1,
+        title: "Pendant le verrou",
+        created_by: membre.id,
+      });
+      assert.ok(error, "la création doit être refusée");
+    });
+
     it("un éditeur d'équipe perd l'accès au projet partagé", async () => {
       const { data } = await equipier.client.from("projects").select("id").eq("id", projetAdmin.id);
       assert.equal(data.length, 0);

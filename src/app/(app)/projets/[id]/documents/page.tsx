@@ -115,8 +115,8 @@ export default async function DocumentsPage({
       )}
 
       {peutEditer ? (
-        <section aria-labelledby="nouveau-titre" className="border-app-line mt-12 border-t pt-10">
-          <h2 id="nouveau-titre" className="font-serif text-2xl leading-tight">
+        <section aria-labelledby="ajout-document" className="border-app-line mt-12 border-t pt-10">
+          <h2 id="ajout-document" className="font-serif text-2xl leading-tight">
             Nouveau document
           </h2>
           <div className="mt-6">

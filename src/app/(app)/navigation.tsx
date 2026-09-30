@@ -28,7 +28,7 @@ const RUBRIQUES: Rubrique[] = [
   { libelle: "Tableau de bord", icone: KanbanIcon, href: "/tableau-de-bord" },
   { libelle: "Mes projets", icone: ClapperIcon, href: "/projets" },
   { libelle: "Documents", icone: DocumentIcon, href: "/documents" },
-  { libelle: "Storyboard", icone: StoryboardIcon },
+  { libelle: "Storyboard", icone: StoryboardIcon, href: "/storyboard" },
   { libelle: "Assistant IA", icone: SparkIcon },
   { libelle: "Ressources", icone: QuillIcon },
 ];

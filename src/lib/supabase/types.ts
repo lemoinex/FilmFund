@@ -23,6 +23,9 @@ export type ProjectMemberRole = Enums<"project_member_role">;
 export type BudgetCategory = Enums<"budget_category">;
 export type DocumentType = Enums<"document_type">;
 export type DocumentStatus = Enums<"document_status">;
+export type SceneSetting = Enums<"scene_setting">;
+export type SceneTime = Enums<"scene_time">;
+export type ShotType = Enums<"shot_type">;
 
 export type Profile = Tables<"profiles">;
 export type Project = Tables<"projects">;
