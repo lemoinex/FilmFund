@@ -12,6 +12,7 @@ import {
   TITRE_SCENE_MAX,
 } from "@/lib/storyboard";
 import { exigerAcces } from "@/lib/supabase/garde";
+import { supprimerImages } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 import type { SceneSetting, SceneTime, ShotType } from "@/lib/supabase/types";
 
@@ -191,7 +192,18 @@ export async function supprimerScene(formData: FormData) {
     return;
   }
 
-  await supabase.from("storyboard_scenes").delete().eq("id", sceneId).eq("project_id", projetId);
+  const { data: supprimees } = await supabase
+    .from("storyboard_scenes")
+    .delete()
+    .eq("id", sceneId)
+    .eq("project_id", projetId)
+    .select("image_path");
+
+  // L'image part avec la scène, et seulement si la scène est bien partie.
+  await supprimerImages(
+    supabase,
+    (supprimees ?? []).map((s) => s.image_path),
+  );
 
   revalidatePath(`/projets/${projetId}/storyboard`);
   revalidatePath("/tableau-de-bord");

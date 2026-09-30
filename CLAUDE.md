@@ -46,6 +46,10 @@ Ces règles ne se négocient pas.
   (« Mode privé : administrateurs uniquement », voir
   `supabase/migrations/20260929220000_mode_prive_administrateurs.sql`). Sans elle, la table
   échapperait au verrou ; `supabase/tests/mode_prive.test.sql` le vérifie.
+- **Stockage : jamais de compartiment public.** Les fichiers se servent par liens signés,
+  délivrés avec la session de l'utilisateur. Un nouveau compartiment reçoit des
+  politiques sur `storage.objects` fondées sur le projet en tête du chemin
+  (`projet_du_chemin`), et sa propre politique restrictive du mode privé.
 - Ne jamais pousser la configuration avec `supabase config push` sans passer par
   `supabase config diff` : le fichier local déclare des assouplissements propres
   au développement — confirmation d'e-mail désactivée, MFA désactivé — dont la

@@ -457,6 +457,7 @@ export type Database = {
       };
       projects: {
         Row: {
+          cover_path: string | null;
           created_at: string;
           format: Database["public"]["Enums"]["project_format"];
           id: string;
@@ -468,6 +469,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          cover_path?: string | null;
           created_at?: string;
           format?: Database["public"]["Enums"]["project_format"];
           id?: string;
@@ -479,6 +481,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          cover_path?: string | null;
           created_at?: string;
           format?: Database["public"]["Enums"]["project_format"];
           id?: string;
@@ -505,6 +508,7 @@ export type Database = {
           created_by: string | null;
           description: string;
           id: string;
+          image_path: string | null;
           location: string;
           position: number;
           project_id: string;
@@ -519,6 +523,7 @@ export type Database = {
           created_by?: string | null;
           description?: string;
           id?: string;
+          image_path?: string | null;
           location?: string;
           position: number;
           project_id: string;
@@ -533,6 +538,7 @@ export type Database = {
           created_by?: string | null;
           description?: string;
           id?: string;
+          image_path?: string | null;
           location?: string;
           position?: number;
           project_id?: string;
@@ -602,6 +608,7 @@ export type Database = {
       mode_prive: { Args: Record<PropertyKey, never>; Returns: boolean };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
+      projet_du_chemin: { Args: { p_chemin: string }; Returns: string };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
     };
     Enums: {

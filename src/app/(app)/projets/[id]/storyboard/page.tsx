@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import Image from "next/image";
+
 import { StoryboardIcon } from "@/components/icons";
 import { BoutonConfirme } from "@/components/ui/confirmation";
+import { EnvoiImage } from "@/components/ui/envoi-image";
 import { CADRAGES, enteteScene, numeroScene } from "@/lib/storyboard";
+import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
+import { definirImageScene, retirerImageScene } from "../images/actions";
 import { OngletsProjet } from "../onglets";
 import { deplacerScene, supprimerScene } from "./actions";
 import { FormulaireScene, type SceneEditable } from "./formulaire";
@@ -34,7 +39,7 @@ export default async function StoryboardPage({
       supabase.rpc("peut_gerer_budget", { p_project_id: id }),
       supabase
         .from("storyboard_scenes")
-        .select("id, title, setting, location, time_of_day, shot, description")
+        .select("id, title, setting, location, time_of_day, shot, description, image_path")
         .eq("project_id", id)
         .order("position"),
     ]);
@@ -44,6 +49,10 @@ export default async function StoryboardPage({
   }
 
   const liste = scenes ?? [];
+  const liens = await liensSignes(
+    supabase,
+    liste.map((s) => s.image_path),
+  );
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
@@ -82,6 +91,8 @@ export default async function StoryboardPage({
                 <Planche
                   projetId={projet.id}
                   scene={scene}
+                  image={scene.image_path ? (liens.get(scene.image_path) ?? null) : null}
+                  aImage={Boolean(scene.image_path)}
                   index={index}
                   total={liste.length}
                   peutEditer={peutEditer === true}
@@ -125,12 +136,16 @@ export default async function StoryboardPage({
 function Planche({
   projetId,
   scene,
+  image,
+  aImage,
   index,
   total,
   peutEditer,
 }: {
   projetId: string;
   scene: SceneEditable;
+  image: string | null;
+  aImage: boolean;
   index: number;
   total: number;
   peutEditer: boolean;
@@ -140,17 +155,39 @@ function Planche({
   return (
     <>
       {/*
-       * Cadre de la planche, en 16:9. Sans image pour l'instant : le numéro
-       * et le cadrage en tiennent lieu. Décoratif, l'information est répétée
-       * dans le texte ci-dessous.
+       * Cadre de la planche, en 16:9. Avec une image, elle le remplit et
+       * garde le numéro en incrustation ; sans image, le numéro seul tient
+       * la place. Lien signé : voir le composant Couverture pour
+       * `unoptimized`.
        */}
-      <div
-        aria-hidden="true"
-        className="border-app-line relative flex aspect-video items-center justify-center border-b bg-[linear-gradient(150deg,var(--surface-hover),var(--sidebar-bg))]"
-      >
-        <span className="text-gold/80 font-serif text-5xl">{numero}</span>
+      <div className="border-app-line relative flex aspect-video items-center justify-center overflow-hidden border-b bg-[linear-gradient(150deg,var(--surface-hover),var(--sidebar-bg))]">
+        {image ? (
+          <>
+            <Image
+              src={image}
+              alt={`Planche de la scène ${numero} : ${scene.title}`}
+              fill
+              unoptimized
+              sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+              className="object-cover"
+            />
+            <span
+              aria-hidden="true"
+              className="bg-app/80 text-gold absolute top-3 left-3 rounded-md px-2 py-0.5 font-serif text-lg"
+            >
+              {numero}
+            </span>
+          </>
+        ) : (
+          <span aria-hidden="true" className="text-gold/80 font-serif text-5xl">
+            {numero}
+          </span>
+        )}
         {scene.shot ? (
-          <span className="bg-app/80 text-secondary absolute bottom-3 left-3 rounded-md px-2 py-1 text-[0.6875rem]">
+          <span
+            aria-hidden="true"
+            className="bg-app/80 text-secondary absolute bottom-3 left-3 rounded-md px-2 py-1 text-[0.6875rem]"
+          >
             {CADRAGES[scene.shot]}
           </span>
         ) : null}
@@ -199,6 +236,16 @@ function Planche({
                 ↓
               </button>
             </form>
+            <EnvoiImage
+              projetId={projetId}
+              dossier="scenes"
+              champs={{ scene: scene.id }}
+              rattacher={definirImageScene}
+              retirer={retirerImageScene}
+              libelle="l'image"
+              aImage={aImage}
+              compact
+            />
             <Link
               href={`/projets/${projetId}/storyboard?scene=${scene.id}#scene-${scene.id}`}
               className="text-secondary hover:bg-surface-hover hover:text-light ml-auto rounded-full px-3 py-1.5 text-xs transition-colors"

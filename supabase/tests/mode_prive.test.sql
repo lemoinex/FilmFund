@@ -9,7 +9,7 @@
 
 begin;
 
-select plan(2);
+select plan(3);
 
 select is_empty(
   $$
@@ -35,6 +35,20 @@ select is(
   (select private_admin_only from public.app_settings where id),
   false,
   'Le mode privé est inactif par défaut après les migrations'
+);
+
+-- Le stockage des images suit le même verrou que les tables.
+select is(
+  (
+    select count(*)::int
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'Mode privé : administrateurs uniquement (images)'
+      and permissive = 'RESTRICTIVE'
+  ),
+  1,
+  'Les images portent la politique restrictive du mode privé'
 );
 
 select * from finish();

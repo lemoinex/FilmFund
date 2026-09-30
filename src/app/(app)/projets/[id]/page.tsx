@@ -3,11 +3,15 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { BoutonConfirme } from "@/components/ui/confirmation";
+import { Couverture } from "@/components/ui/couverture";
+import { EnvoiImage } from "@/components/ui/envoi-image";
 import { lireAcces, ROLES_PROJET } from "@/lib/equipes";
 import { ETAPES, FORMATS } from "@/lib/projets";
+import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
 import { supprimerProjet } from "../actions";
+import { definirCouverture, retirerCouverture } from "./images/actions";
 import { Equipe } from "./equipe";
 import { FormulaireEdition } from "./formulaire";
 import { OngletsProjet } from "./onglets";
@@ -38,7 +42,7 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
   const [{ data: projet }, { data: accesBrut }, { data: estAdmin }] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, title, format, stage, logline, synopsis")
+      .select("id, title, format, stage, logline, synopsis, cover_path")
       .eq("id", id)
       .maybeSingle(),
     supabase.rpc("acces_au_projet", { p_project_id: id }),
@@ -55,22 +59,49 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
   // Même règle que la fonction SQL peut_gerer_budget, qui a le dernier mot.
   const peutGererBudget = peutEditer || estAdmin === true;
 
+  const liens = await liensSignes(supabase, [projet.cover_path]);
+  const urlCouverture = projet.cover_path ? liens.get(projet.cover_path) : null;
+
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
       <Link href="/projets" className="text-light-muted hover:text-light text-sm transition-colors">
         ← Mes projets
       </Link>
 
-      <h1 className="mt-6 font-serif text-3xl leading-tight tracking-tight text-pretty sm:text-4xl">
-        {projet.title}
-      </h1>
-      <p className="text-light-muted mt-4 flex flex-wrap gap-2 text-xs">
-        <span className="bg-navy-soft rounded px-2.5 py-1">{FORMATS[projet.format]}</span>
-        <span className="text-gold bg-gold/10 rounded px-2.5 py-1">{ETAPES[projet.stage]}</span>
-        <span className="border-navy-line rounded border px-2.5 py-1">
-          {acces ? `Vous : ${ROLES_PROJET[acces].toLowerCase()}` : "Consultation administrateur"}
-        </span>
-      </p>
+      <div className="mt-6 flex flex-wrap items-start gap-5">
+        <Couverture url={urlCouverture} titre={projet.title} prioritaire />
+        <div className="min-w-0 flex-1 basis-56">
+          <h1 className="font-serif text-3xl leading-tight tracking-tight text-pretty sm:text-4xl">
+            {projet.title}
+          </h1>
+          <p className="text-light-muted mt-4 flex flex-wrap gap-2 text-xs">
+            <span className="bg-navy-soft rounded px-2.5 py-1">{FORMATS[projet.format]}</span>
+            <span className="text-gold bg-gold/10 rounded px-2.5 py-1">{ETAPES[projet.stage]}</span>
+            <span className="border-navy-line rounded border px-2.5 py-1">
+              {acces
+                ? `Vous : ${ROLES_PROJET[acces].toLowerCase()}`
+                : "Consultation administrateur"}
+            </span>
+          </p>
+          {/*
+           * Porteur et éditeurs seulement : la couverture est une colonne du
+           * projet, et les administrateurs ne modifient pas le contenu des
+           * projets d'autrui.
+           */}
+          {peutEditer ? (
+            <div className="mt-4">
+              <EnvoiImage
+                projetId={projet.id}
+                dossier="couverture"
+                rattacher={definirCouverture}
+                retirer={retirerCouverture}
+                libelle="la couverture"
+                aImage={Boolean(projet.cover_path)}
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       <OngletsProjet projetId={projet.id} actif="projet" budget={peutGererBudget} />
 
