@@ -98,6 +98,42 @@ export type Database = {
           },
         ];
       };
+      funding_documents: {
+        Row: {
+          created_at: string;
+          document_id: string;
+          funding_id: string;
+          project_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          document_id: string;
+          funding_id: string;
+          project_id: string;
+        };
+        Update: {
+          created_at?: string;
+          document_id?: string;
+          funding_id?: string;
+          project_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "funding_documents_document_id_project_id_fkey";
+            columns: ["document_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "project_documents";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "funding_documents_funding_id_project_id_fkey";
+            columns: ["funding_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "project_fundings";
+            referencedColumns: ["id", "project_id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -195,6 +231,72 @@ export type Database = {
           },
           {
             foreignKeyName: "project_documents_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_fundings: {
+        Row: {
+          amount_granted: number | null;
+          amount_requested: number | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          deadline: string | null;
+          funder: string;
+          id: string;
+          kind: Database["public"]["Enums"]["funding_kind"];
+          notes: string;
+          program: string;
+          project_id: string;
+          status: Database["public"]["Enums"]["funding_status"];
+          updated_at: string;
+        };
+        Insert: {
+          amount_granted?: number | null;
+          amount_requested?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency: string;
+          deadline?: string | null;
+          funder: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["funding_kind"];
+          notes?: string;
+          program?: string;
+          project_id: string;
+          status?: Database["public"]["Enums"]["funding_status"];
+          updated_at?: string;
+        };
+        Update: {
+          amount_granted?: number | null;
+          amount_requested?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          deadline?: string | null;
+          funder?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["funding_kind"];
+          notes?: string;
+          program?: string;
+          project_id?: string;
+          status?: Database["public"]["Enums"]["funding_status"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_fundings_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_fundings_project_id_fkey";
             columns: ["project_id"];
             isOneToOne: false;
             referencedRelation: "projects";
@@ -464,6 +566,10 @@ export type Database = {
     Functions: {
       accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
       acces_au_projet: { Args: { p_project_id: string }; Returns: string };
+      definir_pieces_candidature: {
+        Args: { p_document_ids: string[]; p_funding_id: string };
+        Returns: undefined;
+      };
       definir_role: {
         Args: { email_cible: string; nouveau_role: Database["public"]["Enums"]["user_role"] };
         Returns: undefined;
@@ -514,6 +620,15 @@ export type Database = {
       document_status: "brouillon" | "en_relecture" | "finalise";
       document_type:
         "note_intention" | "traitement" | "scenario" | "biographie" | "lettre" | "autre";
+      funding_kind:
+        | "aide_publique"
+        | "coproduction"
+        | "preachat"
+        | "mecenat"
+        | "financement_participatif"
+        | "residence"
+        | "autre";
+      funding_status: "a_preparer" | "deposee" | "acceptee" | "refusee";
       milestone_status: "a_faire" | "en_cours" | "termine";
       project_format:
         "long_metrage" | "court_metrage" | "documentaire" | "serie" | "web_serie" | "animation";
@@ -668,6 +783,16 @@ export const Constants = {
       ],
       document_status: ["brouillon", "en_relecture", "finalise"],
       document_type: ["note_intention", "traitement", "scenario", "biographie", "lettre", "autre"],
+      funding_kind: [
+        "aide_publique",
+        "coproduction",
+        "preachat",
+        "mecenat",
+        "financement_participatif",
+        "residence",
+        "autre",
+      ],
+      funding_status: ["a_preparer", "deposee", "acceptee", "refusee"],
       milestone_status: ["a_faire", "en_cours", "termine"],
       project_format: [
         "long_metrage",
