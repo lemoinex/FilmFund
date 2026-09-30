@@ -5,7 +5,13 @@ import { accesAutorise, MESSAGE_ACCES_RESERVE } from "@/lib/acces-prive";
 import type { Database } from "@/lib/supabase/types";
 
 /** Préfixes réservés aux utilisateurs connectés. */
-const ROUTES_PROTEGEES = ["/tableau-de-bord", "/projets", "/documents", "/storyboard"];
+const ROUTES_PROTEGEES = [
+  "/tableau-de-bord",
+  "/projets",
+  "/documents",
+  "/storyboard",
+  "/administration",
+];
 
 /**
  * Pages d'authentification, inutiles une fois connecté.

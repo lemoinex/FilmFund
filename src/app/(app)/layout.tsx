@@ -36,13 +36,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq("id", user.id)
     .single();
 
+  const administrateur = profil?.role === "admin";
   const nom = profil?.display_name?.trim() || user.email?.split("@")[0] || "Vous";
 
   const compte = (
     <div className="space-y-3">
       <div className="min-w-0">
         <p className="truncate text-sm">{nom}</p>
-        {profil?.role === "admin" ? <p className="text-gold mt-1 text-xs">Administrateur</p> : null}
+        {administrateur ? <p className="text-gold mt-1 text-xs">Administrateur</p> : null}
       </div>
       <form action={deconnexion}>
         <button
@@ -76,14 +77,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <aside className="bg-sidebar border-app-line hidden w-64 shrink-0 flex-col gap-8 border-r px-4 py-6 lg:sticky lg:top-6 lg:flex lg:h-[calc(100vh-3rem)]">
           <div className="px-2">{marque}</div>
           <div className="flex-1 overflow-y-auto">
-            <NavigationLaterale />
+            <NavigationLaterale administrateur={administrateur} />
           </div>
           <div className="border-app-line border-t px-2 pt-5">{compte}</div>
         </aside>
 
         <header className="bg-sidebar border-app-line relative z-40 flex h-16 items-center justify-between border-b px-4 lg:hidden">
           {marque}
-          <MenuMobile>{compte}</MenuMobile>
+          <MenuMobile administrateur={administrateur}>{compte}</MenuMobile>
         </header>
 
         <main className="min-w-0 flex-1">{children}</main>

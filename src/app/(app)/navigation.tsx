@@ -9,6 +9,7 @@ import {
   DocumentIcon,
   KanbanIcon,
   QuillIcon,
+  ShieldIcon,
   SparkIcon,
   StoryboardIcon,
 } from "@/components/icons";
@@ -33,16 +34,31 @@ const RUBRIQUES: Rubrique[] = [
   { libelle: "Ressources", icone: QuillIcon },
 ];
 
+/*
+ * Affichée aux seuls administrateurs, par commodité : la page vérifie
+ * elle-même le rôle, et la base ne livre le journal qu'à eux.
+ */
+const RUBRIQUE_ADMINISTRATION: Rubrique = {
+  libelle: "Journal d'administration",
+  icone: ShieldIcon,
+  href: "/administration/journal",
+};
+
 function estActive(href: string, chemin: string) {
   return chemin === href || chemin.startsWith(`${href}/`);
 }
 
-function ListeRubriques() {
+type ProprietesNavigation = {
+  administrateur?: boolean;
+};
+
+function ListeRubriques({ administrateur = false }: ProprietesNavigation) {
   const chemin = usePathname();
+  const rubriques = administrateur ? [...RUBRIQUES, RUBRIQUE_ADMINISTRATION] : RUBRIQUES;
 
   return (
     <ul className="space-y-1 text-sm">
-      {RUBRIQUES.map(({ libelle, icone: Icone, href }) => {
+      {rubriques.map(({ libelle, icone: Icone, href }) => {
         if (!href) {
           return (
             <li key={libelle}>
@@ -83,10 +99,10 @@ function ListeRubriques() {
 }
 
 /** Navigation de la barre latérale, sur écran large. */
-export function NavigationLaterale() {
+export function NavigationLaterale({ administrateur }: ProprietesNavigation) {
   return (
     <nav aria-label="Navigation de l'espace de travail">
-      <ListeRubriques />
+      <ListeRubriques administrateur={administrateur} />
     </nav>
   );
 }
@@ -99,7 +115,10 @@ export function NavigationLaterale() {
  * menu après une navigation, sans quoi il resterait ouvert sur la nouvelle
  * page — la mise en page, elle, ne se recharge pas.
  */
-export function MenuMobile({ children }: { children?: React.ReactNode }) {
+export function MenuMobile({
+  children,
+  administrateur,
+}: ProprietesNavigation & { children?: React.ReactNode }) {
   const chemin = usePathname();
   const menu = useRef<HTMLDetailsElement>(null);
 
@@ -124,7 +143,7 @@ export function MenuMobile({ children }: { children?: React.ReactNode }) {
 
       <div className="border-app-line bg-sidebar absolute inset-x-2 top-full z-50 mt-2 rounded-xl border p-3 shadow-2xl">
         <nav aria-label="Navigation de l'espace de travail">
-          <ListeRubriques />
+          <ListeRubriques administrateur={administrateur} />
         </nav>
         {children ? <div className="border-app-line mt-3 border-t pt-3">{children}</div> : null}
       </div>
