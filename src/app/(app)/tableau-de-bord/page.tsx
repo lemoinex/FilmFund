@@ -9,10 +9,18 @@ import {
   QuillIcon,
   StoryboardIcon,
 } from "@/components/icons";
+import { BarreAvancement } from "@/components/ui/avancement";
 import { Onglets } from "@/components/ui/onglets";
 import { compterMots, libelleMots, STATUTS_DOCUMENT } from "@/lib/documents";
 import { ROLES_PROJET } from "@/lib/equipes";
 import { chargerMesProjets, type ResumeProjet } from "@/lib/mes-projets";
+import {
+  aujourdhui,
+  calculerAvancement,
+  comparerEtapes,
+  estEnRetard,
+  formaterJour,
+} from "@/lib/planning";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
@@ -81,6 +89,7 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
     { data: detail },
     { data: note },
     { count: nombreScenes },
+    { data: etapes },
     { data: budgetAutorise },
     { data: peutEditer },
   ] = await Promise.all([
@@ -98,11 +107,23 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
       .from("storyboard_scenes")
       .select("id", { count: "exact", head: true })
       .eq("project_id", projet.id),
+    supabase
+      .from("project_milestones")
+      .select("title, status, starts_on, due_on")
+      .eq("project_id", projet.id),
     supabase.rpc("peut_gerer_budget", { p_project_id: projet.id }),
     supabase.rpc("peut_editer_contenu", { p_project_id: projet.id }),
   ]);
 
   const synopsis = detail?.synopsis?.trim() ?? "";
+
+  const avancement = calculerAvancement(etapes ?? []);
+  const jour = aujourdhui();
+  const enRetard = (etapes ?? []).filter((e) => estEnRetard(e, jour)).length;
+  // Prochaine échéance : l'étape non terminée la plus proche, à venir.
+  const prochaine = (etapes ?? [])
+    .filter((e) => e.status !== "termine" && e.due_on !== null && e.due_on >= jour)
+    .sort(comparerEtapes)[0];
 
   return (
     <>
@@ -159,6 +180,7 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
           { cle: "synthese", libelle: "Synthèse", href: "/tableau-de-bord" },
           { cle: "documents", libelle: "Documents", href: `/projets/${projet.id}/documents` },
           { cle: "storyboard", libelle: "Storyboard", href: `/projets/${projet.id}/storyboard` },
+          { cle: "planning", libelle: "Planning", href: `/projets/${projet.id}/planning` },
           ...(budgetAutorise
             ? [{ cle: "budget", libelle: "Budget", href: `/projets/${projet.id}/budget` }]
             : []),
@@ -175,15 +197,54 @@ async function ProjetEnCours({ projet, autres }: { projet: ResumeProjet; autres:
             Avancement du projet
           </h3>
           {/*
-           * Aucune mesure d'avancement n'existe encore dans les données. Un
-           * pourcentage déduit de l'étape serait une invention : on l'écrit.
+           * L'avancement est mesuré sur le planning : la part des étapes
+           * terminées. Sans planning, aucune mesure n'existe — un pourcentage
+           * déduit de l'étape du projet serait une invention.
            */}
-          <p className="text-secondary text-sm">Non renseigné</p>
+          {avancement ? (
+            <p className="text-gold text-sm tabular-nums">{avancement.pourcent} %</p>
+          ) : (
+            <p className="text-secondary text-sm">Non renseigné</p>
+          )}
         </div>
-        <div aria-hidden="true" className="bg-app-line/60 mt-4 h-2 rounded-full" />
-        <p className="text-secondary mt-3 text-xs">
-          Étape actuelle : <span className="text-light">{ETAPES[projet.stage]}</span>
-        </p>
+        <div className="mt-4">
+          {avancement ? (
+            <BarreAvancement
+              pourcent={avancement.pourcent}
+              libelle="Part des étapes du planning terminées"
+            />
+          ) : (
+            <div aria-hidden="true" className="bg-app-line/60 h-2 rounded-full" />
+          )}
+        </div>
+        <div className="text-secondary mt-3 flex flex-wrap justify-between gap-x-6 gap-y-1 text-xs">
+          <p>
+            {avancement ? (
+              <>
+                {avancement.terminees} étape{avancement.terminees > 1 ? "s" : ""} terminée
+                {avancement.terminees > 1 ? "s" : ""} sur {avancement.total}
+                {enRetard ? <span className="text-red-200"> · {enRetard} en retard</span> : null}
+              </>
+            ) : (
+              <>
+                Étape actuelle : <span className="text-light">{ETAPES[projet.stage]}</span>
+              </>
+            )}
+          </p>
+          {prochaine?.due_on ? (
+            <p>
+              Prochaine échéance : <span className="text-light">{prochaine.title}</span>, le{" "}
+              {formaterJour(prochaine.due_on)}
+            </p>
+          ) : avancement ? null : peutEditer ? (
+            <Link
+              href={`/projets/${projet.id}/planning#ajout-etape`}
+              className="text-gold hover:text-gold-bright transition-colors"
+            >
+              Établir le planning
+            </Link>
+          ) : null}
+        </div>
       </section>
 
       <section aria-labelledby="synthese-titre" className="mt-6">
