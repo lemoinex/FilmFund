@@ -137,6 +137,16 @@ export async function recupererExpires(base: Base): Promise<number> {
   return Number(rows[0].nombre);
 }
 
+/**
+ * Clé d'API d'un fournisseur, lue dans le coffre. Null : le fournisseur n'est
+ * pas configuré depuis l'écran Intégrations IA, et son agent reste hors
+ * service. La valeur ne sort jamais d'ici : ni journal, ni message d'erreur.
+ */
+export async function lireCleFournisseur(base: Base, fournisseur: string): Promise<string | null> {
+  const { rows } = await base.query("select public.cle_fournisseur($1) as cle", [fournisseur]);
+  return rows[0]?.cle ?? null;
+}
+
 /** Fiche du projet d'une tâche : ce que le worker a le droit d'en lire. */
 export type Fiche = {
   titre: string;

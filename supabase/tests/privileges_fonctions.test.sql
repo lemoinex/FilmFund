@@ -52,7 +52,9 @@ select is_empty(
         'annuler_travail',
         'rapprocher_travail_admin',
         'accepter_proposition',
-        'ecarter_proposition'
+        'ecarter_proposition',
+        'definir_cle_fournisseur',
+        'retirer_cle_fournisseur'
       )
   $$,
   'Seules les fonctions prévues sont exécutables par un compte connecté'

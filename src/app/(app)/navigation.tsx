@@ -42,6 +42,7 @@ const RUBRIQUES: Rubrique[] = [
 const RUBRIQUES_ADMINISTRATION: Rubrique[] = [
   { libelle: "Journal d'administration", icone: ShieldIcon, href: "/administration/journal" },
   { libelle: "Plans et quotas", icone: TagIcon, href: "/administration/plans" },
+  { libelle: "Intégrations IA", icone: SparkIcon, href: "/administration/integrations" },
 ];
 
 function estActive(href: string, chemin: string) {

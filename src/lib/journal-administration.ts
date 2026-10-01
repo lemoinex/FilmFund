@@ -173,6 +173,17 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       return `a changé le plafond mensuel des dépenses d'IA : ${montant(champ(details, "ancien"))} → ${montant(champ(details, "nouveau"))}`;
     }
 
+    case "cle_fournisseur": {
+      const operations: Record<string, string> = {
+        ajout: "a enregistré",
+        remplacement: "a remplacé",
+        retrait: "a retiré",
+      };
+      const verbe = operations[texte(details, "operation") ?? ""] ?? "a changé";
+      const fournisseur = texte(details, "fournisseur") ?? "inconnu";
+      return `${verbe} la clé du fournisseur d'IA ${fournisseur}`;
+    }
+
     case "changement_plan_studio": {
       const compte = texte(details, "compte");
       const studio = compte

@@ -7,17 +7,21 @@
  * Variables attendues : PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
  * (voir docs/worker.md). Aucune valeur n'est journalisée.
  *
- * ANTHROPIC_API_KEY est facultative : sans elle, le worker n'a aucun
- * exécuteur et ne prend aucune tâche. Avec elle, WEAVER est en service.
+ * Les clés des fournisseurs d'IA ne sont pas des variables d'environnement :
+ * elles sont posées depuis l'écran Administration → Intégrations IA et lues
+ * dans le coffre. Le registre des exécuteurs est donc relu périodiquement :
+ * poser une clé met l'agent en service, la retirer l'en sort, sans
+ * redéploiement. Sans clé, aucun exécuteur, donc aucune tâche prise.
  */
 import { readFileSync } from "node:fs";
 import { hostname } from "node:os";
 
-import { executeursWeaver } from "./agents/weaver.ts";
 import { ouvrirBase, roleCourant } from "./base.ts";
 import { demarrerWorker, type Evenement } from "./boucle.ts";
-import type { Executeur } from "./executeurs.ts";
-import { creerFournisseurAnthropic } from "./ia/passerelle.ts";
+import { registreDesAgents } from "./registre.ts";
+
+/** Fréquence de relecture des clés du coffre. */
+const RELECTURE_CLES_MS = 60_000;
 
 function journal(evenement: Evenement): void {
   console.log(JSON.stringify({ date: new Date().toISOString(), ...evenement }));
@@ -47,11 +51,7 @@ base.on("error", (erreur) => {
   journal({ niveau: "alerte", evenement: "connexion_perdue", message: erreur.message });
 });
 
-const cleAnthropic = process.env.ANTHROPIC_API_KEY;
-const executeurs: Readonly<Record<string, Executeur>> = cleAnthropic
-  ? executeursWeaver(base, creerFournisseurAnthropic(cleAnthropic))
-  : {};
-
+const agents = registreDesAgents({ base, journal });
 const nom = `${process.env.RAILWAY_REPLICA_ID ?? hostname()}-${process.pid}`.slice(0, 100);
 const arret = new AbortController();
 
@@ -63,12 +63,14 @@ for (const signal of ["SIGTERM", "SIGINT"] as const) {
 }
 
 try {
+  const role = await roleCourant(base);
+  await agents.relire();
   journal({
     niveau: "info",
     evenement: "worker_demarre",
     worker: nom,
-    role: await roleCourant(base),
-    actions: Object.keys(executeurs),
+    role,
+    actions: Object.keys(agents.lire()),
   });
 } catch (erreur) {
   journal({
@@ -80,5 +82,21 @@ try {
   process.exit(1);
 }
 
-await demarrerWorker({ base, nom, executeurs, journal }, arret.signal);
-await base.end();
+// Une clé injoignable un instant ne doit pas arrêter le worker : il garde le
+// registre qu'il a et retentera au battement suivant.
+const relecture = setInterval(() => {
+  agents.relire().catch((erreur) =>
+    journal({
+      niveau: "alerte",
+      evenement: "relecture_cles_impossible",
+      message: erreur instanceof Error ? erreur.message : String(erreur),
+    }),
+  );
+}, RELECTURE_CLES_MS);
+
+try {
+  await demarrerWorker({ base, nom, executeurs: agents.lire, journal }, arret.signal);
+} finally {
+  clearInterval(relecture);
+  await base.end();
+}

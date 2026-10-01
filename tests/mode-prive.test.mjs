@@ -291,6 +291,24 @@ describe("Mode privé", () => {
       assert.equal(restee.state, "proposed");
     });
 
+    it("ne lit ni ne configure les intégrations IA", async () => {
+      const { data } = await membre.client.from("ai_provider_keys").select("provider");
+      assert.equal(data.length, 0);
+
+      // Ces fonctions s'exécutent hors RLS : elles vérifient le rôle
+      // elles-mêmes.
+      const { error } = await membre.client.rpc("definir_cle_fournisseur", {
+        p_provider: "anthropic",
+        p_cle: "sk-ant-factice-mode-prive-aaaaaaaa",
+      });
+      assert.ok(error, "l'enregistrement doit être refusé");
+
+      const { error: lecture } = await membre.client.rpc("cle_fournisseur", {
+        p_provider: "anthropic",
+      });
+      assert.ok(lecture, "la lecture de la clé doit être refusée");
+    });
+
     it("ne lit plus son studio ni ses adhésions", async () => {
       const { data: studios } = await membre.client.from("studios").select("id");
       assert.equal(studios.length, 0);
@@ -405,6 +423,22 @@ describe("Mode privé", () => {
         p_idempotency_key: "admin-pendant-le-verrou",
       });
       assert.equal(acceptation, null, acceptation?.message);
+    });
+
+    it("configure et retire une intégration IA", async () => {
+      const { error } = await administrateur.client.rpc("definir_cle_fournisseur", {
+        p_provider: "anthropic",
+        p_cle: "sk-ant-factice-mode-prive-bbbbbbbb",
+      });
+      assert.equal(error, null, error?.message);
+
+      const { data } = await administrateur.client.from("ai_provider_keys").select("provider");
+      assert.deepEqual(data, [{ provider: "anthropic" }]);
+
+      const { error: retrait } = await administrateur.client.rpc("retirer_cle_fournisseur", {
+        p_provider: "anthropic",
+      });
+      assert.equal(retrait, null, retrait?.message);
     });
 
     it("écarte la proposition d'un membre", async () => {

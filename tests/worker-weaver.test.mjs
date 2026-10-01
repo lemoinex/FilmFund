@@ -19,10 +19,12 @@ import { traiterUnTravail } from "../worker/src/boucle.ts";
 import { EchecConnu } from "../worker/src/executeurs.ts";
 import { creerFournisseurAnthropic } from "../worker/src/ia/passerelle.ts";
 import { coutMicroDollars, enDollars, PROFIL_LOGLINE } from "../worker/src/ia/profils.ts";
+import { registreDesAgents } from "../worker/src/registre.ts";
 import {
   annulerLesAutresTaches,
   creerCompte,
   creerProjet,
+  definirCleFactice,
   definirPlafondIa,
   engager,
   executerSqlLocal as sql,
@@ -380,9 +382,135 @@ describe("WEAVER : logline", () => {
   });
 
   it("le worker ne lit ni les coûts ni les propositions : il passe par ses fonctions", async () => {
-    for (const table of ["provider_charges", "ai_suggestions", "ai_settings", "projects"]) {
+    for (const table of [
+      "provider_charges",
+      "ai_suggestions",
+      "ai_settings",
+      "ai_provider_keys",
+      "projects",
+    ]) {
       await assert.rejects(base.query(`select 1 from public.${table} limit 1`), { code: "42501" });
     }
+  });
+});
+
+describe("Registre des agents : la clé vient du coffre", () => {
+  let base;
+
+  before(async () => {
+    base = await ouvrirBaseDuWorker();
+    await definirCleFactice("anthropic", null);
+  });
+
+  after(async () => {
+    await definirCleFactice("anthropic", null);
+    await base.end();
+  });
+
+  /** Fournisseur factice qui retient la clé qu'on lui a confiée. */
+  function registreObserve() {
+    const evenements = [];
+    const clesRecues = [];
+    const agents = registreDesAgents({
+      base,
+      journal: (evenement) => evenements.push(evenement),
+      creerFournisseur: (cle) => {
+        clesRecues.push(cle);
+        return async () => reponseFactice("Jamais appelée.");
+      },
+    });
+    return { agents, evenements, clesRecues };
+  }
+
+  it("sans clé, aucun exécuteur : rien n'est pris, rien n'est simulé", async () => {
+    const { agents, evenements } = registreObserve();
+    await agents.relire();
+    assert.deepEqual(Object.keys(agents.lire()), []);
+    // Rien n'a changé : le démarrage dit déjà « actions: [] », inutile de
+    // répéter l'absence à chaque relecture.
+    assert.deepEqual(evenements, []);
+  });
+
+  it("une clé posée met l'agent en service, sans redémarrage", async () => {
+    const { agents, evenements, clesRecues } = registreObserve();
+    await agents.relire();
+    assert.deepEqual(Object.keys(agents.lire()), []);
+
+    await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
+    await agents.relire();
+
+    assert.deepEqual(Object.keys(agents.lire()), ["logline"]);
+    assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
+    assert.deepEqual(
+      evenements.map((e) => e.evenement),
+      ["cle_fournisseur_chargee"],
+    );
+    // Le journal dit la présence de la clé, jamais sa valeur.
+    assert.ok(!JSON.stringify(evenements).includes("factice"));
+  });
+
+  it("une clé inchangée ne reconstruit rien ; une clé remplacée, si", async () => {
+    await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
+    const { agents, evenements, clesRecues } = registreObserve();
+    await agents.relire();
+    await agents.relire();
+    assert.equal(clesRecues.length, 1, "la même clé ne refait pas un fournisseur");
+
+    await definirCleFactice("anthropic", "sk-ant-factice-registre-bbbbbbbb");
+    await agents.relire();
+    assert.deepEqual(clesRecues, [
+      "sk-ant-factice-registre-aaaaaaaa",
+      "sk-ant-factice-registre-bbbbbbbb",
+    ]);
+    assert.equal(evenements.length, 2, "un événement par changement, pas par relecture");
+  });
+
+  it("une clé retirée sort l'agent du service", async () => {
+    await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
+    const { agents, evenements } = registreObserve();
+    await agents.relire();
+    assert.deepEqual(Object.keys(agents.lire()), ["logline"]);
+
+    await definirCleFactice("anthropic", null);
+    await agents.relire();
+
+    assert.deepEqual(Object.keys(agents.lire()), []);
+    assert.equal(evenements.at(-1).evenement, "cle_fournisseur_retiree");
+  });
+
+  it("la boucle relit le registre à chaque tour : une tâche attend, puis part", async () => {
+    // Sans cette relecture, une clé posée pendant que le worker tourne
+    // n'aurait aucun effet avant son redémarrage.
+    const porteur = await creerCompte("registre-boucle");
+    const projet = await creerProjet(porteur, "Le Registre");
+    const tache = await engager(porteur, projet.id, "logline", "registre-boucle-cle");
+    const nettoyage = await sql(annulerLesAutresTaches([tache.id]));
+    assert.equal(nettoyage.code, 0, nettoyage.erreurs);
+
+    let registre = {};
+    const options = {
+      base,
+      nom: "worker-registre-test",
+      executeurs: () => registre,
+      journal: () => {},
+    };
+
+    assert.equal(await traiterUnTravail(options), false, "sans exécuteur, rien n'est réclamé");
+    const { data: enAttente } = await porteur.client
+      .from("jobs")
+      .select("state")
+      .eq("id", tache.id)
+      .single();
+    assert.equal(enAttente.state, "queued", "la tâche attend, elle n'est pas perdue");
+
+    registre = { logline: async () => ({}) };
+    assert.equal(await traiterUnTravail(options), true, "le registre relu, la tâche part");
+    const { data: traitee } = await porteur.client
+      .from("jobs")
+      .select("state")
+      .eq("id", tache.id)
+      .single();
+    assert.equal(traitee.state, "succeeded");
   });
 });
 

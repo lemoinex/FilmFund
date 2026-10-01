@@ -28,11 +28,18 @@ export type Evenement = {
   [cle: string]: unknown;
 };
 
+export type Registre = Readonly<Record<string, Executeur>>;
+
 export type OptionsWorker = {
   base: Base;
   /** Identifiant du worker, inscrit sur les tâches qu'il prend. */
   nom: string;
-  executeurs: Readonly<Record<string, Executeur>>;
+  /**
+   * Ce que le worker sait faire. Une fonction quand le registre change en
+   * cours de route — la clé d'un fournisseur peut être posée ou retirée
+   * pendant que le worker tourne : il est alors relu à chaque tour.
+   */
+  executeurs: Registre | (() => Registre);
   journal: (evenement: Evenement) => void;
   /** Attente quand la file est vide. */
   attenteMs?: number;
@@ -71,7 +78,9 @@ function attendre(ms: number, arret: AbortSignal): Promise<void> {
  * contient rien que ce worker sache exécuter.
  */
 export async function traiterUnTravail(options: OptionsWorker): Promise<boolean> {
-  const { base, nom, executeurs, journal } = options;
+  const { base, nom, journal } = options;
+  const executeurs =
+    typeof options.executeurs === "function" ? options.executeurs() : options.executeurs;
   const actions = Object.keys(executeurs);
   if (actions.length === 0) {
     return false;

@@ -76,9 +76,20 @@ describe("Passerelle IA unique", () => {
     );
   });
 
-  it("la clé du fournisseur n'est lue que par le point d'entrée du worker", () => {
-    const lecteurs = SOURCES.filter((f) => lire(f).includes("ANTHROPIC_API_KEY"));
-    assert.deepEqual(lecteurs, ["worker/src/index.ts"]);
+  it("aucune clé de fournisseur ne se lit dans l'environnement", () => {
+    // Elles vivent dans le coffre depuis l'écran Intégrations IA. Une
+    // variable d'environnement réapparue ouvrirait un second chemin, hors
+    // de l'écran et de son journal.
+    const lecteurs = SOURCES.filter((f) => /\b(ANTHROPIC|OPENAI)_API_KEY\b/.test(lire(f)));
+    assert.deepEqual(lecteurs, []);
+  });
+
+  it("seul le worker sait demander une clé à la base", () => {
+    // `definir_` et `retirer_cle_fournisseur` ne rendent aucune valeur : seule
+    // `cle_fournisseur` déchiffre, et l'application n'y touche pas.
+    const lecture = /(?:public\.|rpc\(\s*["'])cle_fournisseur\b/;
+    const appelants = SOURCES.filter((f) => lecture.test(lire(f)));
+    assert.deepEqual(appelants, ["worker/src/base.ts"]);
   });
 
   it("aucune variable exposée au navigateur ne porte une clé d'IA", () => {
