@@ -124,10 +124,11 @@ select is(
     order by 1
   ),
   array[
-    'marquer_tentative_soumise', 'prolonger_bail', 'rapprocher_travail',
+    'confirmer_cout', 'contexte_travail', 'livrer_proposition',
+    'marquer_tentative_soumise', 'prolonger_bail', 'provisionner_cout', 'rapprocher_travail',
     'reclamer_travail', 'recuperer_travaux_expires', 'terminer_tentative'
   ]::text[],
-  'Le worker n''exécute que ses six fonctions'
+  'Le worker n''exécute que ses dix fonctions : six pour les tâches, quatre pour la passerelle IA'
 );
 
 -- ---------------------------------------------------------------------------

@@ -265,3 +265,57 @@ export function annulerLesAutresTaches(gardees) {
     where j.state = 'queued' and j.id not in (${liste});
   `;
 }
+
+/**
+ * Fait déposer une proposition pour une tâche de logline en attente, comme
+ * le ferait le worker : réclamation, envoi, provision, coût confirmé,
+ * livraison. AUCUN FOURNISSEUR N'EST APPELÉ : le texte est donné par le test.
+ *
+ * Pour les suites qui éprouvent ce que les comptes font d'une proposition,
+ * pas l'agent qui la rédige — celui-ci a sa propre suite.
+ */
+export async function deposerProposition(tacheId, texte) {
+  if (!/^[0-9a-f-]{36}$/.test(tacheId) || texte.includes("$texte$")) {
+    throw new Error("Tâche ou texte inutilisable dans le SQL du test.");
+  }
+  const { code, erreurs } = await executerSqlLocal(`
+    ${annulerLesAutresTaches([tacheId])}
+    do $$
+    declare
+      v_travail uuid;
+      v_essai uuid;
+    begin
+      select r.job_id, r.attempt_id into v_travail, v_essai
+      from public.reclamer_travail('worker-de-test', array['logline']) r;
+      if v_travail is distinct from '${tacheId}' then
+        raise exception 'Tâche réclamée inattendue : %', v_travail;
+      end if;
+      perform public.marquer_tentative_soumise(v_essai);
+      perform public.provisionner_cout(
+        v_essai, 'anthropic', 'claude-opus-5-5', 'weaver.logline@1', 10, 10, 0.0001
+      );
+      perform public.confirmer_cout(v_essai, 'claude-opus-5-5', 10, 10, 0.0001, false);
+      perform public.livrer_proposition(v_essai, $texte$${texte}$texte$);
+    end $$;
+  `);
+  if (code !== 0) {
+    throw new Error(`Dépôt de la proposition impossible : ${erreurs}`);
+  }
+}
+
+/**
+ * Plafond mensuel des dépenses d'IA de la base locale, en dollars.
+ *
+ * Les suites qui font tourner un agent le relèvent le temps de leurs tests :
+ * leurs provisions jamais confirmées — coupures simulées — s'accumulent dans
+ * le registre d'une exécution à l'autre, et finiraient par atteindre le
+ * plafond de mise en service. Elles le remettent à 5 $ en sortant.
+ */
+export async function definirPlafondIa(dollars) {
+  const { code, erreurs } = await executerSqlLocal(
+    `update public.ai_settings set monthly_budget_usd = ${Number(dollars)};`,
+  );
+  if (code !== 0) {
+    throw new Error(`Plafond d'IA impossible à fixer : ${erreurs}`);
+  }
+}

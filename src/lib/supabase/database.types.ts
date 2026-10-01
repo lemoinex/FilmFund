@@ -50,6 +50,93 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_settings: {
+        Row: {
+          id: boolean;
+          monthly_budget_usd: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          monthly_budget_usd: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          monthly_budget_usd?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      ai_suggestions: {
+        Row: {
+          action: string;
+          content: string;
+          created_at: string;
+          created_by: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          final_content: string | null;
+          id: string;
+          job_id: string;
+          model: string;
+          profile: string;
+          project_id: string;
+          replaced_content: string | null;
+          state: string;
+          studio_id: string;
+        };
+        Insert: {
+          action: string;
+          content: string;
+          created_at?: string;
+          created_by: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          final_content?: string | null;
+          id?: string;
+          job_id: string;
+          model: string;
+          profile: string;
+          project_id: string;
+          replaced_content?: string | null;
+          state?: string;
+          studio_id: string;
+        };
+        Update: {
+          action?: string;
+          content?: string;
+          created_at?: string;
+          created_by?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          final_content?: string | null;
+          id?: string;
+          job_id?: string;
+          model?: string;
+          profile?: string;
+          project_id?: string;
+          replaced_content?: string | null;
+          state?: string;
+          studio_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestions_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: true;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestions_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: false;
+            referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       app_settings: {
         Row: {
           id: boolean;
@@ -774,6 +861,86 @@ export type Database = {
           },
         ];
       };
+      provider_charge_settlements: {
+        Row: {
+          attempt_id: string;
+          fallback: boolean;
+          input_tokens: number;
+          model: string;
+          output_tokens: number;
+          settled_at: string;
+          usd: number | null;
+        };
+        Insert: {
+          attempt_id: string;
+          fallback?: boolean;
+          input_tokens: number;
+          model: string;
+          output_tokens: number;
+          settled_at?: string;
+          usd?: number | null;
+        };
+        Update: {
+          attempt_id?: string;
+          fallback?: boolean;
+          input_tokens?: number;
+          model?: string;
+          output_tokens?: number;
+          settled_at?: string;
+          usd?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "provider_charge_settlements_attempt_id_fkey";
+            columns: ["attempt_id"];
+            isOneToOne: true;
+            referencedRelation: "provider_charges";
+            referencedColumns: ["attempt_id"];
+          },
+        ];
+      };
+      provider_charges: {
+        Row: {
+          attempt_id: string;
+          created_at: string;
+          estimated_input_tokens: number;
+          estimated_output_tokens: number;
+          estimated_usd: number;
+          job_id: string;
+          model: string;
+          profile: string;
+          project_id: string;
+          provider: string;
+          studio_id: string;
+        };
+        Insert: {
+          attempt_id: string;
+          created_at?: string;
+          estimated_input_tokens: number;
+          estimated_output_tokens: number;
+          estimated_usd: number;
+          job_id: string;
+          model: string;
+          profile: string;
+          project_id: string;
+          provider: string;
+          studio_id: string;
+        };
+        Update: {
+          attempt_id?: string;
+          created_at?: string;
+          estimated_input_tokens?: number;
+          estimated_output_tokens?: number;
+          estimated_usd?: number;
+          job_id?: string;
+          model?: string;
+          profile?: string;
+          project_id?: string;
+          provider?: string;
+          studio_id?: string;
+        };
+        Relationships: [];
+      };
       quotes: {
         Row: {
           action: string;
@@ -1180,6 +1347,32 @@ export type Database = {
         };
       };
       accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
+      accepter_proposition: {
+        Args: { p_content?: string; p_suggestion_id: string };
+        Returns: {
+          action: string;
+          content: string;
+          created_at: string;
+          created_by: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          final_content: string | null;
+          id: string;
+          job_id: string;
+          model: string;
+          profile: string;
+          project_id: string;
+          replaced_content: string | null;
+          state: string;
+          studio_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       acces_au_projet: { Args: { p_project_id: string }; Returns: string };
       allocation_du_plan: {
         Args: { p_plan: Database["public"]["Tables"]["plan_versions"]["Row"]; p_unit: string };
@@ -1266,6 +1459,41 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      confirmer_cout: {
+        Args: {
+          p_attempt_id: string;
+          p_fallback?: boolean;
+          p_input_tokens: number;
+          p_model: string;
+          p_output_tokens: number;
+          p_usd: number;
+        };
+        Returns: {
+          attempt_id: string;
+          fallback: boolean;
+          input_tokens: number;
+          model: string;
+          output_tokens: number;
+          settled_at: string;
+          usd: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "provider_charge_settlements";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      contexte_travail: {
+        Args: { p_attempt_id: string };
+        Returns: {
+          format: string;
+          logline: string;
+          stage: string;
+          synopsis: string;
+          title: string;
+        }[];
+      };
       creer_devis: {
         Args: { p_action: string; p_params?: Json; p_project_id: string };
         Returns: {
@@ -1286,9 +1514,36 @@ export type Database = {
         Args: { email_cible: string; nouveau_role: Database["public"]["Enums"]["user_role"] };
         Returns: undefined;
       };
+      depense_ia_du_mois: { Args: Record<PropertyKey, never>; Returns: number };
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       duree_bail_travail: { Args: Record<PropertyKey, never>; Returns: string };
       duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
+      ecarter_proposition: {
+        Args: { p_suggestion_id: string };
+        Returns: {
+          action: string;
+          content: string;
+          created_at: string;
+          created_by: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          final_content: string | null;
+          id: string;
+          job_id: string;
+          model: string;
+          profile: string;
+          project_id: string;
+          replaced_content: string | null;
+          state: string;
+          studio_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       email_confirme_courant: { Args: Record<PropertyKey, never>; Returns: string };
       empreinte_demande: {
         Args: { p_action: string; p_params: Json; p_project_id: string };
@@ -1330,6 +1585,7 @@ export type Database = {
         Args: { p_action: string; p_details: Json; p_project_id: string };
         Returns: undefined;
       };
+      livrer_proposition: { Args: { p_attempt_id: string; p_content: string }; Returns: string };
       marquer_tentative_soumise: {
         Args: { p_attempt_id: string; p_provider_ref?: string };
         Returns: {
@@ -1400,6 +1656,36 @@ export type Database = {
       };
       projet_du_chemin: { Args: { p_chemin: string }; Returns: string };
       prolonger_bail: { Args: { p_attempt_id: string }; Returns: boolean };
+      provisionner_cout: {
+        Args: {
+          p_attempt_id: string;
+          p_input_tokens: number;
+          p_model: string;
+          p_output_tokens: number;
+          p_profile: string;
+          p_provider: string;
+          p_usd: number;
+        };
+        Returns: {
+          attempt_id: string;
+          created_at: string;
+          estimated_input_tokens: number;
+          estimated_output_tokens: number;
+          estimated_usd: number;
+          job_id: string;
+          model: string;
+          profile: string;
+          project_id: string;
+          provider: string;
+          studio_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "provider_charges";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       rapprocher_travail: {
         Args: { p_consumed?: number; p_job_id: string; p_success: boolean };
         Returns: {

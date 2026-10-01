@@ -171,6 +171,31 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("décrit un changement du plafond des dépenses d'IA", () => {
+    assert.equal(
+      descriptionDe(entree("plafond_ia", { ancien: 5, nouveau: 12.5 }), annuaire),
+      "a changé le plafond mensuel des dépenses d'IA : 5 $ → 12,5 $",
+    );
+    assert.equal(
+      descriptionDe(entree("plafond_ia", {}), annuaire),
+      "a changé le plafond mensuel des dépenses d'IA : ? → ?",
+    );
+  });
+
+  it("décrit une proposition de l'assistant écartée par l'administration", () => {
+    assert.equal(
+      descriptionDe(
+        entree(
+          "intervention_contenu",
+          { table: "ai_suggestions", operation: "update", ligne: "s" },
+          { project_id: "p" },
+        ),
+        annuaire,
+      ),
+      "a fait une modification dans les propositions de l'assistant du projet « Le Fleuve »",
+    );
+  });
+
   it("décrit une intervention dans un studio, avec le compte concerné", () => {
     assert.equal(
       descriptionDe(

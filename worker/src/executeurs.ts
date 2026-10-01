@@ -1,10 +1,11 @@
 /**
  * Exécuteurs : ce que le worker sait faire, par action.
  *
- * Le worker ne réclame que les tâches dont l'action figure ici. Le registre
- * de production est vide jusqu'au lot I (passerelle IA) : d'ici là, aucune
- * tâche n'est prise, et rien n'est simulé. Les tests fournissent leurs
- * propres exécuteurs, factices et désignés comme tels.
+ * Le worker ne réclame que les tâches dont l'action a un exécuteur. Le
+ * registre de production est assemblé au démarrage (index.ts) : il reste
+ * vide tant que la clé du fournisseur d'IA n'est pas configurée — aucune
+ * tâche n'est alors prise, et rien n'est simulé. Les tests fournissent leurs
+ * propres exécuteurs et fournisseurs, factices et désignés comme tels.
  */
 
 /** Tâche réclamée, telle que la base la remet au worker. */
@@ -45,5 +46,3 @@ export class EchecConnu extends Error {
     this.consomme = consomme;
   }
 }
-
-export const EXECUTEURS: Readonly<Record<string, Executeur>> = {};
