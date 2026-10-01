@@ -14,7 +14,7 @@ réels).
 | E   | Modèle studio (socle : studio personnel, projets rattachés, isolation)                                                         | validé en recette | —                |
 | F   | Plans, profils, registres distincts — F1 : plans versionnés, abonnements, limites projets et membres ; F2 : limite de stockage | validé en recette | —                |
 | F3  | Offre publique sur la vitrine (catalogue lisible par les visiteurs, section Tarifs)                                            | validé en recette | —                |
-| G   | Devis, réservation atomique, idempotence                                                                                       | bloqué            | F                |
+| G   | Devis, réservation atomique, idempotence                                                                                       | validé en recette | —                |
 | H   | Tâches persistantes, outbox, rapprochement                                                                                     | bloqué            | Décision 4, G    |
 | I   | Passerelle IA et premier agent (WEAVER)                                                                                        | bloqué            | Décision 3, B, H |
 | J   | Autres agents                                                                                                                  | bloqué            | I                |
@@ -41,3 +41,8 @@ par mois) ; quotas mensuels à date anniversaire ; unités texte comptées par l
 bible 10, scénario 2 par séquence, dialogues 1 par scène) ; valeurs modifiables par
 l'administration, une modification publiant une nouvelle version appliquée à chaque studio à
 partir de sa prochaine période.
+
+Devis, décidés le 1er octobre 2026 : un devis reste valable 15 minutes ; le barème des unités
+texte est versionné en base et publié depuis « Plans et quotas », chaque version s'appliquant
+à un studio à partir de sa prochaine période ; seuls le porteur et les éditeurs d'un projet
+— et les administrateurs — demandent un devis et réservent des unités.
