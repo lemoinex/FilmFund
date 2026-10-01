@@ -12,6 +12,7 @@ import {
   ShieldIcon,
   SparkIcon,
   StoryboardIcon,
+  TagIcon,
 } from "@/components/icons";
 
 type Rubrique = {
@@ -35,14 +36,13 @@ const RUBRIQUES: Rubrique[] = [
 ];
 
 /*
- * Affichée aux seuls administrateurs, par commodité : la page vérifie
- * elle-même le rôle, et la base ne livre le journal qu'à eux.
+ * Affichées aux seuls administrateurs, par commodité : chaque page vérifie
+ * elle-même le rôle, et la base ne livre ces données qu'à eux.
  */
-const RUBRIQUE_ADMINISTRATION: Rubrique = {
-  libelle: "Journal d'administration",
-  icone: ShieldIcon,
-  href: "/administration/journal",
-};
+const RUBRIQUES_ADMINISTRATION: Rubrique[] = [
+  { libelle: "Journal d'administration", icone: ShieldIcon, href: "/administration/journal" },
+  { libelle: "Plans et quotas", icone: TagIcon, href: "/administration/plans" },
+];
 
 function estActive(href: string, chemin: string) {
   return chemin === href || chemin.startsWith(`${href}/`);
@@ -54,7 +54,7 @@ type ProprietesNavigation = {
 
 function ListeRubriques({ administrateur = false }: ProprietesNavigation) {
   const chemin = usePathname();
-  const rubriques = administrateur ? [...RUBRIQUES, RUBRIQUE_ADMINISTRATION] : RUBRIQUES;
+  const rubriques = administrateur ? [...RUBRIQUES, ...RUBRIQUES_ADMINISTRATION] : RUBRIQUES;
 
   return (
     <ul className="space-y-1 text-sm">

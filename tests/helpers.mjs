@@ -48,8 +48,12 @@ export function clientDeService() {
  *
  * L'adresse porte un suffixe unique : les tests peuvent ainsi s'enchaîner sur
  * une base déjà peuplée sans se marcher dessus.
+ *
+ * Le studio personnel du compte est mis au plan Studio, le plus large : les
+ * suites éprouvent le cloisonnement et les droits, pas les quotas, qui ont
+ * leur propre suite et y demandent explicitement le plan Gratuit.
  */
-export async function creerCompte(prefixe, nomAffiche = prefixe) {
+export async function creerCompte(prefixe, nomAffiche = prefixe, { plan = "studio" } = {}) {
   const client = clientAnonyme();
   const email = `${prefixe}+${Date.now()}${Math.random().toString(36).slice(2, 7)}@exemple.test`;
 
@@ -63,7 +67,34 @@ export async function creerCompte(prefixe, nomAffiche = prefixe) {
     throw new Error(`Création du compte ${email} impossible : ${error.message}`);
   }
 
+  if (plan !== "gratuit") {
+    await changerPlan(data.user.id, plan);
+  }
+
   return { client, id: data.user.id, email };
+}
+
+/** Change le plan du studio personnel d'un compte, comme le ferait l'exploitant. */
+export async function changerPlan(compteId, plan) {
+  const service = clientDeService();
+  const { data: studio, error: lecture } = await service
+    .from("studios")
+    .select("id")
+    .eq("personal_owner_id", compteId)
+    .single();
+
+  if (lecture) {
+    throw new Error(`Studio personnel introuvable : ${lecture.message}`);
+  }
+
+  const { error } = await service
+    .from("studio_subscriptions")
+    .update({ plan_code: plan })
+    .eq("studio_id", studio.id);
+
+  if (error) {
+    throw new Error(`Changement de plan impossible : ${error.message}`);
+  }
 }
 
 /** Promeut un compte administrateur, comme le ferait l'exploitant en SQL direct. */

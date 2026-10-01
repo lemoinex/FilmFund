@@ -172,6 +172,16 @@ describe("Mode privé", () => {
       assert.ok(error, "la création doit être refusée");
     });
 
+    it("ne lit plus ni les plans ni son abonnement", async () => {
+      const { data: plans } = await membre.client.from("plans").select("code");
+      assert.equal(plans.length, 0);
+
+      const { data: abonnements } = await membre.client
+        .from("studio_subscriptions")
+        .select("studio_id");
+      assert.equal(abonnements.length, 0);
+    });
+
     it("ne lit plus son studio ni ses adhésions", async () => {
       const { data: studios } = await membre.client.from("studios").select("id");
       assert.equal(studios.length, 0);

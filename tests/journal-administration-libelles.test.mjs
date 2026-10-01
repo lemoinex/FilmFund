@@ -15,6 +15,10 @@ const annuaire = {
     ["e", "Élodie"],
   ]),
   projets: new Map([["p", "Le Fleuve"]]),
+  plans: new Map([
+    ["gratuit", "Gratuit"],
+    ["studio", "Studio"],
+  ]),
 };
 
 function entree(action, details, autres = {}) {
@@ -133,6 +137,39 @@ describe("Libellés du journal d'administration", () => {
         annuaire,
       ),
       "a fait une modification dans un studio",
+    );
+  });
+
+  it("décrit la publication d'une version de plan", () => {
+    assert.equal(
+      descriptionDe(entree("publication_plan", { plan: "studio", version: 2 }), annuaire),
+      "a publié la version 2 du plan Studio",
+    );
+  });
+
+  it("décrit un changement de plan, nommant le titulaire d'un studio personnel", () => {
+    assert.equal(
+      descriptionDe(
+        entree("changement_plan_studio", {
+          studio: "s",
+          compte: "a",
+          ancien_plan: "gratuit",
+          nouveau_plan: "studio",
+        }),
+        annuaire,
+      ),
+      "a changé le plan du studio personnel d'Awa : Gratuit → Studio",
+    );
+    assert.equal(
+      descriptionDe(
+        entree("changement_plan_studio", {
+          studio: "s",
+          ancien_plan: "gratuit",
+          nouveau_plan: "pro",
+        }),
+        annuaire,
+      ),
+      "a changé le plan d'un studio : Gratuit → pro",
     );
   });
 
