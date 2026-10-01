@@ -6,7 +6,7 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
-import { composerOffre, montantMensuel, quotasEnMots } from "../src/lib/offre.ts";
+import { composerOffre, montantMensuel, quotasEnMots, uniteTexteEnMots } from "../src/lib/offre.ts";
 
 function version(plan_code, version_number, valeurs = {}) {
   return {
@@ -118,5 +118,43 @@ describe("Offre publique", () => {
       "20 000",
     );
     assert.equal(montantMensuel(version("gratuit", 1, { price_xaf_per_month: 0 })), "0");
+  });
+});
+
+const BAREME = {
+  logline: 1,
+  synopsis_short: 1,
+  synopsis_standard: 2,
+  synopsis_detailed: 3,
+  intention_note: 3,
+  treatment: 8,
+  bible: 10,
+  screenplay_per_sequence: 2,
+  dialogue_per_scene: 1,
+};
+
+describe("Barème des unités texte", () => {
+  it("met en mots le barème de mise en service", () => {
+    assert.equal(
+      uniteTexteEnMots(BAREME),
+      "1 pour une logline, de 1 à 3 pour un synopsis, 3 pour une note d'intention, 8 pour un traitement, 10 pour une bible, 2 par séquence de scénario et 1 par scène de dialogues",
+    );
+  });
+
+  it("suit une nouvelle version : fourchette des synopsis, un seul nombre s'ils coûtent autant", () => {
+    assert.match(
+      uniteTexteEnMots({ ...BAREME, synopsis_short: 2, synopsis_detailed: 5, treatment: 9 }),
+      /de 2 à 5 pour un synopsis, .*9 pour un traitement/,
+    );
+    assert.match(
+      uniteTexteEnMots({
+        ...BAREME,
+        synopsis_short: 2,
+        synopsis_standard: 2,
+        synopsis_detailed: 2,
+      }),
+      /, 2 pour un synopsis,/,
+    );
+    assert.match(lisible(uniteTexteEnMots({ ...BAREME, bible: 1500 })), /1 500 pour une bible/);
   });
 });

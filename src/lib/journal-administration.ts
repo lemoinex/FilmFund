@@ -40,6 +40,7 @@ const TABLES: Record<string, string> = {
   project_milestones: "le planning",
   project_fundings: "les financements",
   funding_documents: "les pièces de candidature",
+  reservations: "les réservations d'unités",
 };
 
 const TABLES_STUDIO: Record<string, string> = {
@@ -143,6 +144,11 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
     case "publication_plan": {
       const version = champ(details, "version");
       return `a publié la version ${typeof version === "number" ? version : "?"} du plan ${nomDuPlan(texte(details, "plan"), annuaire)}`;
+    }
+
+    case "publication_bareme": {
+      const version = champ(details, "version");
+      return `a publié la version ${typeof version === "number" ? version : "?"} du barème des unités texte`;
     }
 
     case "changement_plan_studio": {

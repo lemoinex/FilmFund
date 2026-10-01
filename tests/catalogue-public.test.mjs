@@ -1,14 +1,14 @@
 /**
  * Catalogue public, lu en visiteur anonyme par l'API réelle.
  *
- * La vitrine affiche la dernière version publiée de chaque plan : elle doit
- * pouvoir la lire sans session, et rien d'autre — ni l'auteur d'une version,
- * ni les abonnements des studios, ni aucune écriture.
+ * La vitrine affiche la dernière version publiée de chaque plan et du
+ * barème : elle doit pouvoir les lire sans session, et rien d'autre — ni
+ * l'auteur d'une version, ni les abonnements des studios, ni aucune écriture.
  */
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
-import { lireOffre } from "../src/lib/offre.ts";
+import { lireBareme, lireOffre } from "../src/lib/offre.ts";
 import { clientAnonyme, PUBLISHABLE_KEY, URL } from "./helpers.mjs";
 
 describe("Catalogue public", () => {
@@ -67,7 +67,34 @@ describe("Catalogue public", () => {
     assert.ok(renommage, "le renommage doit être refusé");
   });
 
+  it("un visiteur lit le barème, sans son auteur, et n'en publie aucune version", async () => {
+    const visiteur = clientAnonyme();
+
+    const { data: bareme, error } = await visiteur
+      .from("text_unit_rate_versions")
+      .select(
+        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene, published_at",
+      )
+      .order("version_number");
+    assert.ifError(error);
+    assert.ok(bareme.length >= 1);
+    assert.equal(bareme[0].treatment, 8, "valeur de mise en service");
+
+    const { error: auteur } = await visiteur.from("text_unit_rate_versions").select("published_by");
+    assert.ok(auteur, "l'auteur d'une version doit rester fermé");
+
+    // La vitrine présente la dernière version publiée.
+    const poids = { ...bareme.at(-1) };
+    delete poids.version_number;
+    delete poids.published_at;
+    assert.deepEqual(await lireBareme(URL, PUBLISHABLE_KEY), poids);
+
+    const { error: publication } = await visiteur.from("text_unit_rate_versions").insert(poids);
+    assert.ok(publication, "la publication doit être refusée");
+  });
+
   it("sans adresse ni clé, la lecture renvoie null au lieu d'échouer", async () => {
     assert.equal(await lireOffre(undefined, undefined), null);
+    assert.equal(await lireBareme(undefined, undefined), null);
   });
 });

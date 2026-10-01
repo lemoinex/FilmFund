@@ -118,6 +118,31 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("décrit une réservation d'unités faite par l'administration dans un projet", () => {
+    assert.equal(
+      descriptionDe(
+        entree(
+          "intervention_contenu",
+          { table: "reservations", operation: "insert", ligne: "r" },
+          { project_id: "p" },
+        ),
+        annuaire,
+      ),
+      "a fait un ajout dans les réservations d'unités du projet « Le Fleuve »",
+    );
+  });
+
+  it("décrit la publication d'une version du barème", () => {
+    assert.equal(
+      descriptionDe(entree("publication_bareme", { version: 3 }), annuaire),
+      "a publié la version 3 du barème des unités texte",
+    );
+    assert.equal(
+      descriptionDe(entree("publication_bareme", {}), annuaire),
+      "a publié la version ? du barème des unités texte",
+    );
+  });
+
   it("décrit une intervention dans un studio, avec le compte concerné", () => {
     assert.equal(
       descriptionDe(

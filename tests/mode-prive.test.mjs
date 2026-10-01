@@ -39,6 +39,7 @@ describe("Mode privé", () => {
   let invitationEnAttente;
   let imageDuMembre;
   let versionDuMembre;
+  let devisDuMembre;
 
   before(async () => {
     // Mise en place mode levé : les comptes et l'équipe existent déjà quand
@@ -79,6 +80,14 @@ describe("Mode privé", () => {
       .eq("document_id", document.id);
     assert.equal(versionsAvant.length, 1);
     versionDuMembre = versionsAvant[0].id;
+
+    const { data: devis, error: erreurDevis } = await membre.client.rpc("creer_devis", {
+      p_project_id: projetDuMembre.id,
+      p_action: "logline",
+      p_params: {},
+    });
+    assert.equal(erreurDevis, null, erreurDevis?.message);
+    devisDuMembre = devis[0].quote_id;
 
     await definirModePrive(true);
   });
@@ -182,6 +191,29 @@ describe("Mode privé", () => {
       assert.equal(abonnements.length, 0);
     });
 
+    it("ne demande ni n'accepte de devis, et ne lit plus ni devis ni barème", async () => {
+      // Les fonctions de devis s'exécutent hors RLS : elles vérifient le
+      // mode privé elles-mêmes.
+      const { error: demande } = await membre.client.rpc("creer_devis", {
+        p_project_id: projetDuMembre.id,
+        p_action: "logline",
+        p_params: {},
+      });
+      assert.ok(demande, "la demande de devis doit être refusée");
+
+      const { error: acceptation } = await membre.client.rpc("accepter_devis", {
+        p_quote_id: devisDuMembre,
+        p_idempotency_key: "pendant-le-verrou",
+      });
+      assert.ok(acceptation, "l'acceptation doit être refusée");
+
+      const { data: devis } = await membre.client.from("quotes").select("id");
+      assert.equal(devis.length, 0);
+
+      const { data: bareme } = await membre.client.from("text_unit_rate_versions").select("id");
+      assert.equal(bareme.length, 0);
+    });
+
     it("ne lit plus son studio ni ses adhésions", async () => {
       const { data: studios } = await membre.client.from("studios").select("id");
       assert.equal(studios.length, 0);
@@ -281,6 +313,21 @@ describe("Mode privé", () => {
         .eq("id", projet.id)
         .select("id");
       assert.equal(data.length, 1);
+    });
+
+    it("demande et accepte un devis", async () => {
+      const { data: devis, error } = await administrateur.client.rpc("creer_devis", {
+        p_project_id: projetAdmin.id,
+        p_action: "logline",
+        p_params: {},
+      });
+      assert.equal(error, null, error?.message);
+
+      const { error: acceptation } = await administrateur.client.rpc("accepter_devis", {
+        p_quote_id: devis[0].quote_id,
+        p_idempotency_key: "admin-pendant-le-verrou",
+      });
+      assert.equal(acceptation, null, acceptation?.message);
     });
 
     it("gère un budget", async () => {
