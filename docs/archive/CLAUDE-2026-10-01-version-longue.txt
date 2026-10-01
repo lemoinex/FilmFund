@@ -1,0 +1,972 @@
+# FilmFund Africa — Instructions Claude Code
+
+Plateforme SaaS pour les professionnels du cinéma africain. Ce fichier fait autorité
+pour toute session de travail sur ce dépôt.
+
+## Ordre de lecture obligatoire
+
+Lire intégralement, avant toute modification :
+
+1. `docs/product/PRD_MVP.md`
+2. `docs/engineering/VIBECODING_RULES.md`
+3. `docs/engineering/GUARDRAILS_BACKLOG.md`
+4. `docs/engineering/LOTS_IMPLEMENTATION.md`
+5. `docs/decisions/ADR-0001-architecture-and-scope.md`
+6. `docs/design/LANDING_PAGE_SPEC.md` si le lot concerne la landing.
+
+Puis l'état réel du dépôt : `docs/backlog-status.md` (statut de chaque lot et décisions
+prises), `docs/implementation-audit.md` (audit et plan des lots) et `docs/mode-prive.md`.
+
+
+## Mode de travail : vibecoding discipliné
+
+Produire vite sans livrer de fonctionnalités fictives. Travailler exclusivement par tranches verticales : interface, validation, données réelles, sécurité, états UX et vérification. Ne jamais déclarer un test exécuté s’il ne l’a pas été.
+
+## Plateforme et workflow
+
+- **GitHub est l’unique dépôt de référence** : code, branches, pull requests, issues et GitHub Actions. Ne jamais proposer GitLab, GitLab CI ni GitLab Container Registry, sauf demande explicite.
+- **Vercel** héberge le front-end et les previews.
+- **Supabase** fournit PostgreSQL, Auth, Storage, Realtime, Edge Functions et les migrations SQL, versionnées dans `supabase/migrations/`.
+- **Railway** héberge les APIs spécialisées, workers et tâches planifiées si nécessaire.
+- Code en **TypeScript** quand le projet le permet. Stack : Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, npm.
+- Branches `feature/*`, `fix/*`, `chore/*` ou `docs/*` et pull requests GitHub pour tout changement important ; jamais de push direct sur `main`. Changements petits, testables et réversibles.
+- Vérifier les scripts existants dans `package.json` avant de proposer ou d’exécuter une commande npm.
+- Commandes de validation proposées en PowerShell (Windows) quand nécessaire.
+- Pour chaque modification, indiquer : fichiers créés ou modifiés, commandes de validation à exécuter, risques éventuels.
+
+## Git
+
+- Messages de commit en français, au format Conventional Commits :
+  `feat: ajoute la page de connexion`, `fix: corrige le calcul du budget total`.
+- `npm run lint` et `npm run build` doivent être verts avant tout commit.
+- **Les commits sont signés** (clé SSH, configuration locale du dépôt). Le projet Vercel
+  exige des commits vérifiés par GitHub : un commit non signé voit son déploiement de
+  prévisualisation annulé, et la pull request affiche un check Vercel en échec. Les commits
+  de fusion, signés par GitHub, se déploient normalement.
+
+## Démarrage impératif
+
+1. Auditer le dépôt sans modifier de fichier.
+2. Cartographier architecture, dépendances, routes, composants, Auth, Supabase, migrations, RLS, Storage, variables d’environnement, GitHub (branches, pull requests, GitHub Actions), Vercel, Railway, appels coûteux et risques visibles.
+3. Produire le plan du lot suivant (voir `docs/backlog-status.md`) au format de `VIBECODING_RULES.md`.
+4. Attendre la validation humaine du plan avant de coder.
+
+## Règles immuables
+
+- Avant toute modification importante : analyser les fichiers concernés, présenter le plan et attendre la confirmation humaine.
+- Ne faire aucun `git commit`, `git push`, déploiement, suppression, modification distante ni changement de secrets sans confirmation explicite.
+- Ne supprimer, renommer, réinitialiser, déployer ni remplacer massivement aucun élément sans signaler l’impact et obtenir confirmation.
+- Préférer les migrations non destructives, versionnées et testées.
+- Ne jamais écrire, afficher, committer ni inventer de secret, token, mot de passe ou clé API.
+- Ne jamais committer `.env`, `.env.local`, clé Supabase `service_role`, token GitHub, Vercel, Railway ou autre secret. `.env.example` ne contient que des noms de variables, sans valeur sensible.
+- Ne placer aucun secret, service role, clé IA, clé de paiement ou clé privée côté client, dans Git, fixtures ou logs.
+- Les valeurs réelles vivent dans `.env.local` (ignoré par Git), dans les variables d'environnement Vercel / Railway, ou dans les secrets GitHub Actions.
+- **Le préfixe `NEXT_PUBLIC_` expose la variable au navigateur** : `SUPABASE_SECRET_KEY` et tout autre secret ne doivent jamais le porter.
+- Tout accès privilégié Supabase reste strictement côté serveur.
+- Ne jamais contourner la RLS Supabase sans explication et validation explicite. Si une requête a besoin du rôle service, c'est que la politique RLS est à revoir.
+- Les entrées utilisateur sont validées côté serveur, jamais seulement côté client.
+- Toute mutation vérifie session, rôle, accès studio/projet et payload ; elle produit un journal d’audit lorsque sensible.
+- Tout accès aux données de projet doit être protégé par RLS et testé entre au moins deux utilisateurs/studios.
+- Toute IA passe exclusivement côté serveur : session, accès, rate limit, droits, devis, réservation transactionnelle, appel fournisseur, journalisation non sensible, règlement ou restitution.
+- Aucun appel IA payant, paiement réel, campagne de test payante ou migration de production sans autorisation explicite.
+- Une suggestion IA est affichée, comparable, éditable et explicitement acceptée ; elle ne remplace jamais du contenu utilisateur automatiquement.
+- En cas de fuite d'un secret : le révoquer d'abord chez le fournisseur, réécrire l'historique ensuite. L'ordre inverse ne protège de rien.
+
+
+
+## Les grands domaines du produit à préserver sont :
+
+- Projet audiovisuel et métadonnées.
+- Documents de développement : logline, synopsis, note d’intention, traitement, bible, scénario et autres livrables.
+- Personnages, analyse dramaturgique et arcs narratifs.
+- Storyboard et panneaux.
+- Recherche documentaire, contexte historique et anthropologique.
+- Budget, matériel, contraintes techniques et calendrier.
+- Organisations, appels à projets, financements, échéances, critères d’éligibilité et scoring explicable.
+- Exports de dossiers.
+- Utilisateurs, studios, membres, rôles, abonnements et administration.
+
+
+
+## Base de données
+
+- **Toute modification de schéma passe par une migration SQL versionnée** dans
+  `supabase/migrations`. Jamais de changement à la main dans l'interface Supabase :
+  il serait perdu au prochain déploiement et absent des autres environnements.
+- **La RLS est activée à la création de la table**, dans la même migration, avec ses
+  politiques. L'ajouter après coup sur une table déjà peuplée coûte bien plus cher.
+- Une migration ne se modifie plus une fois poussée : on en écrit une nouvelle.
+- Les migrations sont réversibles ou, à défaut, documentent explicitement ce qui ne l'est pas.
+- **Toute migration touchant une politique, un rôle ou un privilège s'accompagne
+  d'un test dans `tests/`.** Un test qui ne peut pas échouer ne protège rien :
+  vérifiez qu'il tombe quand la protection est retirée. Ce qui ne s'observe pas
+  par l'API — droits d'exécution, état du catalogue — se teste en SQL (pgTAP)
+  dans `supabase/tests/`, avec `supabase test db`.
+- **Supabase accorde l'exécution de toute nouvelle fonction à `anon` et
+  `authenticated`.** Une fonction `security definer` retire ces droits
+  nommément (`revoke all ... from public, anon, authenticated`), puis ne rend
+  que ceux dont elle a besoin. Une fonction appelable par les comptes connectés
+  doit être ajoutée à la liste de `supabase/tests/privileges_fonctions.test.sql`.
+- **Les administrateurs ont accès à tout** : toute nouvelle table donne lecture et écriture
+  aux administrateurs (`public.is_admin()`) dans ses politiques.
+- **Toute nouvelle table reçoit la politique restrictive du mode privé**
+  (« Mode privé : administrateurs uniquement », voir
+  `supabase/migrations/20260929220000_mode_prive_administrateurs.sql`). Sans elle, la table
+  échapperait au verrou ; `supabase/tests/mode_prive.test.sql` le vérifie.
+- **Stockage : jamais de compartiment public.** Les fichiers se servent par liens signés,
+  délivrés avec la session de l'utilisateur. Un nouveau compartiment reçoit des
+  politiques sur `storage.objects` fondées sur le projet en tête du chemin
+  (`projet_du_chemin`), et sa propre politique restrictive du mode privé.
+- Ne jamais pousser la configuration avec `supabase config push` sans passer par
+  `supabase config diff` : le fichier local déclare des assouplissements propres
+  au développement — confirmation d'e-mail désactivée, MFA désactivé — dont la
+  propagation en production serait une régression de sécurité.
+
+## Code
+
+- **Langue** : interface, contenu et commentaires en français. Le code (noms de variables,
+  de fonctions, de fichiers) reste en anglais.
+- **Composants serveur par défaut.** `"use client"` uniquement quand le composant a besoin
+  d'état, d'effets, ou d'événements du navigateur — et le plus bas possible dans l'arbre.
+- **Nommage** : fichiers en `kebab-case`, composants React en `PascalCase`, fonctions et
+  variables en `camelCase`, constantes partagées en `SCREAMING_SNAKE_CASE`.
+- **Organisation** : les routes dans `src/app/`, les composants réutilisables dans
+  `src/components/`, les composants propres à une page dans un sous-dossier dédié.
+- **TypeScript strict** : pas de `any` sans justification écrite en commentaire.
+- **Tailwind** : pas de feuille de style séparée sauf nécessité. Les couleurs et espacements
+  passent par les jetons définis dans `globals.css`, pas par des valeurs en dur.
+- Les commentaires expliquent **pourquoi**, pas **quoi**. Un commentaire qui paraphrase
+  la ligne suivante est du bruit.
+
+## Accessibilité et responsive
+
+- Conception mobile d'abord, vérifiée à 375 px, 768 px et 1440 px.
+- HTML sémantique : `header`, `nav`, `main`, `section`, `footer`, titres hiérarchisés.
+- Contrastes conformes WCAG AA.
+- Focus visible au clavier, navigation possible sans souris.
+- Les animations respectent `prefers-reduced-motion`.
+- Tout texte porté par une image ou une icône a son équivalent accessible.
+
+## Architecture produit
+
+- Les onze agents internes sont : WEAVER, SCRIPT, VOICE, SCOUT, GRIOT, ARC, FRAME, GEAR, BOARD, FIELD et MATCH.
+- Ils doivent être des profils/actions internes traçables par l’exécution et la facturation.
+- L’utilisateur final voit un copilote unifié avec des actions adaptées au contexte, jamais onze applications distinctes.
+- La landing publique utilise le système noir/ivoire/or documenté dans `LANDING_PAGE_SPEC.md`.
+- L’application authentifiée utilise le système bleu nuit/ivoire/or documenté dans `PRD_MVP.md`.
+
+
+### Storage et PDF
+
+- Réserver ou contrôler les octets avant upload selon les capacités de l’infrastructure existante.
+- Vérifier taille réelle et type après réception.
+- Expirer les uploads incomplets.
+- Garder le stockage privé et les URL temporaires quand l’architecture existante le prévoit.
+- Un export PDF identique déjà disponible ne doit pas consommer inutilement un second export.
+- Une limite de stockage ne doit pas empêcher la consultation ou le téléchargement des fichiers déjà existants.
+
+
+
+## Les onze agents IA requis
+
+Les onze agents font partie de la V1. Ne pas les reporter ou les supprimer pour simplifier la mise en œuvre des garde-fous.
+
+| Agent | Responsabilité |
+|---|---|
+| WEAVER | Logline, synopsis court/standard/détaillé, note d’intention |
+| SCRIPT | Traitement, bible du projet, scénario |
+| VOICE | Dialogues de fiction et de séries |
+| SCOUT | Recherche documentaire de contexte |
+| GRIOT | Contexte historique et anthropologique d’Afrique centrale |
+| ARC | Analyse dramaturgique des personnages et arcs narratifs |
+| FRAME | Découpage technique et focales |
+| GEAR | Liste de matériel, calculs électriques et générateurs |
+| BOARD | Storyboard sous forme de croquis à l’encre noir et blanc |
+| FIELD | Budget, plan de financement et calendrier |
+| MATCH | Recherche de financements, scoring et traçabilité des sources |
+
+
+
+### Exigence BOARD
+
+Les visuels générés par BOARD doivent rester des **croquis à l’encre noir et blanc** : traits noirs sur fond blanc, sans couleur, sans photoréalisme, sans rendu 3D et sans peinture numérique colorée.
+
+Ne pas modifier un prompt de storyboard existant qui respecte déjà cette contrainte. Si la contrainte est absente ou contournable, corriger au niveau de la couche centralisée de prompts/profils et ajouter des tests de conformité adaptés.
+
+
+## Passerelle IA unique
+
+Tous les appels OpenAI et Anthropic doivent passer par une couche centralisée existante ou à créer **uniquement si elle manque réellement** : `AIService`, adaptateur ou service équivalent.
+
+
+
+## Règles de fiabilité métier
+
+- Aucune donnée affichée comme réelle ne doit être dépourvue d’une source rattachée.
+- Aucun champ absent ne doit être complété par supposition.
+- Lorsque l’information est absente, l’interface doit utiliser une formulation claire telle que : `Information non trouvée dans la source consultée.` ou `Information non fournie.`
+- Un score de compatibilité financière ne garantit jamais l’obtention d’un financement.
+- Les opportunités de démonstration ne doivent jamais être présentées comme des opportunités réelles.
+- Les générations doivent respecter le contexte du projet : projet, contexte, personnages, vision, documents, puis objectif précis de la génération.
+- La longueur documentaire doit être déterminée à partir des spécifications versionnées ou configurables ; ne pas la fixer en dur dans une route ou un composant.
+- L’utilisateur doit pouvoir modifier les contenus générés et créer une nouvelle version sans écrasement silencieux.
+- Les routes administratives doivent effectuer un contrôle serveur et journaliser l’action avant son exécution.
+
+
+
+## Recherche, sources et financements
+
+Pour SCOUT, GRIOT et MATCH :
+
+- Ne jamais inventer de preuve, d’URL, de financement, de date limite ou de critère d’éligibilité.
+- Garder la provenance : source, horodatage, contenu ou extrait utile, statut de vérification et incertitude éventuelle.
+- Marquer clairement les résultats de démonstration.
+- Distinguer une donnée non trouvée d’une donnée non fournie.
+- Éviter les boucles de recherche incontrôlées ; si des plafonds existent déjà, les centraliser et les tester.
+- Mutualiser, lorsque possible et autorisé, les sources communes sans confondre données publiques et données privées de studio.
+- Sécuriser les fetchs externes contre destinations internes, redirections dangereuses et entrées malveillantes.
+
+## Storyboard, stockage et exports
+
+### BOARD
+
+- Profil image mesuré et explicitement autorisé.
+- Une image par panneau/vignette lorsque le produit fonctionne ainsi.
+- Quota image distinct du quota texte.
+- Les annotations textuelles doivent être gérées hors image lorsque cela est possible.
+- En cas de lot partiellement réussi : consommer seulement les images effectivement livrées et libérer les réservations non utilisées.
+- Ne pas remplacer une vignette approuvée sans action explicite de l’utilisateur.
+
+
+
+## Définition de terminé
+
+Une fonction est terminée uniquement avec : interface responsive, données réelles ou mock explicitement borné, validation des entrées, contrôle d’accès serveur et RLS si nécessaire, états chargement/vide/erreur/succès, test pertinent ou contrôle manuel documenté, et compte rendu honnête des commandes de validation.
+
+
+### Exigences
+
+- Aucune route métier, action serveur, composant client, worker ou script ne doit appeler directement un SDK IA hors adaptateurs autorisés.
+- Les clés API restent uniquement côté serveur/configuration sécurisée.
+- Les agents doivent recevoir un contexte d’exécution explicite : studio, utilisateur, projet, rôle, plan, action demandée, version de document, budget/quota et profil autorisé.
+- Les sous-appels doivent partager le même budget racine et les mêmes limites cumulées.
+- Les paramètres coûteux ou non autorisés envoyés par le client doivent être rejetés avant appel fournisseur.
+- Les sorties doivent être validées contre un schéma ou un contrat lorsque le type de résultat le permet.
+- Une génération ne doit jamais écraser une version utilisateur ou une version approuvée.
+
+### Vérification anti-doublon
+
+Avant de créer `AIService` :
+
+- rechercher les services/adaptateurs IA existants ;
+- relever les appels directs aux SDK ;
+- choisir un point d’intégration unique ;
+- migrer progressivement les appels existants vers ce point sans modifier leur comportement métier hors du nécessaire ;
+- ajouter un test d’architecture ou une règle de lint empêchant les nouveaux imports directs hors adaptateurs autorisés, si cela est compatible avec le dépôt.
+
+## 2. Isolation par studio et autorisation serveur
+
+L’accès doit être dérivé de l’utilisateur authentifié et de son adhésion réelle au studio/projet, jamais d’un rôle, studio_id ou entitlement envoyé par le navigateur.
+
+### Exigences
+
+- Séparer administrateur global, propriétaire de studio et membre de studio selon les rôles réellement présents dans le schéma.
+- Vérifier l’adhésion au studio/projet pour chaque accès aux projets, documents, jobs, devis, résultats, fichiers et données de paiement.
+- Toute adhésion révoquée doit être revérifiée avant l’exécution d’un job en attente.
+- Les workers doivent appliquer un contexte explicite et ne jamais réutiliser le contexte d’un autre studio.
+- Les règles RLS existantes doivent être auditées avant extension.
+
+### Tests requis
+
+- Deux studios : modifier un identifiant de projet, document, job, devis ou fichier d’un autre studio doit échouer sans divulguer de données.
+- Matrice utilisateur : auteur, collaborateur, administrateur de studio, administrateur global.
+- Jeton expiré, adhésion révoquée et connexion SQL/pool réutilisée sans fuite de contexte.
+
+
+
+# Configuration et secrets
+
+## Variables d’environnement
+
+- Mettre à jour `.env.example` uniquement avec les noms de variables, des valeurs d’exemple non sensibles et des explications nécessaires.
+- Ne jamais committer `.env` réel, clé OpenAI, clé Anthropic, clé de paiement, `service_role`, JWT secret, token de webhook ou mot de passe.
+- Ne pas exposer les secrets au navigateur via un préfixe public.
+- Séparer les identifiants locaux, recette et production.
+- Ne pas imprimer de secret, de token ou de payload sensible dans les logs de test.
+
+## Fournisseurs et tests réels
+
+- Les faux fournisseurs sont autorisés pour les tests unitaires et d’intégration locale, à condition d’être explicitement identifiés.
+- Un mock ne prouve pas qu’un agent est opérationnel en conditions réelles.
+- Aucun appel IA payant, recherche payante, génération image payante ou paiement réel sans budget de test et autorisation explicite.
+- Si une dépendance externe manque, livrer la portion testable localement et documenter exactement ce qui reste à valider en recette.
+
+
+
+
+## IA
+
+Créer une couche d'abstraction AI Provider.
+
+Ne jamais appeler directement le fournisseur IA partout dans le code.
+
+Exemple :
+
+```text
+AIService
+   ↓
+Provider
+   ├── OpenAI
+   ├── Anthropic
+   └── Local Model
+Le fournisseur doit être configurable par variable d'environnement.
+
+
+
+#  MODULE AUTHENTIFICATION
+
+Créer :
+
+- inscription ;
+- connexion ;
+- déconnexion ;
+- récupération du mot de passe ;
+- profil utilisateur.
+
+Profil :
+
+```text
+nom
+prénom
+email
+pays
+ville
+profession
+photo
+type_utilisateur
+```
+
+Types :
+
+```text
+AUTHOR
+DIRECTOR
+PRODUCER
+ADMIN
+```
+
+
+#TABLEAU DE BORD
+
+Après connexion, afficher :
+
+### Bienvenue, [Prénom]
+
+Statistiques :
+
+```text
+Mes projets                  4
+
+Documents générés            18
+
+Opportunités compatibles     12
+
+Échéances prochaines          3
+
+
+Afficher :
+
+### Mes projets
+
+Carte projet :
+
+```text
+Titre
+Genre
+Statut
+Dernière modification
+Score de maturité
+```
+
+### Opportunités recommandées
+
+```text
+Nom du fonds
+Montant
+Date limite
+Compatibilité : 87 %
+```
+
+---
+
+# 9. MODULE PROJETS
+
+Créer un CRUD complet.
+
+Un projet contient :
+
+```text
+id
+user_id
+title
+project_type
+genre
+country
+language
+duration
+logline
+short_synopsis
+long_synopsis
+theme
+target_audience
+status
+created_at
+updated_at
+```
+
+Types :
+
+```text
+DOCUMENTARY
+FEATURE_FILM
+SHORT_FILM
+TV_SERIES
+WEB_SERIES
+```
+
+Statuts :
+
+```text
+IDEA
+DEVELOPMENT
+WRITING
+PRE_PRODUCTION
+PRODUCTION
+POST_PRODUCTION
+COMPLETED
+
+
+# 10. ASSISTANT DE CRÉATION DE PROJET
+
+Créer un assistant étape par étape.
+
+### Étape 1
+
+Informations générales.
+
+### Étape 2
+
+Concept.
+
+### Étape 3
+
+Personnages.
+
+### Étape 4
+
+Enjeux.
+
+### Étape 5
+
+Vision du réalisateur.
+
+### Étape 6
+
+Objectifs.
+
+### Étape 7
+
+Public cible.
+
+À la fin :
+
+```text
+Créer mon projet
+```
+
+---
+
+# 11. MODULE IA — DOCUMENTS
+
+Créer un espace :
+
+# AI PROJECT WRITER
+
+L'utilisateur peut générer :
+
+### 1. Logline
+
+### 2. Synopsis court
+
+### 3. Synopsis long
+
+### 4. Note d'intention
+
+### 5. Note de réalisation
+
+### 6. Traitement
+
+### 7. Présentation des personnages
+
+### 8. Pitch oral
+
+### 9. Pitch écrit
+
+### 10. Bible de série
+
+### 11. Scenario
+
+Pour une série :
+
+```text
+Concept
+Univers
+Personnages
+Arcs narratifs
+Saison
+Épisodes
+Pilote
+```
+
+---
+
+# 12. GÉNÉRATION INTELLIGENTE
+
+L'IA doit utiliser les informations du projet.
+
+NE PAS créer des documents indépendants les uns des autres.
+
+Exemple :
+
+```text
+Projet
+ ↓
+Contexte
+ ↓
+Personnages
+ ↓
+Vision
+ ↓
+Documents
+```
+
+La note de réalisation doit donc être cohérente avec le synopsis.
+
+La note d'intention doit être cohérente avec le sujet.
+
+Le traitement doit être cohérent avec le synopsis.
+
+---
+
+# 13. SYSTÈME DE VERSIONING
+
+Chaque document doit pouvoir être sauvegardé.
+
+Exemple :
+
+```text
+Note de réalisation
+Version 1
+Version 2
+Version 3
+```
+
+Permettre :
+
+- modifier ;
+- sauvegarder ;
+- restaurer une version ;
+- comparer ultérieurement.
+
+---
+
+# 14. ÉDITEUR DE DOCUMENT
+
+Créer un éditeur moderne.
+
+Fonctions :
+
+- texte ;
+- titres ;
+- listes ;
+- gras ;
+- italique ;
+- sauvegarde automatique.
+
+Boutons :
+
+```text
+Regénérer
+Améliorer
+Raccourcir
+Développer
+Corriger
+```
+
+---
+
+# 15. MODULE FUNDING INTELLIGENCE
+
+Créer une base :
+
+# Opportunités de financement
+
+Chaque opportunité possède :
+
+```text
+id
+name
+organization
+description
+website
+country
+eligible_countries
+project_types
+genres
+minimum_budget
+maximum_budget
+currency
+deadline
+opening_date
+application_url
+requirements
+status
+source
+created_at
+updated_at
+```
+
+---
+
+# 16. CATÉGORIES
+
+Classer les opportunités :
+
+```text
+FUND
+GRANT
+RESIDENCY
+FESTIVAL
+LAB
+WORKSHOP
+COPRODUCTION
+BURSARY
+PITCHING_FORUM
+```
+
+---
+
+# 17. RECHERCHE
+
+Filtres :
+
+```text
+Pays
+Genre
+Type de projet
+Montant
+Langue
+Date limite
+Type de financement
+```
+
+Recherche plein texte.
+
+---
+
+# 18. MATCHING INTELLIGENT
+
+Fonction stratégique du produit.
+
+Lorsqu'un utilisateur ouvre un projet :
+
+```text
+Analyser les financements compatibles
+```
+
+L'IA analyse :
+
+- type de projet ;
+- pays ;
+- genre ;
+- durée ;
+- stade de développement ;
+- thématique ;
+- budget ;
+- exigences.
+
+Puis retourne :
+
+```text
+17 opportunités trouvées
+
+1. FUND A
+Compatibilité : 92 %
+
+2. FUND B
+Compatibilité : 87 %
+
+3. FUND C
+Compatibilité : 81 %
+```
+
+Pour chaque résultat :
+
+```text
+Pourquoi ce fonds correspond
+Conditions remplies
+Conditions manquantes
+Documents requis
+Date limite
+Montant potentiel
+Lien de candidature
+```
+
+IMPORTANT :
+
+Le score est un indicateur d'aide à la décision et ne doit jamais être présenté comme une garantie de financement.
+
+---
+
+# SYSTÈME DE SCORING DU PROJET
+
+Créer un score :
+
+```text
+Project Readiness Score
+```
+
+Sur 100.
+
+Critères :
+
+```text
+Concept                 20
+Narration               15
+Personnages             15
+Vision artistique       15
+Faisabilité             10
+Budget                  10
+Plan de financement      5
+Potentiel marché         5
+Dossier                  5
+```
+
+Afficher :
+
+```text
+Maturité du projet : 74/100
+```
+
+Puis :
+
+### À améliorer
+
+```text
+Budget non renseigné
+Note de réalisation incomplète
+Plan de financement absent
+```
+
+---
+
+# 20. MODULE BUDGET
+
+Créer un générateur de budget audiovisuel.
+
+Catégories :
+
+### Développement
+
+- recherche ;
+- écriture ;
+- repérages.
+
+### Préproduction
+
+- casting ;
+- préparation ;
+- autorisations.
+
+### Production
+
+- réalisateur ;
+- techniciens ;
+- matériel ;
+- transport ;
+- hébergement ;
+- restauration ;
+- décors ;
+- costumes.
+
+### Postproduction
+
+- montage ;
+- étalonnage ;
+- sound design ;
+- mixage ;
+- sous-titrage ;
+- mastering.
+
+### Distribution
+
+- festivals ;
+- communication ;
+- marketing.
+
+---
+
+# 21. PLAN DE FINANCEMENT
+
+Créer :
+
+```text
+Budget total
+
+Producteur
+Fonds publics
+Télévision
+Coproducteur
+Investisseur
+Sponsor
+Autres
+```
+
+Calculer automatiquement :
+
+```text
+Financement acquis
+Financement recherché
+Pourcentage financé
+```
+
+---
+
+# 22. CALENDRIER
+
+Créer un calendrier simple :
+
+```text
+Développement
+Préproduction
+Tournage
+Postproduction
+Distribution
+```
+
+Afficher les dates.
+
+---
+
+# 23. ALERTES
+
+Créer des notifications :
+
+```text
+Une opportunité correspondant à votre projet vient d'être ajoutée.
+
+Deadline dans 7 jours.
+
+Votre dossier est incomplet.
+
+Votre projet correspond à 8 nouveaux fonds.
+```
+
+Prévoir :
+
+- notification interne ;
+- email.
+
+---
+
+# 24. EXPORT
+
+Permettre :
+
+### PDF
+
+Dossier professionnel.
+
+### DOCX
+
+Document modifiable.
+
+### ZIP
+
+Exporter l'ensemble du projet :
+
+```text
+Projet/
+├── Synopsis.docx
+├── Note_intention.docx
+├── Note_realisation.docx
+├── Traitement.docx
+├── Budget.xlsx
+└── Plan_financement.xlsx
+```
+
+---
+
+
+# 26. SYSTÈME DE CRÉDIT IA
+
+Ne pas rendre l'utilisation de l'IA totalement illimitée.
+
+Créer :
+
+```text
+AI Credits
+```
+
+Chaque génération consomme des crédits.
+
+Exemple :
+
+```text
+FREE       1 générations
+PRO        300 crédits
+PRODUCER   500 crédits
+```
+
+Les valeurs doivent être configurables.
+
+
+
+
+
+# 27. ADMINISTRATION
+
+Créer un dashboard ADMIN.
+
+Fonctions :
+
+### Utilisateurs
+
+- consulter ;
+- suspendre ;
+- modifier le rôle.
+
+### Opportunités
+
+- ajouter ;
+- modifier ;
+- supprimer ;
+- vérifier.
+
+### Projets
+
+Statistiques anonymisées.
+
+### IA
+
+- fournisseur ;
+- modèle ;
+- coûts ;
+- limites.
+
+### Abonnements
+
+- plans ;
+- prix ;
+- crédits.
+
