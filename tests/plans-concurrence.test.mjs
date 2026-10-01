@@ -12,49 +12,11 @@
  * Avec le verrou posé par la limite, la seconde attend la première, compte
  * un projet, et est refusée. Sans lui, elle passerait aussitôt : le studio
  * aurait deux projets au plan Gratuit.
- *
- * `docker exec` évite tout mot de passe : psql s'y connecte en local.
  */
 import { strict as assert } from "node:assert";
-import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
-import { creerCompte } from "./helpers.mjs";
-
-const PROJET_SUPABASE = /^project_id\s*=\s*"([^"]+)"/m.exec(
-  readFileSync(new URL("../supabase/config.toml", import.meta.url), "utf8"),
-)[1];
-const CONTENEUR = `supabase_db_${PROJET_SUPABASE}`;
-
-function session(sql) {
-  return new Promise((resolve, reject) => {
-    const psql = spawn(
-      "docker",
-      [
-        "exec",
-        "-i",
-        CONTENEUR,
-        "psql",
-        "-U",
-        "postgres",
-        "-d",
-        "postgres",
-        "-v",
-        "ON_ERROR_STOP=1",
-        "-At",
-      ],
-      { stdio: ["pipe", "pipe", "pipe"] },
-    );
-    let sortie = "";
-    let erreurs = "";
-    psql.stdout.on("data", (d) => (sortie += d));
-    psql.stderr.on("data", (d) => (erreurs += d));
-    psql.on("error", reject);
-    psql.on("close", (code) => resolve({ code, sortie, erreurs }));
-    psql.stdin.end(sql);
-  });
-}
+import { creerCompte, executerSqlLocal as session } from "./helpers.mjs";
 
 function creationEnSession(compteId, titre, attente) {
   return `
