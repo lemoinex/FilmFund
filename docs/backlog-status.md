@@ -8,8 +8,8 @@ réels).
 | Lot | Ticket                                                                                         | Statut            | Bloqué par       |
 | --- | ---------------------------------------------------------------------------------------------- | ----------------- | ---------------- |
 | A   | Journal des actions d'administration                                                           | validé en recette | —                |
-| B   | Versions de documents                                                                          | validé localement | —                |
-| C   | Envois d'images orphelins                                                                      | à faire           | —                |
+| B   | Versions de documents                                                                          | validé en recette | —                |
+| C   | Envois d'images orphelins                                                                      | validé localement | —                |
 | D   | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré) | à faire           | —                |
 | E   | Modèle studio                                                                                  | bloqué            | Décision 1       |
 | F   | Plans, profils, registres distincts                                                            | bloqué            | Décisions 1, 5   |
