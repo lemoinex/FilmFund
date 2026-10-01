@@ -50,7 +50,9 @@ select is_empty(
         'creer_devis',
         'accepter_devis',
         'annuler_travail',
-        'rapprocher_travail_admin'
+        'rapprocher_travail_admin',
+        'accepter_proposition',
+        'ecarter_proposition'
       )
   $$,
   'Seules les fonctions prévues sont exécutables par un compte connecté'

@@ -13,6 +13,9 @@ import {
   clientDeService,
   creerCompte,
   creerProjet,
+  definirPlafondIa,
+  deposerProposition,
+  engager,
   faireEntrer,
   inviter,
   promouvoirAdministrateur,
@@ -41,6 +44,7 @@ describe("Mode privé", () => {
   let versionDuMembre;
   let devisDuMembre;
   let tacheDuMembre;
+  let propositionDuMembre;
 
   before(async () => {
     // Mise en place mode levé : les comptes et l'équipe existent déjà quand
@@ -107,6 +111,25 @@ describe("Mode privé", () => {
       .single();
     tacheDuMembre = tache.id;
 
+    // Une proposition déposée avant le verrou, sur une tâche à part : celle
+    // du dessus doit rester en attente pour éprouver l'annulation. Le
+    // registre local garde les provisions des exécutions précédentes.
+    await definirPlafondIa(1_000_000);
+    const tacheAboutie = await engager(
+      membre,
+      projetDuMembre.id,
+      "logline",
+      "avant-le-verrou-proposition",
+    );
+    await deposerProposition(tacheAboutie.id, "Une proposition d'avant le verrou.");
+    const { data: proposition, error: erreurProposition } = await membre.client
+      .from("ai_suggestions")
+      .select("id")
+      .eq("job_id", tacheAboutie.id)
+      .single();
+    assert.equal(erreurProposition, null, erreurProposition?.message);
+    propositionDuMembre = proposition.id;
+
     await definirModePrive(true);
   });
 
@@ -114,6 +137,7 @@ describe("Mode privé", () => {
   // échouer toutes les suites suivantes.
   after(async () => {
     await definirModePrive(false);
+    await definirPlafondIa(5);
   });
 
   describe("compte non administrateur", () => {
@@ -243,6 +267,30 @@ describe("Mode privé", () => {
       assert.ok(error, "l'annulation doit être refusée");
     });
 
+    it("ne lit, n'applique ni n'écarte ses propositions", async () => {
+      const { data } = await membre.client.from("ai_suggestions").select("id");
+      assert.equal(data.length, 0);
+
+      // Ces fonctions s'exécutent hors RLS : elles vérifient le mode privé
+      // elles-mêmes.
+      const { error: application } = await membre.client.rpc("accepter_proposition", {
+        p_suggestion_id: propositionDuMembre,
+      });
+      assert.ok(application, "l'application doit être refusée");
+
+      const { error: ecart } = await membre.client.rpc("ecarter_proposition", {
+        p_suggestion_id: propositionDuMembre,
+      });
+      assert.ok(ecart, "l'écart doit être refusé");
+
+      const { data: restee } = await administrateur.client
+        .from("ai_suggestions")
+        .select("state")
+        .eq("id", propositionDuMembre)
+        .single();
+      assert.equal(restee.state, "proposed");
+    });
+
     it("ne lit plus son studio ni ses adhésions", async () => {
       const { data: studios } = await membre.client.from("studios").select("id");
       assert.equal(studios.length, 0);
@@ -357,6 +405,14 @@ describe("Mode privé", () => {
         p_idempotency_key: "admin-pendant-le-verrou",
       });
       assert.equal(acceptation, null, acceptation?.message);
+    });
+
+    it("écarte la proposition d'un membre", async () => {
+      const { data, error } = await administrateur.client.rpc("ecarter_proposition", {
+        p_suggestion_id: propositionDuMembre,
+      });
+      assert.equal(error, null, error?.message);
+      assert.equal(data.state, "dismissed");
     });
 
     it("gère un budget", async () => {

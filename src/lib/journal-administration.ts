@@ -42,12 +42,15 @@ const TABLES: Record<string, string> = {
   funding_documents: "les pièces de candidature",
   reservations: "les réservations d'unités",
   jobs: "les tâches",
+  ai_suggestions: "les propositions de l'assistant",
 };
 
 const TABLES_STUDIO: Record<string, string> = {
   studios: "un studio",
   studio_members: "les membres d'un studio",
 };
+
+const NOMBRE = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 
 // Tournures sans accord : l'auteur peut être n'importe qui.
 const OPERATIONS: Record<string, string> = {
@@ -162,6 +165,12 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       const titre = entree.project_id ? annuaire.projets.get(entree.project_id) : undefined;
       const projet = titre ? `du projet « ${titre} »` : "d'un projet supprimé depuis";
       return `a rapproché une tâche ${projet} : ${issue}`;
+    }
+
+    case "plafond_ia": {
+      const montant = (valeur: unknown) =>
+        typeof valeur === "number" ? `${NOMBRE.format(valeur)} $` : "?";
+      return `a changé le plafond mensuel des dépenses d'IA : ${montant(champ(details, "ancien"))} → ${montant(champ(details, "nouveau"))}`;
     }
 
     case "changement_plan_studio": {

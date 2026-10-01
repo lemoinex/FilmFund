@@ -4,15 +4,15 @@
  *
  * Les exécuteurs de ce fichier sont FACTICES : ils n'appellent aucun
  * fournisseur. Ils éprouvent la boucle — réclamation, soumission, bail,
- * conclusion, échec, issue inconnue, arrêt —, pas un agent. En production,
- * le registre des exécuteurs est vide jusqu'au lot I.
+ * conclusion, échec, issue inconnue, arrêt —, pas un agent. Les agents sont
+ * éprouvés dans worker-weaver.test.mjs.
  */
 import { strict as assert } from "node:assert";
 import { after, before, describe, it } from "node:test";
 
 import { marquerSoumise, reclamer, recupererExpires } from "../worker/src/base.ts";
 import { demarrerWorker, traiterUnTravail } from "../worker/src/boucle.ts";
-import { EchecConnu, EXECUTEURS } from "../worker/src/executeurs.ts";
+import { EchecConnu } from "../worker/src/executeurs.ts";
 import {
   annulerLesAutresTaches,
   creerCompte,
@@ -114,11 +114,9 @@ describe("Worker", () => {
     });
   });
 
-  it("en production, aucun exécuteur : aucune tâche n'est prise, elle attend", async () => {
-    assert.deepEqual(Object.keys(EXECUTEURS), []);
-
+  it("sans exécuteur — pas de clé de fournisseur — aucune tâche n'est prise, elle attend", async () => {
     const { porteur, taches } = await preparer("worker-vide");
-    assert.equal(await traiterUnTravail(options(EXECUTEURS)), false);
+    assert.equal(await traiterUnTravail(options({})), false);
     assert.equal((await etat(porteur, taches[0].id)).state, "queued");
   });
 

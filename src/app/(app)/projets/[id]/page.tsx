@@ -7,6 +7,7 @@ import { Couverture } from "@/components/ui/couverture";
 import { EnvoiImage } from "@/components/ui/envoi-image";
 import { lireAcces, ROLES_PROJET } from "@/lib/equipes";
 import { ETAPES, FORMATS } from "@/lib/projets";
+import { etapePitch, type EtapePitch } from "@/lib/propositions";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,6 +16,7 @@ import { definirCouverture, retirerCouverture } from "./images/actions";
 import { Equipe } from "./equipe";
 import { FormulaireEdition } from "./formulaire";
 import { OngletsProjet } from "./onglets";
+import { PropositionLogline } from "./proposition-logline";
 
 export const metadata: Metadata = {
   title: "Projet — filmfundAfrica",
@@ -62,6 +64,29 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
   const liens = await liensSignes(supabase, [projet.cover_path]);
   const urlCouverture = projet.cover_path ? liens.get(projet.cover_path) : null;
 
+  // Assistant d'écriture : même règle que la fonction SQL peut_engager_unites,
+  // qui a le dernier mot. Les lecteurs n'engagent pas les unités du studio.
+  const peutDemanderPitch = peutEditer || estAdmin === true;
+  let etape: EtapePitch = { etape: "repos" };
+  if (peutDemanderPitch) {
+    const { data: tache } = await supabase
+      .from("jobs")
+      .select("id, state")
+      .eq("project_id", id)
+      .eq("action", "logline")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { data: proposition } = tache
+      ? await supabase
+          .from("ai_suggestions")
+          .select("id, content, state")
+          .eq("job_id", tache.id)
+          .maybeSingle()
+      : { data: null };
+    etape = etapePitch(tache, proposition);
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
       <Link href="/projets" className="text-light-muted hover:text-light text-sm transition-colors">
@@ -106,8 +131,26 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
       <OngletsProjet projetId={projet.id} actif="projet" budget={peutGererBudget} />
 
       <div className="mt-10">
-        {peutEditer ? <FormulaireEdition projet={projet} /> : <Apercu projet={projet} />}
+        {/*
+         * Clé sur le pitch : quand une proposition est appliquée, le
+         * formulaire repart du nouveau texte. Sans cela, son champ garderait
+         * l'ancien pitch, et l'enregistrement suivant l'y remettrait.
+         */}
+        {peutEditer ? (
+          <FormulaireEdition key={projet.logline} projet={projet} />
+        ) : (
+          <Apercu projet={projet} />
+        )}
       </div>
+
+      {peutDemanderPitch ? (
+        <PropositionLogline
+          projetId={projet.id}
+          pitchActuel={projet.logline}
+          etape={etape}
+          peutAppliquer={peutEditer}
+        />
+      ) : null}
 
       <Equipe projetId={projet.id} acces={acces} utilisateurId={user.id} />
 

@@ -41,7 +41,11 @@ export function ouvrirBase(configuration: ConfigurationBase): pg.Pool {
   });
 }
 
-function codeDe(erreur: unknown): string | undefined {
+/** Code levé par la base quand le plafond mensuel des dépenses d'IA est atteint. */
+export const PLAFOND_ATTEINT = "IA001";
+
+/** Code SQL d'une erreur de la base, s'il y en a un. */
+export function codeDe(erreur: unknown): string | undefined {
   return typeof erreur === "object" && erreur !== null && "code" in erreur
     ? String((erreur as { code: unknown }).code)
     : undefined;
@@ -131,4 +135,99 @@ export async function terminer(
 export async function recupererExpires(base: Base): Promise<number> {
   const { rows } = await base.query("select public.recuperer_travaux_expires() as nombre");
   return Number(rows[0].nombre);
+}
+
+/** Fiche du projet d'une tâche : ce que le worker a le droit d'en lire. */
+export type Fiche = {
+  titre: string;
+  format: string;
+  etape: string;
+  logline: string;
+  synopsis: string;
+};
+
+/** Fiche du projet de la tâche en cours ; null si l'essai ne nous appartient plus. */
+export async function lireContexte(base: Base, attemptId: string): Promise<Fiche | null> {
+  const { rows } = await base.query("select * from public.contexte_travail($1)", [attemptId]);
+  const ligne = rows[0];
+  if (!ligne) {
+    return null;
+  }
+  return {
+    titre: ligne.title,
+    format: ligne.format,
+    etape: ligne.stage,
+    logline: ligne.logline,
+    synopsis: ligne.synopsis,
+  };
+}
+
+/**
+ * Inscrit, avant l'appel, ce qu'il coûterait au pire. Lève `PLAFOND_ATTEINT`
+ * si le plafond du mois serait dépassé, `ESSAI_PERDU` si la tâche a été
+ * récupérée : dans les deux cas, rien ne doit être envoyé.
+ */
+export async function provisionnerCout(
+  base: Base,
+  attemptId: string,
+  provision: {
+    fournisseur: string;
+    modele: string;
+    profil: string;
+    jetonsEntree: number;
+    jetonsSortie: number;
+    dollars: string;
+  },
+): Promise<void> {
+  await base.query("select public.provisionner_cout($1, $2, $3, $4, $5, $6, $7)", [
+    attemptId,
+    provision.fournisseur,
+    provision.modele,
+    provision.profil,
+    provision.jetonsEntree,
+    provision.jetonsSortie,
+    provision.dollars,
+  ]);
+}
+
+/** Inscrit l'usage facturé par le fournisseur. `dollars` nul : tarif inconnu, à rapprocher. */
+export async function confirmerCout(
+  base: Base,
+  attemptId: string,
+  usage: {
+    modele: string;
+    jetonsEntree: number;
+    jetonsSortie: number;
+    dollars: string | null;
+    repli: boolean;
+  },
+): Promise<void> {
+  await base.query("select public.confirmer_cout($1, $2, $3, $4, $5, $6)", [
+    attemptId,
+    usage.modele,
+    usage.jetonsEntree,
+    usage.jetonsSortie,
+    usage.dollars,
+    usage.repli,
+  ]);
+}
+
+/**
+ * Dépose la proposition et conclut l'essai. Faux : l'essai ne nous
+ * appartenait plus, rien n'a été déposé.
+ */
+export async function livrerProposition(
+  base: Base,
+  attemptId: string,
+  texte: string,
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition($1, $2)", [attemptId, texte]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
 }
