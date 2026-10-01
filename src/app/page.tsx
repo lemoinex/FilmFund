@@ -9,9 +9,10 @@ import { ValueStrip } from "@/components/landing/value-strip";
 import { VisionSection } from "@/components/landing/vision-section";
 
 /*
- * Revalidée toutes les cinq minutes : la section Tarifs lit l'offre en base,
- * modifiable depuis l'administration, et l'affichage du mode privé suit sans
- * redéploiement.
+ * Une publication depuis « Plans et quotas » régénère la page aussitôt. La
+ * régénération toutes les cinq minutes reste un filet : elle couvre une
+ * version publiée hors de l'application et le passage du mode privé, qui
+ * doivent suivre sans redéploiement.
  */
 export const revalidate = 300;
 

@@ -71,7 +71,7 @@ export default async function PlansPage() {
         s&apos;applique à chaque studio à partir de sa prochaine période mensuelle : la période en
         cours garde ses valeurs. Changer le plan d&apos;un studio, en revanche, s&apos;applique
         aussitôt. Chaque action est journalisée. La dernière version publiée de chaque plan
-        s&apos;affiche sur la page d&apos;accueil, dans les cinq minutes.
+        s&apos;affiche sur la page d&apos;accueil dès sa publication.
       </p>
 
       {listePlans.map((plan) => {

@@ -60,6 +60,9 @@ export async function publierVersionPlan(
 
   revalidatePath("/administration/plans");
   revalidatePath("/administration/journal");
+  // La vitrine présente la dernière version publiée : sans cela, l'ancien
+  // prix y resterait affiché jusqu'à sa prochaine régénération périodique.
+  revalidatePath("/");
   return {
     succes: `Version ${data.version_number} publiée. Elle s'applique à chaque studio à partir de sa prochaine période.`,
   };
