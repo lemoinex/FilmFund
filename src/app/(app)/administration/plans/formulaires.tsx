@@ -1,11 +1,16 @@
 "use client";
 
-import { startTransition, useActionState, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useState, type FormEvent, type ReactNode } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
-import { CHAMPS_PLAN, type ValeursPlan } from "@/lib/plans";
+import { CHAMPS_BAREME, CHAMPS_PLAN, type ValeursBareme, type ValeursPlan } from "@/lib/plans";
 
-import { changerPlanStudio, publierVersionPlan, type EtatPlan } from "./actions";
+import {
+  changerPlanStudio,
+  publierVersionBareme,
+  publierVersionPlan,
+  type EtatPlan,
+} from "./actions";
 
 /*
  * Envoi déclenché à la main, et non par `action={action}` : après une action
@@ -21,32 +26,43 @@ function envoyer(action: (donnees: FormData) => void) {
   };
 }
 
-/** Publication d'une nouvelle version, préremplie avec la version en cours. */
-export function FormulaireVersionPlan({
-  plan,
+/**
+ * Publication d'une nouvelle version, préremplie avec la version en cours :
+ * commune aux plans et au barème, qui ne diffèrent que par leurs champs et
+ * leur action.
+ */
+function FormulaireVersion<Cle extends string>({
+  champs,
   valeurs,
   prochaineVersion,
+  prefixe,
+  publier,
+  children,
 }: {
-  plan: string;
-  valeurs: ValeursPlan;
+  champs: readonly { cle: Cle; libelle: string }[];
+  valeurs: Record<Cle, number>;
   prochaineVersion: number;
+  /** Préfixe des identifiants de champ, unique dans la page. */
+  prefixe: string;
+  publier: (etat: EtatPlan, donnees: FormData) => Promise<EtatPlan>;
+  children?: ReactNode;
 }) {
-  const [etat, action, enCours] = useActionState<EtatPlan, FormData>(publierVersionPlan, null);
+  const [etat, action, enCours] = useActionState<EtatPlan, FormData>(publier, null);
 
   return (
     <form onSubmit={envoyer(action)} className="space-y-5">
-      <input type="hidden" name="plan" value={plan} />
+      {children}
 
       {etat && "erreur" in etat ? <Message ton="erreur">{etat.erreur}</Message> : null}
       {etat && "succes" in etat ? <Message ton="succes">{etat.succes}</Message> : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {CHAMPS_PLAN.map((champ) => (
+        {champs.map((champ) => (
           <Field
             key={champ.cle}
             label={champ.libelle}
             name={champ.cle}
-            id={`${plan}-${champ.cle}`}
+            id={`${prefixe}-${champ.cle}`}
             inputMode="numeric"
             required
             defaultValue={String(valeurs[champ.cle])}
@@ -58,6 +74,46 @@ export function FormulaireVersionPlan({
         <SubmitButton enCours={enCours}>Publier la version {prochaineVersion}</SubmitButton>
       </div>
     </form>
+  );
+}
+
+export function FormulaireVersionPlan({
+  plan,
+  valeurs,
+  prochaineVersion,
+}: {
+  plan: string;
+  valeurs: ValeursPlan;
+  prochaineVersion: number;
+}) {
+  return (
+    <FormulaireVersion
+      champs={CHAMPS_PLAN}
+      valeurs={valeurs}
+      prochaineVersion={prochaineVersion}
+      prefixe={plan}
+      publier={publierVersionPlan}
+    >
+      <input type="hidden" name="plan" value={plan} />
+    </FormulaireVersion>
+  );
+}
+
+export function FormulaireVersionBareme({
+  valeurs,
+  prochaineVersion,
+}: {
+  valeurs: ValeursBareme;
+  prochaineVersion: number;
+}) {
+  return (
+    <FormulaireVersion
+      champs={CHAMPS_BAREME}
+      valeurs={valeurs}
+      prochaineVersion={prochaineVersion}
+      prefixe="bareme"
+      publier={publierVersionBareme}
+    />
   );
 }
 

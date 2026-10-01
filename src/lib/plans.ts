@@ -1,9 +1,10 @@
 /**
- * Plans commerciaux : libellés et bornes des valeurs d'un plan, partagés par
- * l'écran d'administration et son action serveur.
+ * Plans commerciaux et barème des unités texte : libellés et bornes des
+ * valeurs, partagés par l'écran d'administration et ses actions serveur.
  *
- * Les valeurs elles-mêmes vivent en base, versionnées (plan_versions) :
- * aucune n'est fixée ici. Module pur, testable sans pile Supabase.
+ * Les valeurs elles-mêmes vivent en base, versionnées (plan_versions,
+ * text_unit_rate_versions) : aucune n'est fixée ici. Module pur, testable
+ * sans pile Supabase.
  */
 
 /** Code d'erreur levé par la base quand une limite du plan est atteinte. */
@@ -48,18 +49,53 @@ export type CleChampPlan = (typeof CHAMPS_PLAN)[number]["cle"];
 
 export type ValeursPlan = Record<CleChampPlan, number>;
 
+/**
+ * Barème des unités texte : ce que coûte chaque livrable généré. Versionné en
+ * base (text_unit_rate_versions), comme les plans.
+ */
+export const CHAMPS_BAREME = [
+  { cle: "logline", libelle: "Logline", unite: "unités", min: 0, max: 1_000 },
+  { cle: "synopsis_short", libelle: "Synopsis court", unite: "unités", min: 0, max: 1_000 },
+  { cle: "synopsis_standard", libelle: "Synopsis standard", unite: "unités", min: 0, max: 1_000 },
+  { cle: "synopsis_detailed", libelle: "Synopsis détaillé", unite: "unités", min: 0, max: 1_000 },
+  { cle: "intention_note", libelle: "Note d'intention", unite: "unités", min: 0, max: 1_000 },
+  { cle: "treatment", libelle: "Traitement", unite: "unités", min: 0, max: 1_000 },
+  { cle: "bible", libelle: "Bible", unite: "unités", min: 0, max: 1_000 },
+  {
+    cle: "screenplay_per_sequence",
+    libelle: "Scénario, par séquence",
+    unite: "unités",
+    min: 0,
+    max: 1_000,
+  },
+  {
+    cle: "dialogue_per_scene",
+    libelle: "Dialogues, par scène",
+    unite: "unités",
+    min: 0,
+    max: 1_000,
+  },
+] as const;
+
+export type CleChampBareme = (typeof CHAMPS_BAREME)[number]["cle"];
+
+export type ValeursBareme = Record<CleChampBareme, number>;
+
 const NOMBRE = new Intl.NumberFormat("fr-FR");
 
-/**
- * Lit et valide les valeurs d'un formulaire de plan. Entiers seulement : les
- * espaces de groupement (« 20 000 ») sont acceptés, les décimales non.
- */
-export function lireValeursPlan(
-  lire: (cle: string) => unknown,
-): { valeurs: ValeursPlan } | { erreur: string } {
-  const valeurs = {} as ValeursPlan;
+type ChampEntier = { cle: string; libelle: string; min: number; max: number };
 
-  for (const champ of CHAMPS_PLAN) {
+/**
+ * Lit et valide des valeurs entières de formulaire : les espaces de
+ * groupement (« 20 000 ») sont acceptés, les décimales non.
+ */
+function lireEntiers<Champ extends ChampEntier>(
+  champs: readonly Champ[],
+  lire: (cle: string) => unknown,
+): { valeurs: Record<Champ["cle"], number> } | { erreur: string } {
+  const valeurs = {} as Record<Champ["cle"], number>;
+
+  for (const champ of champs) {
     const brut = String(lire(champ.cle) ?? "").replace(/[\s  ]/g, "");
     if (!/^\d+$/.test(brut)) {
       return { erreur: `${champ.libelle} : saisissez un nombre entier.` };
@@ -70,10 +106,24 @@ export function lireValeursPlan(
         erreur: `${champ.libelle} : la valeur doit être comprise entre ${NOMBRE.format(champ.min)} et ${NOMBRE.format(champ.max)}.`,
       };
     }
-    valeurs[champ.cle] = valeur;
+    valeurs[champ.cle as Champ["cle"]] = valeur;
   }
 
   return { valeurs };
+}
+
+/** Lit et valide les valeurs d'un formulaire de plan. */
+export function lireValeursPlan(
+  lire: (cle: string) => unknown,
+): { valeurs: ValeursPlan } | { erreur: string } {
+  return lireEntiers(CHAMPS_PLAN, lire);
+}
+
+/** Lit et valide les valeurs d'un formulaire de barème. */
+export function lireValeursBareme(
+  lire: (cle: string) => unknown,
+): { valeurs: ValeursBareme } | { erreur: string } {
+  return lireEntiers(CHAMPS_BAREME, lire);
 }
 
 /** Valeur lisible, avec son unité : « 20 000 XAF », « 2 Go », « 100 Mo ». */

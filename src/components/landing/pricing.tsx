@@ -2,19 +2,23 @@ import Link from "next/link";
 
 import { CheckIcon } from "@/components/icons";
 import { modePriveActif } from "@/lib/acces-prive";
-import { lireOffre, montantMensuel, quotasEnMots, type CarteOffre } from "@/lib/offre";
+import {
+  lireBareme,
+  lireOffre,
+  montantMensuel,
+  quotasEnMots,
+  uniteTexteEnMots,
+  type BaremePublie,
+  type CarteOffre,
+} from "@/lib/offre";
 import { formaterValeurPlan } from "@/lib/plans";
 
 /*
  * Questions sur l'offre. Rien n'y est promis qui n'existe : les assistants
- * d'écriture et le paiement sont annoncés comme à venir.
+ * d'écriture et le paiement sont annoncés comme à venir. Le barème des
+ * unités texte vient de la base ; injoignable, il est expliqué sans chiffres.
  */
-const QUESTIONS = [
-  {
-    question: "Qu'est-ce qu'une unité texte ?",
-    reponse:
-      "Les assistants d'écriture de filmfundAfrica arrivent prochainement. Chaque livrable généré comptera un nombre fixe d'unités selon son ampleur : 1 pour une logline, de 1 à 3 pour un synopsis, 3 pour une note d'intention, 8 pour un traitement, 10 pour une bible, 2 par séquence de scénario et 1 par scène de dialogues.",
-  },
+const QUESTIONS_FIXES = [
   {
     question: "Que se passe-t-il quand une limite est atteinte ?",
     reponse:
@@ -31,6 +35,19 @@ const QUESTIONS = [
       "Les fonctionnalités de paiement seront activées prochainement. Aucun paiement n'est demandé à ce jour.",
   },
 ];
+
+function questions(bareme: BaremePublie | null) {
+  const uniteTexte =
+    "Les assistants d'écriture de filmfundAfrica arrivent prochainement. Chaque livrable généré comptera un nombre fixe d'unités selon son ampleur";
+
+  return [
+    {
+      question: "Qu'est-ce qu'une unité texte ?",
+      reponse: bareme ? `${uniteTexte} : ${uniteTexteEnMots(bareme)}.` : `${uniteTexte}.`,
+    },
+    ...QUESTIONS_FIXES,
+  ];
+}
 
 function Carte({
   carte,
@@ -121,14 +138,17 @@ function Carte({
 /**
  * Section tarifaire de la vitrine.
  *
- * Les chiffres viennent de la base (dernière version publiée de chaque plan) ;
- * chaque publication depuis l'administration régénère la page d'accueil.
+ * Les chiffres viennent de la base (dernière version publiée de chaque plan
+ * et du barème) ; chaque publication depuis l'administration régénère la
+ * page d'accueil.
  */
 export async function Pricing() {
-  const offre = await lireOffre(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const clePubliable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const [offre, bareme] = await Promise.all([
+    lireOffre(url, clePubliable),
+    lireBareme(url, clePubliable),
+  ]);
   const inscriptionsOuvertes = !modePriveActif();
 
   return (
@@ -174,7 +194,7 @@ export async function Pricing() {
              * se lit mal sur fond clair, et cette règle, hors couche CSS,
              * l'emporterait sur un utilitaire ordinaire.
              */}
-            {QUESTIONS.map(({ question, reponse }) => (
+            {questions(bareme).map(({ question, reponse }) => (
               <details key={question} className="group">
                 <summary className="focus-visible:outline-gold-deep! flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-base font-medium">
                   {question}

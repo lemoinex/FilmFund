@@ -661,6 +661,171 @@ export type Database = {
           },
         ];
       };
+      quotes: {
+        Row: {
+          action: string;
+          created_at: string;
+          created_by: string;
+          expires_at: string;
+          fingerprint: string;
+          id: string;
+          params: NonNullable<Json>;
+          period_start: string;
+          plan_version_id: string;
+          project_id: string;
+          quantity: number;
+          rate_version_id: string | null;
+          studio_id: string;
+          unit: string;
+        };
+        Insert: {
+          action: string;
+          created_at?: string;
+          created_by: string;
+          expires_at: string;
+          fingerprint: string;
+          id?: string;
+          params?: NonNullable<Json>;
+          period_start: string;
+          plan_version_id: string;
+          project_id: string;
+          quantity: number;
+          rate_version_id?: string | null;
+          studio_id: string;
+          unit: string;
+        };
+        Update: {
+          action?: string;
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string;
+          fingerprint?: string;
+          id?: string;
+          params?: NonNullable<Json>;
+          period_start?: string;
+          plan_version_id?: string;
+          project_id?: string;
+          quantity?: number;
+          rate_version_id?: string | null;
+          studio_id?: string;
+          unit?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quotes_plan_version_id_fkey";
+            columns: ["plan_version_id"];
+            isOneToOne: false;
+            referencedRelation: "plan_versions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quotes_rate_version_id_fkey";
+            columns: ["rate_version_id"];
+            isOneToOne: false;
+            referencedRelation: "text_unit_rate_versions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quotes_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: false;
+            referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reservation_settlements: {
+        Row: {
+          consumed: number;
+          released: number | null;
+          reservation_id: string;
+          reserved: number;
+          settled_at: string;
+        };
+        Insert: {
+          consumed: number;
+          released?: never;
+          reservation_id: string;
+          reserved: number;
+          settled_at?: string;
+        };
+        Update: {
+          consumed?: number;
+          released?: never;
+          reservation_id?: string;
+          reserved?: number;
+          settled_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reglement_de_la_reservation";
+            columns: ["reservation_id", "reserved"];
+            isOneToOne: false;
+            referencedRelation: "reservations";
+            referencedColumns: ["id", "quantity"];
+          },
+        ];
+      };
+      reservations: {
+        Row: {
+          action: string;
+          created_at: string;
+          created_by: string;
+          fingerprint: string;
+          id: string;
+          idempotency_key: string;
+          period_start: string;
+          project_id: string;
+          quantity: number;
+          quote_id: string;
+          studio_id: string;
+          unit: string;
+        };
+        Insert: {
+          action: string;
+          created_at?: string;
+          created_by: string;
+          fingerprint: string;
+          id?: string;
+          idempotency_key: string;
+          period_start: string;
+          project_id: string;
+          quantity: number;
+          quote_id: string;
+          studio_id: string;
+          unit: string;
+        };
+        Update: {
+          action?: string;
+          created_at?: string;
+          created_by?: string;
+          fingerprint?: string;
+          id?: string;
+          idempotency_key?: string;
+          period_start?: string;
+          project_id?: string;
+          quantity?: number;
+          quote_id?: string;
+          studio_id?: string;
+          unit?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservations_quote_id_fkey";
+            columns: ["quote_id"];
+            isOneToOne: true;
+            referencedRelation: "quotes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservations_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: false;
+            referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       storyboard_scenes: {
         Row: {
           created_at: string;
@@ -825,13 +990,123 @@ export type Database = {
           },
         ];
       };
+      text_unit_rate_versions: {
+        Row: {
+          bible: number;
+          dialogue_per_scene: number;
+          id: string;
+          intention_note: number;
+          logline: number;
+          published_at: string;
+          published_by: string | null;
+          screenplay_per_sequence: number;
+          synopsis_detailed: number;
+          synopsis_short: number;
+          synopsis_standard: number;
+          treatment: number;
+          version_number: number;
+        };
+        Insert: {
+          bible: number;
+          dialogue_per_scene: number;
+          id?: string;
+          intention_note: number;
+          logline: number;
+          published_at?: string;
+          published_by?: string | null;
+          screenplay_per_sequence: number;
+          synopsis_detailed: number;
+          synopsis_short: number;
+          synopsis_standard: number;
+          treatment: number;
+          version_number?: number;
+        };
+        Update: {
+          bible?: number;
+          dialogue_per_scene?: number;
+          id?: string;
+          intention_note?: number;
+          logline?: number;
+          published_at?: string;
+          published_by?: string | null;
+          screenplay_per_sequence?: number;
+          synopsis_detailed?: number;
+          synopsis_short?: number;
+          synopsis_standard?: number;
+          treatment?: number;
+          version_number?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      accepter_devis: {
+        Args: { p_idempotency_key: string; p_quote_id: string };
+        Returns: {
+          action: string;
+          created_at: string;
+          created_by: string;
+          fingerprint: string;
+          id: string;
+          idempotency_key: string;
+          period_start: string;
+          project_id: string;
+          quantity: number;
+          quote_id: string;
+          studio_id: string;
+          unit: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "reservations";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
       acces_au_projet: { Args: { p_project_id: string }; Returns: string };
+      allocation_du_plan: {
+        Args: { p_plan: Database["public"]["Tables"]["plan_versions"]["Row"]; p_unit: string };
+        Returns: number;
+      };
+      bareme_en_vigueur: {
+        Args: { p_studio_id: string };
+        Returns: {
+          bible: number;
+          dialogue_per_scene: number;
+          id: string;
+          intention_note: number;
+          logline: number;
+          published_at: string;
+          published_by: string | null;
+          screenplay_per_sequence: number;
+          synopsis_detailed: number;
+          synopsis_short: number;
+          synopsis_standard: number;
+          treatment: number;
+          version_number: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "text_unit_rate_versions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      creer_devis: {
+        Args: { p_action: string; p_params?: Json; p_project_id: string };
+        Returns: {
+          allowance: number;
+          available: number;
+          expires_at: string;
+          quantity: number;
+          quote_id: string;
+          unit: string;
+        }[];
+      };
       debut_periode: { Args: { p_ancre: string; p_instant?: string }; Returns: string };
       definir_pieces_candidature: {
         Args: { p_document_ids: string[]; p_funding_id: string };
@@ -842,7 +1117,12 @@ export type Database = {
         Returns: undefined;
       };
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
+      duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
       email_confirme_courant: { Args: Record<PropertyKey, never>; Returns: string };
+      empreinte_demande: {
+        Args: { p_action: string; p_params: Json; p_project_id: string };
+        Returns: string;
+      };
       equipe_du_projet: {
         Args: { p_project_id: string };
         Returns: {
@@ -873,7 +1153,12 @@ export type Database = {
       };
       mode_prive: { Args: Record<PropertyKey, never>; Returns: boolean };
       octets_du_studio: { Args: { p_studio_id: string }; Returns: number };
+      parametre_entier: {
+        Args: { p_cle: string; p_maximum: number; p_params: Json };
+        Returns: number;
+      };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
+      peut_engager_unites: { Args: { p_project_id: string }; Returns: boolean };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
       plan_en_vigueur: {
         Args: { p_studio_id: string };
@@ -900,9 +1185,29 @@ export type Database = {
       };
       projet_du_chemin: { Args: { p_chemin: string }; Returns: string };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
+      regler_reservation: {
+        Args: { p_consumed: number; p_reservation_id: string };
+        Returns: {
+          consumed: number;
+          released: number | null;
+          reservation_id: string;
+          reserved: number;
+          settled_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "reservation_settlements";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       restaurer_version_document: { Args: { p_version_id: string }; Returns: undefined };
       role_dans_studio: { Args: { p_studio_id: string }; Returns: string };
       studio_personnel_courant: { Args: Record<PropertyKey, never>; Returns: string };
+      unites_engagees: {
+        Args: { p_period_start: string; p_studio_id: string; p_unit: string };
+        Returns: number;
+      };
     };
     Enums: {
       budget_category:

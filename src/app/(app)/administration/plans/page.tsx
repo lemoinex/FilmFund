@@ -2,10 +2,20 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { Horodatage } from "@/components/ui/horodatage";
-import { CHAMPS_PLAN, formaterValeurPlan, type ValeursPlan } from "@/lib/plans";
+import {
+  CHAMPS_BAREME,
+  CHAMPS_PLAN,
+  formaterValeurPlan,
+  type ValeursBareme,
+  type ValeursPlan,
+} from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 
-import { FormulairePlanStudio, FormulaireVersionPlan } from "./formulaires";
+import {
+  FormulairePlanStudio,
+  FormulaireVersionBareme,
+  FormulaireVersionPlan,
+} from "./formulaires";
 
 export const metadata: Metadata = {
   title: "Plans et quotas — filmfundAfrica",
@@ -31,27 +41,36 @@ export default async function PlansPage() {
     notFound();
   }
 
-  const [{ data: plans }, { data: versions }, { data: studios }] = await Promise.all([
-    supabase.from("plans").select("code, name").order("position"),
-    supabase
-      .from("plan_versions")
-      .select("*")
-      .order("plan_code")
-      .order("version_number", { ascending: false }),
-    supabase
-      .from("studios")
-      .select(
-        "id, name, personal_owner_id, studio_subscriptions(plan_code, period_anchor), titulaire:profiles!studios_personal_owner_id_fkey(display_name)",
-      )
-      .order("created_at")
-      .limit(LIMITE_STUDIOS),
-  ]);
+  const [{ data: plans }, { data: versions }, { data: bareme }, { data: studios }] =
+    await Promise.all([
+      supabase.from("plans").select("code, name").order("position"),
+      supabase
+        .from("plan_versions")
+        .select("*")
+        .order("plan_code")
+        .order("version_number", { ascending: false }),
+      supabase
+        .from("text_unit_rate_versions")
+        .select("*")
+        .order("version_number", { ascending: false }),
+      supabase
+        .from("studios")
+        .select(
+          "id, name, personal_owner_id, studio_subscriptions(plan_code, period_anchor), titulaire:profiles!studios_personal_owner_id_fkey(display_name)",
+        )
+        .order("created_at")
+        .limit(LIMITE_STUDIOS),
+    ]);
 
   // Les titulaires arrivent avec leur studio ; seuls les auteurs des
   // versions, peu nombreux, sont cherchés par identifiant. Une liste de
   // centaines d'identifiants dépasserait la longueur admise d'une adresse.
   const auteurs = [
-    ...new Set((versions ?? []).map((v) => v.published_by).filter((id): id is string => !!id)),
+    ...new Set(
+      [...(versions ?? []), ...(bareme ?? [])]
+        .map((v) => v.published_by)
+        .filter((id): id is string => !!id),
+    ),
   ];
   const { data: profils } = auteurs.length
     ? await supabase.from("profiles").select("id, display_name").in("id", auteurs)
@@ -60,6 +79,24 @@ export default async function PlansPage() {
 
   const listePlans = plans ?? [];
   const nomsPlans = new Map(listePlans.map((p) => [p.code, p.name]));
+  const historiqueBareme = bareme ?? [];
+  const baremeEnCours = historiqueBareme[0];
+
+  /** « Version 3, publiée le … par Awa » ; sans auteur, à la mise en service. */
+  function publication(version: {
+    version_number: number;
+    published_at: string;
+    published_by: string | null;
+  }) {
+    return (
+      <p className="text-secondary mt-1 text-xs">
+        Version {version.version_number}, publiée le <Horodatage iso={version.published_at} />
+        {version.published_by
+          ? ` par ${noms.get(version.published_by) ?? "un administrateur"}`
+          : " à la mise en service"}
+      </p>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
@@ -93,13 +130,7 @@ export default async function PlansPage() {
             <h2 id={`plan-${plan.code}`} className="font-serif text-2xl">
               {plan.name}
             </h2>
-            <p className="text-secondary mt-1 text-xs">
-              Version {derniere.version_number}, publiée le{" "}
-              <Horodatage iso={derniere.published_at} />
-              {derniere.published_by
-                ? ` par ${noms.get(derniere.published_by) ?? "un administrateur"}`
-                : " à la mise en service"}
-            </p>
+            {publication(derniere)}
 
             <div className="mt-6">
               {/*
@@ -135,6 +166,53 @@ export default async function PlansPage() {
           </section>
         );
       })}
+
+      {baremeEnCours ? (
+        <section
+          aria-labelledby="bareme-titre"
+          className="border-app-line mt-10 rounded-xl border p-5 sm:p-6"
+        >
+          <h2 id="bareme-titre" className="font-serif text-2xl">
+            Barème des unités texte
+          </h2>
+          {publication(baremeEnCours)}
+          <p className="text-secondary mt-3 max-w-2xl text-sm leading-relaxed">
+            Unités décomptées pour chaque livrable généré : le scénario se compte par séquence, les
+            dialogues par scène. Comme pour un plan, une nouvelle version s&apos;applique à chaque
+            studio à partir de sa prochaine période. La dernière version publiée s&apos;affiche sur
+            la page d&apos;accueil dès sa publication.
+          </p>
+
+          <div className="mt-6">
+            <FormulaireVersionBareme
+              key="bareme"
+              valeurs={
+                Object.fromEntries(
+                  CHAMPS_BAREME.map((c) => [c.cle, baremeEnCours[c.cle]]),
+                ) as ValeursBareme
+              }
+              prochaineVersion={baremeEnCours.version_number + 1}
+            />
+          </div>
+
+          {historiqueBareme.length > 1 ? (
+            <details className="mt-6">
+              <summary className="text-secondary hover:text-light cursor-pointer text-sm">
+                Versions précédentes ({historiqueBareme.length - 1})
+              </summary>
+              <ol className="mt-3 space-y-2 text-xs">
+                {historiqueBareme.slice(1).map((v) => (
+                  <li key={v.id} className="text-secondary leading-relaxed">
+                    <span className="text-light font-medium">Version {v.version_number}</span> ·{" "}
+                    <Horodatage iso={v.published_at} /> ·{" "}
+                    {CHAMPS_BAREME.map((c) => `${c.libelle} ${v[c.cle]}`).join(" · ")}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          ) : null}
+        </section>
+      ) : null}
 
       <section aria-labelledby="studios-titre" className="mt-14">
         <h2 id="studios-titre" className="font-serif text-2xl">

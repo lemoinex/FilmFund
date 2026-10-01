@@ -1,8 +1,8 @@
 /**
  * Offre publique : les plans tels que la vitrine les présente.
  *
- * Les chiffres — volumes et prix — sont lus en base : la dernière version
- * publiée de chaque plan, modifiable depuis « Plans et quotas ». Le
+ * Les chiffres — volumes, prix, barème des unités texte — sont lus en base :
+ * la dernière version publiée, modifiable depuis « Plans et quotas ». Le
  * positionnement — accroches, boutons, badge — est rédigé ici. Aucun prix
  * n'est donc recopié dans le code.
  *
@@ -121,6 +121,73 @@ export function quotasEnMots(
   ];
 }
 
+/** Barème des unités texte, tel que la vitrine l'explique. */
+export type BaremePublie = {
+  logline: number;
+  synopsis_short: number;
+  synopsis_standard: number;
+  synopsis_detailed: number;
+  intention_note: number;
+  treatment: number;
+  bible: number;
+  screenplay_per_sequence: number;
+  dialogue_per_scene: number;
+};
+
+/**
+ * Barème mis en mots : « 1 pour une logline, de 1 à 3 pour un synopsis, …
+ * et 1 par scène de dialogues ». Les trois synopsis se résument à leur
+ * fourchette, ou à un seul nombre s'ils coûtent autant.
+ */
+export function uniteTexteEnMots(bareme: BaremePublie): string {
+  const n = (valeur: number) => NOMBRE.format(valeur);
+  const synopsis = [bareme.synopsis_short, bareme.synopsis_standard, bareme.synopsis_detailed];
+  const [min, max] = [Math.min(...synopsis), Math.max(...synopsis)];
+
+  const parties = [
+    `${n(bareme.logline)} pour une logline`,
+    min === max ? `${n(min)} pour un synopsis` : `de ${n(min)} à ${n(max)} pour un synopsis`,
+    `${n(bareme.intention_note)} pour une note d'intention`,
+    `${n(bareme.treatment)} pour un traitement`,
+    `${n(bareme.bible)} pour une bible`,
+    `${n(bareme.screenplay_per_sequence)} par séquence de scénario`,
+  ];
+  return `${parties.join(", ")} et ${n(bareme.dialogue_per_scene)} par scène de dialogues`;
+}
+
+function clientPublic(url: string, clePubliable: string) {
+  return createClient<Database>(url, clePubliable, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/**
+ * Dernière version publiée du barème, lue sans session. Null si la base est
+ * injoignable : la vitrine l'explique alors sans chiffres.
+ */
+export async function lireBareme(
+  url: string | undefined,
+  clePubliable: string | undefined,
+): Promise<BaremePublie | null> {
+  try {
+    if (!url || !clePubliable) {
+      return null;
+    }
+    const { data, error } = await clientPublic(url, clePubliable)
+      .from("text_unit_rate_versions")
+      .select(
+        "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
+      )
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Lit l'offre en base, sans session ni cookie : le catalogue est public.
  * Renvoie null si la base est injoignable ou mal configurée — la vitrine
@@ -134,9 +201,7 @@ export async function lireOffre(
     if (!url || !clePubliable) {
       return null;
     }
-    const supabase = createClient<Database>(url, clePubliable, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const supabase = clientPublic(url, clePubliable);
 
     const [plans, versions] = await Promise.all([
       supabase.from("plans").select("code, name, position"),
