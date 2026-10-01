@@ -542,6 +542,7 @@ export type Database = {
           logline: string;
           owner_id: string;
           stage: Database["public"]["Enums"]["project_stage"];
+          studio_id: string;
           synopsis: string;
           title: string;
           updated_at: string;
@@ -554,6 +555,7 @@ export type Database = {
           logline?: string;
           owner_id: string;
           stage?: Database["public"]["Enums"]["project_stage"];
+          studio_id?: string;
           synopsis?: string;
           title: string;
           updated_at?: string;
@@ -566,6 +568,7 @@ export type Database = {
           logline?: string;
           owner_id?: string;
           stage?: Database["public"]["Enums"]["project_stage"];
+          studio_id?: string;
           synopsis?: string;
           title?: string;
           updated_at?: string;
@@ -576,6 +579,13 @@ export type Database = {
             columns: ["owner_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "projects_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: false;
+            referencedRelation: "studios";
             referencedColumns: ["id"];
           },
         ];
@@ -643,6 +653,71 @@ export type Database = {
           },
         ];
       };
+      studio_members: {
+        Row: {
+          created_at: string;
+          role: Database["public"]["Enums"]["studio_role"];
+          studio_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          role?: Database["public"]["Enums"]["studio_role"];
+          studio_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          role?: Database["public"]["Enums"]["studio_role"];
+          studio_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "studio_members_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: false;
+            referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "studio_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      studios: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          personal_owner_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          personal_owner_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          personal_owner_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "studios_personal_owner_id_fkey";
+            columns: ["personal_owner_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -694,6 +769,8 @@ export type Database = {
       projet_du_chemin: { Args: { p_chemin: string }; Returns: string };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       restaurer_version_document: { Args: { p_version_id: string }; Returns: undefined };
+      role_dans_studio: { Args: { p_studio_id: string }; Returns: string };
+      studio_personnel_courant: { Args: Record<PropertyKey, never>; Returns: string };
     };
     Enums: {
       budget_category:
@@ -744,6 +821,7 @@ export type Database = {
         | "tres_gros_plan"
         | "insert"
         | "plan_sequence";
+      studio_role: "owner" | "member";
       user_role: "member" | "admin";
     };
     CompositeTypes: {
@@ -916,6 +994,7 @@ export const Constants = {
         "insert",
         "plan_sequence",
       ],
+      studio_role: ["owner", "member"],
       user_role: ["member", "admin"],
     },
   },

@@ -114,6 +114,28 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("décrit une intervention dans un studio, avec le compte concerné", () => {
+    assert.equal(
+      descriptionDe(
+        entree("intervention_studio", {
+          table: "studio_members",
+          operation: "insert",
+          studio: "s",
+          compte: "b",
+        }),
+        annuaire,
+      ),
+      "a fait un ajout dans les membres d'un studio (compte : Bakary)",
+    );
+    assert.equal(
+      descriptionDe(
+        entree("intervention_studio", { table: "studios", operation: "update", studio: "s" }),
+        annuaire,
+      ),
+      "a fait une modification dans un studio",
+    );
+  });
+
   it("résiste à des détails absents ou mal formés", () => {
     assert.equal(
       descriptionDe(entree("changement_role", null), annuaire),

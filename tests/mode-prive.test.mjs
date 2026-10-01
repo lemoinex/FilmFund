@@ -172,6 +172,14 @@ describe("Mode privé", () => {
       assert.ok(error, "la création doit être refusée");
     });
 
+    it("ne lit plus son studio ni ses adhésions", async () => {
+      const { data: studios } = await membre.client.from("studios").select("id");
+      assert.equal(studios.length, 0);
+
+      const { data: adhesions } = await membre.client.from("studio_members").select("studio_id");
+      assert.equal(adhesions.length, 0);
+    });
+
     it("ne lit ni ne restaure de version de document", async () => {
       const { data } = await membre.client.from("project_document_versions").select("id");
       assert.equal(data.length, 0);

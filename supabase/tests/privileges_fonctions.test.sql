@@ -45,7 +45,8 @@ select is_empty(
         'mes_invitations',
         'accepter_invitation',
         'refuser_invitation',
-        'images_orphelines'
+        'images_orphelines',
+        'role_dans_studio'
       )
   $$,
   'Seules les fonctions prévues sont exécutables par un compte connecté'
