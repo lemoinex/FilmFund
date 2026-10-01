@@ -872,6 +872,7 @@ export type Database = {
         }[];
       };
       mode_prive: { Args: Record<PropertyKey, never>; Returns: boolean };
+      octets_du_studio: { Args: { p_studio_id: string }; Returns: number };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
       plan_en_vigueur: {

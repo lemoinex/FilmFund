@@ -10,6 +10,9 @@
  * construction ; elles peuvent être surchargées par variables d'environnement
  * si la configuration locale diffère.
  */
+import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
+
 import { createClient } from "@supabase/supabase-js";
 
 export const URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
@@ -146,4 +149,46 @@ export async function faireEntrer(porteur, projetId, compte, role) {
   if (error) {
     throw new Error(`Acceptation impossible : ${error.message}`);
   }
+}
+
+const PROJET_SUPABASE = /^project_id\s*=\s*"([^"]+)"/m.exec(
+  // `URL` désigne ici l'adresse de l'API locale (plus haut) : le constructeur
+  // est pris explicitement sur l'objet global.
+  readFileSync(new globalThis.URL("../supabase/config.toml", import.meta.url), "utf8"),
+)[1];
+
+/**
+ * Exécute du SQL dans le conteneur de la base locale, comme l'exploitant.
+ *
+ * Réservé à ce que l'API ne permet pas : ouvrir deux sessions qui se
+ * croisent, ou inscrire un fichier de taille donnée sans l'envoyer.
+ * `docker exec` évite tout mot de passe : psql s'y connecte en local.
+ */
+export function executerSqlLocal(sql) {
+  return new Promise((resolve, reject) => {
+    const psql = spawn(
+      "docker",
+      [
+        "exec",
+        "-i",
+        `supabase_db_${PROJET_SUPABASE}`,
+        "psql",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At",
+      ],
+      { stdio: ["pipe", "pipe", "pipe"] },
+    );
+    let sortie = "";
+    let erreurs = "";
+    psql.stdout.on("data", (d) => (sortie += d));
+    psql.stderr.on("data", (d) => (erreurs += d));
+    psql.on("error", reject);
+    psql.on("close", (code) => resolve({ code, sortie, erreurs }));
+    psql.stdin.end(sql);
+  });
 }

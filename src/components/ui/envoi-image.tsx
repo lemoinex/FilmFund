@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 
 import { COMPARTIMENT_IMAGES, TYPES_IMAGE, verifierFichier, type DossierImage } from "@/lib/images";
+import { LIMITE_DU_PLAN } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/client";
 
 type Resultat = { erreur: string } | { ok: true };
@@ -72,7 +73,13 @@ export function EnvoiImage({
     setEnvoiEnCours(false);
 
     if (error) {
-      setErreur("L'envoi a échoué. Vérifiez votre connexion et réessayez.");
+      // La base refuse l'inscription d'un fichier qui dépasserait l'espace du
+      // plan ; l'API de stockage en relaie le code dans son message.
+      setErreur(
+        error.message.includes(LIMITE_DU_PLAN)
+          ? "L'espace de stockage de votre plan est plein. Supprimez des images, ou demandez à un administrateur de changer de plan."
+          : "L'envoi a échoué. Vérifiez votre connexion et réessayez.",
+      );
       return;
     }
 
