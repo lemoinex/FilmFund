@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/#fonctionnalites", label: "Fonctionnalités" },
   { href: "/#producteurs", label: "Pour les producteurs" },
   { href: "/#a-propos", label: "À propos" },
+  { href: "/#tarifs", label: "Tarifs" },
   { href: "/#contact", label: "Contact" },
 ];
 

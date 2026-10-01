@@ -3,9 +3,17 @@ import { Footer } from "@/components/landing/footer";
 import { Hero } from "@/components/landing/hero";
 import { Navbar } from "@/components/landing/navbar";
 import { PlatformOverview } from "@/components/landing/platform-overview";
+import { Pricing } from "@/components/landing/pricing";
 import { ProducerSection } from "@/components/landing/producer-section";
 import { ValueStrip } from "@/components/landing/value-strip";
 import { VisionSection } from "@/components/landing/vision-section";
+
+/*
+ * Revalidée toutes les cinq minutes : la section Tarifs lit l'offre en base,
+ * modifiable depuis l'administration, et l'affichage du mode privé suit sans
+ * redéploiement.
+ */
+export const revalidate = 300;
 
 export default function Home() {
   return (
@@ -23,6 +31,7 @@ export default function Home() {
         <PlatformOverview />
         <ProducerSection />
         <VisionSection />
+        <Pricing />
         <FinalCta />
       </main>
       <Footer />
