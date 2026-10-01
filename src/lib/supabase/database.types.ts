@@ -670,6 +670,7 @@ export type Database = {
           user_id: string;
         }[];
       };
+      images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       journaliser: {
         Args: { p_action: string; p_details: Json; p_project_id: string };

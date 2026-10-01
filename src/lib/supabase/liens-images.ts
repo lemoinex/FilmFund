@@ -31,6 +31,21 @@ export async function liensSignes(
   return liens;
 }
 
+/**
+ * Supprime les images orphelines d'un projet : fichiers déposés depuis plus
+ * d'une heure que ni la couverture ni aucune scène ne désignent.
+ *
+ * Appelée après chaque action sur les images du projet. Un échec est sans
+ * conséquence : le passage suivant reprendra les mêmes fichiers.
+ */
+export async function nettoyerImagesOrphelines(
+  supabase: ClientServeur,
+  projetId: string,
+): Promise<void> {
+  const { data } = await supabase.rpc("images_orphelines", { p_project_id: projetId });
+  await supprimerImages(supabase, data ?? []);
+}
+
 /** Supprime des fichiers du compartiment ; sans effet sur une liste vide. */
 export async function supprimerImages(
   supabase: ClientServeur,

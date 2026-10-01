@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { estCheminDe } from "@/lib/images";
 import { exigerAcces } from "@/lib/supabase/garde";
-import { supprimerImages } from "@/lib/supabase/liens-images";
+import { nettoyerImagesOrphelines, supprimerImages } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
 /*
@@ -14,15 +14,19 @@ import { createClient } from "@/lib/supabase/server";
  * navigateur l'y a envoyé directement, sous le contrôle des politiques de
  * stockage. Ces actions enregistrent son chemin — la contrainte SQL vérifie
  * qu'il appartient au bon projet — puis suppriment l'image remplacée. En
- * cas d'échec, le fichier fraîchement envoyé est supprimé à son tour :
- * aucun fichier ne reste sans rattachement.
+ * cas d'échec, le fichier fraîchement envoyé est supprimé à son tour.
+ *
+ * Ces suppressions peuvent elles-mêmes échouer, et un envoi interrompu
+ * avant son rattachement n'appelle aucune action : chaque action se termine
+ * donc par le nettoyage des images orphelines du projet.
  */
 
 export type EtatImage = { erreur: string } | { ok: true };
 
 const REFUS = "Vous n'avez pas le droit de modifier les images de ce projet.";
 
-function revalider(projetId: string) {
+async function conclure(supabase: Awaited<ReturnType<typeof createClient>>, projetId: string) {
+  await nettoyerImagesOrphelines(supabase, projetId);
   revalidatePath(`/projets/${projetId}`);
   revalidatePath(`/projets/${projetId}/storyboard`);
   revalidatePath("/tableau-de-bord");
@@ -63,7 +67,7 @@ export async function definirCouverture(formData: FormData): Promise<EtatImage> 
     await supprimerImages(supabase, [avant.cover_path]);
   }
 
-  revalider(projetId);
+  await conclure(supabase, projetId);
   return { ok: true };
 }
 
@@ -96,7 +100,7 @@ export async function retirerCouverture(formData: FormData): Promise<EtatImage> 
   }
 
   await supprimerImages(supabase, [avant?.cover_path]);
-  revalider(projetId);
+  await conclure(supabase, projetId);
   return { ok: true };
 }
 
@@ -138,7 +142,7 @@ export async function definirImageScene(formData: FormData): Promise<EtatImage> 
     await supprimerImages(supabase, [avant.image_path]);
   }
 
-  revalider(projetId);
+  await conclure(supabase, projetId);
   return { ok: true };
 }
 
@@ -174,6 +178,6 @@ export async function retirerImageScene(formData: FormData): Promise<EtatImage> 
   }
 
   await supprimerImages(supabase, [avant?.image_path]);
-  revalider(projetId);
+  await conclure(supabase, projetId);
   return { ok: true };
 }
