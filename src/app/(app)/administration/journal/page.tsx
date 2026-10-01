@@ -83,8 +83,9 @@ export default async function JournalAdministrationPage() {
       </h1>
       <p className="text-secondary mt-3 max-w-2xl text-sm leading-relaxed">
         Changements de rôle, modifications de profils, bascules du mode privé, suppressions de
-        projets et interventions de l&apos;administration dans les projets d&apos;autrui. Le journal
-        ne se modifie ni ne s&apos;efface ; il ne retient aucun contenu d&apos;œuvre. Heures en UTC.
+        projets et interventions de l&apos;administration dans les projets et les studios
+        d&apos;autrui. Le journal ne se modifie ni ne s&apos;efface ; il ne retient aucun contenu
+        d&apos;œuvre. Heures en UTC.
       </p>
 
       {entrees.length ? (

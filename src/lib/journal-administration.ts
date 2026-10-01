@@ -41,6 +41,11 @@ const TABLES: Record<string, string> = {
   funding_documents: "les pièces de candidature",
 };
 
+const TABLES_STUDIO: Record<string, string> = {
+  studios: "un studio",
+  studio_members: "les membres d'un studio",
+};
+
 // Tournures sans accord : l'auteur peut être n'importe qui.
 const OPERATIONS: Record<string, string> = {
   insert: "a fait un ajout dans",
@@ -117,6 +122,13 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       return titre
         ? `${operation} ${table} du projet « ${titre} »`
         : `${operation} ${table} d'un projet supprimé depuis`;
+    }
+
+    case "intervention_studio": {
+      const table = TABLES_STUDIO[texte(details, "table") ?? ""] ?? "un studio";
+      const operation = OPERATIONS[texte(details, "operation") ?? ""] ?? "a écrit dans";
+      const compte = texte(details, "compte");
+      return `${operation} ${table}${compte ? ` (compte : ${nomDuCompte(compte, annuaire)})` : ""}`;
     }
 
     default:

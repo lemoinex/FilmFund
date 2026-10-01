@@ -10,9 +10,9 @@ réels).
 | A   | Journal des actions d'administration                                                           | validé en recette | —                |
 | B   | Versions de documents                                                                          | validé en recette | —                |
 | C   | Envois d'images orphelins                                                                      | validé en recette | —                |
-| D   | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré) | validé localement | —                |
-| E   | Modèle studio                                                                                  | bloqué            | Décision 1       |
-| F   | Plans, profils, registres distincts                                                            | bloqué            | Décisions 1, 5   |
+| D   | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré) | validé en recette | —                |
+| E   | Modèle studio (socle : studio personnel, projets rattachés, isolation)                         | validé localement | —                |
+| F   | Plans, profils, registres distincts                                                            | bloqué            | Décision 5, E    |
 | G   | Devis, réservation atomique, idempotence                                                       | bloqué            | F                |
 | H   | Tâches persistantes, outbox, rapprochement                                                     | bloqué            | Décision 4, G    |
 | I   | Passerelle IA et premier agent (WEAVER)                                                        | bloqué            | Décision 3, B, H |
@@ -28,3 +28,8 @@ réels).
 
 Voir `docs/implementation-audit.md`, section 11. Décisions 1, 3 et 4 prises le 30 septembre
 2026 ; décision 2 non tranchée ; valeurs de la décision 5 à préciser.
+
+Modèle studio, précisé le 1er octobre 2026 : studio personnel créé automatiquement pour
+chaque compte ; le propriétaire d'un studio ne voit rien d'un projet dont il n'est pas
+l'équipe ; tout membre d'un studio peut y créer un projet ; socle seul, sans invitation
+ni écran de gestion des membres du studio.
