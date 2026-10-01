@@ -41,6 +41,7 @@ const TABLES: Record<string, string> = {
   project_fundings: "les financements",
   funding_documents: "les pièces de candidature",
   reservations: "les réservations d'unités",
+  jobs: "les tâches",
 };
 
 const TABLES_STUDIO: Record<string, string> = {
@@ -149,6 +150,18 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
     case "publication_bareme": {
       const version = champ(details, "version");
       return `a publié la version ${typeof version === "number" ? version : "?"} du barème des unités texte`;
+    }
+
+    case "rapprochement_travail": {
+      const issue =
+        champ(details, "succes") === true
+          ? "réussie"
+          : champ(details, "succes") === false
+            ? "échouée"
+            : "d'issue inconnue";
+      const titre = entree.project_id ? annuaire.projets.get(entree.project_id) : undefined;
+      const projet = titre ? `du projet « ${titre} »` : "d'un projet supprimé depuis";
+      return `a rapproché une tâche ${projet} : ${issue}`;
     }
 
     case "changement_plan_studio": {

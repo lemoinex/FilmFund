@@ -143,6 +143,34 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("décrit le rapprochement d'une tâche et son issue", () => {
+    assert.equal(
+      descriptionDe(
+        entree("rapprochement_travail", { tache: "t", succes: true }, { project_id: "p" }),
+        annuaire,
+      ),
+      "a rapproché une tâche du projet « Le Fleuve » : réussie",
+    );
+    assert.equal(
+      descriptionDe(
+        entree("rapprochement_travail", { tache: "t", succes: false }, { project_id: "x" }),
+        annuaire,
+      ),
+      "a rapproché une tâche d'un projet supprimé depuis : échouée",
+    );
+    assert.equal(
+      descriptionDe(
+        entree(
+          "intervention_contenu",
+          { table: "jobs", operation: "update", ligne: "t" },
+          { project_id: "p" },
+        ),
+        annuaire,
+      ),
+      "a fait une modification dans les tâches du projet « Le Fleuve »",
+    );
+  });
+
   it("décrit une intervention dans un studio, avec le compte concerné", () => {
     assert.equal(
       descriptionDe(
