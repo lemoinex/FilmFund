@@ -1453,7 +1453,7 @@ export type Database = {
         };
       };
       reclamer_travail: {
-        Args: { p_worker: string };
+        Args: { p_actions: string[]; p_worker: string };
         Returns: {
           action: string;
           attempt_id: string;

@@ -2,9 +2,10 @@
  * Tâches persistantes (lot H1), par l'API réelle et par deux vraies
  * sessions PostgreSQL jouant deux workers.
  *
- * Le worker n'a pas encore de connexion (lot H2) : ses sessions passent par
- * le conteneur de la base locale et prennent son rôle, `filmfund_worker`,
- * qui n'a aucun droit sur les tables et n'exécute que ses fonctions.
+ * Les sessions des workers passent par le conteneur de la base locale et
+ * prennent son rôle, `filmfund_worker`, qui n'a aucun droit sur les tables et
+ * n'exécute que ses fonctions. Le worker lui-même est éprouvé dans
+ * worker.test.mjs.
  *
  * Les autres suites laissent des tâches en attente, que le worker prendrait
  * en premier : les tests de réclamation les écartent d'abord.
@@ -13,8 +14,10 @@ import { strict as assert } from "node:assert";
 import { before, describe, it } from "node:test";
 
 import {
+  annulerLesAutresTaches as annulerLesAutres,
   creerCompte,
   creerProjet,
+  engager,
   executerSqlLocal as session,
   faireEntrer,
   promouvoirAdministrateur,
@@ -23,49 +26,14 @@ import {
 const REFUS = "42501";
 const DEJA_PRISE = "TR002";
 
-/** Devis accepté : renvoie la tâche née de la réservation. */
-async function engager(compte, projetId, action, cle) {
-  const { data: devis, error } = await compte.client.rpc("creer_devis", {
-    p_project_id: projetId,
-    p_action: action,
-    p_params: {},
-  });
-  assert.ifError(error);
-  const { data: reservation, error: refus } = await compte.client.rpc("accepter_devis", {
-    p_quote_id: devis[0].quote_id,
-    p_idempotency_key: cle,
-  });
-  assert.ifError(refus);
-  const { data: tache } = await compte.client
-    .from("jobs")
-    .select("id, state, action")
-    .eq("reservation_id", reservation.id)
-    .single();
-  return tache;
-}
-
 /** Réclamation par un worker, sous son rôle, qui garde son verrou `attente` secondes. */
 function reclamationEnSession(worker, attente) {
   return `
     begin;
     set local role filmfund_worker;
-    select 'pris:' || job_id from public.reclamer_travail('${worker}');
+    select 'pris:' || job_id from public.reclamer_travail('${worker}', array['logline']);
     select pg_sleep(${attente});
     commit;
-  `;
-}
-
-/**
- * Les tâches laissées en attente par les autres suites passeraient avant
- * celles du test : elles sont annulées et leurs réservations rendues, comme
- * le ferait leur porteur.
- */
-function annulerLesAutres(gardees) {
-  const liste = gardees.map((id) => `'${id}'`).join(", ");
-  return `
-    select count(public.clore_travail(j, 'cancelled', 0, 'Écartée par un test de réclamation'))
-    from public.jobs j
-    where j.state = 'queued' and j.id not in (${liste});
   `;
 }
 
@@ -112,7 +80,7 @@ describe("Tâches persistantes", () => {
     assert.ok(modification, "la modification d'une tâche doit être refusée");
 
     for (const [fonction, args] of [
-      ["reclamer_travail", { p_worker: "navigateur" }],
+      ["reclamer_travail", { p_worker: "navigateur", p_actions: ["logline"] }],
       ["recuperer_travaux_expires", {}],
       ["rapprocher_travail", { p_job_id: tache.id, p_success: true }],
     ]) {
@@ -230,7 +198,7 @@ describe("Tâches persistantes", () => {
     const prise = await session(`
       ${annulerLesAutres([tache.id])}
       set role filmfund_worker;
-      select 'pris:' || job_id from public.reclamer_travail('worker-annulation');
+      select 'pris:' || job_id from public.reclamer_travail('worker-annulation', array['logline']);
     `);
     assert.equal(prise.code, 0, prise.erreurs);
     assert.deepEqual(prises(prise.sortie), [tache.id]);

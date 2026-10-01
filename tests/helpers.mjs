@@ -192,3 +192,76 @@ export function executerSqlLocal(sql) {
     psql.stdin.end(sql);
   });
 }
+
+/*
+ * Mot de passe du rôle du worker dans la base locale Docker, et là seulement.
+ * Il n'ouvre que le conteneur de la machine ; en production, le mot de passe
+ * est fixé par l'exploitant et rangé dans Railway, jamais dans le dépôt.
+ */
+const MOT_DE_PASSE_WORKER_LOCAL = "worker-local-uniquement";
+
+/**
+ * Connexion à la base locale sous le rôle du worker, comme en production :
+ * aucun droit sur les tables, ses seules fonctions. Sans TLS — la base
+ * locale n'en a pas ; le point d'entrée du worker, lui, l'exige toujours.
+ */
+export async function ouvrirBaseDuWorker() {
+  const { code, erreurs } = await executerSqlLocal(
+    `alter role filmfund_worker password '${MOT_DE_PASSE_WORKER_LOCAL}';`,
+  );
+  if (code !== 0) {
+    throw new Error(`Mot de passe local du worker impossible à fixer : ${erreurs}`);
+  }
+
+  const { ouvrirBase } = await import("../worker/src/base.ts");
+  return ouvrirBase({
+    hote: "127.0.0.1",
+    port: Number(process.env.SUPABASE_DB_PORT ?? 54322),
+    base: "postgres",
+    utilisateur: "filmfund_worker",
+    motDePasse: MOT_DE_PASSE_WORKER_LOCAL,
+    tls: false,
+  });
+}
+
+/** Devis accepté : renvoie la tâche née de la réservation. */
+export async function engager(compte, projetId, action, cle, params = {}) {
+  const { data: devis, error } = await compte.client.rpc("creer_devis", {
+    p_project_id: projetId,
+    p_action: action,
+    p_params: params,
+  });
+  if (error) {
+    throw new Error(`Devis impossible : ${error.message}`);
+  }
+  const { data: reservation, error: refus } = await compte.client.rpc("accepter_devis", {
+    p_quote_id: devis[0].quote_id,
+    p_idempotency_key: cle,
+  });
+  if (refus) {
+    throw new Error(`Réservation impossible : ${refus.message}`);
+  }
+  const { data: tache } = await compte.client
+    .from("jobs")
+    .select("id, state, action")
+    .eq("reservation_id", reservation.id)
+    .single();
+  return tache;
+}
+
+/**
+ * Les tâches laissées en attente par les autres suites passeraient avant
+ * celles du test : elles sont annulées et leurs réservations rendues, comme
+ * le ferait leur porteur. Celles dont le bail a expiré sont d'abord
+ * récupérées, pour qu'aucune ne revienne en attente au milieu d'un test.
+ * Renvoie le SQL, à exécuter par executerSqlLocal.
+ */
+export function annulerLesAutresTaches(gardees) {
+  const liste = gardees.map((id) => `'${id}'`).join(", ");
+  return `
+    select public.recuperer_travaux_expires();
+    select count(public.clore_travail(j, 'cancelled', 0, 'Écartée par un test de réclamation'))
+    from public.jobs j
+    where j.state = 'queued' and j.id not in (${liste});
+  `;
+}

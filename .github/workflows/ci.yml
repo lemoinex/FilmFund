@@ -22,8 +22,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            worker/package-lock.json
 
       - run: npm ci
+      # Le worker a ses propres dépendances (pg) : Railway n'installe que
+      # celles-là, et Vercel ne les voit pas.
+      - run: npm ci --prefix worker
 
       - run: npm run lint
       - run: npm run typecheck
@@ -49,8 +55,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            worker/package-lock.json
 
       - run: npm ci
+      # Le worker a ses propres dépendances (pg) : Railway n'installe que
+      # celles-là, et Vercel ne les voit pas.
+      - run: npm ci --prefix worker
 
       - uses: supabase/setup-cli@v1
         with:
