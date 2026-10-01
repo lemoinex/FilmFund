@@ -40,6 +40,7 @@ describe("Mode privé", () => {
   let imageDuMembre;
   let versionDuMembre;
   let devisDuMembre;
+  let tacheDuMembre;
 
   before(async () => {
     // Mise en place mode levé : les comptes et l'équipe existent déjà quand
@@ -88,6 +89,23 @@ describe("Mode privé", () => {
     });
     assert.equal(erreurDevis, null, erreurDevis?.message);
     devisDuMembre = devis[0].quote_id;
+
+    const { data: devisAccepte } = await membre.client.rpc("creer_devis", {
+      p_project_id: projetDuMembre.id,
+      p_action: "logline",
+      p_params: {},
+    });
+    const { data: reservation, error: erreurReservation } = await membre.client.rpc(
+      "accepter_devis",
+      { p_quote_id: devisAccepte[0].quote_id, p_idempotency_key: "avant-le-verrou" },
+    );
+    assert.equal(erreurReservation, null, erreurReservation?.message);
+    const { data: tache } = await membre.client
+      .from("jobs")
+      .select("id")
+      .eq("reservation_id", reservation.id)
+      .single();
+    tacheDuMembre = tache.id;
 
     await definirModePrive(true);
   });
@@ -212,6 +230,17 @@ describe("Mode privé", () => {
 
       const { data: bareme } = await membre.client.from("text_unit_rate_versions").select("id");
       assert.equal(bareme.length, 0);
+    });
+
+    it("ne lit ni n'annule ses tâches", async () => {
+      const { data: taches } = await membre.client.from("jobs").select("id");
+      assert.equal(taches.length, 0);
+
+      const { data: essais } = await membre.client.from("job_attempts").select("id");
+      assert.equal(essais.length, 0);
+
+      const { error } = await membre.client.rpc("annuler_travail", { p_job_id: tacheDuMembre });
+      assert.ok(error, "l'annulation doit être refusée");
     });
 
     it("ne lit plus son studio ni ses adhésions", async () => {

@@ -161,6 +161,119 @@ export type Database = {
           },
         ];
       };
+      job_attempts: {
+        Row: {
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          job_id: string;
+          number: number;
+          provider_ref: string | null;
+          state: string;
+          submitted_at: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          job_id: string;
+          number: number;
+          provider_ref?: string | null;
+          state?: string;
+          submitted_at?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          job_id?: string;
+          number?: number;
+          provider_ref?: string | null;
+          state?: string;
+          submitted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_attempts_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      jobs: {
+        Row: {
+          action: string;
+          attempts: number;
+          created_at: string;
+          created_by: string;
+          finished_at: string | null;
+          id: string;
+          lease_until: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason: string | null;
+          reservation_id: string;
+          state: string;
+          studio_id: string;
+          updated_at: string;
+          worker: string | null;
+        };
+        Insert: {
+          action: string;
+          attempts?: number;
+          created_at?: string;
+          created_by: string;
+          finished_at?: string | null;
+          id?: string;
+          lease_until?: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason?: string | null;
+          reservation_id: string;
+          state?: string;
+          studio_id: string;
+          updated_at?: string;
+          worker?: string | null;
+        };
+        Update: {
+          action?: string;
+          attempts?: number;
+          created_at?: string;
+          created_by?: string;
+          finished_at?: string | null;
+          id?: string;
+          lease_until?: string | null;
+          params?: NonNullable<Json>;
+          project_id?: string;
+          reason?: string | null;
+          reservation_id?: string;
+          state?: string;
+          studio_id?: string;
+          updated_at?: string;
+          worker?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "jobs_reservation_id_fkey";
+            columns: ["reservation_id"];
+            isOneToOne: true;
+            referencedRelation: "reservations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobs_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: false;
+            referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       plan_versions: {
         Row: {
           id: string;
@@ -1072,6 +1185,32 @@ export type Database = {
         Args: { p_plan: Database["public"]["Tables"]["plan_versions"]["Row"]; p_unit: string };
         Returns: number;
       };
+      annuler_travail: {
+        Args: { p_job_id: string };
+        Returns: {
+          action: string;
+          attempts: number;
+          created_at: string;
+          created_by: string;
+          finished_at: string | null;
+          id: string;
+          lease_until: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason: string | null;
+          reservation_id: string;
+          state: string;
+          studio_id: string;
+          updated_at: string;
+          worker: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "jobs";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       bareme_en_vigueur: {
         Args: { p_studio_id: string };
         Returns: {
@@ -1092,6 +1231,37 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "text_unit_rate_versions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      clore_travail: {
+        Args: {
+          p_consumed: number;
+          p_job: Database["public"]["Tables"]["jobs"]["Row"];
+          p_reason: string;
+          p_state: string;
+        };
+        Returns: {
+          action: string;
+          attempts: number;
+          created_at: string;
+          created_by: string;
+          finished_at: string | null;
+          id: string;
+          lease_until: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason: string | null;
+          reservation_id: string;
+          state: string;
+          studio_id: string;
+          updated_at: string;
+          worker: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "jobs";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -1117,6 +1287,7 @@ export type Database = {
         Returns: undefined;
       };
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
+      duree_bail_travail: { Args: Record<PropertyKey, never>; Returns: string };
       duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
       email_confirme_courant: { Args: Record<PropertyKey, never>; Returns: string };
       empreinte_demande: {
@@ -1133,11 +1304,51 @@ export type Database = {
           user_id: string;
         }[];
       };
+      essai_courant: {
+        Args: { p_attempt_id: string };
+        Returns: {
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          job_id: string;
+          number: number;
+          provider_ref: string | null;
+          state: string;
+          submitted_at: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "job_attempts";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       journaliser: {
         Args: { p_action: string; p_details: Json; p_project_id: string };
         Returns: undefined;
+      };
+      marquer_tentative_soumise: {
+        Args: { p_attempt_id: string; p_provider_ref?: string };
+        Returns: {
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          job_id: string;
+          number: number;
+          provider_ref: string | null;
+          state: string;
+          submitted_at: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "job_attempts";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       mes_invitations: {
         Args: Record<PropertyKey, never>;
@@ -1159,6 +1370,10 @@ export type Database = {
       };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites: { Args: { p_project_id: string }; Returns: boolean };
+      peut_engager_unites_pour: {
+        Args: { p_project_id: string; p_user: string };
+        Returns: boolean;
+      };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
       plan_en_vigueur: {
         Args: { p_studio_id: string };
@@ -1184,6 +1399,73 @@ export type Database = {
         };
       };
       projet_du_chemin: { Args: { p_chemin: string }; Returns: string };
+      prolonger_bail: { Args: { p_attempt_id: string }; Returns: boolean };
+      rapprocher_travail: {
+        Args: { p_consumed?: number; p_job_id: string; p_success: boolean };
+        Returns: {
+          action: string;
+          attempts: number;
+          created_at: string;
+          created_by: string;
+          finished_at: string | null;
+          id: string;
+          lease_until: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason: string | null;
+          reservation_id: string;
+          state: string;
+          studio_id: string;
+          updated_at: string;
+          worker: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "jobs";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      rapprocher_travail_admin: {
+        Args: { p_consumed?: number; p_job_id: string; p_success: boolean };
+        Returns: {
+          action: string;
+          attempts: number;
+          created_at: string;
+          created_by: string;
+          finished_at: string | null;
+          id: string;
+          lease_until: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason: string | null;
+          reservation_id: string;
+          state: string;
+          studio_id: string;
+          updated_at: string;
+          worker: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "jobs";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      reclamer_travail: {
+        Args: { p_worker: string };
+        Returns: {
+          action: string;
+          attempt_id: string;
+          attempt_number: number;
+          job_id: string;
+          lease_until: string;
+          params: Json;
+          project_id: string;
+          studio_id: string;
+        }[];
+      };
+      recuperer_travaux_expires: { Args: Record<PropertyKey, never>; Returns: number };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       regler_reservation: {
         Args: { p_consumed: number; p_reservation_id: string };
@@ -1204,6 +1486,58 @@ export type Database = {
       restaurer_version_document: { Args: { p_version_id: string }; Returns: undefined };
       role_dans_studio: { Args: { p_studio_id: string }; Returns: string };
       studio_personnel_courant: { Args: Record<PropertyKey, never>; Returns: string };
+      terminer_tentative: {
+        Args: { p_attempt_id: string; p_consumed?: number; p_error?: string; p_success: boolean };
+        Returns: {
+          action: string;
+          attempts: number;
+          created_at: string;
+          created_by: string;
+          finished_at: string | null;
+          id: string;
+          lease_until: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason: string | null;
+          reservation_id: string;
+          state: string;
+          studio_id: string;
+          updated_at: string;
+          worker: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "jobs";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      trancher_rapprochement: {
+        Args: { p_consumed: number; p_job_id: string; p_success: boolean };
+        Returns: {
+          action: string;
+          attempts: number;
+          created_at: string;
+          created_by: string;
+          finished_at: string | null;
+          id: string;
+          lease_until: string | null;
+          params: NonNullable<Json>;
+          project_id: string;
+          reason: string | null;
+          reservation_id: string;
+          state: string;
+          studio_id: string;
+          updated_at: string;
+          worker: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "jobs";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       unites_engagees: {
         Args: { p_period_start: string; p_studio_id: string; p_unit: string };
         Returns: number;
