@@ -1,146 +1,508 @@
 # FilmFund Africa — Instructions Claude Code
 
-Plateforme SaaS pour les professionnels du cinéma africain. Ce fichier fait autorité
-pour toute session de travail sur ce dépôt.
+Plateforme SaaS privée de préproduction audiovisuelle pour les professionnels
+du cinéma africain. Ce fichier définit les règles permanentes du dépôt.
 
-## Ordre de lecture obligatoire
+## 1. Ordre de priorité
 
-Lire intégralement, avant toute modification :
+En cas de conflit, appliquer cet ordre :
 
-1. `docs/product/PRD_MVP.md`
-2. `docs/engineering/VIBECODING_RULES.md`
-3. `docs/engineering/GUARDRAILS_BACKLOG.md`
-4. `docs/engineering/LOTS_IMPLEMENTATION.md`
-5. `docs/decisions/ADR-0001-architecture-and-scope.md`
-6. `docs/design/LANDING_PAGE_SPEC.md` si le lot concerne la landing.
+1. Sécurité, confidentialité, RLS et intégrité des données.
+2. Instructions explicites de l’utilisateur.
+3. Architecture et conventions réellement présentes dans le dépôt.
+4. Ce fichier `CLAUDE.md`.
+5. Documents de produit et backlog.
+6. Préférences d’implémentation.
 
-Puis l'état réel du dépôt : `docs/backlog-status.md` (statut de chaque lot et décisions
-prises), `docs/implementation-audit.md` (audit et plan des lots) et `docs/mode-prive.md`.
+Ne jamais supprimer, simplifier ou déclarer terminé une fonctionnalité métier
+sans demande explicite. Une fonctionnalité peut être planifiée ou désactivée,
+mais reste dans le backlog.
 
-Les documents 1 à 6 ne sont pas encore versionnés dans le dépôt. Tant qu'un document
-manque, le signaler plutôt que d'en supposer le contenu.
+**Le dépôt est déjà en production.** Ne jamais recréer, renommer ni réécrire un
+module livré : l’étendre. `docs/backlog-status.md` fait foi sur ce qui est livré
+(voir section 11). En cas de doute, lire le code existant avant de proposer.
 
-## Mode de travail : vibecoding discipliné
+## 2. Lecture ciblée
 
-Produire vite sans livrer de fonctionnalités fictives. Travailler exclusivement par tranches verticales : interface, validation, données réelles, sécurité, états UX et vérification. Ne jamais déclarer un test exécuté s’il ne l’a pas été.
+Au début de chaque tâche :
 
-## Plateforme et workflow
+1. Lire `CLAUDE.md`.
+2. Lire `docs/backlog-status.md`.
+3. Lire `package.json`.
+4. Lire uniquement les fichiers, migrations, routes, composants et documents
+   directement liés à la tâche.
+5. Lire le document métier correspondant seulement si nécessaire :
 
-- **GitHub est l’unique dépôt de référence** : code, branches, pull requests, issues et GitHub Actions. Ne jamais proposer GitLab, GitLab CI ni GitLab Container Registry, sauf demande explicite.
-- **Vercel** héberge le front-end et les previews.
-- **Supabase** fournit PostgreSQL, Auth, Storage, Realtime, Edge Functions et les migrations SQL, versionnées dans `supabase/migrations/`.
-- **Railway** héberge les APIs spécialisées, workers et tâches planifiées si nécessaire.
-- Code en **TypeScript** quand le projet le permet. Stack : Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, npm.
-- Branches `feature/*`, `fix/*`, `chore/*` ou `docs/*` et pull requests GitHub pour tout changement important ; jamais de push direct sur `main`. Changements petits, testables et réversibles.
-- Vérifier les scripts existants dans `package.json` avant de proposer ou d’exécuter une commande npm.
-- Commandes de validation proposées en PowerShell (Windows) quand nécessaire.
-- Pour chaque modification, indiquer : fichiers créés ou modifiés, commandes de validation à exécuter, risques éventuels.
+| Sujet                             | Document à lire si présent                          |
+| --------------------------------- | --------------------------------------------------- |
+| État réel, audit et plan des lots | `docs/implementation-audit.md`                      |
+| Mode privé                        | `docs/mode-prive.md`                                |
+| Worker, passerelle IA, coûts      | `docs/worker.md`                                    |
+| Rôles d’Anthropic et d’OpenAI     | `docs/roles-anthropic-openai-filmfund-africa.md`    |
+| Produit, périmètre MVP, rôles     | `docs/product/PRD_MVP.md`                           |
+| Règles d’exécution                | `docs/engineering/VIBECODING_RULES.md`              |
+| Sécurité, risques, garde-fous     | `docs/engineering/GUARDRAILS_BACKLOG.md`            |
+| Lots et ordre d’exécution         | `docs/engineering/LOTS_IMPLEMENTATION.md`           |
+| Décisions d’architecture          | `docs/decisions/ADR-0001-architecture-and-scope.md` |
+| Landing page                      | `docs/design/LANDING_PAGE_SPEC.md`                  |
 
-## Git
+Les six derniers documents ne sont pas encore versionnés : signaler leur absence,
+ne jamais en supposer le contenu.
 
-- Messages de commit en français, au format Conventional Commits :
-  `feat: ajoute la page de connexion`, `fix: corrige le calcul du budget total`.
-- `npm run lint` et `npm run build` doivent être verts avant tout commit.
-- **Les commits sont signés** (clé SSH, configuration locale du dépôt). Le projet Vercel
-  exige des commits vérifiés par GitHub : un commit non signé voit son déploiement de
-  prévisualisation annulé, et la pull request affiche un check Vercel en échec. Les commits
-  de fusion, signés par GitHub, se déploient normalement.
+Ne pas lire récursivement le dépôt. Exclure par défaut `.next/`, `node_modules/`,
+lockfiles, fichiers binaires, logs et gros fichiers non liés. Ne pas refaire un
+audit complet quand l’état est déjà décrit dans le backlog.
 
-## Démarrage impératif
+## 3. Démarrage d’un lot
 
-1. Auditer le dépôt sans modifier de fichier.
-2. Cartographier architecture, dépendances, routes, composants, Auth, Supabase, migrations, RLS, Storage, variables d’environnement, GitHub (branches, pull requests, GitHub Actions), Vercel, Railway, appels coûteux et risques visibles.
-3. Produire le plan du lot suivant (voir `docs/backlog-status.md`) au format de `VIBECODING_RULES.md`.
-4. Attendre la validation humaine du plan avant de coder.
+Avant toute écriture :
 
-## Règles immuables
+1. Auditer les fichiers ciblés et les dépendances directes.
+2. Identifier les conventions existantes, flux Auth, RLS, migrations, routes,
+   Storage, variables d’environnement, appels externes, coûts et tests.
+3. Vérifier le statut du lot dans `docs/backlog-status.md`.
+4. Répondre avec :
 
-- Avant toute modification importante : analyser les fichiers concernés, présenter le plan et attendre la confirmation humaine.
-- Ne faire aucun `git commit`, `git push`, déploiement, suppression, modification distante ni changement de secrets sans confirmation explicite.
-- Ne supprimer, renommer, réinitialiser, déployer ni remplacer massivement aucun élément sans signaler l’impact et obtenir confirmation.
-- Préférer les migrations non destructives, versionnées et testées.
-- Ne jamais écrire, afficher, committer ni inventer de secret, token, mot de passe ou clé API.
-- Ne jamais committer `.env`, `.env.local`, clé Supabase `service_role`, token GitHub, Vercel, Railway ou autre secret. `.env.example` ne contient que des noms de variables, sans valeur sensible.
-- Ne placer aucun secret, service role, clé IA, clé de paiement ou clé privée côté client, dans Git, fixtures ou logs.
-- Les valeurs réelles vivent dans `.env.local` (ignoré par Git), dans les variables d'environnement Vercel / Railway, ou dans les secrets GitHub Actions.
-- **Le préfixe `NEXT_PUBLIC_` expose la variable au navigateur** : `SUPABASE_SECRET_KEY` et tout autre secret ne doivent jamais le porter.
-- Tout accès privilégié Supabase reste strictement côté serveur.
-- Ne jamais contourner la RLS Supabase sans explication et validation explicite. Si une requête a besoin du rôle service, c'est que la politique RLS est à revoir.
-- Les entrées utilisateur sont validées côté serveur, jamais seulement côté client.
-- Toute mutation vérifie session, rôle, accès studio/projet et payload ; elle produit un journal d’audit lorsque sensible.
-- Tout accès aux données de projet doit être protégé par RLS et testé entre au moins deux utilisateurs/studios.
-- Toute IA passe exclusivement côté serveur : session, accès, rate limit, droits, devis, réservation transactionnelle, appel fournisseur, journalisation non sensible, règlement ou restitution.
-- Aucun appel IA payant, paiement réel, campagne de test payante ou migration de production sans autorisation explicite.
-- Une suggestion IA est affichée, comparable, éditable et explicitement acceptée ; elle ne remplace jamais du contenu utilisateur automatiquement.
-- En cas de fuite d'un secret : le révoquer d'abord chez le fournisseur, réécrire l'historique ensuite. L'ordre inverse ne protège de rien.
+```md
+## État observé
 
-## Base de données
+## Analyse
 
-- **Toute modification de schéma passe par une migration SQL versionnée** dans
-  `supabase/migrations`. Jamais de changement à la main dans l'interface Supabase :
-  il serait perdu au prochain déploiement et absent des autres environnements.
-- **La RLS est activée à la création de la table**, dans la même migration, avec ses
-  politiques. L'ajouter après coup sur une table déjà peuplée coûte bien plus cher.
-- Une migration ne se modifie plus une fois poussée : on en écrit une nouvelle.
-- Les migrations sont réversibles ou, à défaut, documentent explicitement ce qui ne l'est pas.
-- **Toute migration touchant une politique, un rôle ou un privilège s'accompagne
-  d'un test dans `tests/`.** Un test qui ne peut pas échouer ne protège rien :
-  vérifiez qu'il tombe quand la protection est retirée. Ce qui ne s'observe pas
-  par l'API — droits d'exécution, état du catalogue — se teste en SQL (pgTAP)
-  dans `supabase/tests/`, avec `supabase test db`.
-- **Supabase accorde l'exécution de toute nouvelle fonction à `anon` et
-  `authenticated`.** Une fonction `security definer` retire ces droits
-  nommément (`revoke all ... from public, anon, authenticated`), puis ne rend
-  que ceux dont elle a besoin. Une fonction appelable par les comptes connectés
-  doit être ajoutée à la liste de `supabase/tests/privileges_fonctions.test.sql`.
-- **Les administrateurs ont accès à tout** : toute nouvelle table donne lecture et écriture
-  aux administrateurs (`public.is_admin()`) dans ses politiques.
-- **Toute nouvelle table reçoit la politique restrictive du mode privé**
-  (« Mode privé : administrateurs uniquement », voir
-  `supabase/migrations/20260929220000_mode_prive_administrateurs.sql`). Sans elle, la table
-  échapperait au verrou ; `supabase/tests/mode_prive.test.sql` le vérifie.
-- **Stockage : jamais de compartiment public.** Les fichiers se servent par liens signés,
-  délivrés avec la session de l'utilisateur. Un nouveau compartiment reçoit des
-  politiques sur `storage.objects` fondées sur le projet en tête du chemin
-  (`projet_du_chemin`), et sa propre politique restrictive du mode privé.
-- Ne jamais pousser la configuration avec `supabase config push` sans passer par
-  `supabase config diff` : le fichier local déclare des assouplissements propres
-  au développement — confirmation d'e-mail désactivée, MFA désactivé — dont la
-  propagation en production serait une régression de sécurité.
+## Plan proposé
 
-## Code
+## Fichiers concernés
 
-- **Langue** : interface, contenu et commentaires en français. Le code (noms de variables,
-  de fonctions, de fichiers) reste en anglais.
-- **Composants serveur par défaut.** `"use client"` uniquement quand le composant a besoin
-  d'état, d'effets, ou d'événements du navigateur — et le plus bas possible dans l'arbre.
-- **Nommage** : fichiers en `kebab-case`, composants React en `PascalCase`, fonctions et
-  variables en `camelCase`, constantes partagées en `SCREAMING_SNAKE_CASE`.
-- **Organisation** : les routes dans `src/app/`, les composants réutilisables dans
-  `src/components/`, les composants propres à une page dans un sous-dossier dédié.
-- **TypeScript strict** : pas de `any` sans justification écrite en commentaire.
-- **Tailwind** : pas de feuille de style séparée sauf nécessité. Les couleurs et espacements
-  passent par les jetons définis dans `globals.css`, pas par des valeurs en dur.
-- Les commentaires expliquent **pourquoi**, pas **quoi**. Un commentaire qui paraphrase
-  la ligne suivante est du bruit.
+## Risques et sécurité
 
-## Accessibilité et responsive
+## Validation prévue
 
-- Conception mobile d'abord, vérifiée à 375 px, 768 px et 1440 px.
-- HTML sémantique : `header`, `nav`, `main`, `section`, `footer`, titres hiérarchisés.
-- Contrastes conformes WCAG AA.
-- Focus visible au clavier, navigation possible sans souris.
-- Les animations respectent `prefers-reduced-motion`.
-- Tout texte porté par une image ou une icône a son équivalent accessible.
+## Décision requise
+```
 
-## Architecture produit
+Un plan se termine par : « Puis-je exécuter ce plan et modifier uniquement les
+fichiers listés ? »
 
-- Les onze agents internes sont : WEAVER, SCRIPT, VOICE, SCOUT, GRIOT, ARC, FRAME, GEAR, BOARD, FIELD et MATCH.
-- Ils doivent être des profils/actions internes traçables par l’exécution et la facturation.
-- L’utilisateur final voit un copilote unifié avec des actions adaptées au contexte, jamais onze applications distinctes.
-- La landing publique utilise le système noir/ivoire/or documenté dans `LANDING_PAGE_SPEC.md`.
-- L’application authentifiée utilise le système bleu nuit/ivoire/or documenté dans `PRD_MVP.md`.
+Attendre une confirmation explicite avant toute action qui modifie l’état local
+ou distant : fichiers, dépendances, configuration, migrations, Supabase, secrets,
+Git, GitHub, Vercel, Railway. Une autorisation ne couvre que l’action ou le lot
+nommé. Les actions en lecture seule sont libres : lire des fichiers,
+`git status`, `git diff`, `git log`, `npm run lint`, `npm run build`, `npm test`.
 
-## Définition de terminé
+Après accord, terminer entièrement le lot approuvé : code, migration si nécessaire,
+tests ciblés, validations disponibles et rapport honnête. Travailler par tranches
+verticales : interface, validation, données réelles, sécurité, états UX, vérification.
 
-Une fonction est terminée uniquement avec : interface responsive, données réelles ou mock explicitement borné, validation des entrées, contrôle d’accès serveur et RLS si nécessaire, états chargement/vide/erreur/succès, test pertinent ou contrôle manuel documenté, et compte rendu honnête des commandes de validation.
+## 4. Stack et workflow
+
+- GitHub est le dépôt de référence : branches, PR, issues et GitHub Actions.
+  Ne jamais utiliser ni proposer GitLab.
+- Vercel : application Next.js et previews.
+- Supabase : PostgreSQL, Auth, Storage, Realtime, migrations et RLS.
+- Railway : worker (`worker/`), APIs spécialisées, cron ou traitements longs.
+- Stack : Next.js 16 App Router, React 19, TypeScript strict, Tailwind CSS 4, npm.
+- Branches : `feature/*`, `fix/*`, `chore/*`, `docs/*`.
+- Pas de push direct vers `main`.
+- Ne jamais faire commit, push, PR, merge, déploiement, migration de production,
+  modification distante, suppression ou changement de secret sans confirmation
+  distincte.
+- Vérifier les scripts disponibles dans `package.json` avant toute commande.
+- Proposer les commandes Windows en PowerShell lorsque utile.
+- Commits en français, Conventional Commits, **signés** : Vercel exige des commits
+  vérifiés et annule la prévisualisation d’un commit non signé.
+
+Avant tout commit proposé, comme la CI :
+
+```text
+npm run lint
+npm run typecheck
+npm run format:check
+npm run build
+npm test              # pile Supabase locale requise : npm run db:start
+npx supabase test db  # tests SQL (pgTAP)
+```
+
+Livraison : branche, PR, CI verte, fusion, puis `supabase db push` précédé de
+`--dry-run`, puis vérification en production. Chaque étape distante sur accord.
+
+## 5. Règles immuables
+
+- Préserver l’architecture réelle du dépôt : ajouts minimaux, typés, réversibles.
+- Ne pas installer de dépendance sans nécessité démontrée.
+- Ne pas renommer, déplacer, supprimer, réinitialiser ni remplacer massivement
+  sans cartographier les usages, signaler l’impact et obtenir confirmation.
+- Ne jamais inventer une fonctionnalité, un test, une donnée, une source,
+  un résultat fournisseur ou un statut de déploiement. Ne jamais déclarer un test
+  exécuté s’il ne l’a pas été.
+- Ne jamais écrire, afficher, logger, retourner ou committer une clé, secret,
+  mot de passe, token, payload sensible ou chaîne de connexion.
+- Les valeurs réelles vivent dans `.env.local`, dans les variables Vercel et
+  Railway, ou dans les secrets GitHub Actions. Séparer local, recette, production.
+- `.env`, `.env.local`, `.next/`, `node_modules/` restent ignorés par Git.
+- `.env.example` contient seulement les noms et explications non sensibles.
+- Toute variable `NEXT_PUBLIC_*` est considérée publique.
+- Tout accès privilégié Supabase reste côté serveur. Si une requête a besoin du
+  rôle de service, c’est que la politique RLS est à revoir.
+- Toute entrée utilisateur est validée côté serveur.
+- Toute mutation vérifie session, rôle, studio/projet, payload et journalise
+  les opérations sensibles ; une action d’administration est journalisée dans la
+  même transaction que son effet.
+- Une suggestion IA reste modifiable, comparable et acceptée explicitement ;
+  elle n’écrase jamais silencieusement un contenu ou une version approuvée.
+- En cas de fuite de secret : révoquer d’abord chez le fournisseur, puis traiter
+  Git, les logs et l’historique.
+- Paiements : ne jamais choisir un prestataire, créer un paiement réel ni simuler
+  une intégration comme si elle était active.
+- Ne jamais afficher « abonnement disponible », « paiement sécurisé », « essai
+  gratuit », « annulation à tout moment », « facture » ou « remboursement » tant
+  que le paiement n’existe pas. Aucune statistique fictive.
+
+## 6. Données, Auth et RLS
+
+- Mode actuel : accès privé, deux administrateurs préenregistrés, inscription
+  fermée. Ne pas lever le mode privé ni rouvrir l’inscription sans décision
+  explicite (`docs/mode-prive.md`).
+- Déjà en place, verrouillés par le mode privé : inscription, connexion,
+  déconnexion, mot de passe oublié, profil minimal (nom affiché), studios (socle),
+  équipes de projet et invitations. Ne pas les recréer.
+- Rôles existants : `member` et `admin` (`profiles.role`, `is_admin()`) ;
+  `owner`, `editor`, `viewer` dans un projet ; rôles de studio.
+- Profil prévu, par migration additive : prénom, nom, pays, ville, profession,
+  photo, type (`AUTHOR`, `DIRECTOR`, `PRODUCER`). Le type n’est pas un rôle d’accès.
+- Ne jamais dériver un rôle, studio, entitlement ou accès projet depuis le client.
+- Chaque accès est fondé sur l’utilisateur authentifié et son adhésion réelle.
+- Tout accès aux données de projet est protégé par RLS et testé entre au moins
+  deux utilisateurs et deux studios. Cas à couvrir : porteur, éditeur, lecteur,
+  administrateur, compte étranger, jeton expiré, adhésion révoquée.
+- Le worker agit avec un contexte explicite par tâche ; une adhésion révoquée est
+  revérifiée avant d’exécuter une tâche en attente.
+
+### Supabase
+
+- Toute évolution de schéma passe par une migration SQL versionnée dans
+  `supabase/migrations/`, jamais à la main dans l’interface Supabase.
+- Migrations non destructives, réversibles ou documentant ce qui ne l’est pas.
+- Ne jamais modifier une migration déjà appliquée : écrire une nouvelle migration.
+- Toute table nouvelle active RLS dans la même migration, avec ses policies.
+- **Toute table nouvelle et tout compartiment de stockage reçoivent la politique
+  restrictive « Mode privé : administrateurs uniquement »** ;
+  `supabase/tests/mode_prive.test.sql` le vérifie.
+- **Les administrateurs ont accès à tout** : toute table nouvelle leur donne
+  lecture et écriture via `public.is_admin()`.
+- Ne jamais désactiver RLS globalement ni contourner RLS sans validation.
+- **Supabase accorde l’exécution de toute nouvelle fonction à `anon` et
+  `authenticated`.** Une fonction `security definer` retire ces droits nommément
+  (`revoke all ... from public, anon, authenticated`), puis ne rend que ceux
+  nécessaires. Une fonction appelable par les comptes est ajoutée à la liste de
+  `supabase/tests/privileges_fonctions.test.sql`.
+- Toute migration de droits, rôles ou policies reçoit un test dans `tests/` (API)
+  ou `supabase/tests/` (pgTAP). Un test qui ne peut pas échouer ne protège rien :
+  vérifier qu’il tombe quand la protection est retirée.
+- Stockage : jamais de compartiment public ; liens signés ; policies sur
+  `storage.objects` fondées sur le projet en tête du chemin (`projet_du_chemin`).
+- Ne jamais utiliser `supabase config push` sans `supabase config diff` : le
+  fichier local assouplit la sécurité pour le développement.
+
+## 7. Interface et qualité
+
+- Interface, contenu et commentaires : français. Code, fichiers, variables et
+  fonctions : anglais. Un commentaire explique pourquoi, pas quoi.
+- Composants serveur par défaut. `"use client"` uniquement au niveau le plus bas utile.
+- Fichiers `kebab-case`, composants `PascalCase`, fonctions `camelCase`,
+  constantes partagées `SCREAMING_SNAKE_CASE`.
+- Routes : `src/app/`. Composants réutilisables : `src/components/`.
+- Pas de `any` sans justification.
+- Utiliser les jetons de `globals.css`, pas de valeurs visuelles arbitraires.
+- Mobile first : 375 px, 768 px, 1440 px.
+- HTML sémantique, WCAG AA, focus clavier visible, reduced motion, équivalent
+  accessible pour tout texte porté par une image ou une icône.
+- Landing : noir / ivoire / or. Application authentifiée : bleu nuit / ivoire / or.
+
+Une fonction est terminée si elle inclut : interface responsive, validation,
+données réelles ou mock explicitement limité, contrôle d’accès serveur/RLS si
+nécessaire, états loading/vide/erreur/succès, test ou contrôle manuel documenté.
+
+## 8. Couche IA unique
+
+**La couche existe : ne pas en créer une seconde.** Tout nouvel appel à Anthropic,
+OpenAI, un modèle local, une recherche IA ou une génération d’images s’y ajoute.
+
+```text
+Action serveur (Next.js) : session, droits, devis, réservation
+        ↓  (la base crée la tâche ; l’application n’appelle jamais un fournisseur)
+Worker Railway, rôle PostgreSQL `filmfund_worker` sans droit sur les tables
+        ↓
+Agent : `worker/src/agents/`
+        ↓
+Passerelle : `worker/src/ia/passerelle.ts` — seul fichier important un SDK d’IA
+        ↓
+Fournisseur
+```
+
+- Profils versionnés (modèle, effort, plafond de sortie, consignes, tarifs) :
+  `worker/src/ia/profils.ts`. Changer un profil, c’est publier une nouvelle version.
+- Garde-fous en place : règle de lint et `tests/architecture.test.mjs` contre tout
+  import de SDK hors passerelle.
+- Répartition des fournisseurs : Anthropic pour le texte, OpenAI pour l’image
+  (BOARD). Aucun SDK OpenAI n’est installé aujourd’hui.
+
+### Exigences IA
+
+- Tous les appels sont serveur uniquement.
+- Le client ne choisit jamais librement fournisseur, modèle, budget ou limites.
+- Le contexte d’exécution explicite comprend : studio, utilisateur, projet, rôle,
+  plan, agent, action, version de document, quota et profil autorisé.
+- Les paramètres coûteux ou non autorisés provenant du client sont rejetés.
+- Les entrées et sorties sont validées par schéma lorsque possible.
+- Toute requête vérifie : session → autorisation → limite de débit → quota →
+  devis/réservation → provision du coût → appel fournisseur → coût confirmé →
+  journalisation non sensible → règlement/restitution.
+- Plafond mensuel des dépenses d’IA vérifié avant chaque appel (`ai_settings`).
+- Aucun réessai automatique après une coupure : l’issue est inconnue, la tâche
+  passe « à rapprocher ». Aucune bascule payante entre fournisseurs.
+- Les sous-appels partagent le budget racine et les limites cumulées.
+- Le contexte d’une génération suit l’ordre : projet, contexte, personnages,
+  vision, documents, puis objectif. La longueur visée vient du profil versionné,
+  jamais d’une valeur en dur dans une route ou un composant.
+- Les appels payants, images, recherches ou paiements réels exigent une autorisation
+  explicite et un budget de test défini.
+- Les tests utilisent des fournisseurs factices, désignés comme tels, jamais de
+  requêtes réelles. Un mock ne prouve pas qu’un agent fonctionne : livrer la part
+  testable et documenter ce qui reste à valider en recette.
+- Les clés IA sont exclusivement serveur ; jamais dans un préfixe public, Git,
+  logs, fixtures, migrations, table en clair ou réponses API.
+- Une configuration IA d’administration ne réaffiche jamais une clé sauvegardée.
+
+Variables serveur, sans valeur dans Git :
+
+```text
+ANTHROPIC_API_KEY       lue aujourd’hui par le worker seul (Railway)
+OPENAI_API_KEY          prévue, aucun agent ne l’utilise encore
+AI_SECRETS_MASTER_KEY   prévue, avec l’écran Administration → Intégrations IA
+```
+
+L’écran Intégrations IA n’est pas livré ; son mode de stockage des clés reste à
+décider avant tout code.
+
+### Agents V1
+
+Les onze agents font partie de la V1, sans être nécessairement activés en même
+temps. Ce sont des profils internes, traçables par l’exécution et la facturation.
+
+| Agent  | Responsabilité                                              |
+| ------ | ----------------------------------------------------------- |
+| WEAVER | Logline, synopsis court/standard/détaillé, note d’intention |
+| SCRIPT | Traitement, bible, scénario                                 |
+| VOICE  | Dialogues de fiction et séries                              |
+| SCOUT  | Recherche documentaire                                      |
+| GRIOT  | Contexte historique et anthropologique d’Afrique centrale   |
+| ARC    | Analyse dramaturgique, personnages et arcs narratifs        |
+| FRAME  | Découpage technique et focales                              |
+| GEAR   | Matériel, calculs électriques et générateurs                |
+| BOARD  | Storyboard : croquis à l’encre noir et blanc                |
+| FIELD  | Budget, financement et calendrier                           |
+| MATCH  | Financements, scoring et sources                            |
+
+L’utilisateur voit un copilote unifié, pas onze applications séparées.
+
+Un agent/opération reste désactivé tant que son fournisseur, ses limites, son
+budget, ses permissions et ses tests ne sont pas validés. WEAVER/logline (appelée
+« pitch » à l’écran) est le premier flux livré.
+
+### BOARD
+
+- Visuels : croquis à l’encre noir sur fond blanc uniquement.
+- Interdire couleur, photoréalisme, 3D et peinture numérique colorée.
+- Centraliser cette contrainte dans le profil/prompt image, avec des tests de
+  conformité. Ne pas modifier un prompt existant qui la respecte déjà.
+- Une image par panneau lorsque le produit le nécessite.
+- Quota image séparé du quota texte.
+- Conserver plans, focales et annotations dans des données structurées hors image.
+- Ne jamais remplacer une vignette approuvée sans action explicite.
+- Pour un lot partiel : consommer uniquement les images livrées, libérer le solde
+  réservé, conserver les réussites et retourner un état par vignette.
+- Préparer les contrats sans générer d’image réelle sans autorisation.
+
+## 9. Recherche et financement
+
+Concerne SCOUT, GRIOT et MATCH.
+
+- Ne jamais inventer preuve, URL, source, date, montant, opportunité ou critère.
+- Toute donnée affichée comme réelle conserve : source/URL, organisme, date de
+  collecte, extrait utile, statut (`non_verifie`, `verifie`, `expire`,
+  `introuvable`, `demo`) et incertitude.
+- Distinguer : non fourni, non trouvé, absent de la source et démonstration.
+  Formulations : « Information non trouvée dans la source consultée. » et
+  « Information non fournie. »
+- Un résultat démo n’est jamais présenté comme réel.
+- Un score de compatibilité est une aide à la décision, jamais une garantie.
+- Centraliser les limites de recherche, pagination, retry, domaines autorisés et
+  profondeur de crawl ; les tester.
+- Mutualiser les sources publiques seulement si la séparation avec les données
+  privées studio/projet est garantie.
+- Avant tout fetch externe : HTTPS uniquement, refus de localhost/plages privées/
+  métadonnées cloud, redirections limitées et revalidées, timeout, taille maximale,
+  validation de contenu, aucun cookie/token interne transmis.
+
+## 10. Fonctionnalités produit à préserver
+
+**Le schéma existant fait foi.** Les listes ci-dessous décrivent l’intention
+produit : les réaliser par migrations additives, sans renommer l’existant.
+
+### Authentification et profils
+
+- Inscription, connexion, déconnexion, récupération de mot de passe : livrés.
+- Profil : seul le nom affiché existe, saisi à l’inscription ; page de profil à faire.
+- Ouverture publique reportée jusqu’à décision explicite ; le mode privé actuel
+  reste prioritaire.
+
+### Tableau de bord
+
+- Accueil : « Bienvenue, [Prénom] ».
+- Statistiques : projets, documents générés, opportunités compatibles, échéances.
+- Cartes projet : titre, genre, statut, dernière modification, score de maturité.
+- Opportunités recommandées : fonds, montant, date limite, compatibilité sourcée.
+- Chaque chiffre affiché est calculé sur des données réelles.
+
+### Projets et assistant de création
+
+- CRUD de projet : livré. Un projet appartient à son porteur (`owner_id`) et à un
+  studio (`studio_id`), pas à un `user_id`.
+- Existant : titre, format (`format`), étape (`stage`), logline, synopsis, couverture.
+- Prévu : genre, pays, langue, durée, synopsis court/long, thème, audience.
+- Formats : documentaire, long métrage, court métrage, série, web-série, animation.
+- Étapes : idée, développement, écriture, préproduction, production,
+  postproduction, terminé.
+- Assistant, non livré : informations générales, concept, personnages, enjeux,
+  vision, objectifs, public cible, puis création du projet.
+
+### Documents et édition
+
+- Documents et versions (sauvegarder, modifier, restaurer) : livrés.
+- Générations prévues : logline, synopsis court/long, note d’intention,
+  note de réalisation, traitement, personnages, pitch oral/écrit, bible série,
+  scénario.
+- Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
+- Les documents restent cohérents avec les données de projet et entre eux.
+- Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
+  comparaison de versions.
+- Actions : régénérer, améliorer, raccourcir, développer, corriger.
+- Toute génération crée une proposition puis une version ; aucun écrasement silencieux.
+
+### Financement et opportunités
+
+- Suivi des financements d’un projet : livré. Base d’opportunités : non livrée.
+- Données : nom, organisme, description, site, pays, pays éligibles, types de
+  projet, genres, budgets min/max, devise, ouverture, date limite, candidature,
+  exigences, statut, source, dates.
+- Catégories : fonds, subvention, résidence, festival, laboratoire, atelier,
+  coproduction, bourse, forum de pitch.
+- Filtres : pays, genre, type projet, montant, langue, deadline, type.
+- Recherche plein texte.
+- Matching, d’après : type, pays, genre, durée, stade, thématique, budget, exigences.
+  Résultat : raisons, conditions remplies/manquantes, documents requis, échéance,
+  montant et lien sourcé.
+- Un score affiché inclut des critères compréhensibles et son incertitude.
+
+### Project Readiness Score
+
+Score sur 100, non livré. Pondération par défaut : concept 20, narration 15,
+personnages 15, vision artistique 15, faisabilité 10, budget 10, plan de
+financement 5, potentiel marché 5, dossier 5. Critères, pondérations et
+recommandations (« à améliorer ») sont configurables et traçables.
+
+### Budget, financement, calendrier
+
+- Budget, planning et suivi des financements : écrans livrés.
+- Budget audiovisuel, lignes prévues :
+  - développement : recherche, écriture, repérages ;
+  - préproduction : casting, préparation, autorisations ;
+  - production : réalisateur, techniciens, matériel, transport, hébergement,
+    restauration, décors, costumes ;
+  - postproduction : montage, étalonnage, sound design, mixage, sous-titrage,
+    mastering ;
+  - distribution : festivals, communication, marketing.
+- Plan de financement : budget total, producteur, fonds, télévision, coproducteur,
+  investisseur, sponsor et autres ; calculer acquis, recherché et pourcentage.
+- Calendrier : développement, préproduction, tournage, postproduction, distribution.
+- Alertes internes et e-mail, non livrées : opportunité, deadline, dossier
+  incomplet, matching.
+
+### Exports et stockage
+
+- Exports, non livrés : PDF (dossier professionnel), DOCX (documents modifiables),
+  ZIP du projet (textes en DOCX, budget et plan de financement en XLSX).
+- Stockage privé et limite de stockage par plan : livrés.
+- Contrôler les octets avant/à la réception, type/taille réels et expiration
+  des uploads incomplets.
+- Ne pas refaire un export identique déjà disponible.
+- Les limites de stockage n’empêchent pas la lecture/téléchargement de fichiers existants.
+
+### Crédits, abonnements et administration
+
+- Les « crédits IA » sont les unités déjà en place : plans versionnés (Gratuit,
+  Pro, Studio), quotas mensuels, barème d’unités texte, devis et réservations.
+  Ne pas créer un second système de crédits.
+- Plans, prix, quotas et barème restent configurables par l’administration ;
+  aucune utilisation IA illimitée implicite.
+- Admin livré : journal d’administration, plans et quotas.
+- Admin prévu : utilisateurs (consulter, suspendre, rôles), opportunités (ajouter,
+  modifier, supprimer, vérifier), statistiques anonymisées, fournisseurs/modèles/
+  coûts/limites IA, abonnements.
+
+## 11. État et ordre de mise en œuvre
+
+`docs/backlog-status.md` est la source de vérité : lots A à P, avec leur statut.
+Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
+
+| Étape | Contenu                                             | État au 1er octobre 2026                                                       |
+| ----- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                          |
+| 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                          |
+| 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                                  |
+| 3     | Assistant de création, score de maturité, dashboard | Dashboard livré ; assistant et score à faire                                   |
+| 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire                 |
+| 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                                  |
+| 6     | WEAVER                                              | Logline livrée (I1), recette en attente ; synopsis et note d’intention à faire |
+| 7     | Budget, financement, calendrier, FIELD/GEAR         | Écrans livrés ; agents à faire (lot J)                                         |
+| 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                    |
+| 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                                |
+| 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)       |
+| 11    | Exports PDF/DOCX/ZIP                                | À faire (lot M, décision 8)                                                    |
+| 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                                 |
+
+Les onze agents restent dans le plan V1. Leur activation est progressive, avec
+contrôle des coûts, tests, permissions et validation métier.
+
+## 12. Definition of Done
+
+Une livraison est terminée si :
+
+- Les fonctionnalités du lot validé sont présentes sans régression connue.
+- Le contrôle d’accès serveur et la RLS nécessaires sont actifs et testés.
+- Les validations d’entrée/sortie et états UX existent.
+- Aucun secret ou appel fournisseur direct non autorisé n’a été introduit.
+- Les migrations sont versionnées et les tests de sécurité ajoutés si nécessaires.
+- Les validations disponibles ont été exécutées honnêtement.
+- Le rapport final comprend :
+
+```md
+TICKET
+STATUT
+PROBLÈME OBSERVÉ
+FICHIERS MODIFIÉS
+ÉLÉMENTS RÉUTILISÉS
+INVARIANTS PRÉSERVÉS
+MIGRATIONS ET STRATÉGIE DE RETOUR ARRIÈRE
+TESTS EXÉCUTÉS ET RÉSULTATS
+TESTS NON EXÉCUTÉS ET MOTIF
+RISQUES RÉSIDUELS
+PROCHAINE ACTION
+```
+
+Un rapport de travail local se termine par : « Le travail local est terminé.
+Souhaitez-vous que je prépare un commit ? »
+
+Deux statuts de fin sont distincts : validé localement, et validé en recette
+(conditions réelles, fournisseurs réels).
+
+Ne pas commit, push, ouvrir de PR ou déployer sans confirmation explicite.
