@@ -122,7 +122,7 @@ function Carte({
  * Section tarifaire de la vitrine.
  *
  * Les chiffres viennent de la base (dernière version publiée de chaque plan) ;
- * la page d'accueil est revalidée régulièrement pour les suivre.
+ * chaque publication depuis l'administration régénère la page d'accueil.
  */
 export async function Pricing() {
   const offre = await lireOffre(
