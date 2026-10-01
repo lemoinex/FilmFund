@@ -2,13 +2,14 @@
 
 Le worker exécute les tâches nées des réservations (table `jobs`, lots H1 et H2). Son code
 vit dans `worker/` ; il tourne sur Railway et se connecte à la base sous le rôle PostgreSQL
-`filmfund_worker`, qui n'a **aucun droit sur les tables** et n'exécute que ses dix fonctions :
-six pour les tâches, quatre pour la passerelle IA.
+`filmfund_worker`, qui n'a **aucun droit sur les tables** et n'exécute que ses onze fonctions :
+six pour les tâches, quatre pour la passerelle IA, une pour lire la clé du fournisseur.
 
 Depuis le lot I1, le worker porte l'agent WEAVER, qui rédige une proposition de pitch
-(action `logline`). **Sans la variable `ANTHROPIC_API_KEY`, il n'a aucun exécuteur** et ne
-prend aucune tâche : il se connecte, récupère les baux expirés, et attend — les demandes
-restent en file, annulables par leur auteur.
+(action `logline`). **Sans clé de fournisseur au coffre, il n'a aucun exécuteur** et ne prend
+aucune tâche : il se connecte, récupère les baux expirés, et attend — les demandes restent en
+file, annulables par leur auteur. La clé se pose depuis l'écran Administration →
+Intégrations IA, jamais par une variable d'environnement.
 
 ## Ce qui est versionné, ce qui ne l'est pas
 
@@ -55,13 +56,10 @@ La connexion passe par le pooler en mode session : la connexion directe à la ba
 IPv6, que le service Railway n'emprunte pas. Elle est chiffrée, et l'identité du serveur
 vérifiée par le certificat racine ; aucune variable ne permet de s'en dispenser.
 
-| Variable            | Valeur                 | Secret  |
-| ------------------- | ---------------------- | ------- |
-| `ANTHROPIC_API_KEY` | créée par l'exploitant | **oui** |
-
-Facultative : c'est elle qui met WEAVER en service. Elle n'existe que dans Railway — ni dans
-Vercel, ni dans `.env.local`, ni dans les secrets GitHub : l'application web n'appelle jamais
-le fournisseur.
+**Aucune clé de fournisseur d'IA ici** : depuis le lot « Intégrations IA », elles se posent
+depuis l'écran d'administration et vivent dans le coffre de la base. Une variable
+`ANTHROPIC_API_KEY` ou `OPENAI_API_KEY` ajoutée au service serait ignorée ;
+`tests/architecture.test.mjs` refuse d'ailleurs qu'un fichier la relise.
 
 ## Passerelle IA (lot I1)
 
@@ -79,18 +77,43 @@ importer son SDK ; le lint et `tests/architecture.test.mjs` refusent tout autre 
 - **Rien n'est écrit dans le projet** : le worker dépose une proposition
   (`ai_suggestions`) ; le porteur ou un éditeur l'applique — modifiée ou non — ou l'écarte.
 
-### Clé d'API
+### Clé d'API : écran Intégrations IA
+
+La clé ne se saisit ni dans Railway, ni dans Vercel, ni dans `.env.local` : elle se pose
+depuis l'application, par un administrateur.
 
 1. Dans la console Anthropic, créer un espace de travail réservé à FilmFund, avec une
    limite de dépense mensuelle égale au plafond ci-dessous : c'est le second verrou, tenu
    par le fournisseur lui-même.
-2. Y créer une clé, et la coller dans Railway, service du worker, Variables :
-   `ANTHROPIC_API_KEY`, scellée (« Seal »). Nulle part ailleurs.
-3. Redéployer : `worker_demarre` doit afficher `"actions":["logline"]`.
+2. Y créer une clé, puis la coller dans **Administration → Intégrations IA**. Elle part
+   aussitôt dans `vault.secrets`, chiffrée par Supabase avec une clé qui ne vit pas dans la
+   base. L'écran n'en garde que l'état — configurée le tel jour, par telle personne — et ne
+   la réaffiche jamais.
+3. Le worker relit le coffre **toutes les 60 secondes** : dans la minute, ses journaux
+   affichent `cle_fournisseur_chargee` avec `"actions":["logline"]`. Aucun redéploiement.
 
-**Retirer la clé** arrête l'agent sans rien casser : les demandes restent en file.
+**Remplacer** une clé : la reposer depuis le même écran. **Retirer** une clé arrête l'agent
+sans rien casser : les demandes restent en file, annulables par leur auteur. Chaque
+changement est inscrit au journal d'administration, sans la valeur.
+
+**Qui peut lire la clé** : le worker, par `cle_fournisseur()`, réservée à son rôle. Ni
+l'application, ni les administrateurs, ni l'API ne la relisent. Mais un accès SQL au projet
+Supabase — le tableau de bord, par exemple — permet de la déchiffrer, et le mot de passe du
+worker y mène aussi. C'est le prix de ce choix ; les garde-fous restent la limite de dépense
+chez le fournisseur et le plafond mensuel interne.
+
+**Un réglage à ne pas changer sans y penser** : la clé transite en paramètre d'une fonction
+SQL. Les journaux PostgreSQL de production ne gardent aujourd'hui que les instructions de
+structure (`log_statement = ddl`, sans paramètres). Activer la journalisation complète des
+requêtes y écrirait les clés en clair.
+
 **En cas de fuite** : révoquer la clé dans la console Anthropic d'abord, en créer une
-nouvelle ensuite.
+nouvelle ensuite, et la reposer depuis l'écran.
+
+```sql
+-- Qui est configuré, et depuis quand. La clé n'est pas ici.
+select provider, configured_at from public.ai_provider_keys;
+```
 
 ### Coûts et plafond
 

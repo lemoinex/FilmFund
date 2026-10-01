@@ -304,6 +304,40 @@ export async function deposerProposition(tacheId, texte) {
 }
 
 /**
+ * Pose ou retire la clé d'un fournisseur dans le coffre de la base locale,
+ * comme le ferait l'administration depuis l'écran Intégrations IA.
+ *
+ * AUCUNE CLÉ RÉELLE : les suites n'y mettent que des valeurs factices, qui
+ * n'ouvrent rien. Elles retirent ce qu'elles ont posé en sortant.
+ */
+export async function definirCleFactice(fournisseur, cle) {
+  if (!/^[a-z]+$/.test(fournisseur) || (cle !== null && !/^[\w-]{20,}$/.test(cle))) {
+    throw new Error("Fournisseur ou clé inutilisable dans le SQL du test.");
+  }
+  const sql =
+    cle === null
+      ? `delete from vault.secrets where id in (
+           select secret_id from public.ai_provider_keys where provider = '${fournisseur}'
+         );
+         delete from public.ai_provider_keys where provider = '${fournisseur}';`
+      : `do $$
+         declare v_secret uuid;
+         begin
+           select secret_id into v_secret from public.ai_provider_keys where provider = '${fournisseur}';
+           if v_secret is null then
+             insert into public.ai_provider_keys (provider, secret_id)
+             values ('${fournisseur}', vault.create_secret('${cle}', 'ia_${fournisseur}', 'Clé factice de test'));
+           else
+             perform vault.update_secret(v_secret, '${cle}');
+           end if;
+         end $$;`;
+  const { code, erreurs } = await executerSqlLocal(sql);
+  if (code !== 0) {
+    throw new Error(`Clé factice impossible à poser : ${erreurs}`);
+  }
+}
+
+/**
  * Plafond mensuel des dépenses d'IA de la base locale, en dollars.
  *
  * Les suites qui font tourner un agent le relèvent le temps de leurs tests :

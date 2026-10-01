@@ -182,6 +182,18 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("décrit un changement de clé de fournisseur, sans jamais la valeur", () => {
+    const decrire = (operation) =>
+      descriptionDe(entree("cle_fournisseur", { fournisseur: "anthropic", operation }), annuaire);
+    assert.equal(decrire("ajout"), "a enregistré la clé du fournisseur d'IA anthropic");
+    assert.equal(decrire("remplacement"), "a remplacé la clé du fournisseur d'IA anthropic");
+    assert.equal(decrire("retrait"), "a retiré la clé du fournisseur d'IA anthropic");
+    assert.equal(
+      descriptionDe(entree("cle_fournisseur", {}), annuaire),
+      "a changé la clé du fournisseur d'IA inconnu",
+    );
+  });
+
   it("décrit une proposition de l'assistant écartée par l'administration", () => {
     assert.equal(
       descriptionDe(

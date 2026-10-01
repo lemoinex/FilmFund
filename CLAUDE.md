@@ -272,16 +272,18 @@ Fournisseur
   logs, fixtures, migrations, table en clair ou réponses API.
 - Une configuration IA d’administration ne réaffiche jamais une clé sauvegardée.
 
-Variables serveur, sans valeur dans Git :
+**Les clés des fournisseurs ne sont pas des variables d’environnement.** Elles se
+posent depuis **Administration → Intégrations IA**, par un administrateur, et
+vivent chiffrées dans `vault.secrets`. Seul le worker les lit, par
+`cle_fournisseur()`, réservée à son rôle, relue toutes les 60 secondes : poser
+une clé met l’agent en service, la retirer l’en sort, sans redéploiement.
+L’écran ne réaffiche jamais une clé enregistrée ; chaque changement est
+journalisé, sans la valeur. `tests/architecture.test.mjs` refuse qu’un fichier
+relise `ANTHROPIC_API_KEY` ou `OPENAI_API_KEY`.
 
-```text
-ANTHROPIC_API_KEY       lue aujourd’hui par le worker seul (Railway)
-OPENAI_API_KEY          prévue, aucun agent ne l’utilise encore
-AI_SECRETS_MASTER_KEY   prévue, avec l’écran Administration → Intégrations IA
-```
-
-L’écran Intégrations IA n’est pas livré ; son mode de stockage des clés reste à
-décider avant tout code.
+Ce que ce choix déplace : un accès SQL au projet Supabase, ou le mot de passe du
+worker, permet de déchiffrer la clé. Activer la journalisation complète des
+requêtes PostgreSQL l’écrirait dans les journaux.
 
 ### Agents V1
 

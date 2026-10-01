@@ -50,6 +50,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_provider_keys: {
+        Row: {
+          configured_at: string;
+          configured_by: string | null;
+          provider: string;
+          secret_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          configured_at?: string;
+          configured_by?: string | null;
+          provider: string;
+          secret_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          configured_at?: string;
+          configured_by?: string | null;
+          provider?: string;
+          secret_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       ai_settings: {
         Row: {
           id: boolean;
@@ -1428,6 +1452,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      cle_fournisseur: { Args: { p_provider: string }; Returns: string };
       clore_travail: {
         Args: {
           p_consumed: number;
@@ -1506,6 +1531,22 @@ export type Database = {
         }[];
       };
       debut_periode: { Args: { p_ancre: string; p_instant?: string }; Returns: string };
+      definir_cle_fournisseur: {
+        Args: { p_cle: string; p_provider: string };
+        Returns: {
+          configured_at: string;
+          configured_by: string | null;
+          provider: string;
+          secret_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_provider_keys";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       definir_pieces_candidature: {
         Args: { p_document_ids: string[]; p_funding_id: string };
         Returns: undefined;
@@ -1770,6 +1811,7 @@ export type Database = {
         };
       };
       restaurer_version_document: { Args: { p_version_id: string }; Returns: undefined };
+      retirer_cle_fournisseur: { Args: { p_provider: string }; Returns: undefined };
       role_dans_studio: { Args: { p_studio_id: string }; Returns: string };
       studio_personnel_courant: { Args: Record<PropertyKey, never>; Returns: string };
       terminer_tentative: {
