@@ -1,25 +1,78 @@
-# FilmFund Africa — règles du projet
+# FilmFund Africa — Instructions Claude Code
 
 Plateforme SaaS pour les professionnels du cinéma africain. Ce fichier fait autorité
 pour toute session de travail sur ce dépôt.
 
-## Sécurité
+## Ordre de lecture obligatoire
 
-Ces règles ne se négocient pas.
+Lire intégralement, avant toute modification :
 
-- **Aucun secret dans Git.** Ni token, ni mot de passe, ni clé API, ni chaîne de connexion,
-  y compris dans un commentaire, un test, un fichier d'exemple ou un message de commit.
-  Les valeurs réelles vivent dans `.env.local` (ignoré par Git), dans les variables
-  d'environnement Vercel / Railway, ou dans les secrets GitHub Actions.
-- **`.env.example` ne contient que des noms de variables**, jamais de valeurs.
-- **Le préfixe `NEXT_PUBLIC_` expose la variable au navigateur.** `SUPABASE_SECRET_KEY`
-  et tout autre secret ne doivent jamais le porter. Une clé secrète ne s'utilise que
-  dans du code serveur.
-- **La clé secrète Supabase ne contourne pas la RLS par confort.** Si une requête
-  a besoin du rôle service, c'est que la politique RLS est à revoir.
+1. `docs/product/PRD_MVP.md`
+2. `docs/engineering/VIBECODING_RULES.md`
+3. `docs/engineering/GUARDRAILS_BACKLOG.md`
+4. `docs/engineering/LOTS_IMPLEMENTATION.md`
+5. `docs/decisions/ADR-0001-architecture-and-scope.md`
+6. `docs/design/LANDING_PAGE_SPEC.md` si le lot concerne la landing.
+
+Puis l'état réel du dépôt : `docs/backlog-status.md` (statut de chaque lot et décisions
+prises), `docs/implementation-audit.md` (audit et plan des lots) et `docs/mode-prive.md`.
+
+Les documents 1 à 6 ne sont pas encore versionnés dans le dépôt. Tant qu'un document
+manque, le signaler plutôt que d'en supposer le contenu.
+
+## Mode de travail : vibecoding discipliné
+
+Produire vite sans livrer de fonctionnalités fictives. Travailler exclusivement par tranches verticales : interface, validation, données réelles, sécurité, états UX et vérification. Ne jamais déclarer un test exécuté s’il ne l’a pas été.
+
+## Plateforme et workflow
+
+- **GitHub est l’unique dépôt de référence** : code, branches, pull requests, issues et GitHub Actions. Ne jamais proposer GitLab, GitLab CI ni GitLab Container Registry, sauf demande explicite.
+- **Vercel** héberge le front-end et les previews.
+- **Supabase** fournit PostgreSQL, Auth, Storage, Realtime, Edge Functions et les migrations SQL, versionnées dans `supabase/migrations/`.
+- **Railway** héberge les APIs spécialisées, workers et tâches planifiées si nécessaire.
+- Code en **TypeScript** quand le projet le permet. Stack : Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, npm.
+- Branches `feature/*`, `fix/*`, `chore/*` ou `docs/*` et pull requests GitHub pour tout changement important ; jamais de push direct sur `main`. Changements petits, testables et réversibles.
+- Vérifier les scripts existants dans `package.json` avant de proposer ou d’exécuter une commande npm.
+- Commandes de validation proposées en PowerShell (Windows) quand nécessaire.
+- Pour chaque modification, indiquer : fichiers créés ou modifiés, commandes de validation à exécuter, risques éventuels.
+
+## Git
+
+- Messages de commit en français, au format Conventional Commits :
+  `feat: ajoute la page de connexion`, `fix: corrige le calcul du budget total`.
+- `npm run lint` et `npm run build` doivent être verts avant tout commit.
+- **Les commits sont signés** (clé SSH, configuration locale du dépôt). Le projet Vercel
+  exige des commits vérifiés par GitHub : un commit non signé voit son déploiement de
+  prévisualisation annulé, et la pull request affiche un check Vercel en échec. Les commits
+  de fusion, signés par GitHub, se déploient normalement.
+
+## Démarrage impératif
+
+1. Auditer le dépôt sans modifier de fichier.
+2. Cartographier architecture, dépendances, routes, composants, Auth, Supabase, migrations, RLS, Storage, variables d’environnement, GitHub (branches, pull requests, GitHub Actions), Vercel, Railway, appels coûteux et risques visibles.
+3. Produire le plan du lot suivant (voir `docs/backlog-status.md`) au format de `VIBECODING_RULES.md`.
+4. Attendre la validation humaine du plan avant de coder.
+
+## Règles immuables
+
+- Avant toute modification importante : analyser les fichiers concernés, présenter le plan et attendre la confirmation humaine.
+- Ne faire aucun `git commit`, `git push`, déploiement, suppression, modification distante ni changement de secrets sans confirmation explicite.
+- Ne supprimer, renommer, réinitialiser, déployer ni remplacer massivement aucun élément sans signaler l’impact et obtenir confirmation.
+- Préférer les migrations non destructives, versionnées et testées.
+- Ne jamais écrire, afficher, committer ni inventer de secret, token, mot de passe ou clé API.
+- Ne jamais committer `.env`, `.env.local`, clé Supabase `service_role`, token GitHub, Vercel, Railway ou autre secret. `.env.example` ne contient que des noms de variables, sans valeur sensible.
+- Ne placer aucun secret, service role, clé IA, clé de paiement ou clé privée côté client, dans Git, fixtures ou logs.
+- Les valeurs réelles vivent dans `.env.local` (ignoré par Git), dans les variables d'environnement Vercel / Railway, ou dans les secrets GitHub Actions.
+- **Le préfixe `NEXT_PUBLIC_` expose la variable au navigateur** : `SUPABASE_SECRET_KEY` et tout autre secret ne doivent jamais le porter.
+- Tout accès privilégié Supabase reste strictement côté serveur.
+- Ne jamais contourner la RLS Supabase sans explication et validation explicite. Si une requête a besoin du rôle service, c'est que la politique RLS est à revoir.
 - Les entrées utilisateur sont validées côté serveur, jamais seulement côté client.
-- En cas de fuite d'un secret : le révoquer d'abord chez le fournisseur, réécrire
-  l'historique ensuite. L'ordre inverse ne protège de rien.
+- Toute mutation vérifie session, rôle, accès studio/projet et payload ; elle produit un journal d’audit lorsque sensible.
+- Tout accès aux données de projet doit être protégé par RLS et testé entre au moins deux utilisateurs/studios.
+- Toute IA passe exclusivement côté serveur : session, accès, rate limit, droits, devis, réservation transactionnelle, appel fournisseur, journalisation non sensible, règlement ou restitution.
+- Aucun appel IA payant, paiement réel, campagne de test payante ou migration de production sans autorisation explicite.
+- Une suggestion IA est affichée, comparable, éditable et explicitement acceptée ; elle ne remplace jamais du contenu utilisateur automatiquement.
+- En cas de fuite d'un secret : le révoquer d'abord chez le fournisseur, réécrire l'historique ensuite. L'ordre inverse ne protège de rien.
 
 ## Base de données
 
@@ -55,19 +108,6 @@ Ces règles ne se négocient pas.
   au développement — confirmation d'e-mail désactivée, MFA désactivé — dont la
   propagation en production serait une régression de sécurité.
 
-## Git
-
-- **Pas de push direct sur `main`.** Une branche par changement, puis une pull request.
-- Nommage des branches : `feature/`, `fix/`, `chore/`, `docs/`.
-- Messages de commit en français, au format Conventional Commits :
-  `feat: ajoute la page de connexion`, `fix: corrige le calcul du budget total`.
-- `npm run lint` et `npm run build` doivent être verts avant tout commit.
-- **Les commits sont signés** (clé SSH, configuration locale du dépôt). Le projet Vercel
-  exige des commits vérifiés par GitHub : un commit non signé voit son déploiement de
-  prévisualisation annulé, et la pull request affiche un check Vercel en échec. Les commits
-  de fusion, signés par GitHub, se déploient normalement.
-- Rien n'est commité, poussé ni déployé sans accord explicite de l'utilisateur.
-
 ## Code
 
 - **Langue** : interface, contenu et commentaires en français. Le code (noms de variables,
@@ -93,13 +133,14 @@ Ces règles ne se négocient pas.
 - Les animations respectent `prefers-reduced-motion`.
 - Tout texte porté par une image ou une icône a son équivalent accessible.
 
-## Stack
+## Architecture produit
 
-| Rôle                                               | Service  |
-| -------------------------------------------------- | -------- |
-| Code, branches, pull requests, CI                  | GitHub   |
-| Front-end                                          | Vercel   |
-| PostgreSQL, authentification, stockage, migrations | Supabase |
-| Services backend, tâches de fond, cron jobs        | Railway  |
+- Les onze agents internes sont : WEAVER, SCRIPT, VOICE, SCOUT, GRIOT, ARC, FRAME, GEAR, BOARD, FIELD et MATCH.
+- Ils doivent être des profils/actions internes traçables par l’exécution et la facturation.
+- L’utilisateur final voit un copilote unifié avec des actions adaptées au contexte, jamais onze applications distinctes.
+- La landing publique utilise le système noir/ivoire/or documenté dans `LANDING_PAGE_SPEC.md`.
+- L’application authentifiée utilise le système bleu nuit/ivoire/or documenté dans `PRD_MVP.md`.
 
-Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, npm.
+## Définition de terminé
+
+Une fonction est terminée uniquement avec : interface responsive, données réelles ou mock explicitement borné, validation des entrées, contrôle d’accès serveur et RLS si nécessaire, états chargement/vide/erreur/succès, test pertinent ou contrôle manuel documenté, et compte rendu honnête des commandes de validation.
