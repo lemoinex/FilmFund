@@ -30,15 +30,15 @@ select ok(
   'touch_updated_at() n''est plus appelable directement'
 );
 
-select is(
+-- Leur nombre croît avec les tables : on vérifie qu'aucun n'est désactivé,
+-- et qu'il en existe.
+select ok(
   (
-    select count(*)::int
+    select count(*) > 0 and count(*) filter (where tgenabled = 'D') = 0
     from pg_trigger
     where tgfoid = 'public.touch_updated_at()'::regprocedure
-      and tgenabled <> 'D'
   ),
-  7,
-  'Les sept déclencheurs de date de modification restent actifs'
+  'Les déclencheurs de date de modification restent tous actifs'
 );
 
 -- Le retrait du droit ne doit pas empêcher le déclencheur de s'exécuter

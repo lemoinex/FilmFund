@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { estEtapeValide, estFormatValide } from "@/lib/projets";
 import { COMPARTIMENT_IMAGES } from "@/lib/images";
+import { LIMITE_DU_PLAN } from "@/lib/plans";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { supprimerImages } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
@@ -59,6 +60,12 @@ export async function creerProjet(
     .select("id")
     .single();
 
+  if (error?.code === LIMITE_DU_PLAN) {
+    return {
+      erreur:
+        "Le plan de votre studio ne permet pas de créer un projet de plus. Un administrateur peut changer votre plan.",
+    };
+  }
   if (error || !data) {
     return { erreur: "La création du projet a échoué. Réessayez dans un instant." };
   }

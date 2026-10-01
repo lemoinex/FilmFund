@@ -14,10 +14,11 @@ export type EntreeJournal = {
   details: unknown;
 };
 
-/** Noms connus des comptes et titres connus des projets, par identifiant. */
+/** Noms connus des comptes, titres des projets et noms des plans, par identifiant. */
 export type Annuaire = {
   comptes: ReadonlyMap<string, string>;
   projets: ReadonlyMap<string, string>;
+  plans?: ReadonlyMap<string, string>;
 };
 
 const ROLES: Record<string, string> = {
@@ -70,6 +71,14 @@ function nomDuCompte(id: string | undefined, annuaire: Annuaire): string {
     return "un compte inconnu";
   }
   return annuaire.comptes.get(id) ?? "un compte supprimé";
+}
+
+/** Nom d'un plan tel que la base le donne ; à défaut, son code. */
+function nomDuPlan(code: string | undefined, annuaire: Annuaire): string {
+  if (!code) {
+    return "inconnu";
+  }
+  return annuaire.plans?.get(code) ?? code;
 }
 
 /** « de » élidé devant une voyelle : « d'Aïcha », « d'un compte supprimé ». */
@@ -129,6 +138,19 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       const operation = OPERATIONS[texte(details, "operation") ?? ""] ?? "a écrit dans";
       const compte = texte(details, "compte");
       return `${operation} ${table}${compte ? ` (compte : ${nomDuCompte(compte, annuaire)})` : ""}`;
+    }
+
+    case "publication_plan": {
+      const version = champ(details, "version");
+      return `a publié la version ${typeof version === "number" ? version : "?"} du plan ${nomDuPlan(texte(details, "plan"), annuaire)}`;
+    }
+
+    case "changement_plan_studio": {
+      const compte = texte(details, "compte");
+      const studio = compte
+        ? `du studio personnel ${de(nomDuCompte(compte, annuaire))}`
+        : "d'un studio";
+      return `a changé le plan ${studio} : ${nomDuPlan(texte(details, "ancien_plan"), annuaire)} → ${nomDuPlan(texte(details, "nouveau_plan"), annuaire)}`;
     }
 
     default:

@@ -161,6 +161,77 @@ export type Database = {
           },
         ];
       };
+      plan_versions: {
+        Row: {
+          id: string;
+          images_per_month: number;
+          max_members: number;
+          max_projects: number;
+          pdf_exports_per_month: number;
+          plan_code: string;
+          price_xaf_per_month: number;
+          published_at: string;
+          published_by: string | null;
+          storage_mb: number;
+          text_units_per_month: number;
+          version_number: number;
+        };
+        Insert: {
+          id?: string;
+          images_per_month: number;
+          max_members: number;
+          max_projects: number;
+          pdf_exports_per_month: number;
+          plan_code: string;
+          price_xaf_per_month: number;
+          published_at?: string;
+          published_by?: string | null;
+          storage_mb: number;
+          text_units_per_month: number;
+          version_number?: number;
+        };
+        Update: {
+          id?: string;
+          images_per_month?: number;
+          max_members?: number;
+          max_projects?: number;
+          pdf_exports_per_month?: number;
+          plan_code?: string;
+          price_xaf_per_month?: number;
+          published_at?: string;
+          published_by?: string | null;
+          storage_mb?: number;
+          text_units_per_month?: number;
+          version_number?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "plan_versions_plan_code_fkey";
+            columns: ["plan_code"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["code"];
+          },
+        ];
+      };
+      plans: {
+        Row: {
+          code: string;
+          name: string;
+          position: number;
+        };
+        Insert: {
+          code: string;
+          name: string;
+          position: number;
+        };
+        Update: {
+          code?: string;
+          name?: string;
+          position?: number;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -689,6 +760,42 @@ export type Database = {
           },
         ];
       };
+      studio_subscriptions: {
+        Row: {
+          period_anchor: string;
+          plan_code: string;
+          studio_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          period_anchor?: string;
+          plan_code: string;
+          studio_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          period_anchor?: string;
+          plan_code?: string;
+          studio_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "studio_subscriptions_plan_code_fkey";
+            columns: ["plan_code"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["code"];
+          },
+          {
+            foreignKeyName: "studio_subscriptions_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: true;
+            referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       studios: {
         Row: {
           created_at: string;
@@ -725,6 +832,7 @@ export type Database = {
     Functions: {
       accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
       acces_au_projet: { Args: { p_project_id: string }; Returns: string };
+      debut_periode: { Args: { p_ancre: string; p_instant?: string }; Returns: string };
       definir_pieces_candidature: {
         Args: { p_document_ids: string[]; p_funding_id: string };
         Returns: undefined;
@@ -766,6 +874,29 @@ export type Database = {
       mode_prive: { Args: Record<PropertyKey, never>; Returns: boolean };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
+      plan_en_vigueur: {
+        Args: { p_studio_id: string };
+        Returns: {
+          id: string;
+          images_per_month: number;
+          max_members: number;
+          max_projects: number;
+          pdf_exports_per_month: number;
+          plan_code: string;
+          price_xaf_per_month: number;
+          published_at: string;
+          published_by: string | null;
+          storage_mb: number;
+          text_units_per_month: number;
+          version_number: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "plan_versions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       projet_du_chemin: { Args: { p_chemin: string }; Returns: string };
       refuser_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       restaurer_version_document: { Args: { p_version_id: string }; Returns: undefined };

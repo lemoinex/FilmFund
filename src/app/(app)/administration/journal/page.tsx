@@ -56,7 +56,7 @@ export default async function JournalAdministrationPage() {
     if (entree.project_id) projetsCites.add(entree.project_id);
   }
 
-  const [{ data: profils }, { data: projets }] = await Promise.all([
+  const [{ data: profils }, { data: projets }, { data: plans }] = await Promise.all([
     comptesCites.size
       ? supabase
           .from("profiles")
@@ -69,11 +69,13 @@ export default async function JournalAdministrationPage() {
           .select("id, title")
           .in("id", [...projetsCites])
       : Promise.resolve({ data: [] }),
+    supabase.from("plans").select("code, name"),
   ]);
 
   const annuaire: Annuaire = {
     comptes: new Map((profils ?? []).map((p) => [p.id, p.display_name?.trim() || "Sans nom"])),
     projets: new Map((projets ?? []).map((p) => [p.id, p.title])),
+    plans: new Map((plans ?? []).map((p) => [p.code, p.name])),
   };
 
   return (

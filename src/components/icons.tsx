@@ -73,6 +73,16 @@ export function ShieldIcon({ className }: IconProps) {
   );
 }
 
+/** Etiquette : plans et quotas. */
+export function TagIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1l7.9 7.9a1.4 1.4 0 0 1 0 2l-6.1 6.1a1.4 1.4 0 0 1-2 0L3.5 12.6Z" />
+      <circle cx="8.2" cy="8.2" r="1.4" />
+    </svg>
+  );
+}
+
 /** Plume : ecriture et developpement narratif. */
 export function QuillIcon({ className }: IconProps) {
   return (
