@@ -9,7 +9,7 @@
 
 begin;
 
-select plan(44);
+select plan(49);
 
 -- Les autres suites laissent des tâches en attente ou en cours : le worker
 -- les prendrait ou les récupérerait avant celles du test. Le temps de la
@@ -38,6 +38,14 @@ create function pg_temp.reglement(p_cle text) returns text language sql as $$
   from public.reservation_settlements s
   join public.reservations r on r.id = s.reservation_id
   where r.idempotency_key = p_cle;
+$$;
+
+-- Un worker qui saurait tout exécuter.
+create function pg_temp.toutes() returns text[] language sql as $$
+  select array[
+    'logline', 'synopsis_short', 'synopsis_standard', 'synopsis_detailed', 'intention_note',
+    'treatment', 'bible', 'screenplay', 'dialogue', 'image', 'pdf_export'
+  ];
 $$;
 
 -- Ce que le worker reçoit en réclamant, écrit sous son propre rôle.
@@ -73,9 +81,21 @@ values ('00000000-0000-0000-0000-00000000f0a1', '00000000-0000-0000-0000-0000000
 -- Rôle du worker
 -- ---------------------------------------------------------------------------
 
-select ok(
-  (select not rolcanlogin and not rolsuper and not rolinherit from pg_roles where rolname = 'filmfund_worker'),
-  'Le rôle du worker existe, sans connexion ouverte ni super-pouvoir'
+select is(
+  (select rolcanlogin || ' ' || rolconnlimit || ' ' || rolsuper || ' ' || rolinherit || ' ' || rolbypassrls
+   from pg_roles where rolname = 'filmfund_worker'),
+  'true 5 false false false',
+  'Le worker se connecte, cinq connexions au plus, sans super-pouvoir, héritage ni contournement de la RLS'
+);
+
+select is(
+  (select array_agg(parametre order by parametre)
+   from pg_db_role_setting s
+   join pg_roles r on r.oid = s.setrole
+   cross join unnest(s.setconfig) as parametre
+   where r.rolname = 'filmfund_worker'),
+  array['idle_in_transaction_session_timeout=30s', 'statement_timeout=30s'],
+  'Ses requêtes et ses transactions pendues sont bornées à trente secondes'
 );
 
 select is_empty(
@@ -148,8 +168,33 @@ select throws_ok(
 -- Réclamation, sous le rôle du worker
 -- ---------------------------------------------------------------------------
 
+select is(
+  (select count(*)::int from public.reclamer_travail('worker-a', array[]::text[]))
+    + (select count(*)::int from public.reclamer_travail('worker-a', null)),
+  0,
+  'Un worker sans savoir-faire ne prend rien'
+);
+
+select is(
+  (select count(*)::int from public.reclamer_travail('worker-a', array['treatment', 'image'])),
+  0,
+  'Un worker ne prend pas une action qu''il ne sait pas exécuter'
+);
+
+select is(
+  (select j.state from public.jobs j where j.id = pg_temp.travail('k-rapprochee')),
+  'queued',
+  'La tâche qu''aucun worker ne sait exécuter attend, sans échouer'
+);
+
+select is(
+  to_regprocedure('public.reclamer_travail(text)'),
+  null,
+  'La réclamation sans liste d''actions n''existe plus'
+);
+
 set local role filmfund_worker;
-insert into pris select job_id, attempt_id, attempt_number, action from public.reclamer_travail('worker-a');
+insert into pris select job_id, attempt_id, attempt_number, action from public.reclamer_travail('worker-a', pg_temp.toutes());
 reset role;
 
 select is(
@@ -167,7 +212,7 @@ select is(
 );
 
 select is(
-  (select count(*)::int from public.reclamer_travail('worker-b')),
+  (select count(*)::int from public.reclamer_travail('worker-b', pg_temp.toutes())),
   0,
   'Une tâche prise ne l''est pas une seconde fois'
 );
@@ -217,7 +262,7 @@ select is(
 -- ---------------------------------------------------------------------------
 
 select is(
-  (select attempt_number from public.reclamer_travail('worker-b')),
+  (select attempt_number from public.reclamer_travail('worker-b', pg_temp.toutes())),
   2,
   'La tâche repart pour son second et dernier essai'
 );
@@ -235,7 +280,7 @@ select is(
 );
 
 select is(
-  (select count(*)::int from public.reclamer_travail('worker-c')),
+  (select count(*)::int from public.reclamer_travail('worker-c', pg_temp.toutes())),
   0,
   'Une tâche à rapprocher n''est jamais relancée'
 );
@@ -275,7 +320,7 @@ select public.accepter_devis(
 reset role;
 select set_config('request.jwt.claims', '', true);
 
-select public.reclamer_travail('worker-a');
+select public.reclamer_travail('worker-a', pg_temp.toutes());
 select public.marquer_tentative_soumise(pg_temp.essai('k-echec'));
 
 select is(
@@ -284,7 +329,7 @@ select is(
   'Premier échec : une reprise automatique'
 );
 
-select public.reclamer_travail('worker-a');
+select public.reclamer_travail('worker-a', pg_temp.toutes());
 select public.marquer_tentative_soumise(pg_temp.essai('k-echec'));
 
 select is(
@@ -296,7 +341,7 @@ select is(
 select is(pg_temp.reglement('k-echec'), '0/8', 'L''échec rend toute la réservation');
 
 select is(
-  (select count(*)::int from public.reclamer_travail('worker-a')),
+  (select count(*)::int from public.reclamer_travail('worker-a', pg_temp.toutes())),
   0,
   'Pas de troisième essai'
 );
@@ -315,7 +360,7 @@ select public.accepter_devis(
 reset role;
 select set_config('request.jwt.claims', '', true);
 
-select public.reclamer_travail('worker-a');
+select public.reclamer_travail('worker-a', pg_temp.toutes());
 select public.marquer_tentative_soumise(pg_temp.essai('k-succes'));
 
 select is(
@@ -351,7 +396,7 @@ delete from public.project_members
 where project_id = '00000000-0000-0000-0000-00000000f0a1' and user_id = '00000000-0000-0000-0000-00000000f002';
 
 select is(
-  (select count(*)::int from public.reclamer_travail('worker-a')),
+  (select count(*)::int from public.reclamer_travail('worker-a', pg_temp.toutes())),
   0,
   'La tâche d''un auteur qui a perdu ses droits n''est pas exécutée'
 );
@@ -377,7 +422,7 @@ select set_config('request.jwt.claims', '', true);
 update public.app_settings set private_admin_only = true where id;
 
 select is(
-  (select count(*)::int from public.reclamer_travail('worker-a')),
+  (select count(*)::int from public.reclamer_travail('worker-a', pg_temp.toutes())),
   0,
   'Le mode privé ferme l''exécution aux auteurs non administrateurs'
 );
@@ -443,7 +488,7 @@ select public.accepter_devis(
 reset role;
 select set_config('request.jwt.claims', '', true);
 
-select public.reclamer_travail('worker-a');
+select public.reclamer_travail('worker-a', pg_temp.toutes());
 select public.marquer_tentative_soumise(pg_temp.essai('k-admin'));
 update public.jobs set lease_until = now() - interval '1 minute' where id = pg_temp.travail('k-admin');
 select public.recuperer_travaux_expires();

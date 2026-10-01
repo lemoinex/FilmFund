@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --test --test-concurrency=1 \"tests/**/*.test.mjs\"",
