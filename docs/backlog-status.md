@@ -5,24 +5,25 @@ réellement validé. Deux statuts de fin sont distincts : **validé localement**
 navigateur sur la pile locale) et **validé en recette** (conditions réelles, fournisseurs
 réels).
 
-| Lot | Ticket                                                                                                                         | Statut                                      | Bloqué par       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- | ---------------- |
-| A   | Journal des actions d'administration                                                                                           | validé en recette                           | —                |
-| B   | Versions de documents                                                                                                          | validé en recette                           | —                |
-| C   | Envois d'images orphelins                                                                                                      | validé en recette                           | —                |
-| D   | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré)                                 | validé en recette                           | —                |
-| E   | Modèle studio (socle : studio personnel, projets rattachés, isolation)                                                         | validé en recette                           | —                |
-| F   | Plans, profils, registres distincts — F1 : plans versionnés, abonnements, limites projets et membres ; F2 : limite de stockage | F1 validé en recette ; F2 validé localement | —                |
-| G   | Devis, réservation atomique, idempotence                                                                                       | bloqué                                      | F                |
-| H   | Tâches persistantes, outbox, rapprochement                                                                                     | bloqué                                      | Décision 4, G    |
-| I   | Passerelle IA et premier agent (WEAVER)                                                                                        | bloqué                                      | Décision 3, B, H |
-| J   | Autres agents                                                                                                                  | bloqué                                      | I                |
-| K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué                                      | I, décision 7    |
-| L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué                                      | I, décision 7    |
-| M   | Exports PDF                                                                                                                    | bloqué                                      | Décision 8       |
-| N   | Paiements                                                                                                                      | bloqué                                      | Décision 6, F    |
-| O   | Interface des quotas et incidents                                                                                              | bloqué                                      | F à N            |
-| P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué                                      | Tous             |
+| Lot | Ticket                                                                                                                         | Statut                                  | Bloqué par       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- | ---------------- |
+| A   | Journal des actions d'administration                                                                                           | validé en recette                       | —                |
+| B   | Versions de documents                                                                                                          | validé en recette                       | —                |
+| C   | Envois d'images orphelins                                                                                                      | validé en recette                       | —                |
+| D   | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré)                                 | validé en recette                       | —                |
+| E   | Modèle studio (socle : studio personnel, projets rattachés, isolation)                                                         | validé en recette                       | —                |
+| F   | Plans, profils, registres distincts — F1 : plans versionnés, abonnements, limites projets et membres ; F2 : limite de stockage | F1 validé en recette ; F2 en production | —                |
+| F3  | Offre publique sur la vitrine (catalogue lisible par les visiteurs, section Tarifs)                                            | validé localement                       | —                |
+| G   | Devis, réservation atomique, idempotence                                                                                       | bloqué                                  | F                |
+| H   | Tâches persistantes, outbox, rapprochement                                                                                     | bloqué                                  | Décision 4, G    |
+| I   | Passerelle IA et premier agent (WEAVER)                                                                                        | bloqué                                  | Décision 3, B, H |
+| J   | Autres agents                                                                                                                  | bloqué                                  | I                |
+| K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué                                  | I, décision 7    |
+| L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué                                  | I, décision 7    |
+| M   | Exports PDF                                                                                                                    | bloqué                                  | Décision 8       |
+| N   | Paiements                                                                                                                      | bloqué                                  | Décision 6, F    |
+| O   | Interface des quotas et incidents                                                                                              | bloqué                                  | F à N            |
+| P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué                                  | Tous             |
 
 ## Décisions attendues
 
