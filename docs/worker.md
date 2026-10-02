@@ -127,6 +127,12 @@ administrateurs :
   a répondu, que la proposition soit exploitable ou non. Un montant vide signale un modèle
   sans tarif connu dans `profils.ts` : à rapprocher de la facture.
 
+**Requête refusée** (statut 4xx hors 429) : le fournisseur ne l'a ni traitée ni facturée. Le
+coût est alors confirmé à **zéro**, pour que la provision cesse de peser sur le plafond du
+mois. Le motif exact figure dans le champ `detail` de l'événement `essai_echoue`, lisible
+dans les journaux Railway — jamais en base, où l'équipe du projet ne lit qu'un message
+général.
+
 Le **plafond mensuel** (`ai_settings.monthly_budget_usd`, 5 $ à la mise en service) borne la
 somme du mois civil, en UTC : le coût confirmé quand il existe, la provision sinon. Une
 provision qui le dépasserait est refusée : rien n'est envoyé, la tâche échoue avec le motif
@@ -158,19 +164,19 @@ de modèle ou de grille, et à confronter à la facture du fournisseur, qui seul
 
 Une ligne JSON par événement, sans contenu d'œuvre, paramètre ni secret.
 
-| Événement                        | Sens                                                                              |
-| -------------------------------- | --------------------------------------------------------------------------------- |
-| `worker_demarre`                 | Connecté ; `role` doit valoir `filmfund_worker` ; `actions` liste le savoir-faire |
-| `variable_manquante`             | Une variable `PG…` manque : le service s'arrête                                   |
-| `connexion_impossible`           | Hôte, utilisateur, mot de passe ou certificat à vérifier                          |
-| `tache_reclamee`                 | Une tâche est prise                                                               |
-| `tache_reussie`                  | Conclue, réservation réglée                                                       |
-| `essai_echoue`                   | Le fournisseur a répondu par un échec ; une reprise au plus                       |
-| `issue_inconnue`                 | Coupure après l'envoi : la tâche passera « à rapprocher », sans relance           |
-| `bail_perdu_avant_envoi`         | La tâche a été récupérée entre-temps : rien n'a été envoyé                        |
-| `baux_expires_recuperes`         | Des tâches abandonnées ont été remises en file ou mises à rapprocher              |
-| `boucle_en_echec`                | Base injoignable : le worker patiente et réessaie                                 |
-| `arret_demande`, `worker_arrete` | Arrêt propre, après la tâche en cours                                             |
+| Événement                        | Sens                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `worker_demarre`                 | Connecté ; `role` doit valoir `filmfund_worker` ; `actions` liste le savoir-faire                |
+| `variable_manquante`             | Une variable `PG…` manque : le service s'arrête                                                  |
+| `connexion_impossible`           | Hôte, utilisateur, mot de passe ou certificat à vérifier                                         |
+| `tache_reclamee`                 | Une tâche est prise                                                                              |
+| `tache_reussie`                  | Conclue, réservation réglée                                                                      |
+| `essai_echoue`                   | Le fournisseur a répondu par un échec ; une reprise au plus. `detail` porte sa réponse, tronquée |
+| `issue_inconnue`                 | Coupure après l'envoi : la tâche passera « à rapprocher », sans relance                          |
+| `bail_perdu_avant_envoi`         | La tâche a été récupérée entre-temps : rien n'a été envoyé                                       |
+| `baux_expires_recuperes`         | Des tâches abandonnées ont été remises en file ou mises à rapprocher                             |
+| `boucle_en_echec`                | Base injoignable : le worker patiente et réessaie                                                |
+| `arret_demande`, `worker_arrete` | Arrêt propre, après la tâche en cours                                                            |
 
 ## Tâche « à rapprocher »
 
