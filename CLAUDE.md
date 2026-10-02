@@ -169,7 +169,8 @@ Livraison : branche, PR, CI verte, fusion, puis `supabase db push` précédé de
 - Profil : nom affiché, prénom, nom, pays, ville, profession et type (`AUTHOR`,
   `DIRECTOR`, `PRODUCER`), lisibles du titulaire et des administrateurs seulement ;
   les équipes ne reçoivent que le nom affiché. Le type n’est pas un rôle d’accès.
-  Photo prévue, par migration additive (lot Q2).
+  Photo de profil (lot Q2) : même visibilité, compartiment privé `profile-photos`
+  sous `<compte>/`, octets réels contrôlés avant rattachement.
 - Ne jamais dériver un rôle, studio, entitlement ou accès projet depuis le client.
 - Chaque accès est fondé sur l’utilisateur authentifié et son adhésion réelle.
 - Tout accès aux données de projet est protégé par RLS et testé entre au moins
@@ -356,7 +357,7 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 
 - Inscription, connexion, déconnexion, récupération de mot de passe : livrés.
 - Page de profil (`/profil`) : livrée (lot Q1) — nom affiché, prénom, nom, pays,
-  ville, profession, type. Photo de profil : à faire (lot Q2).
+  ville, profession, type. Photo de profil : livrée (lot Q2).
 - Ouverture publique reportée jusqu’à décision explicite ; le mode privé actuel
   reste prioritaire.
 
@@ -440,7 +441,8 @@ recommandations (« à améliorer ») sont configurables et traçables.
   administrateurs. Ne pas créer un second chemin d’export : étendre celui-ci.
 - Non livrés : DOCX (documents modifiables), ZIP du projet (textes en DOCX, budget
   et plan de financement en XLSX).
-- Stockage privé et limite de stockage par plan : livrés.
+- Stockage privé et limite de stockage par plan : livrés. Les photos de profil sont
+  hors quota de studio (2 Mo, une par compte).
 - Contrôler les octets avant/à la réception, type/taille réels et expiration
   des uploads incomplets.
 - Ne pas refaire un export identique déjà disponible.

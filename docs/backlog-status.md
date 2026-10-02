@@ -29,7 +29,7 @@ réels).
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
 | Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —              |
-| Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | à faire           | —              |
+| Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé localement | —              |
 
 ## Recette de I1
 
@@ -122,3 +122,9 @@ Profil, décidé le 2 octobre 2026 : lot Q découpé en Q1 (champs professionnel
 des administrateurs ; les équipes ne reçoivent toujours que le nom affiché, qui reste
 distinct du prénom et du nom. Le type (auteur, réalisateur, producteur) n'ouvre aucun droit.
 Les noms de pays ne sont pas rédigés dans le dépôt : seuls les codes ISO y figurent.
+
+Photo de profil, décidée le 3 octobre 2026 (lot Q2) : même visibilité que le reste du profil,
+affichée sur la page de profil et dans le bloc de compte ; compartiment privé distinct des
+images de projet, fondé sur le compte, hors quota de studio (2 Mo, JPEG, PNG ou WebP, une
+photo par compte) ; octets réels contrôlés par le serveur avant tout rattachement ; ni
+recadrage ni redimensionnement, faute de dépendance de traitement d'image.
