@@ -133,6 +133,38 @@ mois. Le motif exact figure dans le champ `detail` de l'événement `essai_echou
 dans les journaux Railway — jamais en base, où l'équipe du projet ne lit qu'un message
 général.
 
+Un compte fournisseur sans crédit répond lui aussi 400 (`invalid_request_error`, « Your credit
+balance is too low… »), et non 402 : lire `detail` avant de soupçonner la requête.
+
+**Provision restée sans coût confirmé** : deux cas, à ne pas confondre.
+
+- L'essai a échoué sur une réponse 4xx du fournisseur, mais date d'avant la confirmation
+  automatique à zéro : rien n'a été facturé, la provision se solde à zéro.
+- L'essai est d'issue inconnue (coupure) : l'appel a pu être facturé. Ne rien solder avant
+  d'avoir lu la console du fournisseur — voir « Tâche à rapprocher ».
+
+```sql
+-- Provisions sans coût confirmé, avec l'état de leur essai.
+select c.attempt_id, c.created_at, c.estimated_usd, a.state, a.error
+from public.provider_charges c
+join public.job_attempts a on a.id = c.attempt_id
+left join public.provider_charge_settlements s on s.attempt_id = c.attempt_id
+where s.attempt_id is null
+order by c.created_at;
+
+-- Solder à zéro la provision d'un essai refusé : la fonction qu'emploie le worker.
+select public.confirmer_cout('<attempt_id>', '<modèle provisionné>', 0, 0, 0, false);
+```
+
+Un règlement ne se modifie ni ne se supprime : exécuter d'abord dans une transaction annulée,
+en vérifiant le nombre de lignes et la dépense du mois, avant et après. Cette écriture n'est
+pas journalisée ; sa seule trace est `settled_at`.
+
+Fait une fois, le 2 octobre 2026 : douze provisions (1,952752 $) d'essais refusés les 1er et
+2 octobre, avant la confirmation automatique, ont été soldées à zéro. Le motif de ces douze
+refus n'avait pas été journalisé ; les essais suivants, eux journalisés, ont tous été refusés
+faute de crédit sur le compte Anthropic.
+
 Le **plafond mensuel** (`ai_settings.monthly_budget_usd`, 5 $ à la mise en service) borne la
 somme du mois civil, en UTC : le coût confirmé quand il existe, la provision sinon. Une
 provision qui le dépasserait est refusée : rien n'est envoyé, la tâche échoue avec le motif

@@ -74,6 +74,11 @@ Sans rien retirer, en inversant les étapes :
 3. Supabase Dashboard : réactiver « Allow new users to sign up ».
 4. Vérifier l'inscription d'un compte de test, la création d'un projet et l'invitation d'un
    membre.
+5. Vérifier, avec ce compte de test, que l'administration lui reste cachée :
+   `/administration/journal` doit donner exactement l'écran de `/administration/inexistant` —
+   même titre d'onglet une fois la page chargée, hors de la coque de l'application. Ce
+   contrôle n'a été fait qu'en local : en mode privé, aucun compte ordinaire ne se connecte
+   en production.
 
 Les politiques et déclencheurs du mode privé restent en place, inertes. Pour les retirer
 définitivement, **après** ces tests : copier
