@@ -2,14 +2,17 @@
 
 Le worker exécute les tâches nées des réservations (table `jobs`, lots H1 et H2). Son code
 vit dans `worker/` ; il tourne sur Railway et se connecte à la base sous le rôle PostgreSQL
-`filmfund_worker`, qui n'a **aucun droit sur les tables** et n'exécute que ses onze fonctions :
-six pour les tâches, quatre pour la passerelle IA, une pour lire la clé du fournisseur.
+`filmfund_worker`, qui n'a **aucun droit sur les tables** et n'exécute que ses quatorze
+fonctions : six pour les tâches, quatre pour la passerelle IA, une pour lire la clé du
+fournisseur, trois pour les exports PDF.
 
 Depuis le lot I1, le worker porte l'agent WEAVER, qui rédige une proposition de pitch
-(action `logline`). **Sans clé de fournisseur au coffre, il n'a aucun exécuteur** et ne prend
-aucune tâche : il se connecte, récupère les baux expirés, et attend — les demandes restent en
-file, annulables par leur auteur. La clé se pose depuis l'écran Administration →
-Intégrations IA, jamais par une variable d'environnement.
+(action `logline`). **Sans clé de fournisseur au coffre, il n'a aucun agent** : les demandes
+de pitch restent en file, annulables par leur auteur. La clé se pose depuis l'écran
+Administration → Intégrations IA, jamais par une variable d'environnement.
+
+Depuis le lot M1, il fabrique aussi les dossiers PDF (action `pdf_export`). Cette action
+n'appelle aucun fournisseur : elle est en service avec ou sans clé.
 
 ## Ce qui est versionné, ce qui ne l'est pas
 
@@ -184,6 +187,47 @@ update public.ai_settings set monthly_budget_usd = 10;
 Les tarifs par modèle sont dans `worker/src/ia/profils.ts` : à revoir à chaque changement
 de modèle ou de grille, et à confronter à la facture du fournisseur, qui seule fait foi.
 
+## Exports PDF (lot M1)
+
+Un dossier se compose à la carte : synthèse (pitch et synopsis), types de documents, budget,
+plan de financement, planning. La page de garde est toujours présente. Décision 8, prise le
+2 octobre 2026.
+
+- **Ce que le worker reçoit** : le contenu des seules sections demandées, pour la seule
+  tâche qu'il tient (`contexte_export`). Seuls les documents **finalisés** y entrent. Ni
+  image, ni note interne d'une candidature, ni montant réalisé du budget, ni identité des
+  membres.
+- **Aucun fournisseur, aucun coût** : le PDF est fabriqué en mémoire par `pdfkit`. Rien ne
+  s'inscrit au registre des dépenses d'IA.
+- **Où va le fichier** : dans la table `project_exports`, déposé par `livrer_export`, qui
+  conclut la tâche dans la même transaction. Pas dans le stockage Supabase : y écrire
+  demanderait de confier au worker une clé qui contourne toute la RLS.
+- **Qui le lit** : le porteur, les éditeurs et les administrateurs — la règle du budget,
+  qu'un export peut contenir. Un lecteur du projet n'y a pas accès.
+- **Bornes** : 5 Mo par fichier, 30 jours de conservation. Le worker purge les exports
+  expirés au démarrage, puis toutes les heures (`purger_exports_expires`).
+- **Export identique** : chaque fichier porte l'empreinte de son contenu.
+  `export_disponible(projet, demande)` retrouve celui qui correspond encore à l'état du
+  projet ; l'écran le propose alors au lieu d'engager une unité.
+
+**Rien à exporter** : si aucune des sections demandées n'a de contenu — aucun document
+finalisé, budget non ouvert —, la tâche échoue avec un motif clair et l'unité est rendue.
+Une section demandée mais vide est omise du dossier, sans mention.
+
+**Police** : Noto Serif, embarquée (licence OFL, paquet `@expo-google-fonts/noto-serif`). Elle
+couvre l'alphabet latin étendu — ɛ, ɔ, ŋ, ɓ, ɗ —, le grec et le cyrillique. Elle ne couvre ni
+l'arabe, ni l'amharique, ni le tifinagh : ces caractères sortiraient en cases vides.
+
+**Interruption** : une tâche d'export coupée après son envoi passe « à rapprocher », comme un
+appel d'IA. Rien n'a pu être facturé : elle se tranche en échec, l'unité est rendue, et
+l'export se redemande.
+
+```sql
+-- Exports conservés, et leur poids dans la base.
+select count(*) as exports, pg_size_pretty(coalesce(sum(size_bytes), 0)::bigint) as poids
+from public.project_exports;
+```
+
 ## Réglages du service Railway
 
 - Dépôt `lemoinex/FilmFund`, branche `main`, **dossier racine `worker`**.
@@ -208,6 +252,8 @@ Une ligne JSON par événement, sans contenu d'œuvre, paramètre ni secret.
 | `bail_perdu_avant_envoi`         | La tâche a été récupérée entre-temps : rien n'a été envoyé                                       |
 | `baux_expires_recuperes`         | Des tâches abandonnées ont été remises en file ou mises à rapprocher                             |
 | `boucle_en_echec`                | Base injoignable : le worker patiente et réessaie                                                |
+| `exports_expires_purges`         | Des exports de plus de 30 jours ont été supprimés                                                |
+| `purge_exports_impossible`       | La purge a échoué : elle sera retentée à l'heure suivante                                        |
 | `arret_demande`, `worker_arrete` | Arrêt propre, après la tâche en cours                                                            |
 
 ## Tâche « à rapprocher »

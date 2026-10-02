@@ -6,6 +6,7 @@
 import pg from "pg";
 
 import type { Travail } from "./executeurs.ts";
+import type { ContenuDossier } from "./exports/dossier.ts";
 
 export type ConfigurationBase = {
   hote: string;
@@ -43,6 +44,9 @@ export function ouvrirBase(configuration: ConfigurationBase): pg.Pool {
 
 /** Code levé par la base quand le plafond mensuel des dépenses d'IA est atteint. */
 export const PLAFOND_ATTEINT = "IA001";
+
+/** Code levé par la base quand les paramètres d'une tâche sont invalides. */
+export const PARAMETRES_INVALIDES = "22023";
 
 /** Code SQL d'une erreur de la base, s'il y en a un. */
 export function codeDe(erreur: unknown): string | undefined {
@@ -240,4 +244,53 @@ export async function livrerProposition(
     }
     throw erreur;
   }
+}
+
+/** Contenu du dossier d'une tâche d'export, et l'empreinte de ce contenu. */
+export type ContexteExport = { contenu: ContenuDossier; empreinte: string };
+
+/**
+ * Contenu du dossier de la tâche en cours ; null si l'essai ne nous
+ * appartient plus, ou si le projet n'existe plus. Lève `PARAMETRES_INVALIDES`
+ * si la demande ne désigne aucune section connue.
+ */
+export async function lireContexteExport(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteExport | null> {
+  const { rows } = await base.query("select public.contexte_export($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose le fichier et conclut l'essai. Faux : l'essai ne nous appartenait
+ * plus, rien n'a été déposé.
+ */
+export async function livrerExport(
+  base: Base,
+  attemptId: string,
+  fichier: Buffer,
+  pages: number,
+  empreinte: string,
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_export($1, $2, $3, $4)", [
+      attemptId,
+      fichier,
+      pages,
+      empreinte,
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}
+
+/** Supprime les exports expirés ; renvoie leur nombre. */
+export async function purgerExports(base: Base): Promise<number> {
+  const { rows } = await base.query("select public.purger_exports_expires() as nombre");
+  return Number(rows[0].nombre);
 }

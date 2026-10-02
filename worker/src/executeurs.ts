@@ -2,10 +2,11 @@
  * Exécuteurs : ce que le worker sait faire, par action.
  *
  * Le worker ne réclame que les tâches dont l'action a un exécuteur. Le
- * registre de production est assemblé au démarrage (index.ts) : il reste
- * vide tant que la clé du fournisseur d'IA n'est pas configurée — aucune
- * tâche n'est alors prise, et rien n'est simulé. Les tests fournissent leurs
- * propres exécuteurs et fournisseurs, factices et désignés comme tels.
+ * registre de production est assemblé au démarrage (index.ts) : l'export
+ * PDF, qui n'appelle aucun fournisseur, y figure toujours ; les agents n'y
+ * entrent qu'une fois la clé de leur fournisseur d'IA configurée — sans
+ * elle, leurs tâches attendent, et rien n'est simulé. Les tests fournissent
+ * leurs propres exécuteurs et fournisseurs, factices et désignés comme tels.
  */
 
 /** Tâche réclamée, telle que la base la remet au worker. */

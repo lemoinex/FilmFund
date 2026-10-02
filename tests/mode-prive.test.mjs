@@ -14,6 +14,7 @@ import {
   creerCompte,
   creerProjet,
   definirPlafondIa,
+  deposerExport,
   deposerProposition,
   engager,
   faireEntrer,
@@ -45,6 +46,7 @@ describe("Mode privé", () => {
   let devisDuMembre;
   let tacheDuMembre;
   let propositionDuMembre;
+  let exportDuMembre;
 
   before(async () => {
     // Mise en place mode levé : les comptes et l'équipe existent déjà quand
@@ -129,6 +131,23 @@ describe("Mode privé", () => {
       .single();
     assert.equal(erreurProposition, null, erreurProposition?.message);
     propositionDuMembre = proposition.id;
+
+    // Un export déposé avant le verrou, lui aussi.
+    const tacheExport = await engager(
+      membre,
+      projetDuMembre.id,
+      "pdf_export",
+      "avant-le-verrou-export",
+      { sections: ["synthese"] },
+    );
+    await deposerExport(tacheExport.id);
+    const { data: exportDepose, error: erreurExport } = await membre.client
+      .from("project_exports")
+      .select("id")
+      .eq("job_id", tacheExport.id)
+      .single();
+    assert.equal(erreurExport, null, erreurExport?.message);
+    exportDuMembre = exportDepose.id;
 
     await definirModePrive(true);
   });
@@ -289,6 +308,24 @@ describe("Mode privé", () => {
         .eq("id", propositionDuMembre)
         .single();
       assert.equal(restee.state, "proposed");
+    });
+
+    it("ne lit plus ses exports, ni n'en retrouve un", async () => {
+      const { data } = await membre.client.from("project_exports").select("id");
+      assert.equal(data.length, 0);
+
+      const { data: retrouve } = await membre.client.rpc("export_disponible", {
+        p_project_id: projetDuMembre.id,
+        p_params: { sections: ["synthese"] },
+      });
+      assert.equal(retrouve, null);
+
+      // Le fichier, lui, est toujours là : l'administration le lit.
+      const { data: garde } = await administrateur.client
+        .from("project_exports")
+        .select("id")
+        .eq("id", exportDuMembre);
+      assert.equal(garde.length, 1);
     });
 
     it("ne lit ni ne configure les intégrations IA", async () => {
