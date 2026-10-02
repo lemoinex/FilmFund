@@ -98,3 +98,85 @@ describe("Passerelle IA unique", () => {
     assert.deepEqual(fautifs, []);
   });
 });
+
+/*
+ * Pages 404. Les pages d'administration et les projets d'autrui répondent 404
+ * pour ne pas révéler leur existence : rien, dans l'écran rendu, ne doit les
+ * distinguer d'une adresse qui n'existe pas.
+ *
+ * Ces tests lisent le code ; ils ne remplacent pas le contrôle dans le
+ * navigateur, seul à voir la réponse réellement servie.
+ */
+describe("Pages introuvables", () => {
+  const PAGE_RACINE = "src/app/not-found.tsx";
+  const PAGE_ESPACE = "src/app/(app)/not-found.tsx";
+  const PAGES = [PAGE_ESPACE, PAGE_RACINE];
+  const MIDDLEWARE = "src/lib/supabase/middleware.ts";
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("deux pages 404 : la racine, et l'espace connecté", () => {
+    // Next rend le 404 d'un groupe de routes dans sa mise en page : sans page
+    // propre à l'espace connecté, celle de la racine s'y imbriquerait.
+    const pages = SOURCES.filter((f) => /(^|\/)not-found\.(tsx|ts|jsx|js)$/.test(f)).sort();
+    assert.deepEqual(pages, PAGES);
+  });
+
+  it("elles portent un titre en français et se soustraient à l'indexation", () => {
+    for (const page of PAGES) {
+      const source = lire(page);
+      assert.match(source, /title:\s*"Page introuvable/, page);
+      assert.match(source, /robots:\s*\{\s*index:\s*false,\s*follow:\s*false\s*\}/, page);
+    }
+  });
+
+  it("elles ne disent rien des droits : rien qu'une page absente ne dirait", () => {
+    for (const page of PAGES) {
+      const affiche = sansCommentaires(lire(page));
+      // `\b` : « endroit » n'est pas « droit ».
+      assert.doesNotMatch(
+        affiche,
+        /\b(administr|autoris|réserv|droits?\b|acc[èe]s|permission|interdit)/i,
+        page,
+      );
+      // Ni lecture de session : la page ne peut pas varier selon le compte.
+      assert.doesNotMatch(affiche, /supabase|cookies\(|headers\(/, page);
+    }
+  });
+
+  it("celle de l'espace connecté n'apporte que le contenu : la coque fournit le reste", () => {
+    assert.doesNotMatch(sansCommentaires(lire(PAGE_ESPACE)), /<(main|header|footer)\b/);
+    // Celle de la racine n'a que la mise en page racine autour d'elle.
+    assert.match(sansCommentaires(lire(PAGE_RACINE)), /<main\b/);
+  });
+
+  it("l'administration est cachée avant d'atteindre ses pages", () => {
+    // Une page qui répond 404 elle-même s'affiche dans la coque et sous son
+    // propre titre d'onglet : le middleware doit l'avoir écartée avant.
+    const garde = sansCommentaires(lire(MIDDLEWARE));
+    assert.match(garde, /sousAdministration\(pathname\)/);
+    assert.match(garde, /rpc\("is_admin"\)/);
+    // Tout ce qui n'est pas un oui franc est un refus, panne comprise.
+    assert.match(garde, /administrateur !== true/);
+    assert.match(garde, /NextResponse\.rewrite\(/);
+
+    // La cible ne peut être servie par aucune route : Next exclut du routage
+    // les dossiers préfixés d'un tiret bas.
+    const cible = /const ROUTE_INEXISTANTE = "(\/[^"]+)"/.exec(garde)?.[1];
+    assert.match(cible ?? "", /^\/_[a-z]+$/);
+    assert.deepEqual(
+      SOURCES.filter((f) => f.startsWith(`src/app${cible}`)),
+      [],
+    );
+  });
+
+  it("chaque page d'administration garde son propre contrôle, en seconde ligne", () => {
+    const pages = SOURCES.filter((f) => /^src\/app\/\(app\)\/administration\/.*page\.tsx$/.test(f));
+    assert.ok(pages.length >= 3);
+    const sansGarde = pages.filter((f) => {
+      const source = sansCommentaires(lire(f));
+      return !/rpc\("is_admin"\)/.test(source) || !/notFound\(\)/.test(source);
+    });
+    assert.deepEqual(sansGarde, []);
+  });
+});

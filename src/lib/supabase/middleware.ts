@@ -26,6 +26,20 @@ const ROUTES_INVITE = ["/connexion", "/inscription"];
 /** Page d'explication pour les comptes que le mode privé tient à l'écart. */
 const ROUTE_ACCES_REFUSE = "/acces-refuse";
 
+/** Les pages sous ce préfixe n'existent que pour les administrateurs. */
+const ROUTE_ADMINISTRATION = "/administration";
+
+/**
+ * Adresse que rien ne sert, ni ne servira : un dossier préfixé d'un tiret bas
+ * est exclu du routage de Next. Y réécrire une requête la fait répondre comme
+ * toute page absente.
+ */
+const ROUTE_INEXISTANTE = "/_introuvable";
+
+function sousAdministration(pathname: string) {
+  return pathname === ROUTE_ADMINISTRATION || pathname.startsWith(`${ROUTE_ADMINISTRATION}/`);
+}
+
 /**
  * Rafraîchit la session à chaque requête et garde les routes protégées.
  *
@@ -99,6 +113,31 @@ export async function updateSession(request: NextRequest) {
     url.pathname = ROUTE_ACCES_REFUSE;
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  /*
+   * Administration : pour un compte ordinaire, ces pages n'existent pas. Les
+   * laisser répondre 404 elles-mêmes ne suffit pas : leur 404 s'affiche dans
+   * la coque de l'application et sous leur propre titre d'onglet, là où une
+   * adresse inexistante s'affiche hors de la coque — la différence les
+   * trahit. La requête est donc réécrite avant d'atteindre la page, et la
+   * réponse est celle de n'importe quelle page absente.
+   *
+   * En cas d'échec de l'appel, on refuse : mieux vaut un 404 pour un
+   * administrateur pendant une panne qu'une page révélée à qui ne l'est pas.
+   * Les pages gardent leur propre contrôle, en seconde ligne.
+   */
+  if (user && sousAdministration(pathname)) {
+    const { data: administrateur } = await supabase.rpc("is_admin");
+
+    if (administrateur !== true) {
+      const url = request.nextUrl.clone();
+      url.pathname = ROUTE_INEXISTANTE;
+      const reecriture = NextResponse.rewrite(url, { request });
+      // La session a pu être rafraîchie plus haut : ses cookies suivent.
+      response.cookies.getAll().forEach((cookie) => reecriture.cookies.set(cookie));
+      return reecriture;
+    }
   }
 
   if (user && ROUTES_INVITE.some((route) => pathname.startsWith(route))) {
