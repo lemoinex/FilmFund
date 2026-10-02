@@ -64,18 +64,19 @@ jobs:
       # celles-là, et Vercel ne les voit pas.
       - run: npm ci --prefix worker
 
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      # L'outil Supabase est celui que `npm ci` vient d'installer, à la
+      # version verrouillée dans package-lock.json : la même qu'en local.
+      # Demander la dernière version interrogeait l'API GitHub, dont le quota
+      # dépassé a fait échouer le job avant tout test le 2 octobre 2026.
 
       # Démarre Postgres, Auth et Storage, puis applique les migrations.
       # Les tests créent de vrais comptes et de vraies lignes : la RLS ne se
       # simule pas, elle s'éprouve.
       - name: Démarrer Supabase
-        run: supabase start
+        run: npx supabase start
 
       - name: Vérifier que les migrations s'appliquent proprement
-        run: supabase db reset
+        run: npx supabase db reset
 
       - name: Tests
         run: npm test
@@ -83,7 +84,7 @@ jobs:
       # Tests SQL (pgTAP) : ce qui ne s'observe pas par l'API, comme les
       # droits d'exécution des fonctions, se vérifie dans le catalogue.
       - name: Tests de la base
-        run: supabase test db
+        run: npx supabase test db
 
       # Les types sont générés depuis le schéma : s'ils divergent, le typage
       # ment sur l'état réel de la base.
@@ -104,4 +105,4 @@ jobs:
 
       - name: Arrêter Supabase
         if: always()
-        run: supabase stop
+        run: npx supabase stop
