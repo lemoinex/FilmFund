@@ -187,7 +187,7 @@ update public.ai_settings set monthly_budget_usd = 10;
 Les tarifs par modèle sont dans `worker/src/ia/profils.ts` : à revoir à chaque changement
 de modèle ou de grille, et à confronter à la facture du fournisseur, qui seule fait foi.
 
-## Exports PDF (lot M1)
+## Exports PDF (lots M1 et M2)
 
 Un dossier se compose à la carte : synthèse (pitch et synopsis), types de documents, budget,
 plan de financement, planning. La page de garde est toujours présente. Décision 8, prise le
@@ -209,6 +209,9 @@ plan de financement, planning. La page de garde est toujours présente. Décisio
 - **Export identique** : chaque fichier porte l'empreinte de son contenu.
   `export_disponible(projet, demande)` retrouve celui qui correspond encore à l'état du
   projet ; l'écran le propose alors au lieu d'engager une unité.
+- **Écran** (lot M2) : onglet « Dossier PDF » du projet, visible de qui lit le budget. Le
+  fichier se télécharge par la route `/projets/<projet>/dossier/<export>`, lue avec la
+  session de l'utilisateur : c'est la RLS qui décide, et tout refus répond 404.
 
 **Rien à exporter** : si aucune des sections demandées n'a de contenu — aucun document
 finalisé, budget non ouvert —, la tâche échoue avec un motif clair et l'unité est rendue.
