@@ -17,8 +17,8 @@ réels).
 | G   | Devis, réservation atomique, idempotence                                                                                       | validé en recette | —              |
 | H1  | Tâches persistantes, outbox, rapprochement — en base : tâches, essais, rôle dédié du worker                                    | validé en recette | —              |
 | H2  | Worker Node (`worker/`) et son déploiement sur Railway                                                                         | validé en recette | —              |
-| I1  | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé localement | —              |
-| I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé localement | —              |
+| I1  | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé localement | recette        |
+| I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé localement | recette de I1  |
 | I2  | WEAVER : synopsis court / standard / détaillé, note d'intention                                                                | à faire           | recette de I1  |
 | J   | Autres agents                                                                                                                  | bloqué            | I1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
@@ -27,6 +27,20 @@ réels).
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
+
+## Recette de I1
+
+Au 2 octobre 2026, la recette du pitch n'a pas abouti : chaque demande est refusée par
+Anthropic, faute de crédit sur le compte (`400 invalid_request_error`). Aucune tâche n'a
+encore réussi en production : la requête elle-même n'a donc jamais été validée par la vraie
+API.
+
+- Le motif d'un refus se lit désormais dans les journaux du worker, et un refus ne pèse plus
+  sur le plafond mensuel (`docs/worker.md`, « Coûts et plafond »).
+- Les provisions des essais refusés avant ce correctif ont été soldées à zéro.
+- Reste à faire : créditer le compte de la clé enregistrée dans « Intégrations IA », relancer
+  un pitch, puis vérifier une tâche réussie, une proposition affichée et un coût confirmé non
+  nul. I1 et I1b passeront alors « validé en recette », ce qui ouvre I2.
 
 ## Décisions attendues
 
