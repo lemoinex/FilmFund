@@ -23,8 +23,8 @@ réels).
 | J   | Autres agents                                                                                                                  | bloqué            | I1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
-| M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé localement | —              |
-| M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé localement | —              |
+| M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
+| M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -42,6 +42,24 @@ API.
 - Reste à faire : créditer le compte de la clé enregistrée dans « Intégrations IA », relancer
   un pitch, puis vérifier une tâche réussie, une proposition affichée et un coût confirmé non
   nul. I1 et I1b passeront alors « validé en recette », ce qui ouvre I2.
+
+## Recette du lot M
+
+Le 2 octobre 2026, un premier dossier a été fabriqué en production, de l'écran au
+téléchargement, par un administrateur (mode privé actif).
+
+- Demande depuis l'onglet « Dossier PDF » d'un projet : section « Synthèse » seule, devis puis
+  lancement.
+- Tâche `pdf_export` réclamée par le worker Railway cinq secondes plus tard, réussie au premier
+  essai en 212 ms ; aucune alerte dans ses journaux.
+- En base : un export de 2 pages et 10 684 octets, rattaché à sa tâche, expirant 30 jours
+  après ; une unité PDF réservée, consommée, rien de rendu.
+- Téléchargement servi par la route du dossier ; le fichier a été ouvert et jugé correct par
+  l'utilisateur.
+
+Non couvert par cette recette, faute de second compte tant que le mode privé est actif : un
+éditeur et un lecteur réels (vérifiés localement et par les tests), un dossier avec documents,
+budget, plan de financement et planning, et la purge d'un export arrivé à expiration.
 
 ## Décisions attendues
 
