@@ -23,7 +23,8 @@ réels).
 | J   | Autres agents                                                                                                                  | bloqué            | I1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
-| M   | Exports PDF                                                                                                                    | bloqué            | Décision 8     |
+| M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé localement | —              |
+| M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | à faire           | M1             |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -71,3 +72,10 @@ Bail de 5 minutes, deux essais au plus. Au lot H2 : le service Railway « FilmFu
 est réutilisé (dossier `worker/`, région Europe) ; la connexion passe par le pooler Supabase
 en mode session, vérifiée par le certificat racine de Supabase ; le worker ne réclame que les
 actions qu'il sait exécuter — aucune avant le lot I. Exploitation : `docs/worker.md`.
+
+Exports PDF, décidés le 2 octobre 2026 (décision 8) : un dossier se compose à la carte —
+synthèse, types de documents, budget, plan de financement, planning ; seuls les documents
+finalisés y entrent ; le PDF est fabriqué par le worker, jamais par le navigateur ; pas
+d'image dans la première version. Le fichier est rangé en base (5 Mo au plus, 30 jours),
+lisible du porteur, des éditeurs et des administrateurs. Lot M découpé en M1 (base et worker)
+et M2 (écran). Exploitation : `docs/worker.md`.

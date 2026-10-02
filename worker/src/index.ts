@@ -9,19 +9,24 @@
  *
  * Les clés des fournisseurs d'IA ne sont pas des variables d'environnement :
  * elles sont posées depuis l'écran Administration → Intégrations IA et lues
- * dans le coffre. Le registre des exécuteurs est donc relu périodiquement :
+ * dans le coffre. Le registre des agents est donc relu périodiquement :
  * poser une clé met l'agent en service, la retirer l'en sort, sans
- * redéploiement. Sans clé, aucun exécuteur, donc aucune tâche prise.
+ * redéploiement. Sans clé, aucun agent : seules les tâches qui n'appellent
+ * aucun fournisseur — l'export PDF — sont alors prises.
  */
 import { readFileSync } from "node:fs";
 import { hostname } from "node:os";
 
-import { ouvrirBase, roleCourant } from "./base.ts";
-import { demarrerWorker, type Evenement } from "./boucle.ts";
+import { ouvrirBase, purgerExports, roleCourant } from "./base.ts";
+import { demarrerWorker, type Evenement, type Registre } from "./boucle.ts";
+import { executeursExport } from "./exports/executeur.ts";
 import { registreDesAgents } from "./registre.ts";
 
 /** Fréquence de relecture des clés du coffre. */
 const RELECTURE_CLES_MS = 60_000;
+
+/** Fréquence de suppression des exports expirés. */
+const PURGE_EXPORTS_MS = 60 * 60_000;
 
 function journal(evenement: Evenement): void {
   console.log(JSON.stringify({ date: new Date().toISOString(), ...evenement }));
@@ -52,6 +57,9 @@ base.on("error", (erreur) => {
 });
 
 const agents = registreDesAgents({ base, journal });
+// L'export n'appelle aucun fournisseur : il est en service avec ou sans clé.
+const exportsPdf = executeursExport(base);
+const executeurs = (): Registre => ({ ...exportsPdf, ...agents.lire() });
 const nom = `${process.env.RAILWAY_REPLICA_ID ?? hostname()}-${process.pid}`.slice(0, 100);
 const arret = new AbortController();
 
@@ -70,7 +78,7 @@ try {
     evenement: "worker_demarre",
     worker: nom,
     role,
-    actions: Object.keys(agents.lire()),
+    actions: Object.keys(executeurs()),
   });
 } catch (erreur) {
   journal({
@@ -94,9 +102,30 @@ const relecture = setInterval(() => {
   );
 }, RELECTURE_CLES_MS);
 
+// Les exports se conservent 30 jours : au-delà, ils pèseraient pour rien
+// dans la base. Un échec n'arrête rien, la purge suivante rattrapera.
+function purger(): void {
+  purgerExports(base).then(
+    (nombre) => {
+      if (nombre > 0) {
+        journal({ niveau: "info", evenement: "exports_expires_purges", nombre });
+      }
+    },
+    (erreur) =>
+      journal({
+        niveau: "alerte",
+        evenement: "purge_exports_impossible",
+        message: erreur instanceof Error ? erreur.message : String(erreur),
+      }),
+  );
+}
+purger();
+const purge = setInterval(purger, PURGE_EXPORTS_MS);
+
 try {
-  await demarrerWorker({ base, nom, executeurs: agents.lire, journal }, arret.signal);
+  await demarrerWorker({ base, nom, executeurs, journal }, arret.signal);
 } finally {
   clearInterval(relecture);
+  clearInterval(purge);
   await base.end();
 }

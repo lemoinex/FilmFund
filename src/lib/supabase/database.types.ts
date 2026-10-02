@@ -611,6 +611,73 @@ export type Database = {
           },
         ];
       };
+      project_exports: {
+        Row: {
+          content_fingerprint: string;
+          created_at: string;
+          created_by: string;
+          expires_at: string;
+          file: string;
+          id: string;
+          job_id: string;
+          pages: number;
+          params: NonNullable<Json>;
+          project_id: string;
+          size_bytes: number | null;
+          studio_id: string;
+        };
+        Insert: {
+          content_fingerprint: string;
+          created_at?: string;
+          created_by: string;
+          expires_at?: string;
+          file: string;
+          id?: string;
+          job_id: string;
+          pages: number;
+          params: NonNullable<Json>;
+          project_id: string;
+          size_bytes?: never;
+          studio_id: string;
+        };
+        Update: {
+          content_fingerprint?: string;
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string;
+          file?: string;
+          id?: string;
+          job_id?: string;
+          pages?: number;
+          params?: NonNullable<Json>;
+          project_id?: string;
+          size_bytes?: never;
+          studio_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_exports_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: true;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_exports_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_exports_studio_id_fkey";
+            columns: ["studio_id"];
+            isOneToOne: false;
+            referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_fundings: {
         Row: {
           amount_granted: number | null;
@@ -1509,6 +1576,8 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      contenu_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: Json };
+      contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_travail: {
         Args: { p_attempt_id: string };
         Returns: {
@@ -1586,10 +1655,12 @@ export type Database = {
         };
       };
       email_confirme_courant: { Args: Record<PropertyKey, never>; Returns: string };
+      empreinte_contenu: { Args: { p_contenu: Json }; Returns: string };
       empreinte_demande: {
         Args: { p_action: string; p_params: Json; p_project_id: string };
         Returns: string;
       };
+      empreinte_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: string };
       equipe_du_projet: {
         Args: { p_project_id: string };
         Returns: {
@@ -1620,11 +1691,16 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      export_disponible: { Args: { p_params: Json; p_project_id: string }; Returns: string };
       images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       journaliser: {
         Args: { p_action: string; p_details: Json; p_project_id: string };
         Returns: undefined;
+      };
+      livrer_export: {
+        Args: { p_attempt_id: string; p_file: string; p_fingerprint: string; p_pages: number };
+        Returns: string;
       };
       livrer_proposition: { Args: { p_attempt_id: string; p_content: string }; Returns: string };
       marquer_tentative_soumise: {
@@ -1665,6 +1741,7 @@ export type Database = {
         Args: { p_cle: string; p_maximum: number; p_params: Json };
         Returns: number;
       };
+      parametres_export: { Args: { p_params: Json }; Returns: Json };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites_pour: {
@@ -1727,6 +1804,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      purger_exports_expires: { Args: Record<PropertyKey, never>; Returns: number };
       rapprocher_travail: {
         Args: { p_consumed?: number; p_job_id: string; p_success: boolean };
         Returns: {

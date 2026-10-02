@@ -180,3 +180,42 @@ describe("Pages introuvables", () => {
     assert.deepEqual(sansGarde, []);
   });
 });
+
+/*
+ * Libellés du dossier PDF. Railway ne déploie que `worker/` : le worker ne
+ * peut pas importer les libellés de l'application, il en tient une copie. Un
+ * dossier ne doit pas nommer un poste autrement que l'écran.
+ */
+describe("Libellés du worker", () => {
+  /** Table `code: "libellé"` déclarée dans un fichier de l'application. */
+  function tableDe(fichier, nom, { imbriquee = false } = {}) {
+    const source = lire(fichier);
+    const debut = source.indexOf(`export const ${nom}`);
+    assert.ok(debut >= 0, `${nom} introuvable dans ${fichier}`);
+    const corps = source.slice(debut, source.indexOf("\n};", debut));
+    const motif = imbriquee
+      ? /^ {2}(\w+): \{\s*libelle: "([^"]*)"/gm
+      : /^ {2}(\w+): "([^"]*)",?$/gm;
+    return Object.fromEntries([...corps.matchAll(motif)].map((m) => [m[1], m[2]]));
+  }
+
+  it("le dossier nomme chaque chose comme l'écran", async () => {
+    const worker = await import("../worker/src/exports/libelles.ts");
+    const application = {
+      FORMATS: tableDe("src/lib/projets.ts", "FORMATS"),
+      ETAPES: tableDe("src/lib/projets.ts", "ETAPES"),
+      TYPES_DOCUMENT: tableDe("src/lib/documents.ts", "TYPES_DOCUMENT", { imbriquee: true }),
+      POSTES: tableDe("src/lib/budgets.ts", "POSTES"),
+      TYPES_FINANCEMENT: tableDe("src/lib/financements.ts", "TYPES_FINANCEMENT"),
+      STATUTS_FINANCEMENT: tableDe("src/lib/financements.ts", "STATUTS_FINANCEMENT"),
+      STATUTS_ETAPE: tableDe("src/lib/planning.ts", "STATUTS_ETAPE"),
+    };
+
+    for (const [nom, attendu] of Object.entries(application)) {
+      // La lecture a bien trouvé quelque chose : une table vide passerait
+      // la comparaison sans rien prouver.
+      assert.ok(Object.keys(attendu).length >= 3, `${nom} : lecture de l'application`);
+      assert.deepEqual({ ...worker[nom] }, attendu, nom);
+    }
+  });
+});

@@ -353,3 +353,41 @@ export async function definirPlafondIa(dollars) {
     throw new Error(`Plafond d'IA impossible à fixer : ${erreurs}`);
   }
 }
+
+/**
+ * Fait déposer un export pour une tâche d'export en attente, comme le ferait
+ * le worker : réclamation, envoi, lecture du contenu, dépôt. AUCUN PDF RÉEL :
+ * le fichier est un en-tête de PDF, de quoi passer le contrôle de la base.
+ *
+ * Pour les suites qui éprouvent ce que les comptes lisent d'un export, pas
+ * la mise en page — celle-ci a sa propre suite.
+ */
+export async function deposerExport(tacheId) {
+  if (!/^[0-9a-f-]{36}$/.test(tacheId)) {
+    throw new Error("Tâche inutilisable dans le SQL du test.");
+  }
+  const { code, erreurs } = await executerSqlLocal(`
+    ${annulerLesAutresTaches([tacheId])}
+    do $$
+    declare
+      v_travail uuid;
+      v_essai uuid;
+    begin
+      select r.job_id, r.attempt_id into v_travail, v_essai
+      from public.reclamer_travail('worker-de-test', array['pdf_export']) r;
+      if v_travail is distinct from '${tacheId}' then
+        raise exception 'Tâche réclamée inattendue : %', v_travail;
+      end if;
+      perform public.marquer_tentative_soumise(v_essai);
+      perform public.livrer_export(
+        v_essai,
+        '\\x255044462d312e330a'::bytea,
+        1,
+        public.contexte_export(v_essai) ->> 'empreinte'
+      );
+    end $$;
+  `);
+  if (code !== 0) {
+    throw new Error(`Dépôt de l'export impossible : ${erreurs}`);
+  }
+}
