@@ -28,6 +28,8 @@ réels).
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
+| Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé localement | —              |
+| Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | à faire           | —              |
 
 ## Recette de I1
 
@@ -97,3 +99,9 @@ finalisés y entrent ; le PDF est fabriqué par le worker, jamais par le navigat
 d'image dans la première version. Le fichier est rangé en base (5 Mo au plus, 30 jours),
 lisible du porteur, des éditeurs et des administrateurs. Lot M découpé en M1 (base et worker)
 et M2 (écran). Exploitation : `docs/worker.md`.
+
+Profil, décidé le 2 octobre 2026 : lot Q découpé en Q1 (champs professionnels et page) et Q2
+(photo). Prénom, nom, pays, ville, profession et type ne sont lisibles que du titulaire et
+des administrateurs ; les équipes ne reçoivent toujours que le nom affiché, qui reste
+distinct du prénom et du nom. Le type (auteur, réalisateur, producteur) n'ouvre aucun droit.
+Les noms de pays ne sont pas rédigés dans le dépôt : seuls les codes ISO y figurent.

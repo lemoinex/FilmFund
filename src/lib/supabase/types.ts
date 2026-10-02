@@ -17,6 +17,7 @@ export type Tables<T extends keyof Database["public"]["Tables"]> =
 export type Enums<T extends keyof Database["public"]["Enums"]> = Database["public"]["Enums"][T];
 
 export type UserRole = Enums<"user_role">;
+export type ProfileType = Enums<"profile_type">;
 export type ProjectFormat = Enums<"project_format">;
 export type ProjectStage = Enums<"project_stage">;
 export type ProjectMemberRole = Enums<"project_member_role">;

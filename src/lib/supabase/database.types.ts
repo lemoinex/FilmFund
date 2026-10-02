@@ -458,23 +458,41 @@ export type Database = {
       };
       profiles: {
         Row: {
+          city: string;
+          country: string | null;
           created_at: string;
           display_name: string;
+          first_name: string;
           id: string;
+          last_name: string;
+          profession: string;
+          profile_type: Database["public"]["Enums"]["profile_type"] | null;
           role: Database["public"]["Enums"]["user_role"];
           updated_at: string;
         };
         Insert: {
+          city?: string;
+          country?: string | null;
           created_at?: string;
           display_name?: string;
+          first_name?: string;
           id: string;
+          last_name?: string;
+          profession?: string;
+          profile_type?: Database["public"]["Enums"]["profile_type"] | null;
           role?: Database["public"]["Enums"]["user_role"];
           updated_at?: string;
         };
         Update: {
+          city?: string;
+          country?: string | null;
           created_at?: string;
           display_name?: string;
+          first_name?: string;
           id?: string;
+          last_name?: string;
+          profession?: string;
+          profile_type?: Database["public"]["Enums"]["profile_type"] | null;
           role?: Database["public"]["Enums"]["user_role"];
           updated_at?: string;
         };
@@ -1975,6 +1993,7 @@ export type Database = {
         | "autre";
       funding_status: "a_preparer" | "deposee" | "acceptee" | "refusee";
       milestone_status: "a_faire" | "en_cours" | "termine";
+      profile_type: "AUTHOR" | "DIRECTOR" | "PRODUCER";
       project_format:
         "long_metrage" | "court_metrage" | "documentaire" | "serie" | "web_serie" | "animation";
       project_member_role: "editor" | "viewer";
@@ -2140,6 +2159,7 @@ export const Constants = {
       ],
       funding_status: ["a_preparer", "deposee", "acceptee", "refusee"],
       milestone_status: ["a_faire", "en_cours", "termine"],
+      profile_type: ["AUTHOR", "DIRECTOR", "PRODUCER"],
       project_format: [
         "long_metrage",
         "court_metrage",

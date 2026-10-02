@@ -28,6 +28,12 @@ const ROLES: Record<string, string> = {
 
 const CHAMPS_PROFIL: Record<string, string> = {
   display_name: "nom affiché",
+  first_name: "prénom",
+  last_name: "nom",
+  country: "pays",
+  city: "ville",
+  profession: "profession",
+  profile_type: "type de profil",
 };
 
 const TABLES: Record<string, string> = {
