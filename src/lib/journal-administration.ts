@@ -34,6 +34,7 @@ const CHAMPS_PROFIL: Record<string, string> = {
   city: "ville",
   profession: "profession",
   profile_type: "type de profil",
+  avatar_path: "photo",
 };
 
 const TABLES: Record<string, string> = {

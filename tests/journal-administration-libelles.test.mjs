@@ -96,6 +96,13 @@ describe("Libellés du journal d'administration", () => {
       ),
       "a modifié le profil de Bakary (ville, pays, prénom, nom, profession, type de profil)",
     );
+    assert.equal(
+      descriptionDe(
+        entree("modification_profil", { compte: "b", champs: ["avatar_path"] }),
+        annuaire,
+      ),
+      "a modifié le profil de Bakary (photo)",
+    );
   });
 
   it("décrit les deux sens de la bascule du mode privé", () => {

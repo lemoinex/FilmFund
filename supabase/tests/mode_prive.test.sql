@@ -9,7 +9,7 @@
 
 begin;
 
-select plan(3);
+select plan(4);
 
 select is_empty(
   $$
@@ -49,6 +49,25 @@ select is(
   ),
   1,
   'Les images portent la politique restrictive du mode privé'
+);
+
+-- Tout compartiment, existant ou à venir : un compartiment ajouté sans son
+-- verrou échapperait au mode privé.
+select is_empty(
+  $$
+    select b.id
+    from storage.buckets b
+    where not exists (
+      select 1
+      from pg_policies p
+      where p.schemaname = 'storage'
+        and p.tablename = 'objects'
+        and p.permissive = 'RESTRICTIVE'
+        and p.policyname like 'Mode privé : administrateurs uniquement%'
+        and p.qual like '%''' || b.id || '''%'
+    )
+  $$,
+  'Chaque compartiment de stockage porte la politique restrictive du mode privé'
 );
 
 select * from finish();

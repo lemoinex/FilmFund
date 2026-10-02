@@ -303,7 +303,9 @@ describe("Champs du profil", () => {
   });
 
   it("le journal sait nommer chaque champ que l'écran modifie", async () => {
-    const { CHAMPS_MODIFIABLES } = await import("../src/lib/profils.ts");
+    const { CHAMPS_MODIFIABLES: FORMULAIRE } = await import("../src/lib/profils.ts");
+    // La photo ne passe pas par le formulaire, mais par ses propres actions.
+    const CHAMPS_MODIFIABLES = [...FORMULAIRE, "avatar_path"];
     const journal = lire("src/lib/journal-administration.ts");
     const debut = journal.indexOf("const CHAMPS_PROFIL");
     assert.ok(debut >= 0, "CHAMPS_PROFIL introuvable");
@@ -327,6 +329,26 @@ describe("Champs du profil", () => {
 
   it("la page ne lit que le profil de la session", () => {
     const page = sansCommentaires(lire("src/app/(app)/profil/page.tsx"));
-    assert.match(page, /from\("profiles"\)\s*\.select\("[^"]+"\)\s*\.eq\("id", user\.id\)/);
+    assert.match(page, /from\("profiles"\)\s*\.select\(\s*"[^"]+",?\s*\)\s*\.eq\("id", user\.id\)/);
+  });
+
+  it("la photo n'est rattachée qu'au profil de la session, après contrôle de ses octets", () => {
+    const action = sansCommentaires(lire("src/app/(app)/profil/actions.ts"));
+    const debut = action.indexOf("export async function definirPhoto");
+    assert.ok(debut >= 0, "definirPhoto introuvable");
+    const corps = action.slice(debut, action.indexOf("\nexport ", debut + 1));
+
+    assert.match(corps, /exigerAcces\(supabase\)/);
+    // Le dossier est celui du compte de la session.
+    assert.match(corps, /estCheminPhotoDe\(chemin, user\.id\)/);
+    // Les octets réels sont lus, et comparés à l'extension annoncée, avant
+    // tout rattachement.
+    const controle = corps.search(/extensionDesOctets\(octets\) !== extensionDuChemin\(chemin\)/);
+    const rattachement = corps.search(
+      /\.update\(\{ avatar_path: chemin \}\)\s*\.eq\("id", user\.id\)/,
+    );
+    assert.ok(controle > 0, "contrôle des octets introuvable");
+    assert.ok(rattachement > controle, "le rattachement doit suivre le contrôle des octets");
+    assert.doesNotMatch(action, /SECRET|service_role/i);
   });
 });
