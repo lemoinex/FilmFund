@@ -85,6 +85,19 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("nomme en français les champs du profil professionnel", () => {
+    assert.equal(
+      descriptionDe(
+        entree("modification_profil", {
+          compte: "b",
+          champs: ["city", "country", "first_name", "last_name", "profession", "profile_type"],
+        }),
+        annuaire,
+      ),
+      "a modifié le profil de Bakary (ville, pays, prénom, nom, profession, type de profil)",
+    );
+  });
+
   it("décrit les deux sens de la bascule du mode privé", () => {
     assert.equal(
       descriptionDe(entree("mode_prive", { actif: true }), annuaire),

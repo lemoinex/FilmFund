@@ -375,7 +375,7 @@ const CONFIDENTIALITE: LegalDocument = {
           type: "list",
           items: [
             "données de compte : identifiants de connexion, adresse e-mail, nom ou pseudonyme, préférences ;",
-            "données de profil professionnel renseignées volontairement : fonction, société, pays d'activité ;",
+            "données de profil professionnel renseignées volontairement : fonction, société, pays et ville d'activité ;",
             "contenus de projet créés ou importés : synopsis, documents de développement, storyboards, budgets, plannings, fichiers joints ;",
             "données relatives aux équipes et collaborateurs invités par l'utilisateur ;",
             "données d'usage du service nécessaires à son fonctionnement et à sa sécurité.",

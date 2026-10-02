@@ -262,3 +262,71 @@ describe("Sections des exports PDF", () => {
     assert.doesNotMatch(route, /SECRET|service_role/i);
   });
 });
+
+/*
+ * Profil professionnel. Trois listes décrivent les mêmes champs : ce que
+ * l'écran modifie, ce que la base admet, et ce que le journal sait nommer.
+ * Un champ ajouté d'un côté seulement serait refusé après coup, ou
+ * apparaîtrait au journal sous son nom de colonne.
+ */
+describe("Champs du profil", () => {
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("l'écran propose exactement les types de profil que la base admet", async () => {
+    const { TYPES_PROFIL } = await import("../src/lib/profils.ts");
+    const migration = lire("supabase/migrations/20261002201845_profil_professionnel.sql");
+    const liste = /create type public\.profile_type as enum \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+
+    assert.ok(enBase.length >= 3, "lecture de la migration");
+    assert.deepEqual(Object.keys(TYPES_PROFIL), enBase);
+  });
+
+  it("l'écran borne chaque texte comme la base", async () => {
+    const { LONGUEURS_PROFIL } = await import("../src/lib/profils.ts");
+    const migrations = [
+      "supabase/migrations/20260929092712_profiles_et_roles.sql",
+      "supabase/migrations/20261002201845_profil_professionnel.sql",
+    ]
+      .map(lire)
+      .join("\n");
+    const enBase = Object.fromEntries(
+      [...migrations.matchAll(/check \(char_length\((\w+)\) <= (\d+)/g)].map((m) => [
+        m[1],
+        Number(m[2]),
+      ]),
+    );
+
+    assert.ok(Object.keys(enBase).length >= 5, "lecture des migrations");
+    assert.deepEqual({ ...LONGUEURS_PROFIL }, enBase);
+  });
+
+  it("le journal sait nommer chaque champ que l'écran modifie", async () => {
+    const { CHAMPS_MODIFIABLES } = await import("../src/lib/profils.ts");
+    const journal = lire("src/lib/journal-administration.ts");
+    const debut = journal.indexOf("const CHAMPS_PROFIL");
+    assert.ok(debut >= 0, "CHAMPS_PROFIL introuvable");
+    const corps = journal.slice(debut, journal.indexOf("\n};", debut));
+    const nommes = [...corps.matchAll(/^ {2}(\w+): "[^"]+",?$/gm)].map((m) => m[1]);
+
+    assert.ok(nommes.length >= 1, "lecture du journal");
+    assert.deepEqual([...nommes].sort(), [...CHAMPS_MODIFIABLES].sort());
+  });
+
+  // Ces gardes lisent le code : le parcours réel se vérifie dans le navigateur.
+  it("l'action ne modifie que le profil de la session, après validation", () => {
+    const action = sansCommentaires(lire("src/app/(app)/profil/actions.ts"));
+    assert.match(action, /exigerAcces\(supabase\)/);
+    assert.match(action, /normaliserProfil\(/);
+    assert.match(action, /\.update\(lecture\.profil\)\s*\.eq\("id", user\.id\)/);
+    // Ni identifiant ni rôle ne viennent du formulaire.
+    assert.doesNotMatch(action, /formData\.get\("(id|role)"\)/);
+    assert.doesNotMatch(action, /SECRET|service_role/i);
+  });
+
+  it("la page ne lit que le profil de la session", () => {
+    const page = sansCommentaires(lire("src/app/(app)/profil/page.tsx"));
+    assert.match(page, /from\("profiles"\)\s*\.select\("[^"]+"\)\s*\.eq\("id", user\.id\)/);
+  });
+});

@@ -44,6 +44,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="min-w-0">
         <p className="truncate text-sm">{nom}</p>
         {administrateur ? <p className="text-gold mt-1 text-xs">Administrateur</p> : null}
+        <Link
+          href="/profil"
+          className="text-secondary hover:text-light mt-1 inline-block text-xs underline-offset-4 transition-colors hover:underline"
+        >
+          Mon profil
+        </Link>
       </div>
       <form action={deconnexion}>
         <button

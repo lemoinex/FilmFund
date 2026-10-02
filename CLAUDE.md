@@ -162,12 +162,14 @@ Livraison : branche, PR, CI verte, fusion, puis `supabase db push` précédé de
   fermée. Ne pas lever le mode privé ni rouvrir l’inscription sans décision
   explicite (`docs/mode-prive.md`).
 - Déjà en place, verrouillés par le mode privé : inscription, connexion,
-  déconnexion, mot de passe oublié, profil minimal (nom affiché), studios (socle),
+  déconnexion, mot de passe oublié, profil et page de profil, studios (socle),
   équipes de projet et invitations. Ne pas les recréer.
 - Rôles existants : `member` et `admin` (`profiles.role`, `is_admin()`) ;
   `owner`, `editor`, `viewer` dans un projet ; rôles de studio.
-- Profil prévu, par migration additive : prénom, nom, pays, ville, profession,
-  photo, type (`AUTHOR`, `DIRECTOR`, `PRODUCER`). Le type n’est pas un rôle d’accès.
+- Profil : nom affiché, prénom, nom, pays, ville, profession et type (`AUTHOR`,
+  `DIRECTOR`, `PRODUCER`), lisibles du titulaire et des administrateurs seulement ;
+  les équipes ne reçoivent que le nom affiché. Le type n’est pas un rôle d’accès.
+  Photo prévue, par migration additive (lot Q2).
 - Ne jamais dériver un rôle, studio, entitlement ou accès projet depuis le client.
 - Chaque accès est fondé sur l’utilisateur authentifié et son adhésion réelle.
 - Tout accès aux données de projet est protégé par RLS et testé entre au moins
@@ -353,13 +355,14 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 ### Authentification et profils
 
 - Inscription, connexion, déconnexion, récupération de mot de passe : livrés.
-- Profil : seul le nom affiché existe, saisi à l’inscription ; page de profil à faire.
+- Page de profil (`/profil`) : livrée (lot Q1) — nom affiché, prénom, nom, pays,
+  ville, profession, type. Photo de profil : à faire (lot Q2).
 - Ouverture publique reportée jusqu’à décision explicite ; le mode privé actuel
   reste prioritaire.
 
 ### Tableau de bord
 
-- Accueil : « Bienvenue, [Prénom] ».
+- Accueil : « Bienvenue, [Prénom] » — livré ; le nom affiché à défaut de prénom.
 - Statistiques : projets, documents générés, opportunités compatibles, échéances.
 - Cartes projet : titre, genre, statut, dernière modification, score de maturité.
 - Opportunités recommandées : fonds, montant, date limite, compatibilité sourcée.

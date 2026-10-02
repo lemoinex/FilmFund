@@ -23,6 +23,7 @@ import {
   estEnRetard,
   formaterJour,
 } from "@/lib/planning";
+import { salutation } from "@/lib/profils";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
@@ -49,7 +50,10 @@ export default async function TableauDeBord() {
 
   // Projets possédés et partagés, jamais ceux que l'administration rend
   // visibles : ce tableau de bord est celui du travail de l'utilisateur.
-  const { possedes, partages } = await chargerMesProjets(supabase, user.id, { limite: 5 });
+  const [{ possedes, partages }, { data: profil }] = await Promise.all([
+    chargerMesProjets(supabase, user.id, { limite: 5 }),
+    supabase.from("profiles").select("first_name, display_name").eq("id", user.id).maybeSingle(),
+  ]);
   const projets = [...possedes, ...partages].sort((a, b) =>
     b.updated_at.localeCompare(a.updated_at),
   );
@@ -63,9 +67,12 @@ export default async function TableauDeBord() {
   return (
     <div className="flex min-h-full">
       <div className="min-w-0 flex-1 px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
-        <h1 className="sr-only">Tableau de bord</h1>
+        <h1 className="font-serif text-2xl leading-tight tracking-tight break-words sm:text-3xl">
+          {salutation(profil)}
+          <span className="sr-only"> — tableau de bord</span>
+        </h1>
 
-        <div className="border-app-line flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <div className="border-app-line mt-6 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <p className="text-secondary text-sm font-medium">Mon projet</p>
           {projet ? (
             <span className="border-app-line text-secondary rounded-full border px-3 py-1 text-xs">
