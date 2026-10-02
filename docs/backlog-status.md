@@ -29,7 +29,7 @@ réels).
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
 | Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —              |
-| Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé localement | —              |
+| Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —              |
 
 ## Recette de I1
 
@@ -79,6 +79,24 @@ tableau de bord salue alors par le nom affiché ; vérifié localement) ; un com
 administrateur, faute de second compte tant que le mode privé est actif (vérifié par les
 tests) ; la modification d'un profil par un administrateur tiers et sa trace au journal
 (vérifiées par les tests).
+
+## Recette du lot Q2
+
+Le 2 octobre 2026, un administrateur a ajouté sa photo de profil en production (mode privé
+actif).
+
+- Migration poussée moins d'une minute après la fusion ; aucune requête n'est arrivée sur le
+  site entre les deux ; compartiment, politiques et contrainte relus dans le catalogue, et
+  aucun écart de schéma avec les migrations.
+- Envoi direct du navigateur au stockage, puis rattachement par la page `/profil` réussi ;
+  photo affichée, selon l'utilisateur.
+- En base : une photo rattachée, un seul fichier dans le compartiment (un JPEG de 24 645
+  octets), le chemin enregistré désignant bien ce fichier ; aucune entrée au journal
+  d'administration, le titulaire modifiant son propre profil.
+
+Non couvert par cette recette : le refus d'un fichier déguisé en image, le remplacement et le
+retrait (vérifiés localement) ; un compte non administrateur, faute de second compte tant que
+le mode privé est actif (vérifié par les tests).
 
 ## Décisions attendues
 
