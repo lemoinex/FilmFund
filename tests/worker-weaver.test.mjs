@@ -103,6 +103,13 @@ describe("WEAVER : logline", () => {
     return { porteur, projet, tache };
   }
 
+  /** Dépense du mois telle que la base la compte, provisions comprises. */
+  async function depenseDuMois() {
+    const { sortie, code, erreurs } = await sql("select public.depense_ia_du_mois();");
+    assert.equal(code, 0, erreurs);
+    return sortie.trim();
+  }
+
   async function etat(porteur, tache) {
     const { data: travail } = await porteur.client
       .from("jobs")
@@ -277,6 +284,63 @@ describe("WEAVER : logline", () => {
     assert.deepEqual([fin.travail.state, fin.travail.attempts], ["succeeded", 2]);
     assert.equal(fin.couts.length, 2, "chaque essai provisionne");
     assert.equal(fin.confirmes.length, 1, "seul l'appel abouti est confirmé");
+  });
+
+  it("requête refusée : le coût est soldé à zéro, le plafond n'est pas entamé", async () => {
+    const { porteur, tache } = await preparer("weaver-refusee");
+    const { fournisseur } = fournisseurFactice(
+      new EchecConnu("Le fournisseur a répondu par une erreur (400).", {
+        detail: "betas: Unexpected value(s)",
+        sansFrais: true,
+      }),
+    );
+
+    const avant = await depenseDuMois();
+    await traiterUnTravail(options(fournisseur));
+    await traiterUnTravail(options(fournisseur));
+
+    const fin = await etat(porteur, tache);
+    assert.equal(fin.travail.state, "failed");
+    assert.deepEqual(fin.reglement, { consumed: 0, released: 1 });
+    assert.equal(fin.couts.length, 2, "chaque essai provisionne");
+    assert.deepEqual(
+      fin.confirmes.map((c) => c.usd),
+      [0, 0],
+      "une requête refusée n'est pas facturée",
+    );
+    assert.equal(
+      await depenseDuMois(),
+      avant,
+      "la dépense du mois ne bouge pas : rien n'a été dépensé",
+    );
+  });
+
+  it("le motif du fournisseur atteint le journal du worker, jamais la base", async () => {
+    const { porteur, tache } = await preparer("weaver-motif");
+    const { fournisseur } = fournisseurFactice(
+      new EchecConnu("Le fournisseur a répondu par une erreur (400).", {
+        detail: "betas: Unexpected value(s) `server-side-fallback-2026-07-01`",
+        sansFrais: true,
+      }),
+    );
+    const evenements = [];
+
+    await traiterUnTravail({
+      ...options(fournisseur),
+      journal: (evenement) => evenements.push(evenement),
+    });
+
+    const echec = evenements.find((e) => e.evenement === "essai_echoue");
+    assert.ok(echec, "l'échec doit être journalisé");
+    assert.match(echec.detail, /betas/);
+    assert.ok(!echec.message.includes("betas"), "le message reste général");
+
+    // Second essai : la tâche échoue pour de bon et inscrit son motif.
+    await traiterUnTravail(options(fournisseur));
+    const fin = await etat(porteur, tache);
+    assert.equal(fin.travail.state, "failed");
+    // En base, l'équipe du projet ne lit que le motif général.
+    assert.equal(fin.travail.reason, "Le fournisseur a répondu par une erreur (400).");
   });
 
   it("coupure pendant l'appel : rien n'est conclu, la provision reste au registre", async () => {
@@ -625,10 +689,47 @@ describe("Passerelle Anthropic, contre un serveur local factice", () => {
       await assert.rejects(appeler(), (erreur) => {
         assert.ok(erreur instanceof EchecConnu, `statut ${statut} : échec connu attendu`);
         assert.equal(erreur.message, `Le fournisseur a répondu par une erreur (${statut}).`);
+        // Le fournisseur a pu commencer à travailler : la provision reste.
+        assert.equal(erreur.sansFrais, false, `statut ${statut} : frais possibles`);
         return true;
       });
       assert.equal(recues.length, 1, "le SDK ne doit pas relancer de lui-même");
     }
+  });
+
+  it("requête refusée (400) : rien n'est facturé, et le motif part au journal", async () => {
+    recues.length = 0;
+    const motif = "betas: Unexpected value(s) `server-side-fallback-2026-07-01`";
+    repondre = json(400, {
+      type: "error",
+      error: { type: "invalid_request_error", message: motif },
+    });
+
+    await assert.rejects(appeler(), (erreur) => {
+      assert.ok(erreur instanceof EchecConnu);
+      assert.equal(erreur.message, "Le fournisseur a répondu par une erreur (400).");
+      assert.equal(erreur.sansFrais, true, "une requête refusée n'est pas facturée");
+      // Le message reste général — l'équipe du projet le lit en base — mais
+      // le détail doit permettre à l'exploitant de comprendre.
+      assert.ok(!erreur.message.includes("betas"));
+      assert.ok(erreur.detail.includes("betas"));
+      assert.ok(erreur.detail.length <= 300);
+      return true;
+    });
+    assert.equal(recues.length, 1);
+  });
+
+  it("le détail est tronqué : un fournisseur bavard ne noie pas le journal", async () => {
+    recues.length = 0;
+    repondre = json(400, {
+      type: "error",
+      error: { type: "invalid_request_error", message: "x".repeat(5000) },
+    });
+
+    await assert.rejects(appeler(), (erreur) => {
+      assert.equal(erreur.detail.length, 300);
+      return true;
+    });
   });
 
   it("coupure de la connexion : issue inconnue, sans réessai automatique", async () => {

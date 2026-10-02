@@ -35,14 +35,36 @@ export type Issue = { consomme?: number };
  */
 export type Executeur = (travail: Travail, signal: AbortSignal) => Promise<Issue>;
 
+/** Longueur retenue du détail : de quoi comprendre, pas de quoi tout recopier. */
+const DETAIL_MAX = 300;
+
 /** Le fournisseur a répondu, sans ambiguïté, que le travail a échoué. */
 export class EchecConnu extends Error {
   /** Unités malgré tout consommées, en cas de livraison partielle. */
   readonly consomme: number | undefined;
 
-  constructor(message: string, consomme?: number) {
+  /**
+   * Ce que le fournisseur a répondu, pour le journal du worker — que seul
+   * l'exploitant lit. Le `message`, lui, est repris en base et lu par
+   * l'équipe du projet : il reste général.
+   */
+  readonly detail: string | undefined;
+
+  /**
+   * Vrai quand le fournisseur a refusé la requête sans rien produire : il ne
+   * la facture pas, et la provision doit être soldée à zéro plutôt que de
+   * peser sur le plafond du mois.
+   */
+  readonly sansFrais: boolean;
+
+  constructor(
+    message: string,
+    options: { consomme?: number; detail?: string; sansFrais?: boolean } = {},
+  ) {
     super(message);
     this.name = "EchecConnu";
-    this.consomme = consomme;
+    this.consomme = options.consomme;
+    this.detail = options.detail?.slice(0, DETAIL_MAX);
+    this.sansFrais = options.sansFrais ?? false;
   }
 }

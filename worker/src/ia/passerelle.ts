@@ -78,9 +78,17 @@ export function creerFournisseurAnthropic(cleApi: string): Fournisseur {
         throw erreur;
       }
       // Le fournisseur a répondu par une erreur : rien n'a été produit. Le
-      // message ne reprend pas son texte, lu ensuite par l'équipe du projet.
+      // message ne reprend pas son texte, lu ensuite par l'équipe du projet ;
+      // le détail part au journal du worker, que seul l'exploitant lit. Sans
+      // lui, une requête refusée resterait indéchiffrable.
       if (erreur instanceof Anthropic.APIError) {
-        throw new EchecConnu(`Le fournisseur a répondu par une erreur (${erreur.status}).`);
+        throw new EchecConnu(`Le fournisseur a répondu par une erreur (${erreur.status}).`, {
+          detail: erreur.message,
+          // 4xx : la requête est refusée, donc ni traitée ni facturée. Un 429
+          // ou un 5xx peut survenir après un début de traitement.
+          sansFrais:
+            typeof erreur.status === "number" && erreur.status >= 400 && erreur.status < 429,
+        });
       }
       throw erreur;
     }

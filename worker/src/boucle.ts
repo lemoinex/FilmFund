@@ -136,6 +136,9 @@ export async function traiterUnTravail(options: OptionsWorker): Promise<boolean>
           evenement: conclu ? "essai_echoue" : "essai_perdu",
           ...repere,
           message: erreur.message,
+          // Ce que le fournisseur a répondu : sans cela, une requête refusée
+          // resterait indéchiffrable. Journal du worker seulement.
+          ...(erreur.detail ? { detail: erreur.detail } : {}),
         });
       } else {
         // Issue inconnue : ne rien conclure. Le bail n'est plus prolongé ; à

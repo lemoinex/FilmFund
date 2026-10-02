@@ -91,7 +91,24 @@ function creerExecuteurLogline(base: Base, fournisseur: Fournisseur, profil: Pro
       throw erreur;
     }
 
-    const reponse = await fournisseur({ profil, message }, signal);
+    let reponse;
+    try {
+      reponse = await fournisseur({ profil, message }, signal);
+    } catch (erreur) {
+      // Requête refusée : le fournisseur ne l'a ni traitée ni facturée. Le
+      // coût est soldé à zéro, sans quoi la provision pèserait sur le plafond
+      // du mois pour un appel qui n'a rien coûté.
+      if (erreur instanceof EchecConnu && erreur.sansFrais) {
+        await confirmerCout(base, travail.attemptId, {
+          modele: profil.modele,
+          jetonsEntree: 0,
+          jetonsSortie: 0,
+          dollars: "0.000000",
+          repli: false,
+        });
+      }
+      throw erreur;
+    }
 
     // La dépense a eu lieu, quelle que soit la suite : elle est inscrite
     // avant tout contrôle de la réponse.
