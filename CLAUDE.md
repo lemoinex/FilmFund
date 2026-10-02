@@ -431,8 +431,12 @@ recommandations (« à améliorer ») sont configurables et traçables.
 
 ### Exports et stockage
 
-- Exports, non livrés : PDF (dossier professionnel), DOCX (documents modifiables),
-  ZIP du projet (textes en DOCX, budget et plan de financement en XLSX).
+- Export PDF du dossier : livré (lots M1 et M2). Sections à la carte, documents
+  finalisés seulement, sans image ; fabriqué par le worker (`pdf_export`), rangé en
+  base (`project_exports`, 5 Mo, 30 jours), lisible du porteur, des éditeurs et des
+  administrateurs. Ne pas créer un second chemin d’export : étendre celui-ci.
+- Non livrés : DOCX (documents modifiables), ZIP du projet (textes en DOCX, budget
+  et plan de financement en XLSX).
 - Stockage privé et limite de stockage par plan : livrés.
 - Contrôler les octets avant/à la réception, type/taille réels et expiration
   des uploads incomplets.
@@ -456,7 +460,7 @@ recommandations (« à améliorer ») sont configurables et traçables.
 `docs/backlog-status.md` est la source de vérité : lots A à P, avec leur statut.
 Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 
-| Étape | Contenu                                             | État au 1er octobre 2026                                                       |
+| Étape | Contenu                                             | État au 2 octobre 2026                                                         |
 | ----- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
 | 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                          |
 | 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                          |
@@ -469,7 +473,7 @@ Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 | 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                    |
 | 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                                |
 | 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)       |
-| 11    | Exports PDF/DOCX/ZIP                                | À faire (lot M, décision 8)                                                    |
+| 11    | Exports PDF/DOCX/ZIP                                | PDF livré (lots M1 et M2) ; DOCX et ZIP à faire                                |
 | 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                                 |
 
 Les onze agents restent dans le plan V1. Leur activation est progressive, avec

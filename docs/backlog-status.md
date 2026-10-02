@@ -24,7 +24,7 @@ réels).
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé localement | —              |
-| M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | à faire           | M1             |
+| M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé localement | —              |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |

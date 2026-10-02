@@ -3,9 +3,9 @@ import { Onglets, type Onglet } from "@/components/ui/onglets";
 /**
  * Rubriques d'un projet.
  *
- * L'onglet Budget n'apparaît qu'à qui peut l'ouvrir : le proposer à un
- * lecteur ne mènerait qu'à une page introuvable. Équipe renvoie à la section
- * de la page du projet.
+ * Les onglets Budget, Financements et Dossier PDF n'apparaissent qu'à qui
+ * peut les ouvrir : les proposer à un lecteur ne mènerait qu'à une page
+ * introuvable. Équipe renvoie à la section de la page du projet.
  */
 export function OngletsProjet({
   projetId,
@@ -13,7 +13,7 @@ export function OngletsProjet({
   budget,
 }: {
   projetId: string;
-  actif: "projet" | "budget" | "documents" | "storyboard" | "planning" | "financements";
+  actif: "projet" | "budget" | "documents" | "storyboard" | "planning" | "financements" | "dossier";
   budget: boolean;
 }) {
   const onglets: Onglet[] = [
@@ -30,6 +30,8 @@ export function OngletsProjet({
             libelle: "Financements",
             href: `/projets/${projetId}/financements`,
           },
+          // Un dossier peut contenir le budget : il en suit les droits.
+          { cle: "dossier", libelle: "Dossier PDF", href: `/projets/${projetId}/dossier` },
         ]
       : []),
     { cle: "equipe", libelle: "Équipe", href: `/projets/${projetId}#equipe` },

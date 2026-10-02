@@ -219,3 +219,46 @@ describe("Libellés du worker", () => {
     }
   });
 });
+
+/*
+ * Sections d'un dossier PDF. L'écran valide une demande avant de demander un
+ * devis ; la base la valide à l'exécution, et a le dernier mot. Les deux
+ * listes doivent rester la même : une section proposée à l'écran mais
+ * inconnue de la base ferait échouer la tâche après coup.
+ */
+describe("Sections des exports PDF", () => {
+  it("l'écran propose exactement les sections que la base accepte", async () => {
+    const { ORDRE_SECTIONS } = await import("../src/lib/exports.ts");
+    const migration = lire("supabase/migrations/20261002181851_exports_pdf.sql");
+    const liste = /v_sections <@ array\[([^\]]+)\]/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+
+    assert.ok(enBase.length >= 4, "lecture de la migration");
+    assert.deepEqual([...ORDRE_SECTIONS].sort(), [...enBase].sort());
+  });
+
+  // Ces deux gardes lisent le code : le parcours réel — onglet absent, page
+  // et téléchargement en 404 pour un lecteur — se vérifie dans le navigateur.
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("la page du dossier suit la règle du budget, et ne lit jamais le fichier", () => {
+    const page = sansCommentaires(lire("src/app/(app)/projets/[id]/dossier/page.tsx"));
+    assert.match(page, /rpc\("peut_gerer_budget"/);
+    assert.match(page, /if \(!projet \|\| !autorise\) \{\s*notFound\(\);/);
+    // La liste n'a besoin que des métadonnées : le fichier, lui, ne voyage
+    // qu'au téléchargement.
+    const colonnes = /from\("project_exports"\)\s*\.select\("([^"]+)"\)/.exec(page)?.[1] ?? "";
+    assert.ok(colonnes.length > 0, "lecture de la page");
+    assert.doesNotMatch(colonnes, /\bfile\b/);
+  });
+
+  it("le téléchargement passe par la session, et ne se garde dans aucun cache", () => {
+    const route = sansCommentaires(lire("src/app/(app)/projets/[id]/dossier/[exportId]/route.ts"));
+    assert.match(route, /exigerAcces\(supabase\)/);
+    // L'export demandé doit être celui du projet de l'adresse.
+    assert.match(route, /\.eq\("id", exportId\)\s*\.eq\("project_id", id\)/);
+    assert.match(route, /"cache-control": "private, no-store"/);
+    assert.doesNotMatch(route, /SECRET|service_role/i);
+  });
+});
