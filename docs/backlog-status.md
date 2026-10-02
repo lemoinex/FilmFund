@@ -28,7 +28,7 @@ réels).
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
-| Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé localement | —              |
+| Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —              |
 | Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | à faire           | —              |
 
 ## Recette de I1
@@ -62,6 +62,23 @@ téléchargement, par un administrateur (mode privé actif).
 Non couvert par cette recette, faute de second compte tant que le mode privé est actif : un
 éditeur et un lecteur réels (vérifiés localement et par les tests), un dossier avec documents,
 budget, plan de financement et planning, et la purge d'un export arrivé à expiration.
+
+## Recette du lot Q1
+
+Le 2 octobre 2026, un administrateur a renseigné son profil en production (mode privé actif).
+
+- Migration poussée 73 secondes après la fusion ; aucune requête n'est arrivée sur le site
+  entre les deux, et le schéma de production ne présente aucun écart avec les migrations.
+- Tableau de bord et page `/profil` servis sans erreur ; enregistrement du formulaire réussi,
+  message « Profil enregistré. » vu par l'utilisateur.
+- En base : le profil modifié à la seconde de l'enregistrement, un pays et un type renseignés ;
+  aucune entrée au journal d'administration, le titulaire modifiant son propre profil.
+
+Non couvert par cette recette : l'accueil par le prénom, aucun prénom n'ayant été saisi (le
+tableau de bord salue alors par le nom affiché ; vérifié localement) ; un compte non
+administrateur, faute de second compte tant que le mode privé est actif (vérifié par les
+tests) ; la modification d'un profil par un administrateur tiers et sa trace au journal
+(vérifiées par les tests).
 
 ## Décisions attendues
 
