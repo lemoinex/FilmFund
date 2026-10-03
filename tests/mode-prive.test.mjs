@@ -402,6 +402,21 @@ describe("Mode privé", () => {
       assert.ok(error, "la création doit être refusée");
     });
 
+    it("ne lit plus les pondérations du score, ni les faits de son propre projet", async () => {
+      const { data: ponderations } = await membre.client
+        .from("readiness_weight_versions")
+        .select("version_number");
+      assert.equal(ponderations.length, 0);
+
+      // La fonction s'exécute sous la RLS de l'appelant : le projet lui est
+      // devenu invisible, elle ne rend donc rien.
+      const { data: faits, error } = await membre.client.rpc("faits_maturite", {
+        p_project_id: projetDuMembre.id,
+      });
+      assert.ifError(error);
+      assert.equal(faits, null);
+    });
+
     it("n'obtient plus de lien vers ses propres images, ni n'en envoie", async () => {
       const { error: lien } = await membre.client.storage
         .from("project-images")

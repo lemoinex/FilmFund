@@ -1210,6 +1210,54 @@ export type Database = {
           },
         ];
       };
+      readiness_weight_versions: {
+        Row: {
+          artistic_vision: number;
+          budget: number;
+          characters: number;
+          concept: number;
+          dossier: number;
+          feasibility: number;
+          financing: number;
+          id: string;
+          market: number;
+          narrative: number;
+          published_at: string;
+          published_by: string | null;
+          version_number: number;
+        };
+        Insert: {
+          artistic_vision: number;
+          budget: number;
+          characters: number;
+          concept: number;
+          dossier: number;
+          feasibility: number;
+          financing: number;
+          id?: string;
+          market: number;
+          narrative: number;
+          published_at?: string;
+          published_by?: string | null;
+          version_number?: number;
+        };
+        Update: {
+          artistic_vision?: number;
+          budget?: number;
+          characters?: number;
+          concept?: number;
+          dossier?: number;
+          feasibility?: number;
+          financing?: number;
+          id?: string;
+          market?: number;
+          narrative?: number;
+          published_at?: string;
+          published_by?: string | null;
+          version_number?: number;
+        };
+        Relationships: [];
+      };
       reservation_settlements: {
         Row: {
           consumed: number;
@@ -1800,6 +1848,7 @@ export type Database = {
         Args: { p_format?: string; p_params: Json; p_project_id: string };
         Returns: string;
       };
+      faits_maturite: { Args: { p_project_id: string }; Returns: Json };
       images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       journaliser: {

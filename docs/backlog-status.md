@@ -34,6 +34,8 @@ réels).
 | Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —              |
 | R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé en recette | —              |
 | R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —              |
+| S1  | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé localement | recette        |
+| S2  | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | à faire           | S1             |
 
 ## Recette de I1
 
@@ -242,3 +244,15 @@ projet », cochée comme les autres sur l'écran du dossier, placée après la s
 reprend la fiche dans l'ordre de l'assistant, personnages compris ; ses champs vides sont omis.
 Aucune table, politique ni dépendance nouvelle : deux fonctions de la base reprises, et la
 composition du worker étendue. Exploitation : `docs/worker.md`.
+
+Score de maturité, décidé le 3 octobre 2026 (lot S) : sans IA, le score mesure ce qui est
+renseigné dans le projet, critère par critère, et ne juge pas la qualité de l'écriture —
+l'écran le dit. Il se montre au porteur, aux éditeurs et aux administrateurs : il tient compte
+du budget et du financement, que les lecteurs de l'équipe ne lisent pas. Les neuf critères
+gardent les pondérations du cahier des charges, versionnées en base
+(`readiness_weight_versions`, total 100, en ajout seul, publication journalisée) ; la base
+rend les faits d'un projet (`faits_maturite()`, des compteurs et des oui/non, sous la RLS de
+l'appelant) et l'application calcule (`src/lib/maturite.ts`). Rien n'est stocké : le score est
+recalculé à chaque affichage. Lot S découpé en S1 (base, calcul, encart sur la page du projet
+et le tableau de bord, libellé de la publication au journal d'administration) et S2 (cartes de
+la liste des projets, écran de publication des pondérations).

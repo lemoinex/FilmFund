@@ -163,6 +163,17 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("décrit la publication d'une version des pondérations du score de maturité", () => {
+    assert.equal(
+      descriptionDe(entree("publication_ponderations", { version: 2 }), annuaire),
+      "a publié la version 2 des pondérations du score de maturité",
+    );
+    assert.equal(
+      descriptionDe(entree("publication_ponderations", {}), annuaire),
+      "a publié la version ? des pondérations du score de maturité",
+    );
+  });
+
   it("décrit le rapprochement d'une tâche et son issue", () => {
     assert.equal(
       descriptionDe(

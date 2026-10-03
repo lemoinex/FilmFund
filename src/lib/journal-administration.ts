@@ -162,6 +162,11 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       return `a publié la version ${typeof version === "number" ? version : "?"} du barème des unités texte`;
     }
 
+    case "publication_ponderations": {
+      const version = champ(details, "version");
+      return `a publié la version ${typeof version === "number" ? version : "?"} des pondérations du score de maturité`;
+    }
+
     case "rapprochement_travail": {
       const issue =
         champ(details, "succes") === true
