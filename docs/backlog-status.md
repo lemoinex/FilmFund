@@ -31,6 +31,8 @@ réels).
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
 | Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —              |
 | Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —              |
+| R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé localement | —              |
+| R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | à faire           | R1             |
 
 ## Recette de I1
 
@@ -171,3 +173,10 @@ affichée sur la page de profil et dans le bloc de compte ; compartiment privé 
 images de projet, fondé sur le compte, hors quota de studio (2 Mo, JPEG, PNG ou WebP, une
 photo par compte) ; octets réels contrôlés par le serveur avant tout rattachement ; ni
 recadrage ni redimensionnement, faute de dépendance de traitement d'image.
+
+Assistant de création, décidé le 3 octobre 2026 (lot R) : le projet naît à la première étape,
+chaque étape suivante complète sa fiche, et l'assistant se rouvre pour la compléter ; les
+personnages forment une vraie liste, protégée comme le storyboard ; un projet peut avoir
+plusieurs pays de production, le premier étant le principal. Lot R découpé en R1 (base : champs
+de la fiche, table des personnages) et R2 (écrans). La fiche suit les droits du projet : un
+administrateur la lit mais ne la réécrit pas.

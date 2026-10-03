@@ -398,3 +398,51 @@ describe("Formats des exports", () => {
     assert.doesNotMatch(route, /searchParams|nextUrl/);
   });
 });
+
+/*
+ * Fiche du projet. L'écran propose des genres et borne des textes ; la base
+ * a le dernier mot. Un genre proposé à l'écran mais inconnu de la base ferait
+ * échouer l'enregistrement ; une borne plus large, de même.
+ */
+describe("Fiche du projet", () => {
+  const MIGRATION = "supabase/migrations/20261003010956_fiche_projet.sql";
+
+  it("l'écran propose exactement les genres que la base admet", async () => {
+    const { GENRES } = await import("../src/lib/fiche.ts");
+    const migration = lire(MIGRATION);
+    const liste = /genre in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+
+    assert.ok(enBase.length >= 10, "lecture de la migration");
+    assert.deepEqual(Object.keys(GENRES), enBase);
+  });
+
+  it("l'écran borne chaque texte comme la base", async () => {
+    const { LONGUEURS_FICHE, LONGUEURS_PERSONNAGE, MAX_PAYS, DUREE_MINUTES } =
+      await import("../src/lib/fiche.ts");
+    const migration = lire(MIGRATION);
+    const bornes = Object.fromEntries(
+      [
+        ...migration.matchAll(/char_length\((?:btrim\()?(\w+)\)?\) (?:<=|between 1 and) (\d+)/g),
+      ].map((m) => [m[1], Number(m[2])]),
+    );
+
+    assert.ok(Object.keys(bornes).length >= 9, "lecture de la migration");
+    assert.deepEqual({ ...LONGUEURS_FICHE, ...LONGUEURS_PERSONNAGE }, bornes);
+    assert.ok(migration.includes(`cardinality(countries) <= ${MAX_PAYS}`), "nombre de pays");
+    assert.match(
+      migration,
+      new RegExp(`duration_minutes between ${DUREE_MINUTES.min} and ${DUREE_MINUTES.max}`),
+    );
+  });
+
+  it("chaque personnage est protégé comme le storyboard : verrou, journal et droits par colonne", () => {
+    const migration = lire(MIGRATION);
+    assert.match(migration, /on public\.project_characters\s+as restrictive/);
+    assert.match(migration, /execute function public\.journaliser_intervention_admin\(\)/);
+    assert.match(
+      migration,
+      /revoke update on table public\.project_characters from authenticated;\s*grant update \(name, role, description, position\)/,
+    );
+  });
+});

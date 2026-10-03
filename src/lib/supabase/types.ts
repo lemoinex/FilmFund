@@ -33,3 +33,4 @@ export type FundingStatus = Enums<"funding_status">;
 
 export type Profile = Tables<"profiles">;
 export type Project = Tables<"projects">;
+export type ProjectCharacter = Tables<"project_characters">;
