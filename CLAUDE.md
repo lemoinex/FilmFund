@@ -380,9 +380,10 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 - Formats : documentaire, long métrage, court métrage, série, web-série, animation.
 - Étapes : idée, développement, écriture, préproduction, production,
   postproduction, terminé.
-- Assistant : base livrée (lot R1), écrans à faire (lot R2) — informations
-  générales, concept, personnages, enjeux, vision, objectifs, public cible. Le
-  projet naît à la première étape ; chaque étape suivante complète sa fiche.
+- Assistant : livré (lots R1 et R2) — informations générales, concept,
+  personnages, enjeux, vision, objectifs, public cible (`src/lib/assistant.ts`,
+  `projets/[id]/assistant/`). Le projet naît à la première étape ; chaque étape
+  suivante complète sa fiche ; le récapitulatif est l'onglet « Fiche ».
 
 ### Documents et édition
 
@@ -474,7 +475,7 @@ Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 | 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                          |
 | 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                          |
 | 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                                  |
-| 3     | Assistant de création, score de maturité, dashboard | Dashboard livré ; assistant et score à faire                                   |
+| 3     | Assistant de création, score de maturité, dashboard | Dashboard et assistant livrés (lots R1, R2) ; score à faire                    |
 | 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire                 |
 | 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                                  |
 | 6     | WEAVER                                              | Logline livrée (I1), recette en attente ; synopsis et note d’intention à faire |
