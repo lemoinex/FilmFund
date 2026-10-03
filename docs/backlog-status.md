@@ -25,7 +25,7 @@ réels).
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
 | M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
-| M3  | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé localement | —              |
+| M3  | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —              |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -98,6 +98,24 @@ actif).
 Non couvert par cette recette : le refus d'un fichier déguisé en image, le remplacement et le
 retrait (vérifiés localement) ; un compte non administrateur, faute de second compte tant que
 le mode privé est actif (vérifié par les tests).
+
+## Recette du lot M3
+
+Le 3 octobre 2026, un administrateur a fabriqué un dossier Word en production, de l'écran au
+fichier ouvert (mode privé actif).
+
+- Migration poussée 27 secondes après la fusion ; aucun écart de schéma avec les migrations ;
+  le worker redéployé annonce `pdf_export`, `docx_export` et `logline`.
+- Demande depuis l'onglet « Dossier », format Word : devis puis lancement.
+- Tâche `docx_export` réclamée par le worker Railway deux secondes plus tard, réussie au
+  premier essai en 254 ms ; aucune alerte dans ses journaux.
+- Téléchargement servi par la route du dossier ; le fichier s'ouvre correctement, selon
+  l'utilisateur.
+
+Non couvert par cette recette : un dossier Word avec documents, budget, plan de financement et
+planning (vérifiés localement et par les tests du worker) ; l'ouverture dans LibreOffice ; un
+éditeur et un lecteur réels, faute de second compte tant que le mode privé est actif
+(vérifiés par les tests).
 
 ## Décisions attendues
 
