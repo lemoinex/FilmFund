@@ -26,7 +26,7 @@ réels).
 | M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
 | M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
 | M3  | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —              |
-| M4  | Exports : la fiche du projet et ses personnages dans le dossier, en PDF comme en Word                                          | validé localement | recette        |
+| M4  | Exports : la fiche du projet et ses personnages dans le dossier, en PDF comme en Word                                          | validé en recette | —              |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -139,6 +139,34 @@ modification et le retrait d'un personnage, « Passer cette étape » (vérifié
 les tests) ; un éditeur et un lecteur réels, ni l'accès refusé à un compte étranger, faute de
 second compte tant que le mode privé est actif (vérifiés localement et par les tests).
 
+## Recette du lot M4
+
+Le 3 octobre 2026, un administrateur a fabriqué en production un dossier PDF puis un dossier
+Word contenant la fiche du projet, de l'écran au fichier ouvert (mode privé actif).
+
+- Avant la fusion, la base de production ne s'écartait des migrations que par les deux
+  fonctions du lot. Fusion à 04h06 UTC, migration poussée 38 secondes après ; aucun écart de
+  schéma ensuite ; le worker redéployé annonce `pdf_export`, `docx_export` et `logline`.
+- Demandes depuis l'onglet « Dossier » : sections « Synthèse » et « Fiche du projet », devis
+  puis lancement, dans chaque format.
+- Tâche `pdf_export` réclamée par le worker Railway cinq secondes plus tard, réussie au
+  premier essai en 187 ms : un fichier de 3 pages et 12 800 octets. Tâche `docx_export`
+  réclamée deux secondes plus tard, réussie au premier essai en 91 ms : 12 059 octets, sans
+  nombre de pages. Aucune alerte dans les journaux du worker.
+- Une unité d'export consommée pour chaque fichier, rien de rendu ; chaque empreinte
+  correspond encore au contenu du projet.
+- Téléchargements servis par la route du dossier ; aucune erreur d'exécution chez Vercel. Les
+  deux fichiers ont été ouverts et jugés corrects par l'utilisateur.
+
+Non couvert par cette recette : un projet à plusieurs personnages ou à plusieurs pays, et la
+fiche aux côtés de documents, du budget, du plan de financement et du planning (vérifiés
+localement et par les tests) ; un éditeur et un lecteur réels, faute de second compte tant que
+le mode privé est actif (vérifiés par les tests).
+
+Reste connu, hors de ce lot : dans un tableau Word, un retour à la ligne à l'intérieur d'une
+cellule s'affiche comme une espace — la description d'un personnage, l'échéance d'un
+financement.
+
 ## Décisions attendues
 
 Voir `docs/implementation-audit.md`, section 11. Décisions 1, 3 et 4 prises le 30 septembre
@@ -211,5 +239,4 @@ Fiche dans les exports (lot M4), décidé le 3 octobre 2026 : une seule section 
 projet », cochée comme les autres sur l'écran du dossier, placée après la synthèse. Elle
 reprend la fiche dans l'ordre de l'assistant, personnages compris ; ses champs vides sont omis.
 Aucune table, politique ni dépendance nouvelle : deux fonctions de la base reprises, et la
-composition du worker étendue. Reste à livrer : fusion, migration poussée, puis recette d'un
-dossier PDF et d'un dossier Word contenant la fiche.
+composition du worker étendue. Exploitation : `docs/worker.md`.
