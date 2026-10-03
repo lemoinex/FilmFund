@@ -163,9 +163,11 @@ fiche aux côtés de documents, du budget, du plan de financement et du planning
 localement et par les tests) ; un éditeur et un lecteur réels, faute de second compte tant que
 le mode privé est actif (vérifiés par les tests).
 
-Reste connu, hors de ce lot : dans un tableau Word, un retour à la ligne à l'intérieur d'une
-cellule s'affiche comme une espace — la description d'un personnage, l'échéance d'un
-financement.
+Relevé lors de ce lot, corrigé depuis : dans un tableau Word, un retour à la ligne à
+l'intérieur d'une cellule s'affichait comme une espace — la description d'un personnage,
+l'échéance d'un financement. Chaque ligne d'une cellule y est désormais écrite séparément. Un
+dossier Word fabriqué avant ce correctif garde l'ancien rendu tant qu'il est retrouvé à
+l'identique : il se refait dès que le contenu du projet change, ou à son expiration.
 
 ## Décisions attendues
 

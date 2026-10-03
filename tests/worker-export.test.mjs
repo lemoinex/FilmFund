@@ -417,6 +417,26 @@ describe("Dossier : Word", () => {
     );
   });
 
+  it("rend un retour à la ligne dans une cellule par un vrai retour, pas par une espace", async () => {
+    const dossier = composerDossier(contenuComplet(), new Date("2026-10-01T12:00:00Z"));
+    const document = lireArchive(await rendreDocx(dossier)).get("word/document.xml");
+
+    // Laissé dans le texte, un retour brut s'afficherait comme une espace.
+    assert.doesNotMatch(document, /<w:t(?: [^>]*)?>[^<]*\n/);
+
+    // Les deux lignes restent dans la même cellule, séparées par un retour.
+    const separes = (avant, apres) => {
+      const debut = document.indexOf(avant);
+      const fin = document.indexOf(apres);
+      assert.ok(debut >= 0 && fin > debut, `« ${avant} » puis « ${apres} »`);
+      const entre = document.slice(debut + avant.length, fin);
+      assert.equal(entre.split("<w:br/>").length - 1, 1, `un retour après « ${avant} »`);
+      assert.doesNotMatch(entre, /<\/w:tc>/, `« ${apres} » dans la même cellule`);
+    };
+    separes("Pêcheuse, quarante ans.", "Ne cède rien.");
+    separes("Fonds Image — Développement", "Échéance : 1er mars 2027");
+  });
+
   it("garde un long document et un long tableau sans rien perdre", async () => {
     const contenu = contenuComplet();
     contenu.documents[0].contenu = Array.from(
