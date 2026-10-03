@@ -657,3 +657,24 @@ describe("Score de maturité", () => {
     assert.doesNotMatch(action, /SECRET|service_role/i);
   });
 });
+
+/*
+ * Rubriques d'un projet. Écrite à deux endroits, la liste des onglets avait
+ * cessé d'être la même : le tableau de bord n'avait ni « Fiche » ni
+ * « Dossier ». Elle n'existe plus qu'à un seul.
+ */
+describe("Rubriques d'un projet", () => {
+  it("le tableau de bord emploie les onglets de la page du projet, sans réécrire la liste", () => {
+    const tableauDeBord = lire("src/app/(app)/tableau-de-bord/page.tsx");
+    assert.match(
+      tableauDeBord,
+      /<OngletsProjet\s+projetId=\{projet\.id\}\s+actif="projet"\s+budget=\{budgetAutorise === true\}\s+synthese="\/tableau-de-bord"\s+\/>/,
+    );
+    assert.doesNotMatch(tableauDeBord, /<Onglets\b/);
+    assert.doesNotMatch(tableauDeBord, /libelle: "(Documents|Storyboard|Planning|Budget)"/);
+
+    const onglets = lire("src/app/(app)/projets/[id]/onglets.tsx");
+    assert.match(onglets, /ongletsDuProjet\(projetId, \{ budget, synthese \}\)/);
+    assert.doesNotMatch(onglets, /libelle: "/);
+  });
+});
