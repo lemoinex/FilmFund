@@ -56,13 +56,15 @@ describe("Droits d'administration", () => {
   });
 
   it("laisse un administrateur lire les projets des autres", async () => {
-    const { data, error } = await patron.client.from("projects").select("id");
+    // Filtré sur le projet attendu : la base locale accumule les projets de
+    // toutes les exécutions, et l'API n'en rend que 1 000 au plus (max_rows).
+    const { data, error } = await patron.client
+      .from("projects")
+      .select("id")
+      .eq("id", projetDuMembre.id);
 
     assert.equal(error, null, error?.message);
-    assert.ok(
-      data.some((projet) => projet.id === projetDuMembre.id),
-      "le projet du membre doit être visible",
-    );
+    assert.deepEqual(data, [{ id: projetDuMembre.id }], "le projet du membre doit être visible");
   });
 
   it("interdit à un administrateur de réécrire le projet d'un auteur", async () => {
