@@ -27,11 +27,11 @@ const VALEURS_BAREME =
 
 describe("Catalogue public", () => {
   /*
-   * Une version de plus du plan Studio, aux valeurs en vigueur. Sur une base
-   * neuve, il n'a que sa version de mise en service : « la dernière » ne s'y
-   * distinguerait pas de « la première », et une lecture triée à l'envers
-   * passerait. Mêmes valeurs : la publication ne change rien aux autres
-   * suites.
+   * Une version de plus du plan Studio et du barème, aux valeurs en vigueur.
+   * Sur une base neuve, chacun n'a que sa version de mise en service : « la
+   * dernière » ne s'y distinguerait pas de « la première », et une lecture
+   * triée à l'envers passerait. Mêmes valeurs : la publication ne change rien
+   * aux autres suites.
    */
   before(async () => {
     const administrateur = await creerCompte("catalogue-admin");
@@ -51,6 +51,18 @@ describe("Catalogue public", () => {
         .from("plan_versions")
         .insert({ plan_code: "studio", ...plan.data }),
       "publication du plan Studio",
+    );
+
+    const bareme = await administrateur.client
+      .from("text_unit_rate_versions")
+      .select(VALEURS_BAREME)
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .single();
+    ok(bareme, "lecture du barème");
+    ok(
+      await administrateur.client.from("text_unit_rate_versions").insert(bareme.data),
+      "publication du barème",
     );
   });
 
@@ -136,14 +148,21 @@ describe("Catalogue public", () => {
     const { error: auteur } = await visiteur.from("text_unit_rate_versions").select("published_by");
     assert.ok(auteur, "l'auteur d'une version doit rester fermé");
 
-    // La vitrine présente la dernière version publiée.
+    // La vitrine présente la dernière version publiée. Son numéro fait partie
+    // de la comparaison : les versions de la base de test portent toutes les
+    // mêmes valeurs, qui ne diraient pas laquelle a été lue.
     const { data: courante, error: lecture } = await version(true);
     assert.ifError(lecture);
-    const poids = { ...courante };
-    delete poids.version_number;
-    delete poids.published_at;
-    assert.deepEqual(await lireBareme(URL, PUBLISHABLE_KEY), poids);
+    const enVigueur = { ...courante };
+    delete enVigueur.published_at;
+    assert.ok(
+      enVigueur.version_number > premiere.version_number,
+      "le barème doit porter plusieurs versions, pour que l'ordre de lecture compte",
+    );
+    assert.deepEqual(await lireBareme(URL, PUBLISHABLE_KEY), enVigueur);
 
+    const poids = { ...enVigueur };
+    delete poids.version_number;
     const { error: publication } = await visiteur.from("text_unit_rate_versions").insert(poids);
     assert.ok(publication, "la publication doit être refusée");
   });

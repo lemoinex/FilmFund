@@ -161,14 +161,20 @@ function clientPublic(url: string, clePubliable: string) {
   });
 }
 
+/** Le barème en vigueur, avec le numéro de la version dont il vient. */
+export type BaremeEnVigueur = BaremePublie & { version_number: number };
+
 /**
  * Dernière version publiée du barème, lue sans session. Null si la base est
  * injoignable : la vitrine l'explique alors sans chiffres.
+ *
+ * Le numéro de version accompagne les valeurs : deux versions peuvent porter
+ * les mêmes, et lui seul dit laquelle a été lue.
  */
 export async function lireBareme(
   url: string | undefined,
   clePubliable: string | undefined,
-): Promise<BaremePublie | null> {
+): Promise<BaremeEnVigueur | null> {
   try {
     if (!url || !clePubliable) {
       return null;
@@ -176,7 +182,7 @@ export async function lireBareme(
     const { data, error } = await clientPublic(url, clePubliable)
       .from("text_unit_rate_versions")
       .select(
-        "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
+        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
       )
       .order("version_number", { ascending: false })
       .limit(1)
