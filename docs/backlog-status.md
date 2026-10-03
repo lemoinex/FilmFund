@@ -34,7 +34,7 @@ réels).
 | Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —              |
 | R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé en recette | —              |
 | R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —              |
-| S1  | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé localement | recette        |
+| S1  | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —              |
 | S2  | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | à faire           | S1             |
 
 ## Recette de I1
@@ -170,6 +170,35 @@ l'intérieur d'une cellule s'affichait comme une espace — la description d'un 
 l'échéance d'un financement. Chaque ligne d'une cellule y est désormais écrite séparément. Un
 dossier Word fabriqué avant ce correctif garde l'ancien rendu tant qu'il est retrouvé à
 l'identique : il se refait dès que le contenu du projet change, ou à son expiration.
+
+## Recette du lot S1
+
+Le 3 octobre 2026, un administrateur a lu en production le score de maturité d'un de ses
+projets, sur le tableau de bord puis sur la page du projet (mode privé actif).
+
+- Avant la fusion, essai à blanc : une seule migration à pousser, celle du lot. Fusion à
+  14h08 UTC, migration poussée 18 secondes après ; 33 migrations appliquées sur 33. Le worker
+  n'est pas redéployé : il n'a pas changé.
+- En base, relu après la migration : RLS active sur `readiness_weight_versions`, ses trois
+  politiques dont celle du mode privé, ses quatre déclencheurs, le total de 100 contrôlé, la
+  version 1 aux pondérations du cahier des charges ; `faits_maturite()` sans
+  `security definer`, fermée aux visiteurs.
+- Sessions simulées dans une transaction annulée : un administrateur lit les 26 faits d'un
+  projet et la version des pondérations ; un compte connecté inconnu ne lit ni les uns ni
+  l'autre ; un visiteur est refusé.
+- Tableau de bord : bloc « Maturité du dossier » à 36 / 100, 17 éléments à améliorer, avec la
+  phrase qui dit ce que le score mesure (capture de l'utilisateur). Le calcul livré, appliqué
+  aux faits lus en production, donne le même score et le même nombre.
+- Page du projet : détail des neuf critères et version des pondérations, déclarés conformes
+  par l'utilisateur aux valeurs recalculées (sans capture).
+- Aucune erreur d'exécution chez Vercel depuis le déploiement.
+
+Non couvert par cette recette : des critères « Vision artistique », « Budget », « Plan de
+financement » et « Dossier » autres qu'à zéro — le projet lu n'a ni vision, ni budget, ni
+candidature, ni document finalisé (vérifiés localement et par les tests) ; un éditeur et un
+lecteur réels, faute de second compte tant que le mode privé est actif (vérifiés par les
+tests) ; la publication d'une nouvelle version des pondérations et sa ligne au journal,
+qu'aucun écran ne permet avant le lot S2 (vérifiées par les tests).
 
 ## Décisions attendues
 
