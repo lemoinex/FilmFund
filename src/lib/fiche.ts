@@ -63,6 +63,11 @@ export const DUREE_MINUTES = { min: 1, max: 1000 } as const;
 
 export const LONGUEURS_PERSONNAGE = { name: 120, description: 2000 } as const;
 
+/** « 95 minutes », « 1 minute » : la durée telle que la fiche l'affiche. */
+export function dureeEnClair(minutes: number): string {
+  return `${minutes} ${minutes > 1 ? "minutes" : "minute"}`;
+}
+
 /**
  * Personnages par projet, à l'écran. La base n'en fixe pas : c'est une borne
  * de confort, pas de sécurité.

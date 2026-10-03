@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { Message } from "@/components/ui/form";
 import { etapeDe, type CleEtape } from "@/lib/assistant";
 import { lireAcces } from "@/lib/equipes";
-import { GENRES, ROLES_PERSONNAGE } from "@/lib/fiche";
+import { dureeEnClair, GENRES, ROLES_PERSONNAGE } from "@/lib/fiche";
 import { listerPays } from "@/lib/profils";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
@@ -116,7 +116,7 @@ export default async function FichePage({
             <Ligne terme="Étape">{ETAPES[projet.stage]}</Ligne>
             <Ligne terme="Genre">{libelle(GENRES, projet.genre)}</Ligne>
             <Ligne terme="Durée">
-              {projet.duration_minutes ? `${projet.duration_minutes} minutes` : null}
+              {projet.duration_minutes ? dureeEnClair(projet.duration_minutes) : null}
             </Ligne>
             <Ligne terme="Pays de production">{pays.join(", ")}</Ligne>
             <Ligne terme="Langues">{projet.languages}</Ligne>
