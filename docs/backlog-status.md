@@ -27,7 +27,7 @@ réels).
 | M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
 | M3  | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —              |
 | M4  | Exports : la fiche du projet et ses personnages dans le dossier, en PDF comme en Word                                          | validé en recette | —              |
-| M5  | Exports ZIP : un fichier Word par texte, un classeur Excel par tableau, même écran, même quota                                 | validé localement | recette        |
+| M5  | Exports ZIP : un fichier Word par texte, un classeur Excel par tableau, même écran, même quota                                 | validé en recette | —              |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -225,6 +225,38 @@ le refus d'un total différent de 100 n'ont laissé de trace (vérifiés localem
 tests) ; un éditeur et un lecteur réels, faute de second compte tant que le mode privé est
 actif (vérifiés localement et par les tests) ; une liste de plus de cent projets (vérifiée
 localement).
+
+## Recette du lot M5
+
+Le 4 octobre 2026, un administrateur a fabriqué en production deux dossiers ZIP, de l'écran au
+fichier ouvert dans Word et dans Excel (mode privé actif).
+
+- Avant la fusion, essai à blanc : une seule migration à pousser, celle du lot. Fusion de la
+  PR 68 (`8d33136`), migration poussée aussitôt ; après le push, `supabase db diff --linked`
+  ne trouve aucun écart entre la base de production et les migrations.
+- En base, relu après la migration : `creer_devis`, `contexte_export` et `livrer_export`
+  portent la branche `zip` ; `export_format` admet `pdf`, `docx` et `zip` ; `devis_action_connue`
+  admet `zip_export`.
+- Le worker a été reconstruit par la fusion elle-même — le lot touche `worker/` —, en 37
+  secondes, et annonce à 22h48 UTC `pdf_export`, `docx_export`, `zip_export` et `logline`. Ses
+  journaux portent un SIGTERM à la bascule du conteneur ; l'instance qui a suivi a servi les
+  deux tâches, sans autre alerte.
+- Premier dossier, à 22h51 UTC : sections « Synthèse » et « Fiche du projet », documents
+  « Traitement » et « Scénario ». Tâche `zip_export` réclamée par le worker Railway, réussie
+  au premier essai en 202 ms : 45 931 octets, sans nombre de pages.
+- Second dossier, à 22h58 UTC : les cinq sections — synthèse, fiche du projet, budget, plan de
+  financement et planning — et trois documents. Réussie au premier essai en 286 ms : 68 061
+  octets, expirant le 2 novembre 2026.
+- Une unité d'export réservée puis consommée pour chaque dossier, rien de rendu, sur la même
+  unité et la même période mensuelle que les exports PDF et Word du même studio : le quota
+  commun aux trois formats est vérifié en conditions réelles.
+- Téléchargements servis par la route du dossier ; aucune erreur d'exécution chez Vercel
+  depuis le déploiement. Les deux archives ont été ouvertes par l'utilisateur : fichiers Word
+  et classeurs Excel jugés corrects, nombres et dates exploitables.
+
+Non couvert par cette recette : un éditeur et un lecteur réels, faute de second compte tant
+que le mode privé est actif (vérifiés localement et par les tests) ; la purge d'une archive
+arrivée à expiration ; un dossier dépassant la taille maximale d'un export.
 
 ## Décisions attendues
 
