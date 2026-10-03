@@ -1,15 +1,15 @@
 /**
- * Export d'un projet, en PDF ou en Word : du contenu remis par la base au
- * fichier déposé.
+ * Export d'un projet, en PDF, en Word ou en archive ZIP : du contenu remis
+ * par la base au fichier déposé.
  *
  * Aucun fournisseur n'est appelé et rien n'est facturé : ces exécuteurs n'ont
  * besoin d'aucune clé, et restent donc en service quel que soit l'état du
  * coffre. Ils ne lisent aucune table : la base leur remet le contenu des
  * seules sections demandées, pour la seule tâche qu'ils tiennent.
  *
- * Le format se lit dans l'action de la tâche (`pdf_export`, `docx_export`),
- * jamais dans ce que la base remet : un même dossier, composé une fois, est
- * ensuite rendu dans l'un ou l'autre format.
+ * Le format se lit dans l'action de la tâche (`pdf_export`, `docx_export`,
+ * `zip_export`), jamais dans ce que la base remet : un même dossier, composé
+ * une fois, est ensuite rendu dans l'un de ces formats.
  */
 import {
   codeDe,
@@ -19,7 +19,8 @@ import {
   type Base,
 } from "../base.ts";
 import { EchecConnu, type Executeur } from "../executeurs.ts";
-import { composerDossier, type Dossier } from "./dossier.ts";
+import { rendreArchive } from "./archive.ts";
+import { composerDossier, type ContenuDossier, type Dossier } from "./dossier.ts";
 import { rendreDocx } from "./docx.ts";
 import { rendrePdf } from "./pdf.ts";
 
@@ -29,11 +30,19 @@ export const TAILLE_MAX_EXPORT = 5 * 1024 * 1024;
 /** Fichier rendu ; `pages` nul pour un format qui ne fige pas sa pagination. */
 type Rendu = { fichier: Buffer; pages: number | null };
 
-type Rendeur = (dossier: Dossier) => Promise<Rendu>;
+/**
+ * Rend le plan du dossier. Le contenu de la base l'accompagne : l'archive en
+ * tire ses classeurs, dont les nombres doivent rester des nombres.
+ */
+type Rendeur = (dossier: Dossier, contenu: ContenuDossier) => Promise<Rendu>;
 
 const RENDEURS: Readonly<Record<string, Rendeur>> = {
   pdf_export: rendrePdf,
   docx_export: async (dossier) => ({ fichier: await rendreDocx(dossier), pages: null }),
+  zip_export: async (dossier, contenu) => ({
+    fichier: await rendreArchive(dossier, contenu),
+    pages: null,
+  }),
 };
 
 function creerExecuteurExport(base: Base, rendre: Rendeur): Executeur {
@@ -58,7 +67,7 @@ function creerExecuteurExport(base: Base, rendre: Rendeur): Executeur {
       throw new EchecConnu("Aucune des sections demandées n'a de contenu à exporter.");
     }
 
-    const { fichier, pages } = await rendre(dossier);
+    const { fichier, pages } = await rendre(dossier, contexte.contenu);
     if (fichier.length > TAILLE_MAX_EXPORT) {
       throw new EchecConnu("Le dossier dépasse la taille maximale d'un export.");
     }

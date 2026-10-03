@@ -190,10 +190,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       <OngletsProjet projetId={projet.id} actif="dossier" budget />
 
       <p className="text-secondary mt-8 max-w-2xl text-sm leading-relaxed text-pretty">
-        Réunissez en un seul fichier les pièces du projet : en PDF, prêt à être envoyé, ou en Word,
-        à retoucher. Un dossier n&apos;est visible que du porteur, des éditeurs et des
-        administrateurs : il peut contenir le budget, auquel les lecteurs de l&apos;équipe
-        n&apos;ont pas accès.
+        Réunissez les pièces du projet : en PDF, prêt à être envoyé ; en Word, à retoucher ; ou en
+        archive ZIP, un fichier Word par texte et un classeur Excel par tableau. Un dossier
+        n&apos;est visible que du porteur, des éditeurs et des administrateurs : il peut contenir le
+        budget, auquel les lecteurs de l&apos;équipe n&apos;ont pas accès.
       </p>
 
       <SelectionExport projetId={projet.id} options={options} etape={etapeExport(tache)} />
@@ -224,7 +224,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
                         {premierDuMois(dateFr.format(new Date(dossier.created_at)))}
                       </time>{" "}
                       UTC ·{" "}
-                      {/* Un fichier Word n'a pas de pagination arrêtée : le traitement de texte la recalcule. */}
+                      {/* Seul un PDF a une pagination arrêtée : un traitement de texte la recalcule, une archive n'en a pas. */}
                       {dossier.pages ? `${pages(dossier.pages)} · ` : ""}
                       {poids(dossier.size_bytes ?? 0)} · disponible jusqu&apos;au{" "}
                       <time dateTime={dossier.expires_at}>

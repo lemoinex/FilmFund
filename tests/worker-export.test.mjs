@@ -1,11 +1,13 @@
 /**
- * Exports PDF (lot M1) et Word (lot M3) : de la tâche réclamée au fichier
- * déposé, contre la base locale et sous le rôle du worker.
+ * Exports PDF (lot M1), Word (lot M3) et ZIP (lot M5) : de la tâche réclamée
+ * au fichier déposé, contre la base locale et sous le rôle du worker.
  *
  * Aucun fournisseur n'est en jeu : l'export ne coûte rien et n'appelle
  * personne. Les fichiers sont réellement fabriqués ; leur contenu se vérifie
  * sur le plan du dossier, que la mise en page ne fait que dessiner, et, pour
- * le Word, dans le XML de l'archive.
+ * le Word, le classeur Excel et l'archive, dans le XML qu'ils contiennent.
+ * Qu'un tableur ouvre ces classeurs ne se vérifie pas ici : aucun n'est
+ * installé sur les postes de test.
  */
 import { strict as assert } from "node:assert";
 import { after, before, describe, it } from "node:test";
@@ -13,10 +15,12 @@ import { inflateRawSync } from "node:zlib";
 
 import { lireContexteExport, purgerExports } from "../worker/src/base.ts";
 import { traiterUnTravail } from "../worker/src/boucle.ts";
+import { nomSur, rendreArchive } from "../worker/src/exports/archive.ts";
 import { rendreDocx } from "../worker/src/exports/docx.ts";
 import { composerDossier } from "../worker/src/exports/dossier.ts";
 import { executeursExport, TAILLE_MAX_EXPORT } from "../worker/src/exports/executeur.ts";
 import { rendrePdf } from "../worker/src/exports/pdf.ts";
+import { date, montant, nombre, rendreXlsx, texte } from "../worker/src/exports/xlsx.ts";
 import {
   annulerLesAutresTaches,
   creerCompte,
@@ -156,6 +160,13 @@ function ficheVide() {
  * « deflate » (méthode 8), les autres sont rangées telles quelles.
  */
 function lireArchive(archive) {
+  return new Map(
+    [...lireEntrees(archive)].map(([nom, donnees]) => [nom, donnees.toString("utf8")]),
+  );
+}
+
+/** Les mêmes fichiers, en octets : une archive peut en contenir d'autres. */
+function lireEntrees(archive) {
   const fichiers = new Map();
   let i = 0;
   while (i + 30 <= archive.length && archive.readUInt32LE(i) === 0x04034b50) {
@@ -166,10 +177,28 @@ function lireArchive(archive) {
     const nom = archive.toString("utf8", i + 30, i + 30 + longueurNom);
     const debut = i + 30 + longueurNom + longueurExtra;
     const donnees = archive.subarray(debut, debut + taille);
-    fichiers.set(nom, (methode === 8 ? inflateRawSync(donnees) : donnees).toString("utf8"));
+    fichiers.set(nom, methode === 8 ? inflateRawSync(donnees) : Buffer.from(donnees));
     i = debut + taille;
   }
   return fichiers;
+}
+
+/**
+ * Feuille d'un classeur, cellule par cellule : `{ A1: "Poste", C2: 1 }`. Un
+ * texte est relu dans la table des textes partagés, un nombre tel quel.
+ */
+function lireFeuille(classeur) {
+  const parties = lireArchive(classeur);
+  const textes = [
+    ...parties.get("xl/sharedStrings.xml").matchAll(/<si><t[^>]*>([\s\S]*?)<\/t><\/si>/g),
+  ].map((m) => m[1]);
+  const cellules = {};
+  for (const [, reference, attributs, valeur] of parties
+    .get("xl/worksheets/sheet1.xml")
+    .matchAll(/<c r="([A-Z]+\d+)"([^>]*)><v>([^<]*)<\/v><\/c>/g)) {
+    cellules[reference] = /t="s"/.test(attributs) ? textes[Number(valeur)] : Number(valeur);
+  }
+  return { cellules, parties };
 }
 
 describe("Dossier : composition", () => {
@@ -457,6 +486,290 @@ describe("Dossier : Word", () => {
   });
 });
 
+describe("Dossier : classeur Excel", () => {
+  const feuille = {
+    nom: "Budget",
+    colonnes: [
+      { titre: "Ligne", largeur: 30 },
+      { titre: "Quantité", largeur: 12 },
+      { titre: "Total", largeur: 20 },
+      { titre: "Échéance", largeur: 14 },
+    ],
+    lignes: [
+      [texte("Écriture"), nombre(12.5), montant(4500000), date("2027-03-01")],
+      [texte("Total", true), null, montant(4500000.5, true), null],
+    ],
+  };
+
+  it("fabrique un classeur complet : ses six fichiers, sans entrée de dossier", async () => {
+    const classeur = await rendreXlsx(feuille);
+    assert.equal(classeur.subarray(0, 4).toString("hex"), "504b0304");
+    assert.deepEqual(
+      [...lireEntrees(classeur).keys()],
+      [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "xl/workbook.xml",
+        "xl/_rels/workbook.xml.rels",
+        "xl/styles.xml",
+        "xl/sharedStrings.xml",
+        "xl/worksheets/sheet1.xml",
+      ],
+    );
+
+    const { parties } = lireFeuille(classeur);
+    assert.match(parties.get("xl/workbook.xml"), /<sheet name="Budget" sheetId="1" r:id="rId1"\/>/);
+    // Chaque fichier du classeur est déclaré, et relié.
+    for (const partie of ["workbook", "worksheets/sheet1", "styles", "sharedStrings"]) {
+      assert.ok(parties.get("[Content_Types].xml").includes(`/xl/${partie}.xml`), partie);
+    }
+    for (const cible of ["worksheets/sheet1.xml", "styles.xml", "sharedStrings.xml"]) {
+      assert.ok(parties.get("xl/_rels/workbook.xml.rels").includes(`Target="${cible}"`), cible);
+    }
+  });
+
+  it("range un nombre en nombre, une date en date, un texte en texte", async () => {
+    const { cellules, parties } = lireFeuille(await rendreXlsx(feuille));
+    assert.deepEqual(cellules, {
+      A1: "Ligne",
+      B1: "Quantité",
+      C1: "Total",
+      D1: "Échéance",
+      A2: "Écriture",
+      B2: 12.5,
+      C2: 4500000,
+      // Le 1er mars 2027, en jours depuis le 30 décembre 1899.
+      D2: 46447,
+      A3: "Total",
+      C3: 4500000.5,
+    });
+
+    const feuilleXml = parties.get("xl/worksheets/sheet1.xml");
+    // Un montant porte son format, une date le sien, un total est en gras.
+    assert.match(feuilleXml, /<c r="C2" s="2"><v>4500000<\/v><\/c>/);
+    assert.match(feuilleXml, /<c r="D2" s="4"><v>46447<\/v><\/c>/);
+    assert.match(feuilleXml, /<c r="A3" t="s" s="1">/);
+    assert.match(feuilleXml, /<c r="C3" s="3">/);
+    // Une cellule vide n'est pas écrite.
+    assert.doesNotMatch(feuilleXml, /r="B3"|r="D3"/);
+  });
+
+  it("ne laisse rien d'un texte devenir une formule, une balise ou un caractère interdit", async () => {
+    const pieges = [
+      "=1+1",
+      "+SUM(A1:A9)",
+      "@commande",
+      '<script>alert("x")</script> & co',
+      "avant\u0000\u0008\u001Fapres",
+      "ligne 1\r\nligne 2",
+    ];
+    const classeur = await rendreXlsx({
+      nom: "Pièges",
+      colonnes: [{ titre: "Texte", largeur: 30 }],
+      lignes: pieges.map((piege) => [texte(piege)]),
+    });
+    const { cellules, parties } = lireFeuille(classeur);
+    const feuilleXml = parties.get("xl/worksheets/sheet1.xml");
+    const textesXml = parties.get("xl/sharedStrings.xml");
+
+    // Aucune formule dans la feuille ; chaque piège est un texte partagé.
+    assert.doesNotMatch(feuilleXml, /<f>|<f /);
+    for (let ligne = 2; ligne <= pieges.length + 1; ligne += 1) {
+      assert.match(feuilleXml, new RegExp(`<c r="A${ligne}" t="s" `), `A${ligne}`);
+    }
+    assert.equal(cellules.A2, "=1+1");
+    assert.equal(cellules.A3, "+SUM(A1:A9)");
+    assert.equal(cellules.A5, "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; co");
+    assert.equal(cellules.A6, "avantapres");
+    assert.equal(cellules.A7, "ligne 1\nligne 2");
+    // Rien d'interdit en XML ne subsiste, et aucune balise n'est née du texte.
+    assert.doesNotMatch(textesXml, /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    assert.doesNotMatch(textesXml, /<script/);
+  });
+
+  it("écrit telle quelle une date illisible, et ignore un nombre qui n'en est pas un", async () => {
+    const { cellules } = lireFeuille(
+      await rendreXlsx({
+        nom: "Limites",
+        colonnes: [
+          { titre: "Date", largeur: 14 },
+          { titre: "Nombre", largeur: 14 },
+        ],
+        lignes: [
+          [date("2027-02-31"), nombre(Number.NaN)],
+          [date("bientôt"), nombre(Number.POSITIVE_INFINITY)],
+        ],
+      }),
+    );
+    assert.deepEqual(cellules, { A1: "Date", B1: "Nombre", A2: "2027-02-31", A3: "bientôt" });
+  });
+
+  it("donne à l'onglet un nom qu'Excel admet", async () => {
+    const { parties } = lireFeuille(
+      await rendreXlsx({
+        nom: "Budget [v2] : coûts/recettes d'un très long métrage ?",
+        colonnes: [{ titre: "A", largeur: 10 }],
+        lignes: [],
+      }),
+    );
+    const nom = /<sheet name="([^"]*)"/.exec(parties.get("xl/workbook.xml"))[1];
+    assert.ok(nom.length <= 31, nom);
+    assert.doesNotMatch(nom, /[[\]:*?/\\]/);
+  });
+});
+
+describe("Dossier : archive ZIP", () => {
+  const fabriquer = async (contenu = contenuComplet()) => {
+    const dossier = composerDossier(contenu, new Date("2026-10-01T12:00:00Z"));
+    return lireEntrees(await rendreArchive(dossier, contenu));
+  };
+  /** Les fichiers d'une archive, sans ses entrées de dossier. */
+  const fichiersDe = (entrees) => [...entrees.keys()].filter((nom) => !nom.endsWith("/"));
+
+  it("range un fichier Word par texte et un classeur par tableau, dans l'ordre du dossier", async () => {
+    const contenu = contenuComplet();
+    const dossier = composerDossier(contenu, new Date("2026-10-01T12:00:00Z"));
+    const archive = await rendreArchive(dossier, contenu);
+    assert.equal(archive.subarray(0, 4).toString("hex"), "504b0304");
+    assert.ok(archive.length < TAILLE_MAX_EXPORT);
+
+    const entrees = lireEntrees(archive);
+    // La note vide est omise, comme dans un dossier.
+    assert.deepEqual(fichiersDe(entrees), [
+      "presentation.docx",
+      "documents/01-note-d-intention-note-d-intention.docx",
+      "budget.xlsx",
+      "plan-de-financement.xlsx",
+      "planning.xlsx",
+    ]);
+    for (const nom of fichiersDe(entrees)) {
+      assert.equal(entrees.get(nom).subarray(0, 4).toString("hex"), "504b0304", nom);
+    }
+  });
+
+  it("sépare la présentation des documents : chacun dans son fichier", async () => {
+    const entrees = await fabriquer();
+    const presentation = lireArchive(entrees.get("presentation.docx")).get("word/document.xml");
+    const note = lireArchive(
+      entrees.get("documents/01-note-d-intention-note-d-intention.docx"),
+    ).get("word/document.xml");
+
+    assert.ok(presentation.includes("Une pêcheuse défend sa plage."));
+    assert.ok(presentation.includes("Cameroun (principal), Sénégal"));
+    assert.ok(
+      !presentation.includes("Pourquoi ce film."),
+      "la note n'est pas dans la présentation",
+    );
+    assert.ok(!presentation.includes("Budget prévisionnel"), "ni le budget");
+
+    assert.ok(note.includes("Pourquoi ce film."));
+    assert.ok(
+      !note.includes("Une pêcheuse défend sa plage."),
+      "la synthèse n'est pas dans la note",
+    );
+    // Chaque fichier garde la page de garde du projet.
+    assert.ok(note.includes("Mɔ́ŋ ma Ɛyɔ"));
+  });
+
+  it("écrit le budget en nombres, avec son total", async () => {
+    const { cellules } = lireFeuille((await fabriquer()).get("budget.xlsx"));
+    assert.deepEqual(
+      [cellules.A1, cellules.B1, cellules.C1, cellules.D1, cellules.E1],
+      ["Poste", "Ligne", "Quantité", "Coût unitaire (XAF)", "Total (XAF)"],
+    );
+    assert.deepEqual(
+      [cellules.A2, cellules.B2, cellules.C2, cellules.D2, cellules.E2],
+      ["Développement et écriture", "Écriture", 1, 4500000, 4500000],
+    );
+    assert.deepEqual([cellules.B3, cellules.C3, cellules.E3], ["Repérages", 2, 1700000]);
+    assert.deepEqual([cellules.A4, cellules.B4], ["Postproduction", "Montage"]);
+    assert.deepEqual([cellules.A5, cellules.E5], ["Total", 9200000]);
+  });
+
+  it("totalise le plan de financement par devise, sans additionner des monnaies différentes", async () => {
+    const { cellules } = lireFeuille((await fabriquer()).get("plan-de-financement.xlsx"));
+    assert.deepEqual(
+      ["A", "B", "C", "D", "E", "F", "G", "H"].map((colonne) => cellules[`${colonne}2`]),
+      ["Fonds Image", "Développement", "Aide publique", "Déposée", "EUR", 25000, undefined, 46447],
+    );
+    // Sans programme ni échéance : cellules vides, pas de tiret.
+    assert.deepEqual(
+      ["A", "B", "E", "F", "G", "H"].map((colonne) => cellules[`${colonne}3`]),
+      ["Ministère", undefined, "XAF", 15000000, 12000000, undefined],
+    );
+    // Rien d'accordé en euros : pas de somme, plutôt qu'un zéro.
+    assert.deepEqual(
+      ["A", "E", "F", "G"].map((colonne) => cellules[`${colonne}4`]),
+      ["Total EUR", "EUR", 25000, undefined],
+    );
+    assert.deepEqual(
+      ["A", "E", "F", "G"].map((colonne) => cellules[`${colonne}5`]),
+      ["Total XAF", "XAF", 15000000, 12000000],
+    );
+  });
+
+  it("écrit le planning avec de vraies dates", async () => {
+    const { cellules } = lireFeuille((await fabriquer()).get("planning.xlsx"));
+    assert.deepEqual(
+      ["A", "B", "C", "D", "E"].map((colonne) => cellules[`${colonne}1`]),
+      ["Étape", "Phase", "Début", "Fin", "Statut"],
+    );
+    // 1er novembre 2026 et 15 janvier 2027, en numéros de série.
+    assert.deepEqual(
+      ["A", "B", "C", "D", "E"].map((colonne) => cellules[`${colonne}2`]),
+      ["Écriture", "Écriture", 46327, 46402, "En cours"],
+    );
+    assert.deepEqual([cellules.A3, cellules.C3, cellules.D3], ["Dépôt", undefined, 46458]);
+  });
+
+  it("n'y met que ce que le dossier retient : une pièce demandée mais vide est omise", async () => {
+    const contenu = contenuComplet();
+    contenu.budget.lignes = [];
+    contenu.planning = [];
+    delete contenu.financements;
+    delete contenu.fiche_projet;
+    assert.deepEqual(fichiersDe(await fabriquer(contenu)), [
+      "presentation.docx",
+      "documents/01-note-d-intention-note-d-intention.docx",
+    ]);
+
+    const sansTexte = contenuComplet();
+    delete sansTexte.synthese;
+    delete sansTexte.fiche_projet;
+    sansTexte.documents = [];
+    assert.deepEqual(fichiersDe(await fabriquer(sansTexte)), [
+      "budget.xlsx",
+      "plan-de-financement.xlsx",
+      "planning.xlsx",
+    ]);
+  });
+
+  it("numérote les documents : deux titres identiques ne se recouvrent pas", async () => {
+    const contenu = contenuComplet();
+    contenu.documents = [
+      { type: "note_intention", titre: "Note", contenu: "Première." },
+      { type: "note_intention", titre: "Note", contenu: "Seconde." },
+      { type: "scenario", titre: "../../etc/passwd", contenu: "Rien à voir." },
+    ];
+    const noms = fichiersDe(await fabriquer(contenu)).filter((nom) => nom.startsWith("documents/"));
+    assert.deepEqual(noms, [
+      "documents/01-note-d-intention-note.docx",
+      "documents/02-note-d-intention-note.docx",
+      "documents/03-scenario-etc-passwd.docx",
+    ]);
+  });
+
+  it("réduit un titre à un nom de fichier sûr, sans séparateur de dossier", () => {
+    assert.equal(nomSur("Note d'intention — Été 2027"), "note-d-intention-ete-2027");
+    assert.equal(nomSur("../../secret\\fichier:nom"), "secret-fichier-nom");
+    assert.equal(nomSur("  ...  "), "");
+    assert.ok(nomSur("x".repeat(200)).length <= 60);
+    for (const titre of ["a/b", "a\\b", "..", "C:\\Windows", "Mɔ́ŋ ma Ɛyɔ"]) {
+      assert.match(nomSur(titre), /^[a-z0-9-]*$/, titre);
+    }
+  });
+});
+
 describe("Export PDF : worker", () => {
   let base;
   const journal = [];
@@ -542,8 +855,12 @@ describe("Export PDF : worker", () => {
     return { travail, reglement, exports };
   }
 
-  it("sait exécuter l'export PDF et l'export Word, sans aucune clé", () => {
-    assert.deepEqual(Object.keys(executeursExport(base)), ["pdf_export", "docx_export"]);
+  it("sait exécuter l'export PDF, l'export Word et l'export ZIP, sans aucune clé", () => {
+    assert.deepEqual(Object.keys(executeursExport(base)), [
+      "pdf_export",
+      "docx_export",
+      "zip_export",
+    ]);
   });
 
   it("succès : le PDF est déposé, la tâche conclue, l'unité consommée", async () => {
@@ -601,6 +918,54 @@ describe("Export PDF : worker", () => {
     const document = archive.get("word/document.xml");
     assert.ok(document.includes("Les Eaux de export-word"));
     assert.ok(document.includes("Budget prévisionnel"));
+  });
+
+  it("succès en ZIP : l'archive est déposée sans nombre de pages, l'unité consommée", async () => {
+    const { porteur, tache } = await preparer(
+      "export-zip",
+      { sections: ["synthese", "budget"], documents: ["note_intention"] },
+      {
+        action: "zip_export",
+        documents: [
+          {
+            type: "note_intention",
+            title: "Note finale",
+            content: "Le texte.",
+            status: "finalise",
+          },
+        ],
+      },
+    );
+    assert.equal(tache.action, "zip_export");
+
+    assert.equal(await traiterUnTravail(options()), true);
+
+    const { travail, reglement, exports } = await etat(porteur, tache);
+    assert.deepEqual([travail.state, travail.attempts], ["succeeded", 1]);
+    assert.deepEqual(reglement, { consumed: 1, released: 0 });
+    assert.equal(exports.length, 1);
+    assert.equal(exports[0].format, "zip");
+    assert.equal(exports[0].pages, null);
+    assert.match(exports[0].file, /^\\x504b0304/);
+    assert.deepEqual(exports[0].params, {
+      sections: ["budget", "synthese"],
+      documents: ["note_intention"],
+    });
+
+    // Du contenu de la base jusque dans les fichiers de l'archive.
+    const entrees = lireEntrees(Buffer.from(exports[0].file.slice(2), "hex"));
+    assert.deepEqual(
+      [...entrees.keys()].filter((nom) => !nom.endsWith("/")),
+      ["presentation.docx", "documents/01-note-d-intention-note-finale.docx", "budget.xlsx"],
+    );
+    assert.ok(
+      lireArchive(entrees.get("presentation.docx")).get("word/document.xml").includes("Un pitch."),
+    );
+    const { cellules } = lireFeuille(entrees.get("budget.xlsx"));
+    assert.deepEqual(
+      [cellules.B2, cellules.C2, cellules.D2, cellules.E2, cellules.E3],
+      ["Écriture", 1, 2500000, 2500000, 2500000],
+    );
   });
 
   it("ne reçoit que les sections demandées, et que les documents finalisés", async () => {

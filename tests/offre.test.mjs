@@ -85,7 +85,7 @@ describe("Offre publique", () => {
         "100 Mo de stockage d'images",
         "20 unités texte par mois",
         "10 images générées par mois",
-        "2 exports par mois (PDF ou Word)",
+        "2 exports par mois (PDF, Word ou ZIP)",
       ],
     );
 
@@ -107,7 +107,7 @@ describe("Offre publique", () => {
         "20 Go de stockage d'images",
         "1 500 unités texte par mois",
         "1 000 images générées par mois",
-        "150 exports par mois (PDF ou Word)",
+        "150 exports par mois (PDF, Word ou ZIP)",
       ],
     );
   });

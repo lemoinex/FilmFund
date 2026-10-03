@@ -457,9 +457,13 @@ recommandations (« à améliorer ») sont configurables et traçables.
   `fiche_projet`) —, documents finalisés seulement, sans image ; fabriqué par le worker
   (`pdf_export`, `docx_export` : le format est l’action), rangé en base
   (`project_exports`, 5 Mo, 30 jours), lisible du porteur, des éditeurs et des
-  administrateurs ; un seul quota d’exports pour les deux formats. Ne pas créer un
+  administrateurs ; un seul quota d’exports pour tous les formats. Ne pas créer un
   second chemin d’export : étendre celui-ci.
-- Non livré : ZIP du projet (textes en DOCX, budget et plan de financement en XLSX).
+- ZIP du projet (lot M5, action `zip_export`) : livré. Un fichier Word par texte
+  (présentation, puis un par document finalisé), un classeur Excel par tableau
+  (budget, plan de financement, planning), où nombres et dates restent des nombres
+  et des dates. Les classeurs sont écrits par le worker (`worker/src/exports/xlsx.ts`),
+  sans bibliothèque Excel.
 - Stockage privé et limite de stockage par plan : livrés. Les photos de profil sont
   hors quota de studio (2 Mo, une par compte).
 - Contrôler les octets avant/à la réception, type/taille réels et expiration
@@ -498,7 +502,7 @@ Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 | 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                    |
 | 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                                |
 | 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)       |
-| 11    | Exports PDF/DOCX/ZIP                                | PDF et DOCX livrés (lots M1, M2, M3) ; ZIP à faire                             |
+| 11    | Exports PDF/DOCX/ZIP                                | PDF, DOCX et ZIP livrés (lots M1 à M5)                                         |
 | 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                                 |
 
 Les onze agents restent dans le plan V1. Leur activation est progressive, avec

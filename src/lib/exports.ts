@@ -1,7 +1,7 @@
 /**
- * Exports d'un projet, en PDF ou en Word : ce que l'écran propose, où en est
- * une demande, et comment un fichier se nomme. Module pur, testable sans pile
- * Supabase.
+ * Exports d'un projet, en PDF, en Word ou en archive ZIP : ce que l'écran
+ * propose, où en est une demande, et comment un fichier se nomme. Module pur,
+ * testable sans pile Supabase.
  *
  * Aucun import d'alias : ce module est aussi chargé tel quel par les tests
  * Node.
@@ -33,8 +33,9 @@ export const SECTIONS_D_OUVERTURE: readonly SectionExport[] = ["synthese", "fich
 /**
  * Formats d'un dossier. Le format est l'action même de la tâche — la base
  * n'en connaît pas d'autre — et la signature, les premiers octets que tout
- * fichier de ce format présente : « %PDF- », ou « PK\x03\x04 » pour l'archive
- * d'un DOCX. Un test d'architecture vérifie que la base admet ces actions.
+ * fichier de ce format présente : « %PDF- », ou « PK\x03\x04 » pour une
+ * archive — un DOCX en est une, comme un ZIP. Un test d'architecture vérifie
+ * que la base admet ces actions.
  */
 export const FORMATS_EXPORT = {
   pdf: {
@@ -51,6 +52,14 @@ export const FORMATS_EXPORT = {
     action: "docx_export",
     extension: "docx",
     type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    signature: [0x50, 0x4b, 0x03, 0x04],
+  },
+  zip: {
+    libelle: "ZIP",
+    detail: "Un fichier Word par texte, un classeur Excel par tableau",
+    action: "zip_export",
+    extension: "zip",
+    type: "application/zip",
     signature: [0x50, 0x4b, 0x03, 0x04],
   },
 } as const;
