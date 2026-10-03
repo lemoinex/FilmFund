@@ -154,7 +154,22 @@ function tableau(colonnes: Colonne[], lignes: Ligne[]): Table {
       children: [
         new Paragraph({
           alignment: colonnes[i].alignement === "droite" ? AlignmentType.RIGHT : AlignmentType.LEFT,
-          children: [new TextRun({ text: contenu, bold: gras, size: TABLEAU, color: encre })],
+          // Une ligne par bloc : laissé dans le texte, un retour à la ligne
+          // s'afficherait comme une espace — la description d'un personnage,
+          // l'échéance d'un financement.
+          children: contenu
+            .replaceAll("\r\n", "\n")
+            .split("\n")
+            .map(
+              (ligne, rang) =>
+                new TextRun({
+                  text: ligne,
+                  break: rang > 0 ? 1 : 0,
+                  bold: gras,
+                  size: TABLEAU,
+                  color: encre,
+                }),
+            ),
         }),
       ],
     });
