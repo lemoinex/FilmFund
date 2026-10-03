@@ -31,8 +31,8 @@ réels).
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
 | Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —              |
 | Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —              |
-| R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé localement | —              |
-| R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé localement | —              |
+| R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé en recette | —              |
+| R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —              |
 
 ## Recette de I1
 
@@ -118,6 +118,25 @@ Non couvert par cette recette : un dossier Word avec documents, budget, plan de 
 planning (vérifiés localement et par les tests du worker) ; l'ouverture dans LibreOffice ; un
 éditeur et un lecteur réels, faute de second compte tant que le mode privé est actif
 (vérifiés par les tests).
+
+## Recette du lot R
+
+Le 3 octobre 2026, un administrateur a créé un projet avec l'assistant en production, de la
+première étape à la fiche (mode privé actif). R1 (migration poussée à 01h41) et R2 (fusionné à
+02h22, sans migration) sont recettés ensemble, R1 n'ayant pas d'écran propre.
+
+- Projet créé par la première étape, puis renvoi vers « Concept » ; format, étape, genre,
+  durée, pays et langues enregistrés.
+- Un personnage ajouté, rattaché au projet, son auteur étant le porteur.
+- Les six étapes à champs enregistrées l'une après l'autre, puis la fiche affichée avec le
+  message de fin, selon l'utilisateur.
+- Journaux Vercel : aucune erreur d'exécution, réponses 200 ; aucune entrée au journal
+  d'administration, l'administrateur agissant dans son propre projet.
+
+Non couvert par cette recette : plusieurs pays de production et le choix du principal, la
+modification et le retrait d'un personnage, « Passer cette étape » (vérifiés localement et par
+les tests) ; un éditeur et un lecteur réels, ni l'accès refusé à un compte étranger, faute de
+second compte tant que le mode privé est actif (vérifiés localement et par les tests).
 
 ## Décisions attendues
 
