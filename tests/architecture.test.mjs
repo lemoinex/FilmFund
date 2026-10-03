@@ -590,4 +590,70 @@ describe("Score de maturité", () => {
       /\{budgetAutorise \? <ScoreMaturite projetId=\{projet\.id\} \/> : null\}/,
     );
   });
+
+  // Lot S2 : le score sur les listes, et la publication des pondérations.
+  const MIGRATION_LISTE = "supabase/migrations/20261003144808_score_maturite_liste.sql";
+
+  it("la lecture groupée suit la règle du budget, sans réécrire les faits", () => {
+    const migration = lire(MIGRATION_LISTE);
+    const debut = migration.indexOf("create or replace function public.faits_maturite_projets");
+    assert.ok(debut >= 0, "faits_maturite_projets introuvable");
+    const corps = migration.slice(debut, migration.indexOf("$$;", debut));
+
+    assert.match(corps, /security invoker/);
+    assert.match(corps, /select p\.id, public\.faits_maturite\(p\.id\)/);
+    assert.match(corps, /and public\.peut_gerer_budget\(p\.id\)/);
+  });
+
+  it("le plafond des listes est le même en base et dans l'application", async () => {
+    const { LIMITE_SCORES_LISTE } = await import("../src/lib/maturite.ts");
+    const enBase = /cardinality\(p_project_ids\), 0\) > (\d+) then/.exec(
+      lire(MIGRATION_LISTE),
+    )?.[1];
+
+    assert.ok(enBase, "lecture de la migration");
+    assert.equal(LIMITE_SCORES_LISTE, Number(enBase));
+
+    const encart = sansCommentaires(lire("src/app/(app)/projets/[id]/maturite.tsx"));
+    assert.match(encart, /projetIds\.slice\(0, LIMITE_SCORES_LISTE\)/);
+  });
+
+  it("les listes lisent les scores en lot, jamais projet par projet", () => {
+    for (const page of [
+      "src/app/(app)/projets/page.tsx",
+      "src/app/(app)/tableau-de-bord/page.tsx",
+    ]) {
+      const source = sansCommentaires(lire(page));
+      assert.match(source, /chargerScores\(/, page);
+      assert.match(source, /<EtiquetteMaturite\s+score=\{scores\.get\(\w+\.id\)\}/, page);
+      assert.doesNotMatch(source, /rpc\("faits_maturite/, page);
+    }
+    // Une carte sans score n'affiche rien : ni zéro, ni tiret.
+    const encart = sansCommentaires(lire("src/app/(app)/projets/[id]/maturite.tsx"));
+    assert.match(encart, /if \(score === undefined\) \{\s*return null;/);
+    assert.match(encart, /rpc\("faits_maturite_projets", \{ p_project_ids: demandes \}\)/);
+  });
+
+  it("la publication des pondérations revérifie le rôle et valide avant d'écrire", () => {
+    const action = sansCommentaires(lire("src/app/(app)/administration/ponderations/actions.ts"));
+    const etapes = [
+      "exigerAcces(supabase)",
+      'rpc("is_admin")',
+      "lireValeursPonderations(",
+      ".insert(lecture.valeurs)",
+    ].map((etape) => action.indexOf(etape));
+
+    assert.ok(
+      etapes.every((position) => position >= 0),
+      "une étape manque",
+    );
+    assert.deepEqual(
+      etapes,
+      [...etapes].sort((a, b) => a - b),
+      "session, rôle, validation, puis écriture",
+    );
+    assert.match(action, /if \(!estAdministrateur\) \{\s*return \{ erreur: REFUS \};/);
+    // Écriture sous la session de l'administrateur : aucun rôle de service.
+    assert.doesNotMatch(action, /SECRET|service_role/i);
+  });
 });

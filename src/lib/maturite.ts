@@ -35,6 +35,16 @@ export const ORDRE_CRITERES = Object.keys(CRITERES) as CodeCritere[];
 /** Points de chaque critère, sur un total de 100. */
 export type Ponderations = Record<CodeCritere, number>;
 
+/** Total que les pondérations doivent atteindre : la base le contrôle aussi. */
+export const TOTAL_PONDERATIONS = 100;
+
+/**
+ * Nombre de projets dont une liste affiche le score : au-delà, la lecture
+ * groupée pèserait sur la page. Même plafond que `faits_maturite_projets()` ;
+ * un test d'architecture vérifie qu'ils ne s'écartent pas.
+ */
+export const LIMITE_SCORES_LISTE = 100;
+
 /** Oui/non remis par `faits_maturite()`. */
 export const FAITS_OUI_NON = [
   "pitch",
@@ -114,7 +124,59 @@ export function lirePonderations(valeur: unknown): { version: number; poids: Pon
     ORDRE_CRITERES.map((code) => [code, valeur[code]]),
   ) as Ponderations;
   const total = ORDRE_CRITERES.reduce((somme, code) => somme + poids[code], 0);
-  return total === 100 ? { version: valeur.version_number, poids } : null;
+  return total === TOTAL_PONDERATIONS ? { version: valeur.version_number, poids } : null;
+}
+
+/** Entier positif d'un champ de formulaire, espaces tolérées ; nul sinon. */
+function lireEntier(saisie: unknown): number | null {
+  const brut = String(saisie ?? "").replace(/\s/g, "");
+  return /^\d+$/.test(brut) ? Number(brut) : null;
+}
+
+/** Somme des poids saisis ; nul tant qu'un champ n'est pas un entier. */
+export function totalSaisi(lire: (code: CodeCritere) => unknown): number | null {
+  let total = 0;
+  for (const code of ORDRE_CRITERES) {
+    const valeur = lireEntier(lire(code));
+    if (valeur === null) {
+      return null;
+    }
+    total += valeur;
+  }
+  return total;
+}
+
+/**
+ * Lit et valide les pondérations d'un formulaire de publication : neuf
+ * entiers de 0 à 100, dont la somme fait 100. La base refuse le reste elle
+ * aussi ; le message d'ici dit ce qui ne va pas.
+ */
+export function lireValeursPonderations(
+  lire: (code: CodeCritere) => unknown,
+): { valeurs: Ponderations } | { erreur: string } {
+  const valeurs = {} as Ponderations;
+
+  for (const code of ORDRE_CRITERES) {
+    const valeur = lireEntier(lire(code));
+    if (valeur === null) {
+      return { erreur: `${CRITERES[code]} : saisissez un nombre entier.` };
+    }
+    if (valeur > TOTAL_PONDERATIONS) {
+      return {
+        erreur: `${CRITERES[code]} : la valeur doit être comprise entre 0 et ${TOTAL_PONDERATIONS}.`,
+      };
+    }
+    valeurs[code] = valeur;
+  }
+
+  const total = ORDRE_CRITERES.reduce((somme, code) => somme + valeurs[code], 0);
+  if (total !== TOTAL_PONDERATIONS) {
+    return {
+      erreur: `Le total doit faire ${TOTAL_PONDERATIONS} points : il en fait ${total}.`,
+    };
+  }
+
+  return { valeurs };
 }
 
 /** Un élément attendu d'un critère, et ce qu'il reste à faire s'il manque. */

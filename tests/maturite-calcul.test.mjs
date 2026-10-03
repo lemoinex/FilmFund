@@ -1,6 +1,6 @@
 /**
- * Score de maturité (lot S1) : le calcul, à partir de faits et de
- * pondérations.
+ * Score de maturité (lots S1 et S2) : le calcul, à partir de faits et de
+ * pondérations, et la saisie d'une version des pondérations.
  *
  * Importe directement le module TypeScript (types retirés par Node). Module
  * pur : ni base, ni serveur. Les faits réels et les droits ont leur propre
@@ -14,7 +14,9 @@ import {
   CRITERES,
   lireFaits,
   lirePonderations,
+  lireValeursPonderations,
   ORDRE_CRITERES,
+  totalSaisi,
 } from "../src/lib/maturite.ts";
 
 /** Pondérations par défaut, celles de la première version en base. */
@@ -278,5 +280,65 @@ describe("Maturité : lecture des pondérations", () => {
       lirePonderations({ version_number: 1, ...POIDS, concept: -5, narrative: 40 }),
       null,
     );
+  });
+});
+
+// Lot S2 : ce que l'administration saisit avant de publier une version.
+describe("Maturité : saisie des pondérations", () => {
+  /** Un formulaire où chaque poids est saisi en texte, comme le navigateur l'envoie. */
+  const formulaire = (poids) => (code) => (code in poids ? String(poids[code]) : null);
+
+  it("accepte neuf entiers dont le total fait 100, espaces tolérées", () => {
+    assert.deepEqual(lireValeursPonderations(formulaire(POIDS)), { valeurs: POIDS });
+    assert.deepEqual(lireValeursPonderations(formulaire({ ...POIDS, concept: " 20 " })), {
+      valeurs: POIDS,
+    });
+    // Un critère à zéro est admis : il n'est plus évalué.
+    const sansMarche = { ...POIDS, market: 0, concept: 25 };
+    assert.deepEqual(lireValeursPonderations(formulaire(sansMarche)), { valeurs: sansMarche });
+  });
+
+  it("refuse un total différent de 100, et dit combien il fait", () => {
+    assert.deepEqual(lireValeursPonderations(formulaire({ ...POIDS, concept: 15 })), {
+      erreur: "Le total doit faire 100 points : il en fait 95.",
+    });
+    assert.deepEqual(lireValeursPonderations(formulaire({ ...POIDS, concept: 30 })), {
+      erreur: "Le total doit faire 100 points : il en fait 110.",
+    });
+  });
+
+  it("refuse un champ vide, décimal, négatif ou hors bornes, en nommant le critère", () => {
+    const sansDossier = { ...POIDS };
+    delete sansDossier.dossier;
+
+    for (const [poids, critere] of [
+      [sansDossier, "Dossier"],
+      [{ ...POIDS, concept: "" }, "Concept"],
+      [{ ...POIDS, narrative: "12,5" }, "Narration"],
+      [{ ...POIDS, budget: "-5" }, "Budget"],
+      [{ ...POIDS, market: "cinq" }, "Potentiel marché"],
+    ]) {
+      assert.deepEqual(lireValeursPonderations(formulaire(poids)), {
+        erreur: `${critere} : saisissez un nombre entier.`,
+      });
+    }
+
+    assert.deepEqual(lireValeursPonderations(formulaire({ ...POIDS, concept: 101 })), {
+      erreur: "Concept : la valeur doit être comprise entre 0 et 100.",
+    });
+  });
+
+  it("ne rend que les neuf critères : un champ en trop est ignoré", () => {
+    const lecture = lireValeursPonderations(
+      formulaire({ ...POIDS, version_number: 9, published_by: "quelqu'un" }),
+    );
+    assert.deepEqual(Object.keys(lecture.valeurs), [...ORDRE_CRITERES]);
+  });
+
+  it("le total suit la saisie, et reste nul tant qu'un champ n'est pas un entier", () => {
+    assert.equal(totalSaisi(formulaire(POIDS)), 100);
+    assert.equal(totalSaisi(formulaire({ ...POIDS, concept: 15 })), 95);
+    assert.equal(totalSaisi(formulaire({ ...POIDS, concept: "" })), null);
+    assert.equal(totalSaisi(formulaire({ ...POIDS, concept: "2x" })), null);
   });
 });

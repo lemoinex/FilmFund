@@ -415,6 +415,14 @@ describe("Mode privé", () => {
       });
       assert.ifError(error);
       assert.equal(faits, null);
+
+      // La lecture groupée des listes suit le même verrou.
+      const { data: enLot, error: erreurEnLot } = await membre.client.rpc(
+        "faits_maturite_projets",
+        { p_project_ids: [projetDuMembre.id] },
+      );
+      assert.ifError(erreurEnLot);
+      assert.deepEqual(enLot, []);
     });
 
     it("n'obtient plus de lien vers ses propres images, ni n'en envoie", async () => {

@@ -35,7 +35,7 @@ réels).
 | R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé en recette | —              |
 | R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —              |
 | S1  | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —              |
-| S2  | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | à faire           | S1             |
+| S2  | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé localement | recette        |
 
 ## Recette de I1
 
@@ -285,3 +285,13 @@ l'appelant) et l'application calcule (`src/lib/maturite.ts`). Rien n'est stocké
 recalculé à chaque affichage. Lot S découpé en S1 (base, calcul, encart sur la page du projet
 et le tableau de bord, libellé de la publication au journal d'administration) et S2 (cartes de
 la liste des projets, écran de publication des pondérations).
+
+Lot S2 : les listes — « Mes projets » et les autres projets récents du tableau de bord —
+affichent le score de chaque carte par une lecture groupée (`faits_maturite_projets()`), qui
+ne rend que les projets dont l'appelant gère le budget et refuse plus de cent projets ; les
+faits restent ceux de `faits_maturite()`. Au-delà de cent projets affichés, la page le dit et
+le score se lit sur la page du projet. L'administration publie une version depuis « Score de
+maturité » (`/administration/ponderations`) : neuf entiers dont le total fait 100, validés
+par l'action puis par la base ; la version s'applique aussitôt à tous les projets, puisque
+rien n'est stocké. Reste à livrer : fusion, migration poussée, puis recette — la publication
+d'une version en production est un changement réel.

@@ -1849,6 +1849,13 @@ export type Database = {
         Returns: string;
       };
       faits_maturite: { Args: { p_project_id: string }; Returns: Json };
+      faits_maturite_projets: {
+        Args: { p_project_ids: string[] };
+        Returns: {
+          faits: Json;
+          project_id: string;
+        }[];
+      };
       images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       journaliser: {
