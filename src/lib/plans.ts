@@ -31,7 +31,7 @@ export const CHAMPS_PLAN = [
   },
   {
     cle: "pdf_exports_per_month",
-    libelle: "Exports PDF par mois",
+    libelle: "Exports par mois (PDF ou Word)",
     unite: "exports",
     min: 0,
     max: 10_000_000,

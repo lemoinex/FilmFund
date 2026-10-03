@@ -1,16 +1,19 @@
 /**
- * Export PDF (lot M1) : de la tâche réclamée au fichier déposé, contre la
- * base locale et sous le rôle du worker.
+ * Exports PDF (lot M1) et Word (lot M3) : de la tâche réclamée au fichier
+ * déposé, contre la base locale et sous le rôle du worker.
  *
  * Aucun fournisseur n'est en jeu : l'export ne coûte rien et n'appelle
- * personne. Les PDF sont réellement fabriqués ; leur contenu se vérifie sur
- * le plan du dossier, que la mise en page ne fait que dessiner.
+ * personne. Les fichiers sont réellement fabriqués ; leur contenu se vérifie
+ * sur le plan du dossier, que la mise en page ne fait que dessiner, et, pour
+ * le Word, dans le XML de l'archive.
  */
 import { strict as assert } from "node:assert";
 import { after, before, describe, it } from "node:test";
+import { inflateRawSync } from "node:zlib";
 
 import { lireContexteExport, purgerExports } from "../worker/src/base.ts";
 import { traiterUnTravail } from "../worker/src/boucle.ts";
+import { rendreDocx } from "../worker/src/exports/docx.ts";
 import { composerDossier } from "../worker/src/exports/dossier.ts";
 import { executeursExport, TAILLE_MAX_EXPORT } from "../worker/src/exports/executeur.ts";
 import { rendrePdf } from "../worker/src/exports/pdf.ts";
@@ -107,6 +110,28 @@ const cellules = (section) =>
   section.blocs
     .find((bloc) => bloc.type === "tableau")
     .lignes.map((ligne) => ligne.cellules.map((cellule) => cellule.replace(/[  ]/g, " ")));
+
+/**
+ * Fichiers d'une archive ZIP, lus en-tête local après en-tête local : de quoi
+ * vérifier un DOCX sans dépendance. Les entrées compressées le sont par
+ * « deflate » (méthode 8), les autres sont rangées telles quelles.
+ */
+function lireArchive(archive) {
+  const fichiers = new Map();
+  let i = 0;
+  while (i + 30 <= archive.length && archive.readUInt32LE(i) === 0x04034b50) {
+    const methode = archive.readUInt16LE(i + 8);
+    const taille = archive.readUInt32LE(i + 18);
+    const longueurNom = archive.readUInt16LE(i + 26);
+    const longueurExtra = archive.readUInt16LE(i + 28);
+    const nom = archive.toString("utf8", i + 30, i + 30 + longueurNom);
+    const debut = i + 30 + longueurNom + longueurExtra;
+    const donnees = archive.subarray(debut, debut + taille);
+    fichiers.set(nom, (methode === 8 ? inflateRawSync(donnees) : donnees).toString("utf8"));
+    i = debut + taille;
+  }
+  return fichiers;
+}
 
 describe("Dossier : composition", () => {
   const dossier = composerDossier(contenuComplet(), new Date("2026-10-01T12:00:00Z"));
@@ -215,6 +240,60 @@ describe("Dossier : mise en page", () => {
   });
 });
 
+describe("Dossier : Word", () => {
+  it("fabrique une archive DOCX lisible : contenu, styles et pied de page", async () => {
+    const dossier = composerDossier(contenuComplet(), new Date("2026-10-01T12:00:00Z"));
+    const fichier = await rendreDocx(dossier);
+    assert.equal(fichier.subarray(0, 4).toString("hex"), "504b0304");
+    assert.ok(fichier.length < TAILLE_MAX_EXPORT);
+
+    const archive = lireArchive(fichier);
+    for (const partie of ["[Content_Types].xml", "word/document.xml", "word/styles.xml"]) {
+      assert.ok(archive.has(partie), partie);
+    }
+    const document = archive.get("word/document.xml");
+    // Les lettres d'une langue africaine traversent intactes.
+    assert.ok(document.includes("Mɔ́ŋ ma Ɛyɔ"));
+    for (const section of dossier.sections) {
+      assert.ok(
+        document.includes(section.titre.replace("'", "&apos;")) || document.includes(section.titre),
+        section.titre,
+      );
+    }
+    // De vrais titres, et de vrais tableaux à en-tête répété.
+    assert.match(document, /w:pStyle w:val="Heading1"/);
+    assert.match(document, /<w:tbl>/);
+    assert.match(document, /<w:tblHeader\/>/);
+    // Montants groupés comme à l'écran, espaces insécables comprises.
+    assert.ok(document.replace(/[  ]/g, " ").includes("9 200 000"));
+
+    // Numéro de page et nombre de pages : des champs, que Word recalcule.
+    const pieds = [...archive.keys()].filter((nom) => /^word\/footer\d+\.xml$/.test(nom));
+    assert.ok(
+      pieds.some((nom) => /PAGE/.test(archive.get(nom)) && /NUMPAGES/.test(archive.get(nom))),
+    );
+  });
+
+  it("garde un long document et un long tableau sans rien perdre", async () => {
+    const contenu = contenuComplet();
+    contenu.documents[0].contenu = Array.from(
+      { length: 400 },
+      (_, i) => `Paragraphe ${i + 1}. La mer n'attend personne.`,
+    ).join("\n\n");
+    contenu.budget.lignes = Array.from({ length: 120 }, (_, i) => ({
+      poste: "equipe_technique",
+      libelle: `Ligne ${i + 1}`,
+      quantite: 1,
+      cout_unitaire: 1000,
+      total: 1000,
+    }));
+    const dossier = composerDossier(contenu, new Date("2026-10-01T12:00:00Z"));
+    const document = lireArchive(await rendreDocx(dossier)).get("word/document.xml");
+    assert.ok(document.includes("Paragraphe 400."));
+    assert.ok(document.includes("Ligne 120"));
+  });
+});
+
 describe("Export PDF : worker", () => {
   let base;
   const journal = [];
@@ -237,7 +316,11 @@ describe("Export PDF : worker", () => {
     };
   }
 
-  async function preparer(prefixe, demande, { documents = [], budget = true } = {}) {
+  async function preparer(
+    prefixe,
+    demande,
+    { documents = [], budget = true, action = "pdf_export" } = {},
+  ) {
     const porteur = await creerCompte(prefixe);
     const projet = await creerProjet(porteur, `Les Eaux de ${prefixe}`);
     const { error } = await porteur.client
@@ -272,7 +355,7 @@ describe("Export PDF : worker", () => {
       assert.ifError(ligne);
     }
 
-    const tache = await engager(porteur, projet.id, "pdf_export", `${prefixe}-cle`, demande);
+    const tache = await engager(porteur, projet.id, action, `${prefixe}-cle`, demande);
     const nettoyage = await sql(annulerLesAutresTaches([tache.id]));
     assert.equal(nettoyage.code, 0, nettoyage.erreurs);
     return { porteur, projet, tache };
@@ -291,13 +374,13 @@ describe("Export PDF : worker", () => {
       .maybeSingle();
     const { data: exports } = await porteur.client
       .from("project_exports")
-      .select("id, pages, size_bytes, params, content_fingerprint, file")
+      .select("id, format, pages, size_bytes, params, content_fingerprint, file")
       .eq("job_id", tache.id);
     return { travail, reglement, exports };
   }
 
-  it("ne sait exécuter que l'export PDF, sans aucune clé", () => {
-    assert.deepEqual(Object.keys(executeursExport(base)), ["pdf_export"]);
+  it("sait exécuter l'export PDF et l'export Word, sans aucune clé", () => {
+    assert.deepEqual(Object.keys(executeursExport(base)), ["pdf_export", "docx_export"]);
   });
 
   it("succès : le PDF est déposé, la tâche conclue, l'unité consommée", async () => {
@@ -331,6 +414,30 @@ describe("Export PDF : worker", () => {
       documents: ["note_intention"],
     });
     assert.match(exports[0].content_fingerprint, /^[0-9a-f]{64}$/);
+  });
+
+  it("succès en Word : l'archive est déposée sans nombre de pages, l'unité consommée", async () => {
+    const { porteur, tache } = await preparer(
+      "export-word",
+      { sections: ["synthese", "budget"] },
+      { action: "docx_export" },
+    );
+    assert.equal(tache.action, "docx_export");
+
+    assert.equal(await traiterUnTravail(options()), true);
+
+    const { travail, reglement, exports } = await etat(porteur, tache);
+    assert.deepEqual([travail.state, travail.attempts], ["succeeded", 1]);
+    assert.deepEqual(reglement, { consumed: 1, released: 0 });
+    assert.equal(exports.length, 1);
+    assert.equal(exports[0].format, "docx");
+    assert.equal(exports[0].pages, null);
+    assert.match(exports[0].file, /^\\x504b0304/);
+
+    const archive = lireArchive(Buffer.from(exports[0].file.slice(2), "hex"));
+    const document = archive.get("word/document.xml");
+    assert.ok(document.includes("Les Eaux de export-word"));
+    assert.ok(document.includes("Budget prévisionnel"));
   });
 
   it("ne reçoit que les sections demandées, et que les documents finalisés", async () => {

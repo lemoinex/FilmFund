@@ -3,15 +3,20 @@
 import { revalidatePath } from "next/cache";
 
 import { ORDRE_TYPES } from "@/lib/documents";
-import { messageErreurExport, normaliserDemande } from "@/lib/exports";
+import {
+  estFormatExport,
+  FORMATS_EXPORT,
+  messageErreurExport,
+  normaliserDemande,
+} from "@/lib/exports";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
 /*
- * Dossier PDF : demande d'export.
+ * Dossier : demande d'export, en PDF ou en Word.
  *
  * Aucune de ces actions ne fabrique de fichier : elles demandent un devis et
- * réservent une unité. Le PDF est fabriqué par le worker. Les droits, les
+ * réservent une unité. Le fichier est fabriqué par le worker. Les droits, les
  * quotas et le contenu du dossier sont décidés par la base ; rien de ce que
  * le navigateur envoie n'est cru sur parole.
  */
@@ -36,15 +41,16 @@ async function session() {
 
 /**
  * Prépare un export. Si un dossier identique existe encore — mêmes sections,
- * même contenu —, il est rendu tel quel : aucune unité n'est engagée. Sinon,
- * un devis est établi, que l'utilisateur confirme ou non.
+ * même contenu, même format —, il est rendu tel quel : aucune unité n'est
+ * engagée. Sinon, un devis est établi, que l'utilisateur confirme ou non.
  */
 export async function preparerExport(
   projetId: string,
   sections: string[],
   documents: string[],
+  format: unknown,
 ): Promise<{ devis: DevisExport } | { existant: string } | Echec> {
-  if (!UUID.test(projetId)) {
+  if (!UUID.test(projetId) || !estFormatExport(format)) {
     return DEMANDE_INVALIDE;
   }
   const demande = normaliserDemande(sections, documents, ORDRE_TYPES);
@@ -59,6 +65,7 @@ export async function preparerExport(
   const { data: existant, error: recherche } = await acces.supabase.rpc("export_disponible", {
     p_project_id: projetId,
     p_params: demande,
+    p_format: format,
   });
   if (recherche) {
     return { erreur: messageErreurExport(recherche.code) };
@@ -69,7 +76,8 @@ export async function preparerExport(
 
   const { data, error } = await acces.supabase.rpc("creer_devis", {
     p_project_id: projetId,
-    p_action: "pdf_export",
+    // Le format est l'action même : la base n'accepte que les siennes.
+    p_action: FORMATS_EXPORT[format].action,
     p_params: demande,
   });
   const devis = data?.[0];

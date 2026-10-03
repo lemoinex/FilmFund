@@ -352,3 +352,49 @@ describe("Champs du profil", () => {
     assert.doesNotMatch(action, /SECRET|service_role/i);
   });
 });
+
+/*
+ * Formats des exports. L'écran choisit une action par format ; la base doit
+ * l'admettre, et le worker savoir l'exécuter. Un format proposé à l'écran
+ * sans l'un ou l'autre ferait échouer la demande, ou attendre la tâche à
+ * jamais.
+ */
+describe("Formats des exports", () => {
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("la base admet chaque action d'export que l'écran propose", async () => {
+    const { ACTIONS_EXPORT } = await import("../src/lib/exports.ts");
+    const migration = lire("supabase/migrations/20261003000947_exports_docx.sql");
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+
+    assert.ok(enBase.length >= 10, "lecture de la migration");
+    for (const action of ACTIONS_EXPORT) {
+      assert.ok(enBase.includes(action), action);
+      assert.match(migration, new RegExp(`when [^\n]*'${action}'[^\n]*then`), `devis de ${action}`);
+    }
+  });
+
+  it("le worker sait exécuter exactement les actions d'export de l'écran", async () => {
+    const { ACTIONS_EXPORT } = await import("../src/lib/exports.ts");
+    const { executeursExport } = await import("../worker/src/exports/executeur.ts");
+    // La base n'est pas touchée : les exécuteurs ne la lisent qu'à l'exécution.
+    assert.deepEqual(Object.keys(executeursExport({})).sort(), [...ACTIONS_EXPORT].sort());
+  });
+
+  it("la demande transmet son format à la base : export identique et devis", () => {
+    const action = sansCommentaires(lire("src/app/(app)/projets/[id]/dossier/actions.ts"));
+    assert.match(action, /estFormatExport\(format\)/);
+    assert.match(action, /rpc\("export_disponible", \{[^}]*p_format: format,?\s*\}/);
+    assert.match(action, /p_action: FORMATS_EXPORT\[format\]\.action/);
+    assert.doesNotMatch(action, /p_action: "pdf_export"/);
+  });
+
+  it("le téléchargement prend le format dans la base, jamais dans l'adresse", () => {
+    const route = sansCommentaires(lire("src/app/(app)/projets/[id]/dossier/[exportId]/route.ts"));
+    assert.match(route, /\.select\("file, format"\)/);
+    assert.match(route, /lireFichier\(dossier\?\.file, format\)/);
+    assert.doesNotMatch(route, /searchParams|nextUrl/);
+  });
+});

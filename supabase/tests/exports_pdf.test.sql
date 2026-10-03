@@ -296,7 +296,7 @@ select ok(
 
 select ok(
   not has_function_privilege('filmfund_worker', 'public.contenu_dossier(uuid, jsonb)', 'execute')
-  and not has_function_privilege('filmfund_worker', 'public.export_disponible(uuid, jsonb)', 'execute'),
+  and not has_function_privilege('filmfund_worker', 'public.export_disponible(uuid, jsonb, text)', 'execute'),
   'Le worker ne lit pas le contenu d''un projet hors de sa tâche'
 );
 
@@ -550,7 +550,7 @@ select ok(
 );
 
 select ok(
-  not has_function_privilege('anon', 'public.export_disponible(uuid, jsonb)', 'execute')
+  not has_function_privilege('anon', 'public.export_disponible(uuid, jsonb, text)', 'execute')
   and not has_function_privilege('anon', 'public.contenu_dossier(uuid, jsonb)', 'execute')
   and not has_function_privilege('anon', 'public.empreinte_dossier(uuid, jsonb)', 'execute'),
   'Un visiteur n''exécute aucune fonction des exports'

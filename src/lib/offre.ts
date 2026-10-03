@@ -117,7 +117,7 @@ export function quotasEnMots(
     `${formaterStockage(version.storage_mb)} de stockage d'images`,
     `${compte(version.text_units_per_month, "unité texte", "unités texte")} par mois`,
     `${compte(version.images_per_month, "image générée", "images générées")} par mois`,
-    `${compte(version.pdf_exports_per_month, "export PDF", "exports PDF")} par mois`,
+    `${compte(version.pdf_exports_per_month, "export", "exports")} par mois (PDF ou Word)`,
   ];
 }
 

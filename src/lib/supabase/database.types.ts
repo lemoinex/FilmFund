@@ -639,9 +639,10 @@ export type Database = {
           created_by: string;
           expires_at: string;
           file: string;
+          format: string;
           id: string;
           job_id: string;
-          pages: number;
+          pages: number | null;
           params: NonNullable<Json>;
           project_id: string;
           size_bytes: number | null;
@@ -653,9 +654,10 @@ export type Database = {
           created_by: string;
           expires_at?: string;
           file: string;
+          format?: string;
           id?: string;
           job_id: string;
-          pages: number;
+          pages?: number | null;
           params: NonNullable<Json>;
           project_id: string;
           size_bytes?: never;
@@ -667,9 +669,10 @@ export type Database = {
           created_by?: string;
           expires_at?: string;
           file?: string;
+          format?: string;
           id?: string;
           job_id?: string;
-          pages?: number;
+          pages?: number | null;
           params?: NonNullable<Json>;
           project_id?: string;
           size_bytes?: never;
@@ -1712,7 +1715,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      export_disponible: { Args: { p_params: Json; p_project_id: string }; Returns: string };
+      export_disponible: {
+        Args: { p_format?: string; p_params: Json; p_project_id: string };
+        Returns: string;
+      };
       images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       journaliser: {

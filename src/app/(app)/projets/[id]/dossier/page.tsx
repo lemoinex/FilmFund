@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 
 import { ORDRE_TYPES, TYPES_DOCUMENT } from "@/lib/documents";
 import {
+  ACTIONS_EXPORT,
+  estFormatExport,
   etapeExport,
+  FORMATS_EXPORT,
   libelleDemande,
   ORDRE_SECTIONS,
   pages,
@@ -19,7 +22,7 @@ import { OngletsProjet } from "../onglets";
 import { SelectionExport, type OptionExport } from "./selection";
 
 export const metadata: Metadata = {
-  title: "Dossier PDF — filmfundAfrica",
+  title: "Dossier — filmfundAfrica",
   robots: { index: false, follow: false },
 };
 
@@ -74,14 +77,14 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       .from("jobs")
       .select("id, state, reason")
       .eq("project_id", id)
-      .eq("action", "pdf_export")
+      .in("action", ACTIONS_EXPORT)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
     // Jamais la colonne `file` ici : elle ne se lit qu'au téléchargement.
     supabase
       .from("project_exports")
-      .select("id, params, pages, size_bytes, created_at, expires_at")
+      .select("id, params, format, pages, size_bytes, created_at, expires_at")
       .eq("project_id", id)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
@@ -163,16 +166,15 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
         ← {projet.title}
       </Link>
 
-      <h1 className="mt-6 font-serif text-3xl leading-tight tracking-tight sm:text-4xl">
-        Dossier PDF
-      </h1>
+      <h1 className="mt-6 font-serif text-3xl leading-tight tracking-tight sm:text-4xl">Dossier</h1>
 
       <OngletsProjet projetId={projet.id} actif="dossier" budget />
 
       <p className="text-secondary mt-8 max-w-2xl text-sm leading-relaxed text-pretty">
-        Réunissez en un seul fichier les pièces du projet, prêtes à être envoyées. Un dossier
-        n&apos;est visible que du porteur, des éditeurs et des administrateurs : il peut contenir le
-        budget, auquel les lecteurs de l&apos;équipe n&apos;ont pas accès.
+        Réunissez en un seul fichier les pièces du projet : en PDF, prêt à être envoyé, ou en Word,
+        à retoucher. Un dossier n&apos;est visible que du porteur, des éditeurs et des
+        administrateurs : il peut contenir le budget, auquel les lecteurs de l&apos;équipe
+        n&apos;ont pas accès.
       </p>
 
       <SelectionExport projetId={projet.id} options={options} etape={etapeExport(tache)} />
@@ -183,40 +185,49 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
         </h2>
         {exportsDisponibles?.length ? (
           <ul className="border-app-line mt-5 divide-y divide-[var(--app-line)] rounded-xl border">
-            {exportsDisponibles.map((dossier) => (
-              <li
-                key={dossier.id}
-                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm leading-relaxed text-pretty">
-                    {libelleDemande(dossier.params, LIBELLES_DOCUMENTS)}
-                  </p>
-                  <p className="text-secondary mt-1 text-xs leading-relaxed">
-                    Fabriqué le{" "}
-                    <time dateTime={dossier.created_at}>
-                      {premierDuMois(dateFr.format(new Date(dossier.created_at)))}
-                    </time>{" "}
-                    UTC · {pages(dossier.pages)} · {poids(dossier.size_bytes ?? 0)} · disponible
-                    jusqu&apos;au{" "}
-                    <time dateTime={dossier.expires_at}>
-                      {premierDuMois(jourFr.format(new Date(dossier.expires_at)))}
-                    </time>
-                  </p>
-                </div>
-                {/* Lien ordinaire, et non `Link` : un fichier ne se précharge pas. */}
-                <a
-                  href={`/projets/${projet.id}/dossier/${dossier.id}`}
-                  className="border-app-line hover:bg-surface-hover shrink-0 rounded-full border px-4 py-2 text-sm transition-colors"
+            {exportsDisponibles.map((dossier) => {
+              const format = estFormatExport(dossier.format) ? dossier.format : "pdf";
+              return (
+                <li
+                  key={dossier.id}
+                  className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4"
                 >
-                  Télécharger
-                  <span className="sr-only">
-                    {" "}
-                    le dossier du {premierDuMois(dateFr.format(new Date(dossier.created_at)))}
-                  </span>
-                </a>
-              </li>
-            ))}
+                  <div className="min-w-0">
+                    <p className="text-sm leading-relaxed text-pretty">
+                      <span className="border-app-line text-secondary mr-2 inline-block rounded-full border px-2 py-0.5 align-middle text-[0.6875rem]">
+                        {FORMATS_EXPORT[format].libelle}
+                      </span>
+                      {libelleDemande(dossier.params, LIBELLES_DOCUMENTS)}
+                    </p>
+                    <p className="text-secondary mt-1 text-xs leading-relaxed">
+                      Fabriqué le{" "}
+                      <time dateTime={dossier.created_at}>
+                        {premierDuMois(dateFr.format(new Date(dossier.created_at)))}
+                      </time>{" "}
+                      UTC ·{" "}
+                      {/* Un fichier Word n'a pas de pagination arrêtée : le traitement de texte la recalcule. */}
+                      {dossier.pages ? `${pages(dossier.pages)} · ` : ""}
+                      {poids(dossier.size_bytes ?? 0)} · disponible jusqu&apos;au{" "}
+                      <time dateTime={dossier.expires_at}>
+                        {premierDuMois(jourFr.format(new Date(dossier.expires_at)))}
+                      </time>
+                    </p>
+                  </div>
+                  {/* Lien ordinaire, et non `Link` : un fichier ne se précharge pas. */}
+                  <a
+                    href={`/projets/${projet.id}/dossier/${dossier.id}`}
+                    className="border-app-line hover:bg-surface-hover shrink-0 rounded-full border px-4 py-2 text-sm transition-colors"
+                  >
+                    Télécharger
+                    <span className="sr-only">
+                      {" "}
+                      le dossier {FORMATS_EXPORT[format].libelle} du{" "}
+                      {premierDuMois(dateFr.format(new Date(dossier.created_at)))}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="border-app-line text-secondary mt-5 rounded-xl border border-dashed px-5 py-8 text-center text-sm leading-relaxed">
