@@ -440,7 +440,8 @@ recommandations (« à améliorer ») sont configurables et traçables.
 ### Exports et stockage
 
 - Export du dossier en PDF (lots M1 et M2) et en Word (lot M3) : livré. Sections à
-  la carte, documents finalisés seulement, sans image ; fabriqué par le worker
+  la carte — dont la fiche du projet et ses personnages (lot M4, section
+  `fiche_projet`) —, documents finalisés seulement, sans image ; fabriqué par le worker
   (`pdf_export`, `docx_export` : le format est l’action), rangé en base
   (`project_exports`, 5 Mo, 30 jours), lisible du porteur, des éditeurs et des
   administrateurs ; un seul quota d’exports pour les deux formats. Ne pas créer un

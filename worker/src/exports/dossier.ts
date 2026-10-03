@@ -9,18 +9,38 @@
 import {
   ETAPES,
   FORMATS,
+  GENRES,
   POSTES,
+  ROLES_PERSONNAGE,
   STATUTS_ETAPE,
   STATUTS_FINANCEMENT,
   TYPES_DOCUMENT,
   TYPES_FINANCEMENT,
 } from "./libelles.ts";
 
-/** Ce que `contexte_export()` remet : la fiche, puis les seules sections demandées. */
+/**
+ * Ce que `contexte_export()` remet : de quoi dresser la page de garde
+ * (`fiche`), puis les seules sections demandées.
+ */
 export type ContenuDossier = {
   demande: { sections: string[]; documents: string[] };
   fiche: { titre: string; format: string; etape: string };
   synthese?: { pitch: string; synopsis: string };
+  /** La fiche de l'assistant de création, personnages compris. */
+  fiche_projet?: {
+    genre: string | null;
+    /** Codes ISO 3166-1 ; le premier est le pays principal. */
+    pays: string[];
+    langues: string;
+    duree: number | null;
+    synopsis_court: string;
+    theme: string;
+    enjeux: string;
+    vision: string;
+    objectifs: string;
+    public: string;
+    personnages: { nom: string; role: string; description: string }[];
+  };
   documents?: { type: string; titre: string; contenu: string }[];
   /** Nul : le budget du projet n'a pas été ouvert. */
   budget?: {
@@ -93,6 +113,10 @@ const JOUR = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "UTC",
 });
 
+// `fallback: "none"` : un code sans nom français reste un code, que l'on
+// reconnaît, plutôt qu'un libellé inventé.
+const PAYS = new Intl.DisplayNames("fr", { type: "region", fallback: "none" });
+
 const ABSENT = "—";
 
 /** Libellé d'un code de la base ; un code inconnu reste lisible plutôt que de disparaître. */
@@ -136,6 +160,74 @@ function sectionSynthese(synthese: NonNullable<ContenuDossier["synthese"]>): Sec
     );
   }
   return blocs.length ? { titre: "Synthèse", blocs } : null;
+}
+
+/**
+ * La fiche, dans l'ordre de l'assistant de création : repères, concept,
+ * personnages, enjeux, vision, objectifs, public. Le format et l'étape n'y
+ * figurent pas : la page de garde les porte déjà.
+ */
+function sectionFiche(fiche: NonNullable<ContenuDossier["fiche_projet"]>): Section | null {
+  const blocs: Bloc[] = [];
+
+  // Comme à l'écran : le premier pays n'est dit principal que s'il y en a d'autres.
+  const pays = fiche.pays.map((code, rang) => {
+    const nom = PAYS.of(code) ?? code;
+    return rang === 0 && fiche.pays.length > 1 ? `${nom} (principal)` : nom;
+  });
+  const reperes: Ligne[] = [
+    ["Genre", fiche.genre ? libelle(GENRES, fiche.genre) : ""],
+    ["Durée", fiche.duree ? `${fiche.duree} ${fiche.duree > 1 ? "minutes" : "minute"}` : ""],
+    ["Pays de production", pays.join(", ")],
+    ["Langues", fiche.langues.trim()],
+  ]
+    .filter(([, valeur]) => valeur)
+    .map((cellules) => ({ cellules }));
+  if (reperes.length) {
+    blocs.push({
+      type: "tableau",
+      colonnes: [
+        { titre: "Repère", largeur: 0.3 },
+        { titre: "Détail", largeur: 0.7 },
+      ],
+      lignes: reperes,
+    });
+  }
+
+  const texte = (titre: string, contenu: string) => {
+    if (contenu.trim()) {
+      blocs.push({ type: "intertitre", texte: titre }, { type: "texte", texte: contenu });
+    }
+  };
+
+  texte("Synopsis court", fiche.synopsis_court);
+  texte("Thème", fiche.theme);
+  if (fiche.personnages.length) {
+    blocs.push(
+      { type: "intertitre", texte: "Personnages" },
+      {
+        type: "tableau",
+        colonnes: [
+          { titre: "Nom", largeur: 0.24 },
+          { titre: "Rôle", largeur: 0.16 },
+          { titre: "Description", largeur: 0.6 },
+        ],
+        lignes: fiche.personnages.map((personnage) => ({
+          cellules: [
+            personnage.nom,
+            libelle(ROLES_PERSONNAGE, personnage.role),
+            personnage.description,
+          ],
+        })),
+      },
+    );
+  }
+  texte("Enjeux", fiche.enjeux);
+  texte("Vision artistique", fiche.vision);
+  texte("Objectifs", fiche.objectifs);
+  texte("Public cible", fiche.public);
+
+  return blocs.length ? { titre: "Fiche du projet", blocs } : null;
 }
 
 function sectionBudget(budget: NonNullable<ContenuDossier["budget"]>): Section | null {
@@ -286,6 +378,9 @@ export function composerDossier(contenu: ContenuDossier, etabliLe: Date): Dossie
 
   if (contenu.synthese) {
     sections.push(sectionSynthese(contenu.synthese));
+  }
+  if (contenu.fiche_projet) {
+    sections.push(sectionFiche(contenu.fiche_projet));
   }
   for (const document of contenu.documents ?? []) {
     if (document.contenu.trim()) {

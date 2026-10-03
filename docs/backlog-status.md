@@ -26,6 +26,7 @@ réels).
 | M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
 | M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
 | M3  | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —              |
+| M4  | Exports : la fiche du projet et ses personnages dans le dossier, en PDF comme en Word                                          | validé localement | recette        |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -204,4 +205,11 @@ administrateur la lit mais ne la réécrit pas.
 sept étapes — informations, concept, personnages, enjeux, vision, objectifs, public — chacune
 enregistrée, passable et reprise à volonté, ouvertes au porteur et aux éditeurs seuls (page
 introuvable pour les autres) ; le récapitulatif est l'onglet « Fiche » du projet, lisible de
-toute l'équipe. Les exports PDF et Word n'incluent pas encore la fiche.
+toute l'équipe.
+
+Fiche dans les exports (lot M4), décidé le 3 octobre 2026 : une seule section « Fiche du
+projet », cochée comme les autres sur l'écran du dossier, placée après la synthèse. Elle
+reprend la fiche dans l'ordre de l'assistant, personnages compris ; ses champs vides sont omis.
+Aucune table, politique ni dépendance nouvelle : deux fonctions de la base reprises, et la
+composition du worker étendue. Reste à livrer : fusion, migration poussée, puis recette d'un
+dossier PDF et d'un dossier Word contenant la fiche.

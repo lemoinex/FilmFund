@@ -188,11 +188,21 @@ update public.ai_settings set monthly_budget_usd = 10;
 Les tarifs par modèle sont dans `worker/src/ia/profils.ts` : à revoir à chaque changement
 de modèle ou de grille, et à confronter à la facture du fournisseur, qui seule fait foi.
 
-## Exports PDF et Word (lots M1, M2 et M3)
+## Exports PDF et Word (lots M1 à M4)
 
-Un dossier se compose à la carte : synthèse (pitch et synopsis), types de documents, budget,
-plan de financement, planning. La page de garde est toujours présente. Décision 8, prise le
-2 octobre 2026 ; le Word s'y ajoute le 3 octobre 2026.
+Un dossier se compose à la carte : synthèse (pitch et synopsis), fiche du projet, types de
+documents, budget, plan de financement, planning. La page de garde est toujours présente.
+Décision 8, prise le 2 octobre 2026 ; le Word s'y ajoute le 3 octobre 2026, la fiche du projet
+le même jour (lot M4).
+
+- **Fiche du projet** (lot M4) : la section `fiche_projet` reprend la fiche de l'assistant de
+  création, dans son ordre — repères (genre, durée, pays de production, langues), synopsis
+  court, thème, personnages, enjeux, vision artistique, objectifs, public cible. Elle suit la
+  synthèse et précède les documents. Un champ vide est omis ; une fiche entièrement vide,
+  aussi. Les personnages sont ceux du seul projet, dans l'ordre de l'écran, sans leur auteur.
+  Le format et l'étape n'y figurent pas : la page de garde les porte déjà. Les pays sont
+  nommés par `Intl`, comme à l'écran ; les genres et les rôles, par la copie des libellés que
+  tient le worker.
 
 - **Format** : c'est l'action de la tâche — `pdf_export` ou `docx_export`. Le worker compose
   le même plan de dossier, puis le rend avec `pdfkit` ou avec le paquet `docx`. Un worker qui
@@ -226,7 +236,8 @@ plan de financement, planning. La page de garde est toujours présente. Décisio
   par les octets du fichier.
 
 **Rien à exporter** : si aucune des sections demandées n'a de contenu — aucun document
-finalisé, budget non ouvert —, la tâche échoue avec un motif clair et l'unité est rendue.
+finalisé, budget non ouvert, fiche vide —, la tâche échoue avec un motif clair et l'unité est
+rendue.
 Une section demandée mais vide est omise du dossier, sans mention.
 
 **Police** : Noto Serif, embarquée (licence OFL, paquet `@expo-google-fonts/noto-serif`). Elle
