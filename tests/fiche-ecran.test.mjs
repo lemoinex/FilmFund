@@ -10,6 +10,7 @@ import { describe, it } from "node:test";
 import {
   CHAMPS_FICHE,
   DUREE_MINUTES,
+  dureeEnClair,
   GENRES,
   LONGUEURS_FICHE,
   LONGUEURS_PERSONNAGE,
@@ -180,6 +181,15 @@ describe("Fiche : personnages", () => {
     ]) {
       assert.ok("erreur" in normaliserPersonnage(saisie), JSON.stringify(saisie));
     }
+  });
+});
+
+describe("Fiche : affichage", () => {
+  it("accorde la durée : « 1 minute », « 95 minutes »", () => {
+    assert.equal(dureeEnClair(1), "1 minute");
+    assert.equal(dureeEnClair(2), "2 minutes");
+    assert.equal(dureeEnClair(95), "95 minutes");
+    assert.equal(dureeEnClair(DUREE_MINUTES.max), "1000 minutes");
   });
 });
 
