@@ -525,3 +525,69 @@ describe("Assistant de création", () => {
     );
   });
 });
+
+/*
+ * Score de maturité. L'application calcule le score ; la base fournit les
+ * pondérations et les faits, et a le dernier mot. Un critère connu de l'un et
+ * pas de l'autre, ou un fait attendu que la base ne rend pas, donnerait un
+ * score faux — ou aucun score, sans qu'aucun test de droits ne le voie.
+ */
+describe("Score de maturité", () => {
+  const MIGRATION = "supabase/migrations/20261003131559_score_maturite.sql";
+
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("l'application évalue exactement les critères que la base pondère", async () => {
+    const { ORDRE_CRITERES } = await import("../src/lib/maturite.ts");
+    const liste =
+      /grant insert \(([^)]+)\) on table public\.readiness_weight_versions/.exec(
+        lire(MIGRATION),
+      )?.[1] ?? "";
+    const enBase = [...liste.matchAll(/(\w+)/g)].map((m) => m[1]);
+
+    assert.ok(enBase.length >= 9, "lecture de la migration");
+    assert.deepEqual([...ORDRE_CRITERES], enBase);
+  });
+
+  it("l'application attend exactement les faits que la base rend", async () => {
+    const { FAITS_OUI_NON, FAITS_COMPTES } = await import("../src/lib/maturite.ts");
+    const migration = lire(MIGRATION);
+    const debut = migration.indexOf("create or replace function public.faits_maturite");
+    assert.ok(debut >= 0, "faits_maturite introuvable");
+    const corps = migration.slice(debut, migration.indexOf("$$;", debut));
+    const enBase = [...corps.matchAll(/^ {4}'(\w+)', /gm)].map((m) => m[1]);
+
+    assert.ok(enBase.length >= 20, "lecture de la migration");
+    assert.deepEqual([...FAITS_OUI_NON, ...FAITS_COMPTES].sort(), [...enBase].sort());
+  });
+
+  // Ces gardes lisent le code : l'affichage réel — encart présent pour le
+  // porteur, absent pour un lecteur — se vérifie dans le navigateur.
+  it("le score suit la règle du budget, revérifiée là où il se calcule", () => {
+    const encart = sansCommentaires(lire("src/app/(app)/projets/[id]/maturite.tsx"));
+    assert.match(encart, /rpc\("peut_gerer_budget", \{ p_project_id: projetId \}\)/);
+    assert.match(encart, /if \(autorise !== true\) \{\s*return \{ etat: "interdit" \};/);
+    // Les deux encarts ne rendent rien à qui n'y a pas droit.
+    assert.equal(
+      encart.split(/if \(chargement\.etat === "interdit"\) \{\s*return null;/).length - 1,
+      2,
+    );
+    // Lecture sous la session de l'utilisateur : aucun rôle de service.
+    assert.doesNotMatch(encart, /SECRET|service_role/i);
+  });
+
+  it("les pages ne montrent l'encart qu'à qui lit le budget", () => {
+    const projet = sansCommentaires(lire("src/app/(app)/projets/[id]/page.tsx"));
+    assert.match(
+      projet,
+      /\{peutGererBudget \? <MaturiteDuDossier projetId=\{projet\.id\} \/> : null\}/,
+    );
+
+    const tableauDeBord = sansCommentaires(lire("src/app/(app)/tableau-de-bord/page.tsx"));
+    assert.match(
+      tableauDeBord,
+      /\{budgetAutorise \? <ScoreMaturite projetId=\{projet\.id\} \/> : null\}/,
+    );
+  });
+});

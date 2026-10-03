@@ -15,6 +15,7 @@ import { supprimerProjet } from "../actions";
 import { definirCouverture, retirerCouverture } from "./images/actions";
 import { Equipe } from "./equipe";
 import { FormulaireEdition } from "./formulaire";
+import { MaturiteDuDossier } from "./maturite";
 import { OngletsProjet } from "./onglets";
 import { PropositionLogline } from "./proposition-logline";
 
@@ -129,6 +130,9 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
       </div>
 
       <OngletsProjet projetId={projet.id} actif="projet" budget={peutGererBudget} />
+
+      {/* Le score tient compte du budget : il se montre à qui le lit. */}
+      {peutGererBudget ? <MaturiteDuDossier projetId={projet.id} /> : null}
 
       <div className="mt-10">
         {/*

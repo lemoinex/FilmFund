@@ -28,6 +28,7 @@ import { ETAPES, FORMATS } from "@/lib/projets";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
+import { ScoreMaturite } from "../projets/[id]/maturite";
 import { InvitationsRecues } from "./invitations";
 
 export const metadata: Metadata = {
@@ -320,6 +321,9 @@ async function ProjetEnCours({
           ) : null}
         </div>
       </section>
+
+      {/* Le score tient compte du budget : il se montre à qui le lit. */}
+      {budgetAutorise ? <ScoreMaturite projetId={projet.id} /> : null}
 
       <section aria-labelledby="synthese-titre" className="mt-6">
         <h3 id="synthese-titre" className="sr-only">

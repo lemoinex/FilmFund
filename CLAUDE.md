@@ -415,10 +415,20 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 
 ### Project Readiness Score
 
-Score sur 100, non livré. Pondération par défaut : concept 20, narration 15,
+Score sur 100. Pondération par défaut : concept 20, narration 15,
 personnages 15, vision artistique 15, faisabilité 10, budget 10, plan de
 financement 5, potentiel marché 5, dossier 5. Critères, pondérations et
 recommandations (« à améliorer ») sont configurables et traçables.
+
+- Calcul et encart : livrés (lot S1). Le score mesure ce qui est renseigné dans
+  le projet, pas la qualité de l'écriture, et l'écran le dit. Il se montre au
+  porteur, aux éditeurs et aux administrateurs : il tient compte du budget.
+- Pondérations versionnées en base (`readiness_weight_versions`, total 100, en
+  ajout seul) ; faits du projet par `faits_maturite()`, sous la RLS de
+  l'appelant ; calcul dans `src/lib/maturite.ts`. Rien n'est stocké. Ne pas
+  créer un second score : étendre celui-ci.
+- À faire (lot S2) : cartes de la liste des projets, écran de publication des
+  pondérations.
 
 ### Budget, financement, calendrier
 
@@ -476,7 +486,7 @@ Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 | 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                          |
 | 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                          |
 | 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                                  |
-| 3     | Assistant de création, score de maturité, dashboard | Dashboard et assistant livrés (lots R1, R2) ; score à faire                    |
+| 3     | Assistant de création, score de maturité, dashboard | Dashboard, assistant (R1, R2) et score (S1) livrés ; lot S2 à faire            |
 | 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire                 |
 | 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                                  |
 | 6     | WEAVER                                              | Logline livrée (I1), recette en attente ; synopsis et note d’intention à faire |
