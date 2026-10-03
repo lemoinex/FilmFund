@@ -32,7 +32,7 @@ réels).
 | Q1  | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —              |
 | Q2  | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —              |
 | R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé localement | —              |
-| R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | à faire           | R1             |
+| R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé localement | —              |
 
 ## Recette de I1
 
@@ -180,3 +180,9 @@ personnages forment une vraie liste, protégée comme le storyboard ; un projet 
 plusieurs pays de production, le premier étant le principal. Lot R découpé en R1 (base : champs
 de la fiche, table des personnages) et R2 (écrans). La fiche suit les droits du projet : un
 administrateur la lit mais ne la réécrit pas.
+
+Écrans de l'assistant (lot R2) : « Nouveau projet » propose l'assistant ou la création rapide ;
+sept étapes — informations, concept, personnages, enjeux, vision, objectifs, public — chacune
+enregistrée, passable et reprise à volonté, ouvertes au porteur et aux éditeurs seuls (page
+introuvable pour les autres) ; le récapitulatif est l'onglet « Fiche » du projet, lisible de
+toute l'équipe. Les exports PDF et Word n'incluent pas encore la fiche.

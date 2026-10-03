@@ -446,3 +446,56 @@ describe("Fiche du projet", () => {
     );
   });
 });
+
+/*
+ * Assistant de création. Chaque action vérifie elle-même qui l'appelle avant
+ * d'écrire ; seuls le porteur et les éditeurs ouvrent ses étapes. La RLS a le
+ * dernier mot : ces gardes lisent le code, le parcours réel se vérifie dans
+ * le navigateur.
+ */
+describe("Assistant de création", () => {
+  const DOSSIER = "src/app/(app)/projets/[id]/assistant";
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const actions = () => sansCommentaires(lire(`${DOSSIER}/actions.ts`));
+
+  it("l'écran borne le titre et le pitch comme la base", async () => {
+    const { TITRE_MAX, PITCH_MAX } = await import("../src/lib/assistant.ts");
+    const migration = lire("supabase/migrations/20260929092713_projets_de_film.sql");
+    assert.ok(migration.includes(`char_length(btrim(title)) between 1 and ${TITRE_MAX}`));
+    assert.ok(migration.includes(`char_length(logline) <= ${PITCH_MAX}`));
+  });
+
+  it("chaque action vérifie la session avant d'écrire", () => {
+    const corps = actions().split("\nexport async function ").slice(1);
+    assert.equal(corps.length, 5, "lecture des actions");
+    for (const fonction of corps) {
+      const nom = fonction.slice(0, fonction.indexOf("("));
+      const garde = fonction.indexOf("exigerAcces(supabase)");
+      const ecriture = fonction.search(/\.(insert|update|delete)\(/);
+      assert.ok(garde > 0, `${nom} : garde introuvable`);
+      assert.ok(ecriture > garde, `${nom} : l'écriture doit suivre la garde`);
+    }
+    assert.doesNotMatch(actions(), /SECRET|service_role/i);
+  });
+
+  it("ni le porteur ni l'auteur ne viennent du formulaire", () => {
+    assert.doesNotMatch(actions(), /formData\.get\("(owner_id|studio_id|created_by|project_id)"\)/);
+    assert.match(actions(), /owner_id: garde\.user\.id/);
+    assert.match(actions(), /created_by: garde\.user\.id/);
+  });
+
+  it("une modification que la RLS ignore est signalée, et non perdue en silence", () => {
+    // Projet et personnage : une modification sans ligne touchée est un refus.
+    assert.equal(actions().split("if (!data?.length) return { erreur: REFUS };").length - 1, 2);
+  });
+
+  it("seuls le porteur et les éditeurs ouvrent une étape", () => {
+    const page = sansCommentaires(lire(`${DOSSIER}/[etape]/page.tsx`));
+    assert.match(page, /rpc\("acces_au_projet", \{ p_project_id: id \}\)/);
+    assert.match(
+      page,
+      /if \(!projet \|\| \(acces !== "owner" && acces !== "editor"\)\) \{\s*notFound\(\);/,
+    );
+  });
+});

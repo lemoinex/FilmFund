@@ -13,11 +13,20 @@ export function OngletsProjet({
   budget,
 }: {
   projetId: string;
-  actif: "projet" | "budget" | "documents" | "storyboard" | "planning" | "financements" | "dossier";
+  actif:
+    | "projet"
+    | "fiche"
+    | "budget"
+    | "documents"
+    | "storyboard"
+    | "planning"
+    | "financements"
+    | "dossier";
   budget: boolean;
 }) {
   const onglets: Onglet[] = [
     { cle: "projet", libelle: "Synthèse", href: `/projets/${projetId}` },
+    { cle: "fiche", libelle: "Fiche", href: `/projets/${projetId}/fiche` },
     { cle: "documents", libelle: "Documents", href: `/projets/${projetId}/documents` },
     { cle: "storyboard", libelle: "Storyboard", href: `/projets/${projetId}/storyboard` },
     { cle: "planning", libelle: "Planning", href: `/projets/${projetId}/planning` },
