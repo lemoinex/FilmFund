@@ -11,9 +11,10 @@ Depuis le lot I1, le worker porte l'agent WEAVER, qui rédige une proposition de
 de pitch restent en file, annulables par leur auteur. La clé se pose depuis l'écran
 Administration → Intégrations IA, jamais par une variable d'environnement.
 
-Depuis le lot M1, il fabrique aussi les dossiers PDF (action `pdf_export`), et depuis le lot
-M3 les dossiers Word (action `docx_export`). Ces actions n'appellent aucun fournisseur :
-elles sont en service avec ou sans clé.
+Depuis le lot M1, il fabrique aussi les dossiers PDF (action `pdf_export`), depuis le lot M3
+les dossiers Word (action `docx_export`), et depuis le lot M5 les archives ZIP (action
+`zip_export`). Ces actions n'appellent aucun fournisseur : elles sont en service avec ou sans
+clé.
 
 ## Ce qui est versionné, ce qui ne l'est pas
 
@@ -188,12 +189,12 @@ update public.ai_settings set monthly_budget_usd = 10;
 Les tarifs par modèle sont dans `worker/src/ia/profils.ts` : à revoir à chaque changement
 de modèle ou de grille, et à confronter à la facture du fournisseur, qui seule fait foi.
 
-## Exports PDF et Word (lots M1 à M4)
+## Exports PDF, Word et ZIP (lots M1 à M5)
 
 Un dossier se compose à la carte : synthèse (pitch et synopsis), fiche du projet, types de
 documents, budget, plan de financement, planning. La page de garde est toujours présente.
 Décision 8, prise le 2 octobre 2026 ; le Word s'y ajoute le 3 octobre 2026, la fiche du projet
-le même jour (lot M4).
+(lot M4) et l'archive ZIP (lot M5) le même jour.
 
 - **Fiche du projet** (lot M4) : la section `fiche_projet` reprend la fiche de l'assistant de
   création, dans son ordre — repères (genre, durée, pays de production, langues), synopsis
@@ -204,9 +205,25 @@ le même jour (lot M4).
   nommés par `Intl`, comme à l'écran ; les genres et les rôles, par la copie des libellés que
   tient le worker.
 
-- **Format** : c'est l'action de la tâche — `pdf_export` ou `docx_export`. Le worker compose
-  le même plan de dossier, puis le rend avec `pdfkit` ou avec le paquet `docx`. Un worker qui
-  ne connaît pas encore `docx_export` laisse ces tâches en file.
+- **Format** : c'est l'action de la tâche — `pdf_export`, `docx_export` ou `zip_export`. Le
+  worker compose le même plan de dossier, puis le rend avec `pdfkit`, avec le paquet `docx`,
+  ou en archive. Un worker qui ne connaît pas encore une action laisse ses tâches en file.
+
+- **Archive ZIP** (lot M5) : chaque pièce sort dans le format où elle se retravaille.
+  - `presentation.docx` : la synthèse et la fiche du projet.
+  - `documents/NN-<type>-<titre>.docx` : un fichier par document finalisé, numéroté dans
+    l'ordre du dossier. Les noms sont réduits à des minuscules sans accent, des chiffres et
+    des tirets : aucun séparateur de dossier ne peut venir d'un titre.
+  - `budget.xlsx`, `plan-de-financement.xlsx`, `planning.xlsx` : un classeur par tableau.
+    Quantités et montants y sont des nombres, échéances et périodes des dates ; le plan de
+    financement porte un total par devise.
+  - Une pièce demandée mais vide est omise, comme une section d'un dossier.
+  - Les classeurs sont écrits par `worker/src/exports/xlsx.ts`, sans bibliothèque Excel :
+    six fichiers XML dans une archive (`jszip`). Un texte y est rangé dans la table des
+    textes partagés : un tableur ne l'interprète jamais, et un libellé qui commence par
+    « = » reste un texte. Les caractères que le XML interdit sont retirés.
+  - La base ne distingue pas une archive d'un Word par ses octets — un DOCX est une
+    archive ZIP : c'est l'action de la tâche qui fixe le format rangé.
 
 - **Ce que le worker reçoit** : le contenu des seules sections demandées, pour la seule
   tâche qu'il tient (`contexte_export`). Seuls les documents **finalisés** y entrent. Ni
@@ -214,13 +231,14 @@ le même jour (lot M4).
   membres.
 - **Aucun fournisseur, aucun coût** : le fichier est fabriqué en mémoire. Rien ne s'inscrit
   au registre des dépenses d'IA.
-- **Quota** : un export Word consomme la même unité qu'un PDF (`pdf_exports_per_month`),
-  sur le même quota.
+- **Quota** : un export Word ou ZIP consomme la même unité qu'un PDF
+  (`pdf_exports_per_month`), sur le même quota.
 - **Où va le fichier** : dans la table `project_exports`, déposé par `livrer_export`, qui
   conclut la tâche dans la même transaction. Pas dans le stockage Supabase : y écrire
   demanderait de confier au worker une clé qui contourne toute la RLS. La base contrôle la
-  signature selon le format (`%PDF-`, ou `PK` pour l'archive d'un Word) ; un PDF compte ses
-  pages, un Word n'en déclare pas — le traitement de texte recalcule la pagination.
+  signature selon le format (`%PDF-`, ou `PK` pour un Word comme pour une archive) ; un PDF
+  compte ses pages, un Word n'en déclare pas — le traitement de texte recalcule la
+  pagination —, une archive non plus.
 - **Qui le lit** : le porteur, les éditeurs et les administrateurs — la règle du budget,
   qu'un export peut contenir. Un lecteur du projet n'y a pas accès.
 - **Bornes** : 5 Mo par fichier, 30 jours de conservation. Le worker purge les exports

@@ -391,7 +391,8 @@ describe("Formats des exports", () => {
 
   it("la base admet chaque action d'export que l'écran propose", async () => {
     const { ACTIONS_EXPORT } = await import("../src/lib/exports.ts");
-    const migration = lire("supabase/migrations/20261003000947_exports_docx.sql");
+    // La dernière migration qui redéfinit la liste des actions et leur devis.
+    const migration = lire("supabase/migrations/20261003162159_exports_zip.sql");
     const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 
@@ -415,6 +416,40 @@ describe("Formats des exports", () => {
     assert.match(action, /rpc\("export_disponible", \{[^}]*p_format: format,?\s*\}/);
     assert.match(action, /p_action: FORMATS_EXPORT\[format\]\.action/);
     assert.doesNotMatch(action, /p_action: "pdf_export"/);
+  });
+
+  it("la base range et contrôle chaque format que l'écran propose", async () => {
+    const { FORMATS_EXPORT, ORDRE_FORMATS } = await import("../src/lib/exports.ts");
+    const migration = lire("supabase/migrations/20261003162159_exports_zip.sql");
+
+    const liste = /export_format check \(format in \(([^)]+)\)\)/.exec(migration)?.[1] ?? "";
+    assert.deepEqual(
+      [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]),
+      [...ORDRE_FORMATS],
+    );
+
+    for (const format of ORDRE_FORMATS) {
+      const { signature } = FORMATS_EXPORT[format];
+      // La signature que l'application attend est celle que la base exige.
+      const hexa = signature.map((octet) => octet.toString(16).padStart(2, "0")).join("");
+      assert.ok(
+        migration.includes(
+          `when '${format}' then substring(file from 1 for ${signature.length}) = '\\x${hexa}'::bytea`,
+        ),
+        `signature de ${format}`,
+      );
+    }
+
+    // Le format se déduit de l'action, et de rien d'autre, quand le worker dépose.
+    const depot = migration.slice(
+      migration.indexOf("create or replace function public.livrer_export"),
+    );
+    for (const format of ORDRE_FORMATS) {
+      assert.ok(
+        depot.includes(`when '${FORMATS_EXPORT[format].action}' then '${format}'`),
+        `${FORMATS_EXPORT[format].action} dépose un ${format}`,
+      );
+    }
   });
 
   it("le téléchargement prend le format dans la base, jamais dans l'adresse", () => {

@@ -27,6 +27,7 @@ réels).
 | M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
 | M3  | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —              |
 | M4  | Exports : la fiche du projet et ses personnages dans le dossier, en PDF comme en Word                                          | validé en recette | —              |
+| M5  | Exports ZIP : un fichier Word par texte, un classeur Excel par tableau, même écran, même quota                                 | validé localement | recette        |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -298,6 +299,17 @@ projet », cochée comme les autres sur l'écran du dossier, placée après la s
 reprend la fiche dans l'ordre de l'assistant, personnages compris ; ses champs vides sont omis.
 Aucune table, politique ni dépendance nouvelle : deux fonctions de la base reprises, et la
 composition du worker étendue. Exploitation : `docs/worker.md`.
+
+Exports ZIP (lot M5), décidé le 3 octobre 2026 : un troisième format sur le même chemin,
+l'action `zip_export`, comptée une unité sur le même quota. L'archive range un fichier Word
+par texte — la présentation (synthèse et fiche du projet), puis un fichier par document
+finalisé — et un classeur Excel par tableau : budget, plan de financement, planning, ce
+dernier ajouté à ce que le cahier des charges citait. Les classeurs sont écrits par le worker,
+sans bibliothèque Excel : `jszip`, déjà installé par le paquet `docx`, devient une dépendance
+déclarée. Nombres et dates y restent des nombres et des dates ; un texte n'y devient jamais une
+formule. Aucune table ni politique nouvelle : trois fonctions de la base reprises. Reste à
+livrer : ouverture d'une archive d'essai dans Word et Excel par l'utilisateur, fusion,
+migration poussée, redéploiement du worker, puis recette. Exploitation : `docs/worker.md`.
 
 Score de maturité, décidé le 3 octobre 2026 (lot S) : sans IA, le score mesure ce qui est
 renseigné dans le projet, critère par critère, et ne juge pas la qualité de l'écriture —

@@ -90,12 +90,21 @@ export type Bloc =
   | { type: "texte"; texte: string }
   | { type: "tableau"; colonnes: Colonne[]; lignes: Ligne[] };
 
+/** Ce dont une section est tirée : une rubrique de la demande, ou un document. */
+export type OrigineSection =
+  "synthese" | "fiche_projet" | "document" | "budget" | "financements" | "planning";
+
 export type Section = {
+  /** De quoi ranger la section dans son fichier, quand le dossier sort en archive. */
+  origine: OrigineSection;
   /** Au-dessus du titre : le type d'un document, par exemple. */
   surTitre?: string;
   titre: string;
   blocs: Bloc[];
 };
+
+/** Une section avant que le plan du dossier ne lui donne son origine. */
+type Contenu = Omit<Section, "origine">;
 
 export type Dossier = {
   titre: string;
@@ -120,7 +129,7 @@ const PAYS = new Intl.DisplayNames("fr", { type: "region", fallback: "none" });
 const ABSENT = "—";
 
 /** Libellé d'un code de la base ; un code inconnu reste lisible plutôt que de disparaître. */
-function libelle(table: Readonly<Record<string, string>>, code: string): string {
+export function libelle(table: Readonly<Record<string, string>>, code: string): string {
   return table[code] ?? code.replaceAll("_", " ");
 }
 
@@ -148,7 +157,7 @@ function periode(debut: string | null, fin: string | null): string {
   return fin ? `jusqu'au ${jour(fin)}` : ABSENT;
 }
 
-function sectionSynthese(synthese: NonNullable<ContenuDossier["synthese"]>): Section | null {
+function sectionSynthese(synthese: NonNullable<ContenuDossier["synthese"]>): Contenu | null {
   const blocs: Bloc[] = [];
   if (synthese.pitch.trim()) {
     blocs.push({ type: "intertitre", texte: "Pitch" }, { type: "texte", texte: synthese.pitch });
@@ -167,7 +176,7 @@ function sectionSynthese(synthese: NonNullable<ContenuDossier["synthese"]>): Sec
  * personnages, enjeux, vision, objectifs, public. Le format et l'étape n'y
  * figurent pas : la page de garde les porte déjà.
  */
-function sectionFiche(fiche: NonNullable<ContenuDossier["fiche_projet"]>): Section | null {
+function sectionFiche(fiche: NonNullable<ContenuDossier["fiche_projet"]>): Contenu | null {
   const blocs: Bloc[] = [];
 
   // Comme à l'écran : le premier pays n'est dit principal que s'il y en a d'autres.
@@ -230,7 +239,7 @@ function sectionFiche(fiche: NonNullable<ContenuDossier["fiche_projet"]>): Secti
   return blocs.length ? { titre: "Fiche du projet", blocs } : null;
 }
 
-function sectionBudget(budget: NonNullable<ContenuDossier["budget"]>): Section | null {
+function sectionBudget(budget: NonNullable<ContenuDossier["budget"]>): Contenu | null {
   if (budget.lignes.length === 0) {
     return null;
   }
@@ -277,7 +286,7 @@ function sectionBudget(budget: NonNullable<ContenuDossier["budget"]>): Section |
 
 function sectionFinancements(
   financements: NonNullable<ContenuDossier["financements"]>,
-): Section | null {
+): Contenu | null {
   if (financements.length === 0) {
     return null;
   }
@@ -340,7 +349,7 @@ function sectionFinancements(
   };
 }
 
-function sectionPlanning(planning: NonNullable<ContenuDossier["planning"]>): Section | null {
+function sectionPlanning(planning: NonNullable<ContenuDossier["planning"]>): Contenu | null {
   if (planning.length === 0) {
     return null;
   }
@@ -374,17 +383,22 @@ function sectionPlanning(planning: NonNullable<ContenuDossier["planning"]>): Sec
  * l'appelant de refuser un dossier sans aucune section.
  */
 export function composerDossier(contenu: ContenuDossier, etabliLe: Date): Dossier {
-  const sections: (Section | null)[] = [];
+  const sections: Section[] = [];
+  const ajouter = (origine: OrigineSection, section: Contenu | null) => {
+    if (section) {
+      sections.push({ origine, ...section });
+    }
+  };
 
   if (contenu.synthese) {
-    sections.push(sectionSynthese(contenu.synthese));
+    ajouter("synthese", sectionSynthese(contenu.synthese));
   }
   if (contenu.fiche_projet) {
-    sections.push(sectionFiche(contenu.fiche_projet));
+    ajouter("fiche_projet", sectionFiche(contenu.fiche_projet));
   }
   for (const document of contenu.documents ?? []) {
     if (document.contenu.trim()) {
-      sections.push({
+      ajouter("document", {
         surTitre: libelle(TYPES_DOCUMENT, document.type),
         titre: document.titre,
         blocs: [{ type: "texte", texte: document.contenu }],
@@ -392,19 +406,19 @@ export function composerDossier(contenu: ContenuDossier, etabliLe: Date): Dossie
     }
   }
   if (contenu.budget) {
-    sections.push(sectionBudget(contenu.budget));
+    ajouter("budget", sectionBudget(contenu.budget));
   }
   if (contenu.financements) {
-    sections.push(sectionFinancements(contenu.financements));
+    ajouter("financements", sectionFinancements(contenu.financements));
   }
   if (contenu.planning) {
-    sections.push(sectionPlanning(contenu.planning));
+    ajouter("planning", sectionPlanning(contenu.planning));
   }
 
   return {
     titre: contenu.fiche.titre,
     sousTitre: `${libelle(FORMATS, contenu.fiche.format)} · ${libelle(ETAPES, contenu.fiche.etape)}`,
     date: `Dossier établi le ${enJour(etabliLe)}`,
-    sections: sections.filter((section) => section !== null),
+    sections,
   };
 }
