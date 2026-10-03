@@ -35,7 +35,7 @@ réels).
 | R1  | Assistant de création, base : fiche du projet et personnages                                                                   | validé en recette | —              |
 | R2  | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —              |
 | S1  | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —              |
-| S2  | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé localement | recette        |
+| S2  | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —              |
 
 ## Recette de I1
 
@@ -200,6 +200,31 @@ lecteur réels, faute de second compte tant que le mode privé est actif (vérif
 tests) ; la publication d'une nouvelle version des pondérations et sa ligne au journal,
 qu'aucun écran ne permet avant le lot S2 (vérifiées par les tests).
 
+## Recette du lot S2
+
+Le 3 octobre 2026, un administrateur a lu en production le score de ses projets sur les
+listes (mode privé actif).
+
+- Avant la fusion, essai à blanc : une seule migration à pousser, celle du lot. Fusion à
+  15h25 UTC, migration poussée 10 secondes après, avant la fin de la construction du site ;
+  34 migrations appliquées sur 34. Le worker n'est pas redéployé : il n'a pas changé.
+- En base, relu après la migration : `faits_maturite_projets()` sans `security definer`,
+  fermée aux visiteurs, avec la règle du budget et le plafond de cent projets.
+- Sessions simulées dans une transaction annulée : un administrateur obtient une ligne par
+  projet, aux mêmes faits que la lecture d'un projet seul ; un compte connecté inconnu
+  n'obtient aucune ligne ; un visiteur est refusé ; cent un projets sont refusés.
+- Listes : étiquettes « Maturité 36 / 100 » et « Maturité 5 / 100 », valeurs données par le
+  calcul livré sur les faits lus en production, déclarées conformes par l'utilisateur (sans
+  capture).
+- Aucune erreur d'exécution chez Vercel depuis le déploiement.
+
+Non couvert par cette recette : l'écran de publication en production — aucune version n'y a
+été publiée (la version 1 reste seule en base, sans ligne au journal), et ni son affichage ni
+le refus d'un total différent de 100 n'ont laissé de trace (vérifiés localement et par les
+tests) ; un éditeur et un lecteur réels, faute de second compte tant que le mode privé est
+actif (vérifiés localement et par les tests) ; une liste de plus de cent projets (vérifiée
+localement).
+
 ## Décisions attendues
 
 Voir `docs/implementation-audit.md`, section 11. Décisions 1, 3 et 4 prises le 30 septembre
@@ -293,5 +318,5 @@ faits restent ceux de `faits_maturite()`. Au-delà de cent projets affichés, la
 le score se lit sur la page du projet. L'administration publie une version depuis « Score de
 maturité » (`/administration/ponderations`) : neuf entiers dont le total fait 100, validés
 par l'action puis par la base ; la version s'applique aussitôt à tous les projets, puisque
-rien n'est stocké. Reste à livrer : fusion, migration poussée, puis recette — la publication
-d'une version en production est un changement réel.
+rien n'est stocké. Aucune version n'a encore été publiée en production depuis cet écran : la
+première publication y sera un changement réel, à relire au journal.
