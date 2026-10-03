@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { BandeOnglets } from "./bande-onglets";
+
 export type Onglet = {
   cle: string;
   libelle: string;
@@ -30,17 +32,17 @@ export function Onglets({
     <nav aria-label={libelle} className={`border-app-line border-b ${className}`}>
       {/*
        * Sur écran étroit, les onglets défilent dans leur bande plutôt que de
-       * déborder de la page. La barre de défilement est masquée ; le fondu
-       * sur le bord droit indique qu'il reste des onglets à voir.
+       * déborder de la page ; au-delà, ils passent à la ligne. La bande est
+       * le seul composant client : les onglets restent rendus par le serveur.
        */}
-      <ul className="-mb-px flex [scrollbar-width:none] gap-6 overflow-x-auto text-sm max-sm:[mask-image:linear-gradient(to_right,black_80%,transparent)] [&::-webkit-scrollbar]:hidden">
+      <BandeOnglets>
         {onglets.map((onglet) => {
           if (!onglet.href) {
             return (
               <li key={onglet.cle} className="shrink-0">
                 <span
                   aria-disabled="true"
-                  className="text-secondary/70 inline-flex items-center gap-2 border-b-2 border-transparent pb-3"
+                  className="text-secondary/70 inline-flex items-center gap-2 border-b-2 border-transparent pb-3 max-sm:px-1"
                 >
                   {onglet.libelle}
                   <span className="border-app-line text-secondary rounded-full border px-1.5 py-px text-[0.625rem]">
@@ -57,7 +59,10 @@ export function Onglets({
               <Link
                 href={onglet.href}
                 aria-current={courant ? "page" : undefined}
-                className={`inline-block border-b-2 pb-3 transition-colors ${
+                // Dans la bande défilante, un contour extérieur serait rogné
+                // par ses bords : il est tracé à l'intérieur de l'onglet, qui
+                // garde pour cela une marge de chaque côté de son texte.
+                className={`inline-block border-b-2 pb-3 transition-colors max-sm:px-1 max-sm:focus-visible:-outline-offset-2! ${
                   courant
                     ? "border-gold text-light"
                     : "text-secondary hover:text-light border-transparent"
@@ -68,7 +73,7 @@ export function Onglets({
             </li>
           );
         })}
-      </ul>
+      </BandeOnglets>
     </nav>
   );
 }
