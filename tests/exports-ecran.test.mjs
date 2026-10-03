@@ -10,6 +10,7 @@ import { describe, it } from "node:test";
 
 import {
   ACTIONS_EXPORT,
+  detailFiche,
   enTeteDeTelechargement,
   ERREURS_EXPORT,
   estFormatExport,
@@ -26,6 +27,7 @@ import {
   pages,
   poids,
   premierDuMois,
+  SECTIONS_D_OUVERTURE,
 } from "../src/lib/exports.ts";
 
 const TYPES = ["note_intention", "traitement", "scenario", "biographie", "lettre", "autre"];
@@ -61,7 +63,22 @@ describe("Exports PDF : demande", () => {
   });
 
   it("propose les sections dans l'ordre du dossier", () => {
-    assert.deepEqual(ORDRE_SECTIONS, ["synthese", "budget", "financements", "planning"]);
+    assert.deepEqual(ORDRE_SECTIONS, [
+      "synthese",
+      "fiche_projet",
+      "budget",
+      "financements",
+      "planning",
+    ]);
+    // Ce qui présente le projet ouvre le dossier, avant les documents.
+    assert.deepEqual(SECTIONS_D_OUVERTURE, ["synthese", "fiche_projet"]);
+  });
+
+  it("admet la fiche du projet, et la range comme la base", () => {
+    assert.deepEqual(normaliserDemande(["synthese", "fiche_projet", "budget"], [], TYPES), {
+      sections: ["budget", "fiche_projet", "synthese"],
+      documents: [],
+    });
   });
 
   it("nomme le contenu d'un dossier dans l'ordre où il le présente", () => {
@@ -72,8 +89,68 @@ describe("Exports PDF : demande", () => {
       ),
       "Synthèse, Note d'intention, Scénario, Budget prévisionnel, Planning",
     );
+    // La fiche suit la synthèse, et précède les documents.
+    assert.equal(
+      libelleDemande(
+        { sections: ["budget", "fiche_projet", "synthese"], documents: ["scenario"] },
+        LIBELLES,
+      ),
+      "Synthèse, Fiche du projet, Scénario, Budget prévisionnel",
+    );
+    assert.equal(
+      libelleDemande({ sections: ["fiche_projet"], documents: [] }, LIBELLES),
+      "Fiche du projet",
+    );
     assert.equal(libelleDemande(null, LIBELLES), "Dossier");
     assert.equal(libelleDemande({ sections: "budget" }, LIBELLES), "Dossier");
+  });
+});
+
+describe("Exports : case de la fiche", () => {
+  const vide = {
+    genre: null,
+    countries: [],
+    languages: "",
+    duration_minutes: null,
+    short_synopsis: "",
+    theme: " ",
+    stakes: "",
+    artistic_vision: "",
+    goals: "\n",
+    audience: "",
+  };
+
+  it("reste décochée tant que la fiche est vide", () => {
+    assert.equal(detailFiche(vide, 0), null);
+  });
+
+  it("dit ce que la fiche apporterait, dans l'ordre de l'assistant", () => {
+    assert.equal(
+      detailFiche(
+        {
+          genre: "drame",
+          countries: ["CM"],
+          languages: "Batanga",
+          duration_minutes: 95,
+          short_synopsis: "Une pêcheuse.",
+          theme: "",
+          stakes: "La plage.",
+          artistic_vision: "À l'épaule.",
+          goals: "Festivals.",
+          audience: "Tout public.",
+        },
+        2,
+      ),
+      "Repères, concept, 2 personnages, enjeux, vision, objectifs et public",
+    );
+  });
+
+  it("ne cite que ce qui est renseigné, et accorde les personnages", () => {
+    assert.equal(detailFiche({ ...vide, duration_minutes: 12 }, 0), "Repères");
+    assert.equal(detailFiche({ ...vide, countries: ["SN"] }, 0), "Repères");
+    assert.equal(detailFiche({ ...vide, theme: "L'exil" }, 0), "Concept");
+    assert.equal(detailFiche(vide, 1), "1 personnage");
+    assert.equal(detailFiche({ ...vide, audience: "Adolescents" }, 3), "3 personnages et public");
   });
 });
 

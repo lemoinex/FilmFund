@@ -192,7 +192,9 @@ describe("Libellés du worker", () => {
     const source = lire(fichier);
     const debut = source.indexOf(`export const ${nom}`);
     assert.ok(debut >= 0, `${nom} introuvable dans ${fichier}`);
-    const corps = source.slice(debut, source.indexOf("\n};", debut));
+    // Jusqu'à l'accolade qui ferme la table, qu'elle finisse par « }; » ou
+    // par « } as const; » : au-delà, la lecture prendrait la table suivante.
+    const corps = source.slice(debut, source.indexOf("\n}", debut));
     const motif = imbriquee
       ? /^ {2}(\w+): \{\s*libelle: "([^"]*)"/gm
       : /^ {2}(\w+): "([^"]*)",?$/gm;
@@ -209,12 +211,19 @@ describe("Libellés du worker", () => {
       TYPES_FINANCEMENT: tableDe("src/lib/financements.ts", "TYPES_FINANCEMENT"),
       STATUTS_FINANCEMENT: tableDe("src/lib/financements.ts", "STATUTS_FINANCEMENT"),
       STATUTS_ETAPE: tableDe("src/lib/planning.ts", "STATUTS_ETAPE"),
+      GENRES: tableDe("src/lib/fiche.ts", "GENRES"),
+      ROLES_PERSONNAGE: tableDe("src/lib/fiche.ts", "ROLES_PERSONNAGE"),
     };
+    // Un personnage n'a que deux rôles : son seuil de lecture est le sien.
+    const minimum = { ROLES_PERSONNAGE: 2 };
 
     for (const [nom, attendu] of Object.entries(application)) {
       // La lecture a bien trouvé quelque chose : une table vide passerait
       // la comparaison sans rien prouver.
-      assert.ok(Object.keys(attendu).length >= 3, `${nom} : lecture de l'application`);
+      assert.ok(
+        Object.keys(attendu).length >= (minimum[nom] ?? 3),
+        `${nom} : lecture de l'application`,
+      );
       assert.deepEqual({ ...worker[nom] }, attendu, nom);
     }
   });
@@ -229,12 +238,29 @@ describe("Libellés du worker", () => {
 describe("Sections des exports PDF", () => {
   it("l'écran propose exactement les sections que la base accepte", async () => {
     const { ORDRE_SECTIONS } = await import("../src/lib/exports.ts");
-    const migration = lire("supabase/migrations/20261002181851_exports_pdf.sql");
-    const liste = /v_sections <@ array\[([^\]]+)\]/.exec(migration)?.[1] ?? "";
+    // parametres_export() a été redéfinie depuis sa création : seule sa
+    // dernière définition, dans l'ordre des migrations, a cours.
+    const liste =
+      readdirSync(join(RACINE, "supabase/migrations"))
+        .sort()
+        .map((fichier) => lire(`supabase/migrations/${fichier}`))
+        .map((migration) => /v_sections <@ array\[([^\]]+)\]/.exec(migration)?.[1])
+        .filter(Boolean)
+        .at(-1) ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 
-    assert.ok(enBase.length >= 4, "lecture de la migration");
+    assert.ok(enBase.length >= 5, "lecture des migrations");
     assert.deepEqual([...ORDRE_SECTIONS].sort(), [...enBase].sort());
+  });
+
+  it("le worker sait composer chaque section que l'écran propose", async () => {
+    // Une section admise par la base mais ignorée du worker donnerait un
+    // dossier où elle manque, sans erreur.
+    const { ORDRE_SECTIONS } = await import("../src/lib/exports.ts");
+    const composition = lire("worker/src/exports/dossier.ts");
+    for (const section of ORDRE_SECTIONS) {
+      assert.match(composition, new RegExp(`if \\(contenu\\.${section}\\) \\{`), section);
+    }
   });
 
   // Ces deux gardes lisent le code : le parcours réel — onglet absent, page

@@ -14,6 +14,7 @@
  */
 export const SECTIONS = {
   synthese: { libelle: "Synthèse" },
+  fiche_projet: { libelle: "Fiche du projet" },
   budget: { libelle: "Budget prévisionnel" },
   financements: { libelle: "Plan de financement" },
   planning: { libelle: "Planning" },
@@ -22,6 +23,12 @@ export const SECTIONS = {
 export type SectionExport = keyof typeof SECTIONS;
 
 export const ORDRE_SECTIONS = Object.keys(SECTIONS) as SectionExport[];
+
+/**
+ * Sections qui ouvrent le dossier, avant les documents : ce qui présente le
+ * projet. Les tableaux — budget, financements, planning — le ferment.
+ */
+export const SECTIONS_D_OUVERTURE: readonly SectionExport[] = ["synthese", "fiche_projet"];
 
 /**
  * Formats d'un dossier. Le format est l'action même de la tâche — la base
@@ -99,7 +106,7 @@ export function normaliserDemande(
 
 /**
  * Ce qu'une demande contient, en clair et dans l'ordre du dossier :
- * « Synthèse, Note d'intention, Budget prévisionnel ».
+ * « Synthèse, Fiche du projet, Note d'intention, Budget prévisionnel ».
  */
 export function libelleDemande(
   demande: unknown,
@@ -108,16 +115,59 @@ export function libelleDemande(
   const lue = (demande ?? {}) as { sections?: unknown; documents?: unknown };
   const sections = listeDeTextes(lue.sections) ?? [];
   const documents = listeDeTextes(lue.documents) ?? [];
+  const demandees = (ouverture: boolean) =>
+    ORDRE_SECTIONS.filter(
+      (section) =>
+        SECTIONS_D_OUVERTURE.includes(section) === ouverture && sections.includes(section),
+    ).map((section) => SECTIONS[section].libelle);
   const parties = [
-    ...(sections.includes("synthese") ? [SECTIONS.synthese.libelle] : []),
+    ...demandees(true),
     ...Object.keys(libellesDocuments)
       .filter((type) => documents.includes(type))
       .map((type) => libellesDocuments[type]),
-    ...ORDRE_SECTIONS.filter((section) => section !== "synthese" && sections.includes(section)).map(
-      (section) => SECTIONS[section].libelle,
-    ),
+    ...demandees(false),
   ];
   return parties.join(", ") || "Dossier";
+}
+
+/** Ce que la page du dossier lit de la fiche, pour dire ce que sa case apporterait. */
+export type ApercuFiche = {
+  genre: string | null;
+  countries: readonly string[];
+  languages: string;
+  duration_minutes: number | null;
+  short_synopsis: string;
+  theme: string;
+  stakes: string;
+  artistic_vision: string;
+  goals: string;
+  audience: string;
+};
+
+const ENUMERATION = new Intl.ListFormat("fr", { style: "long", type: "conjunction" });
+
+/**
+ * Ce que la fiche apporterait au dossier, dans l'ordre de l'assistant :
+ * « Repères, concept, 2 personnages, vision et public ». Nul si elle est
+ * vide : le dossier omettrait la section, la case reste donc décochée.
+ */
+export function detailFiche(fiche: ApercuFiche, personnages: number): string | null {
+  const parties = [
+    fiche.genre || fiche.countries.length || fiche.languages.trim() || fiche.duration_minutes
+      ? "repères"
+      : "",
+    fiche.short_synopsis.trim() || fiche.theme.trim() ? "concept" : "",
+    personnages > 0 ? `${personnages} ${personnages > 1 ? "personnages" : "personnage"}` : "",
+    fiche.stakes.trim() ? "enjeux" : "",
+    fiche.artistic_vision.trim() ? "vision" : "",
+    fiche.goals.trim() ? "objectifs" : "",
+    fiche.audience.trim() ? "public" : "",
+  ].filter(Boolean);
+  if (parties.length === 0) {
+    return null;
+  }
+  const texte = ENUMERATION.format(parties);
+  return texte.charAt(0).toUpperCase() + texte.slice(1);
 }
 
 export type TacheExport = { id: string; state: string; reason: string | null } | null;

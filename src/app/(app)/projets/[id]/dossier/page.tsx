@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ORDRE_TYPES, TYPES_DOCUMENT } from "@/lib/documents";
 import {
   ACTIONS_EXPORT,
+  detailFiche,
   estFormatExport,
   etapeExport,
   FORMATS_EXPORT,
@@ -14,6 +15,7 @@ import {
   poids,
   premierDuMois,
   SECTIONS,
+  SECTIONS_D_OUVERTURE,
   type SectionExport,
 } from "@/lib/exports";
 import { createClient } from "@/lib/supabase/server";
@@ -57,10 +59,17 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     { count: lignes },
     { count: candidatures },
     { count: etapes },
+    { count: personnages },
     { data: tache },
     { data: exportsDisponibles },
   ] = await Promise.all([
-    supabase.from("projects").select("id, title, logline, synopsis").eq("id", id).maybeSingle(),
+    supabase
+      .from("projects")
+      .select(
+        "id, title, logline, synopsis, genre, countries, languages, duration_minutes, short_synopsis, theme, stakes, artistic_vision, goals, audience",
+      )
+      .eq("id", id)
+      .maybeSingle(),
     supabase.rpc("peut_gerer_budget", { p_project_id: id }),
     supabase.from("project_documents").select("type").eq("project_id", id).eq("status", "finalise"),
     supabase.from("project_budgets").select("currency").eq("project_id", id).maybeSingle(),
@@ -71,6 +80,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       .eq("project_id", id),
     supabase
       .from("project_milestones")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", id),
+    supabase
+      .from("project_characters")
       .select("id", { count: "exact", head: true })
       .eq("project_id", id),
     supabase
@@ -101,6 +114,8 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
+  const fiche = detailFiche(projet, personnages ?? 0);
+
   // Chaque case dit ce qu'elle apporterait, et ce qui n'y entre jamais.
   const contenuDes: Record<SectionExport, { detail: string; disponible: boolean }> = {
     synthese: {
@@ -109,6 +124,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
           ? "Le pitch et le synopsis"
           : "Ni pitch ni synopsis pour l'instant",
       disponible: Boolean(projet.logline.trim() || projet.synopsis.trim()),
+    },
+    fiche_projet: {
+      detail: fiche ?? "La fiche est encore vide",
+      disponible: fiche !== null,
     },
     budget: {
       detail: !budget
@@ -130,7 +149,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     },
   };
 
-  // Dans l'ordre du dossier : la synthèse, les documents, puis les tableaux.
+  // Dans l'ordre du dossier : la synthèse et la fiche, les documents, puis les tableaux.
   const section = (code: SectionExport): OptionExport => ({
     groupe: "section",
     code,
@@ -138,7 +157,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     ...contenuDes[code],
   });
   const options: OptionExport[] = [
-    section("synthese"),
+    ...SECTIONS_D_OUVERTURE.map(section),
     ...ORDRE_TYPES.map((type): OptionExport => {
       const nombre = (finalises ?? []).filter((document) => document.type === type).length;
       return {
@@ -154,7 +173,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
         disponible: nombre > 0,
       };
     }),
-    ...ORDRE_SECTIONS.filter((code) => code !== "synthese").map(section),
+    ...ORDRE_SECTIONS.filter((code) => !SECTIONS_D_OUVERTURE.includes(code)).map(section),
   ];
 
   return (

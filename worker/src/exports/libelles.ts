@@ -27,6 +27,34 @@ export const ETAPES: Readonly<Record<string, string>> = {
   termine: "Terminé",
 };
 
+export const GENRES: Readonly<Record<string, string>> = {
+  drame: "Drame",
+  comedie: "Comédie",
+  comedie_dramatique: "Comédie dramatique",
+  thriller: "Thriller",
+  policier: "Policier",
+  action: "Action",
+  aventure: "Aventure",
+  fantastique: "Fantastique",
+  science_fiction: "Science-fiction",
+  horreur: "Horreur",
+  romance: "Romance",
+  historique: "Historique",
+  biopic: "Biopic",
+  guerre: "Guerre",
+  musical: "Musical",
+  jeunesse: "Jeunesse",
+  societe: "Société",
+  portrait: "Portrait",
+  nature: "Nature",
+  autre: "Autre",
+};
+
+export const ROLES_PERSONNAGE: Readonly<Record<string, string>> = {
+  principal: "Principal",
+  secondaire: "Secondaire",
+};
+
 export const TYPES_DOCUMENT: Readonly<Record<string, string>> = {
   note_intention: "Note d'intention",
   traitement: "Traitement",

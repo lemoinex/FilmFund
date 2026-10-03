@@ -31,11 +31,27 @@ import {
 function contenuComplet() {
   return {
     demande: {
-      sections: ["budget", "financements", "planning", "synthese"],
+      sections: ["budget", "fiche_projet", "financements", "planning", "synthese"],
       documents: ["note_intention"],
     },
     fiche: { titre: "Mɔ́ŋ ma Ɛyɔ", format: "long_metrage", etape: "ecriture" },
     synthese: { pitch: "Une pêcheuse défend sa plage.", synopsis: "À Kribi, la mer nourrit." },
+    fiche_projet: {
+      genre: "drame",
+      pays: ["CM", "SN"],
+      langues: "Batanga, français",
+      duree: 95,
+      synopsis_court: "Une pêcheuse refuse de vendre sa plage.",
+      theme: "La transmission",
+      enjeux: "Perdre la plage, c'est perdre le village.",
+      vision: "Caméra à l'épaule, lumière naturelle.",
+      objectifs: "",
+      public: "Tout public, festivals et salles.",
+      personnages: [
+        { nom: "Ɛyɔ", role: "principal", description: "Pêcheuse, quarante ans.\nNe cède rien." },
+        { nom: "Le promoteur", role: "secondaire", description: "" },
+      ],
+    },
     documents: [
       { type: "note_intention", titre: "Note d'intention", contenu: "Pourquoi ce film." },
       { type: "note_intention", titre: "Note vide", contenu: "   " },
@@ -111,6 +127,29 @@ const cellules = (section) =>
     .find((bloc) => bloc.type === "tableau")
     .lignes.map((ligne) => ligne.cellules.map((cellule) => cellule.replace(/[  ]/g, " ")));
 
+/** Tous les tableaux d'une section, dans l'ordre : la fiche en a deux. */
+const tableaux = (section) =>
+  section.blocs
+    .filter((bloc) => bloc.type === "tableau")
+    .map((bloc) => bloc.lignes.map((ligne) => ligne.cellules));
+
+/** Une fiche où rien n'est renseigné. */
+function ficheVide() {
+  return {
+    genre: null,
+    pays: [],
+    langues: " ",
+    duree: null,
+    synopsis_court: "",
+    theme: "",
+    enjeux: "",
+    vision: " \n ",
+    objectifs: "",
+    public: "",
+    personnages: [],
+  };
+}
+
 /**
  * Fichiers d'une archive ZIP, lus en-tête local après en-tête local : de quoi
  * vérifier un DOCX sans dépendance. Les entrées compressées le sont par
@@ -140,11 +179,102 @@ describe("Dossier : composition", () => {
   it("place les sections dans l'ordre d'un dossier de film", () => {
     assert.deepEqual(
       dossier.sections.map((s) => s.titre),
-      ["Synthèse", "Note d'intention", "Budget prévisionnel", "Plan de financement", "Planning"],
+      [
+        "Synthèse",
+        "Fiche du projet",
+        "Note d'intention",
+        "Budget prévisionnel",
+        "Plan de financement",
+        "Planning",
+      ],
     );
     assert.equal(dossier.titre, "Mɔ́ŋ ma Ɛyɔ");
     assert.equal(dossier.sousTitre, "Long métrage · Écriture");
     assert.equal(dossier.date, "Dossier établi le 1er octobre 2026");
+  });
+
+  it("présente la fiche dans l'ordre de l'assistant, sans ses champs vides", () => {
+    const fiche = section("Fiche du projet");
+    assert.deepEqual(
+      fiche.blocs.map((bloc) => (bloc.type === "intertitre" ? bloc.texte : bloc.type)),
+      [
+        "tableau",
+        "Synopsis court",
+        "texte",
+        "Thème",
+        "texte",
+        "Personnages",
+        "tableau",
+        "Enjeux",
+        "texte",
+        "Vision artistique",
+        "texte",
+        // Les objectifs, laissés vides, n'apparaissent pas.
+        "Public cible",
+        "texte",
+      ],
+    );
+
+    const [reperes, personnages] = tableaux(fiche);
+    assert.deepEqual(reperes, [
+      ["Genre", "Drame"],
+      ["Durée", "95 minutes"],
+      ["Pays de production", "Cameroun (principal), Sénégal"],
+      ["Langues", "Batanga, français"],
+    ]);
+    assert.deepEqual(personnages, [
+      ["Ɛyɔ", "Principal", "Pêcheuse, quarante ans.\nNe cède rien."],
+      ["Le promoteur", "Secondaire", ""],
+    ]);
+  });
+
+  it("omet une fiche où rien n'est renseigné", () => {
+    const vide = composerDossier(
+      {
+        demande: { sections: ["fiche_projet"], documents: [] },
+        fiche: { titre: "Projet nu", format: "documentaire", etape: "idee" },
+        fiche_projet: ficheVide(),
+      },
+      new Date("2026-10-02T12:00:00Z"),
+    );
+    assert.deepEqual(vide.sections, []);
+  });
+
+  it("ne dit un pays principal que s'il y en a plusieurs, et garde lisible un code inconnu", () => {
+    const dossierSeul = composerDossier(
+      {
+        demande: { sections: ["fiche_projet"], documents: [] },
+        fiche: { titre: "Projet", format: "court_metrage", etape: "idee" },
+        fiche_projet: {
+          ...ficheVide(),
+          genre: "western_spaghetti",
+          pays: ["CM"],
+          duree: 1,
+          personnages: [{ nom: "Figurante", role: "silhouette", description: "" }],
+        },
+      },
+      new Date("2026-10-02T12:00:00Z"),
+    );
+    const [reperes, personnages] = tableaux(dossierSeul.sections[0]);
+    assert.deepEqual(reperes, [
+      ["Genre", "western spaghetti"],
+      ["Durée", "1 minute"],
+      ["Pays de production", "Cameroun"],
+    ]);
+    assert.deepEqual(personnages, [["Figurante", "silhouette", ""]]);
+
+    // Un code sans nom français reste un code, plutôt que de disparaître.
+    const sansNom = composerDossier(
+      {
+        demande: { sections: ["fiche_projet"], documents: [] },
+        fiche: { titre: "Projet", format: "court_metrage", etape: "idee" },
+        fiche_projet: { ...ficheVide(), pays: ["QQ", "CM"] },
+      },
+      new Date("2026-10-02T12:00:00Z"),
+    );
+    assert.deepEqual(tableaux(sansNom.sections[0])[0], [
+      ["Pays de production", "QQ (principal), Cameroun"],
+    ]);
   });
 
   it("nomme un document par son titre, sous son type ; un document vide est omis", () => {
@@ -187,9 +317,13 @@ describe("Dossier : composition", () => {
   it("omet sans mention une section demandée mais vide", () => {
     const vide = composerDossier(
       {
-        demande: { sections: ["budget", "financements", "planning", "synthese"], documents: [] },
+        demande: {
+          sections: ["budget", "fiche_projet", "financements", "planning", "synthese"],
+          documents: [],
+        },
         fiche: { titre: "Projet nu", format: "documentaire", etape: "idee" },
         synthese: { pitch: "", synopsis: " " },
+        fiche_projet: ficheVide(),
         budget: null,
         financements: [],
         planning: [],
@@ -259,6 +393,15 @@ describe("Dossier : Word", () => {
         document.includes(section.titre.replace("'", "&apos;")) || document.includes(section.titre),
         section.titre,
       );
+    }
+    // La fiche : ses repères et ses personnages, lettres africaines comprises.
+    for (const attendu of [
+      "Cameroun (principal), Sénégal",
+      "95 minutes",
+      "Le promoteur",
+      ">Ɛyɔ<",
+    ]) {
+      assert.ok(document.includes(attendu), attendu);
     }
     // De vrais titres, et de vrais tableaux à en-tête répété.
     assert.match(document, /w:pStyle w:val="Heading1"/);
@@ -477,7 +620,89 @@ describe("Export PDF : worker", () => {
     );
     assert.equal("budget" in remis.contenu, false, "le budget n'a pas été demandé");
     assert.equal("financements" in remis.contenu, false);
+    assert.equal("fiche_projet" in remis.contenu, false, "la fiche n'a pas été demandée");
     assert.deepEqual(Object.keys(remis.contenu.fiche).sort(), ["etape", "format", "titre"]);
+  });
+
+  it("avec la fiche : ses repères et ses seuls personnages, dans l'ordre de l'écran, jusque dans le fichier", async () => {
+    const { porteur, projet, tache } = await preparer(
+      "export-fiche",
+      { sections: ["fiche_projet"] },
+      { budget: false, action: "docx_export" },
+    );
+    // Le contenu se lit à l'exécution : la fiche se remplit après la demande.
+    const { error: fiche } = await porteur.client
+      .from("projects")
+      .update({
+        genre: "drame",
+        countries: ["CM", "SN"],
+        duration_minutes: 95,
+        theme: "La transmission",
+      })
+      .eq("id", projet.id);
+    assert.ifError(fiche);
+    const autre = await creerProjet(porteur, "Un autre film");
+    // Mêmes colonnes pour chaque ligne : dans une insertion groupée, l'API met
+    // à nul celles qu'une ligne ne nomme pas.
+    const personnage = (projetId, name, role, description, position) => ({
+      project_id: projetId,
+      name,
+      role,
+      description,
+      position,
+      created_by: porteur.id,
+    });
+    const { error: personnages } = await porteur.client
+      .from("project_characters")
+      .insert([
+        personnage(projet.id, "Second venu", "secondaire", "", 2),
+        personnage(projet.id, "Première venue", "principal", "Pêcheuse à Kribi.", 1),
+        personnage(autre.id, "Personnage d'ailleurs", "principal", "", 0),
+      ]);
+    assert.ifError(personnages);
+
+    let remis;
+    const export_ = executeursExport(base).docx_export;
+    const executeurs = {
+      docx_export: async (travail, signal) => {
+        remis = await lireContexteExport(base, travail.attemptId);
+        return export_(travail, signal);
+      },
+    };
+    assert.equal(await traiterUnTravail(options(executeurs)), true);
+
+    assert.deepEqual(
+      remis.contenu.fiche_projet.personnages.map((personnage) => personnage.nom),
+      ["Première venue", "Second venu"],
+    );
+    assert.equal("synthese" in remis.contenu, false, "la synthèse n'a pas été demandée");
+
+    const { travail, reglement, exports } = await etat(porteur, tache);
+    assert.deepEqual([travail.state, travail.attempts], ["succeeded", 1]);
+    assert.deepEqual(reglement, { consumed: 1, released: 0 });
+    assert.deepEqual(exports[0].params, { sections: ["fiche_projet"], documents: [] });
+
+    const document = lireArchive(Buffer.from(exports[0].file.slice(2), "hex")).get(
+      "word/document.xml",
+    );
+    for (const attendu of [
+      "Fiche du projet",
+      "Drame",
+      "95 minutes",
+      "Cameroun (principal), Sénégal",
+      "La transmission",
+      "Première venue",
+      "Pêcheuse à Kribi.",
+    ]) {
+      assert.ok(document.includes(attendu), attendu);
+    }
+    assert.ok(
+      document.indexOf("Première venue") < document.indexOf("Second venu"),
+      "les personnages suivent leur rang",
+    );
+    for (const absent of ["Personnage d", "Un pitch."]) {
+      assert.equal(document.includes(absent), false, absent);
+    }
   });
 
   it("rien à exporter : échec connu, deux essais, l'unité est rendue", async () => {
@@ -524,6 +749,9 @@ describe("Export PDF : worker", () => {
       "note_intention",
       "synthese",
       "storyboard",
+      "fiche_projet",
+      "Première venue",
+      "La transmission",
     ]) {
       assert.equal(texte.includes(interdit), false, `« ${interdit} » dans le journal`);
     }
