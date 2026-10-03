@@ -678,3 +678,28 @@ describe("Rubriques d'un projet", () => {
     assert.doesNotMatch(onglets, /libelle: "/);
   });
 });
+
+/*
+ * Catalogue public. La vitrine lit la dernière version de chaque plan et du
+ * barème : une version, pas la table. Que ce soit bien la dernière se vérifie
+ * contre la base, dans la suite du catalogue.
+ */
+describe("Catalogue public", () => {
+  it("la vitrine lit une version par plan et une version du barème, jamais une table entière", () => {
+    const offre = lire("src/lib/offre.ts");
+
+    // Les versions d'un plan n'arrivent qu'imbriquées dans leur plan, triées et limitées.
+    assert.doesNotMatch(offre, /\.from\("plan_versions"\)/);
+    assert.match(
+      offre,
+      /\.order\("version_number", \{ referencedTable: "plan_versions", ascending: false \}\)\s*\.limit\(1, \{ referencedTable: "plan_versions" \}\)/,
+    );
+
+    const lectures = offre.split('.from("text_unit_rate_versions")').slice(1);
+    assert.equal(lectures.length, 1, "une seule lecture du barème");
+    assert.match(
+      lectures[0],
+      /^\s*\.select\([^)]*\)\s*\.order\("version_number", \{ ascending: false \}\)\s*\.limit\(1\)/,
+    );
+  });
+});

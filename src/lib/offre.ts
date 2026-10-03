@@ -192,6 +192,10 @@ export async function lireBareme(
  * Lit l'offre en base, sans session ni cookie : le catalogue est public.
  * Renvoie null si la base est injoignable ou mal configurée — la vitrine
  * présente alors l'offre plus tard, plutôt que de ne pas s'afficher.
+ *
+ * Chaque plan arrive avec sa seule dernière version : rapatrier toutes les
+ * versions pour y chercher la plus récente grossirait à chaque publication,
+ * et l'API tronque une réponse au-delà de 1 000 lignes.
  */
 export async function lireOffre(
   url: string | undefined,
@@ -201,21 +205,21 @@ export async function lireOffre(
     if (!url || !clePubliable) {
       return null;
     }
-    const supabase = clientPublic(url, clePubliable);
+    const { data, error } = await clientPublic(url, clePubliable)
+      .from("plans")
+      .select(
+        "code, name, position, plan_versions(plan_code, version_number, max_projects, max_members, storage_mb, text_units_per_month, images_per_month, pdf_exports_per_month, price_xaf_per_month)",
+      )
+      .order("version_number", { referencedTable: "plan_versions", ascending: false })
+      .limit(1, { referencedTable: "plan_versions" });
 
-    const [plans, versions] = await Promise.all([
-      supabase.from("plans").select("code, name, position"),
-      supabase
-        .from("plan_versions")
-        .select(
-          "plan_code, version_number, max_projects, max_members, storage_mb, text_units_per_month, images_per_month, pdf_exports_per_month, price_xaf_per_month",
-        ),
-    ]);
-
-    if (plans.error || versions.error) {
+    if (error) {
       return null;
     }
-    return composerOffre(plans.data, versions.data);
+    return composerOffre(
+      data.map(({ code, name, position }) => ({ code, name, position })),
+      data.flatMap((plan) => plan.plan_versions),
+    );
   } catch {
     return null;
   }
