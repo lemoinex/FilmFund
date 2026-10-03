@@ -9,15 +9,19 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
 import {
+  ACTIONS_EXPORT,
   enTeteDeTelechargement,
   ERREURS_EXPORT,
+  estFormatExport,
   etapeExport,
-  exportsPdf,
+  FORMATS_EXPORT,
   libelleDemande,
   lireFichier,
   messageErreurExport,
+  nombreExports,
   nomDeFichier,
   normaliserDemande,
+  ORDRE_FORMATS,
   ORDRE_SECTIONS,
   pages,
   poids,
@@ -111,18 +115,57 @@ describe("Exports PDF : étapes de l'écran", () => {
       assert.match(message, /^[A-ZÀ-Ý].+\.$/);
       assert.doesNotMatch(message, /\b[0-9A-Z]{5}\b/);
     }
-    assert.match(messageErreurExport(ERREURS_EXPORT.quota), /exports PDF/);
+    // PDF et Word puisent dans le même quota : le message ne nomme pas de format.
+    assert.match(messageErreurExport(ERREURS_EXPORT.quota), /quota d'exports de ce studio/);
     assert.notEqual(messageErreurExport(ERREURS_EXPORT.quota), messageErreurExport("XX000"));
   });
 
   it("accorde les pages et les exports, et écrit un poids lisible", () => {
     assert.equal(pages(1), "1 page");
     assert.equal(pages(12), "12 pages");
-    assert.equal(exportsPdf(1), "1 export PDF");
-    assert.equal(exportsPdf(3), "3 exports PDF");
+    assert.equal(nombreExports(1), "1 export");
+    assert.equal(nombreExports(3), "3 exports");
     assert.equal(net(poids(300)), "1 Ko");
     assert.equal(net(poids(319_488)), "312 Ko");
     assert.equal(net(poids(1_258_291)), "1,2 Mo");
+  });
+});
+
+describe("Exports : formats", () => {
+  it("propose le PDF puis le Word, chacun par son action", () => {
+    assert.deepEqual(ORDRE_FORMATS, ["pdf", "docx"]);
+    assert.deepEqual(ACTIONS_EXPORT, ["pdf_export", "docx_export"]);
+    assert.equal(FORMATS_EXPORT.docx.extension, "docx");
+    assert.equal(
+      FORMATS_EXPORT.docx.type,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+  });
+
+  it("ne reconnaît que ses formats", () => {
+    assert.equal(estFormatExport("pdf"), true);
+    assert.equal(estFormatExport("docx"), true);
+    for (const valeur of ["odt", "PDF", "", "toString", null, undefined, 1]) {
+      assert.equal(estFormatExport(valeur), false, String(valeur));
+    }
+  });
+
+  it("nomme le fichier selon son format", () => {
+    assert.equal(nomDeFichier("Les Eaux de Kribi", "docx"), "dossier-les-eaux-de-kribi.docx");
+    assert.equal(nomDeFichier("Les Eaux de Kribi"), "dossier-les-eaux-de-kribi.pdf");
+    assert.match(
+      enTeteDeTelechargement("Les Eaux de Kribi", "docx"),
+      /^attachment; filename="dossier-les-eaux-de-kribi\.docx"; filename\*=UTF-8''Dossier%20-%20Les%20Eaux%20de%20Kribi\.docx$/,
+    );
+  });
+
+  it("ne sert un fichier que sous le format que ses octets confirment", () => {
+    const archive = "\\x504b03041400000008";
+    const pdf = "\\x255044462d312e330a";
+    assert.equal(Buffer.from(lireFichier(archive, "docx")).toString("hex"), "504b03041400000008");
+    assert.equal(lireFichier(pdf, "docx"), null, "un PDF n'est pas servi comme Word");
+    assert.equal(lireFichier(archive, "pdf"), null, "une archive n'est pas servie comme PDF");
+    assert.equal(lireFichier(archive), null, "le PDF reste le format par défaut");
   });
 });
 

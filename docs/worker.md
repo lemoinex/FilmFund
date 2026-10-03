@@ -4,15 +4,16 @@ Le worker exécute les tâches nées des réservations (table `jobs`, lots H1 et
 vit dans `worker/` ; il tourne sur Railway et se connecte à la base sous le rôle PostgreSQL
 `filmfund_worker`, qui n'a **aucun droit sur les tables** et n'exécute que ses quatorze
 fonctions : six pour les tâches, quatre pour la passerelle IA, une pour lire la clé du
-fournisseur, trois pour les exports PDF.
+fournisseur, trois pour les exports.
 
 Depuis le lot I1, le worker porte l'agent WEAVER, qui rédige une proposition de pitch
 (action `logline`). **Sans clé de fournisseur au coffre, il n'a aucun agent** : les demandes
 de pitch restent en file, annulables par leur auteur. La clé se pose depuis l'écran
 Administration → Intégrations IA, jamais par une variable d'environnement.
 
-Depuis le lot M1, il fabrique aussi les dossiers PDF (action `pdf_export`). Cette action
-n'appelle aucun fournisseur : elle est en service avec ou sans clé.
+Depuis le lot M1, il fabrique aussi les dossiers PDF (action `pdf_export`), et depuis le lot
+M3 les dossiers Word (action `docx_export`). Ces actions n'appellent aucun fournisseur :
+elles sont en service avec ou sans clé.
 
 ## Ce qui est versionné, ce qui ne l'est pas
 
@@ -187,31 +188,42 @@ update public.ai_settings set monthly_budget_usd = 10;
 Les tarifs par modèle sont dans `worker/src/ia/profils.ts` : à revoir à chaque changement
 de modèle ou de grille, et à confronter à la facture du fournisseur, qui seule fait foi.
 
-## Exports PDF (lots M1 et M2)
+## Exports PDF et Word (lots M1, M2 et M3)
 
 Un dossier se compose à la carte : synthèse (pitch et synopsis), types de documents, budget,
 plan de financement, planning. La page de garde est toujours présente. Décision 8, prise le
-2 octobre 2026.
+2 octobre 2026 ; le Word s'y ajoute le 3 octobre 2026.
+
+- **Format** : c'est l'action de la tâche — `pdf_export` ou `docx_export`. Le worker compose
+  le même plan de dossier, puis le rend avec `pdfkit` ou avec le paquet `docx`. Un worker qui
+  ne connaît pas encore `docx_export` laisse ces tâches en file.
 
 - **Ce que le worker reçoit** : le contenu des seules sections demandées, pour la seule
   tâche qu'il tient (`contexte_export`). Seuls les documents **finalisés** y entrent. Ni
   image, ni note interne d'une candidature, ni montant réalisé du budget, ni identité des
   membres.
-- **Aucun fournisseur, aucun coût** : le PDF est fabriqué en mémoire par `pdfkit`. Rien ne
-  s'inscrit au registre des dépenses d'IA.
+- **Aucun fournisseur, aucun coût** : le fichier est fabriqué en mémoire. Rien ne s'inscrit
+  au registre des dépenses d'IA.
+- **Quota** : un export Word consomme la même unité qu'un PDF (`pdf_exports_per_month`),
+  sur le même quota.
 - **Où va le fichier** : dans la table `project_exports`, déposé par `livrer_export`, qui
   conclut la tâche dans la même transaction. Pas dans le stockage Supabase : y écrire
-  demanderait de confier au worker une clé qui contourne toute la RLS.
+  demanderait de confier au worker une clé qui contourne toute la RLS. La base contrôle la
+  signature selon le format (`%PDF-`, ou `PK` pour l'archive d'un Word) ; un PDF compte ses
+  pages, un Word n'en déclare pas — le traitement de texte recalcule la pagination.
 - **Qui le lit** : le porteur, les éditeurs et les administrateurs — la règle du budget,
   qu'un export peut contenir. Un lecteur du projet n'y a pas accès.
 - **Bornes** : 5 Mo par fichier, 30 jours de conservation. Le worker purge les exports
   expirés au démarrage, puis toutes les heures (`purger_exports_expires`).
 - **Export identique** : chaque fichier porte l'empreinte de son contenu.
-  `export_disponible(projet, demande)` retrouve celui qui correspond encore à l'état du
-  projet ; l'écran le propose alors au lieu d'engager une unité.
-- **Écran** (lot M2) : onglet « Dossier PDF » du projet, visible de qui lit le budget. Le
-  fichier se télécharge par la route `/projets/<projet>/dossier/<export>`, lue avec la
-  session de l'utilisateur : c'est la RLS qui décide, et tout refus répond 404.
+  `export_disponible(projet, demande, format)` retrouve celui qui correspond encore à l'état
+  du projet, dans ce format (PDF par défaut) ; l'écran le propose alors au lieu d'engager
+  une unité.
+- **Écran** (lots M2 et M3) : onglet « Dossier » du projet, visible de qui lit le budget,
+  avec le choix du format. Le fichier se télécharge par la route
+  `/projets/<projet>/dossier/<export>`, lue avec la session de l'utilisateur : c'est la RLS
+  qui décide, et tout refus répond 404. Le type servi vient du format rangé en base, confirmé
+  par les octets du fichier.
 
 **Rien à exporter** : si aucune des sections demandées n'a de contenu — aucun document
 finalisé, budget non ouvert —, la tâche échoue avec un motif clair et l'unité est rendue.
@@ -219,7 +231,9 @@ Une section demandée mais vide est omise du dossier, sans mention.
 
 **Police** : Noto Serif, embarquée (licence OFL, paquet `@expo-google-fonts/noto-serif`). Elle
 couvre l'alphabet latin étendu — ɛ, ɔ, ŋ, ɓ, ɗ —, le grec et le cyrillique. Elle ne couvre ni
-l'arabe, ni l'amharique, ni le tifinagh : ces caractères sortiraient en cases vides.
+l'arabe, ni l'amharique, ni le tifinagh : ces caractères sortiraient en cases vides. Un
+fichier Word, lui, n'embarque aucune police : il demande Cambria, livrée avec Office, qui
+couvre ɛ, ɔ et ŋ ; LibreOffice la remplace par Caladea, de mêmes dimensions.
 
 **Interruption** : une tâche d'export coupée après son envoi passe « à rapprocher », comme un
 appel d'IA. Rien n'a pu être facturé : elle se tranche en échec, l'unité est rendue, et

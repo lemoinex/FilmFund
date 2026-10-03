@@ -4,7 +4,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { Message } from "@/components/ui/form";
-import { exportsPdf, type EtapeExport } from "@/lib/exports";
+import {
+  FORMATS_EXPORT,
+  nombreExports,
+  ORDRE_FORMATS,
+  type EtapeExport,
+  type FormatExport,
+} from "@/lib/exports";
 
 import { annulerExport, lancerExport, preparerExport, type DevisExport } from "./actions";
 
@@ -32,7 +38,8 @@ type Demande =
   | { existant: string };
 
 /**
- * Composition d'un dossier PDF : cases à cocher, devis, confirmation, suivi.
+ * Composition d'un dossier : cases à cocher, format, devis, confirmation,
+ * suivi.
  *
  * Tout ce qui compte est décidé côté serveur : ce composant n'affiche que
  * l'étape calculée par la page, et ses boutons ne font qu'appeler des actions
@@ -55,6 +62,7 @@ export function SelectionExport({
     () => new Set(options.filter((option) => option.disponible).map((option) => option.code)),
   );
   const [demande, setDemande] = useState<Demande | null>(null);
+  const [format, setFormat] = useState<FormatExport>("pdf");
 
   const enFabrication = etape.etape === "en_attente" || etape.etape === "en_cours";
   // Une demande interrompue n'empêche pas d'en faire une autre : aucun
@@ -82,6 +90,13 @@ export function SelectionExport({
     });
   }
 
+  function choisirFormat(suivant: FormatExport) {
+    // Un autre format est une autre demande, avec son propre devis.
+    setDemande(null);
+    setErreur(null);
+    setFormat(suivant);
+  }
+
   function choisis(groupe: OptionExport["groupe"]) {
     return options
       .filter((option) => option.groupe === groupe && option.disponible && coches.has(option.code))
@@ -91,7 +106,12 @@ export function SelectionExport({
   function preparer() {
     setErreur(null);
     demarrer(async () => {
-      const resultat = await preparerExport(projetId, choisis("section"), choisis("document"));
+      const resultat = await preparerExport(
+        projetId,
+        choisis("section"),
+        choisis("document"),
+        format,
+      );
       if ("erreur" in resultat) {
         setErreur(resultat.erreur);
       } else if ("existant" in resultat) {
@@ -169,6 +189,42 @@ export function SelectionExport({
         </ul>
       </fieldset>
 
+      <fieldset disabled={enCours || !libre} className="mt-5 disabled:opacity-70">
+        <legend className="text-sm font-medium">Format</legend>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {ORDRE_FORMATS.map((code) => {
+            const id = `export-format-${code}`;
+            const choisi = format === code;
+            return (
+              <label
+                key={code}
+                htmlFor={id}
+                className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                  choisi ? "border-gold bg-surface" : "border-app-line hover:bg-surface"
+                }`}
+              >
+                <input
+                  id={id}
+                  type="radio"
+                  name="format-export"
+                  value={code}
+                  className="accent-gold mt-1 size-4 shrink-0"
+                  checked={choisi}
+                  onChange={() => choisirFormat(code)}
+                  aria-describedby={`${id}-detail`}
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm">{FORMATS_EXPORT[code].libelle}</span>
+                  <span id={`${id}-detail`} className="text-secondary mt-0.5 block text-xs">
+                    {FORMATS_EXPORT[code].detail}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
       {erreur ? (
         <div className="mt-4">
           <Message ton="erreur">{erreur}</Message>
@@ -197,8 +253,9 @@ export function SelectionExport({
       {libre && demande && "devis" in demande ? (
         <div className="mt-5">
           <p role="status" className="text-sm leading-relaxed text-pretty">
-            Ce dossier compte {exportsPdf(demande.devis.quantite)}. Il en reste{" "}
-            {demande.devis.disponible} sur {demande.devis.allocation} pour la période en cours.
+            Ce dossier en {FORMATS_EXPORT[format].libelle} compte{" "}
+            {nombreExports(demande.devis.quantite)}. Il en reste {demande.devis.disponible} sur{" "}
+            {demande.devis.allocation} pour la période en cours.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button
@@ -224,8 +281,8 @@ export function SelectionExport({
       {libre && demande && "existant" in demande ? (
         <div className="mt-5">
           <p role="status" className="text-sm leading-relaxed text-pretty">
-            Ce dossier existe déjà, à l&apos;identique : rien n&apos;a changé dans le projet depuis.
-            Aucun export n&apos;est décompté.
+            Ce dossier existe déjà en {FORMATS_EXPORT[format].libelle}, à l&apos;identique : rien
+            n&apos;a changé dans le projet depuis. Aucun export n&apos;est décompté.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             {/* Lien ordinaire, et non `Link` : un fichier ne se précharge pas. */}

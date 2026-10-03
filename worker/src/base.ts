@@ -246,8 +246,12 @@ export async function livrerProposition(
   }
 }
 
-/** Contenu du dossier d'une tâche d'export, et l'empreinte de ce contenu. */
-export type ContexteExport = { contenu: ContenuDossier; empreinte: string };
+/**
+ * Contenu du dossier d'une tâche d'export, et l'empreinte de ce contenu.
+ * `format` est absent d'une base antérieure au lot M3 : l'exécuteur se fie
+ * à l'action de la tâche, pas à ce champ.
+ */
+export type ContexteExport = { contenu: ContenuDossier; empreinte: string; format?: string };
 
 /**
  * Contenu du dossier de la tâche en cours ; null si l'essai ne nous
@@ -264,13 +268,14 @@ export async function lireContexteExport(
 
 /**
  * Dépose le fichier et conclut l'essai. Faux : l'essai ne nous appartenait
- * plus, rien n'a été déposé.
+ * plus, rien n'a été déposé. `pages` est nul pour un fichier Word, dont le
+ * traitement de texte recalcule la pagination.
  */
 export async function livrerExport(
   base: Base,
   attemptId: string,
   fichier: Buffer,
-  pages: number,
+  pages: number | null,
   empreinte: string,
 ): Promise<boolean> {
   try {

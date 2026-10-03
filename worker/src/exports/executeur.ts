@@ -1,10 +1,15 @@
 /**
- * Export PDF d'un projet : du contenu remis par la base au fichier déposé.
+ * Export d'un projet, en PDF ou en Word : du contenu remis par la base au
+ * fichier déposé.
  *
- * Aucun fournisseur n'est appelé et rien n'est facturé : cet exécuteur n'a
- * besoin d'aucune clé, et reste donc en service quel que soit l'état du
- * coffre. Il ne lit aucune table : la base lui remet le contenu des seules
- * sections demandées, pour la seule tâche qu'il tient.
+ * Aucun fournisseur n'est appelé et rien n'est facturé : ces exécuteurs n'ont
+ * besoin d'aucune clé, et restent donc en service quel que soit l'état du
+ * coffre. Ils ne lisent aucune table : la base leur remet le contenu des
+ * seules sections demandées, pour la seule tâche qu'ils tiennent.
+ *
+ * Le format se lit dans l'action de la tâche (`pdf_export`, `docx_export`),
+ * jamais dans ce que la base remet : un même dossier, composé une fois, est
+ * ensuite rendu dans l'un ou l'autre format.
  */
 import {
   codeDe,
@@ -14,13 +19,24 @@ import {
   type Base,
 } from "../base.ts";
 import { EchecConnu, type Executeur } from "../executeurs.ts";
-import { composerDossier } from "./dossier.ts";
+import { composerDossier, type Dossier } from "./dossier.ts";
+import { rendreDocx } from "./docx.ts";
 import { rendrePdf } from "./pdf.ts";
 
 /** Borne de `livrer_export()` : au-delà, la base refuserait le fichier. */
 export const TAILLE_MAX_EXPORT = 5 * 1024 * 1024;
 
-function creerExecuteurExport(base: Base): Executeur {
+/** Fichier rendu ; `pages` nul pour un format qui ne fige pas sa pagination. */
+type Rendu = { fichier: Buffer; pages: number | null };
+
+type Rendeur = (dossier: Dossier) => Promise<Rendu>;
+
+const RENDEURS: Readonly<Record<string, Rendeur>> = {
+  pdf_export: rendrePdf,
+  docx_export: async (dossier) => ({ fichier: await rendreDocx(dossier), pages: null }),
+};
+
+function creerExecuteurExport(base: Base, rendre: Rendeur): Executeur {
   return async (travail, signal) => {
     let contexte;
     try {
@@ -42,7 +58,7 @@ function creerExecuteurExport(base: Base): Executeur {
       throw new EchecConnu("Aucune des sections demandées n'a de contenu à exporter.");
     }
 
-    const { fichier, pages } = await rendrePdf(dossier);
+    const { fichier, pages } = await rendre(dossier);
     if (fichier.length > TAILLE_MAX_EXPORT) {
       throw new EchecConnu("Le dossier dépasse la taille maximale d'un export.");
     }
@@ -59,5 +75,10 @@ function creerExecuteurExport(base: Base): Executeur {
 
 /** Ce que le worker sait exporter. */
 export function executeursExport(base: Base): Readonly<Record<string, Executeur>> {
-  return { pdf_export: creerExecuteurExport(base) };
+  return Object.fromEntries(
+    Object.entries(RENDEURS).map(([action, rendre]) => [
+      action,
+      creerExecuteurExport(base, rendre),
+    ]),
+  );
 }

@@ -1,6 +1,7 @@
 /**
- * Exports PDF d'un projet : ce que l'écran propose, où en est une demande,
- * et comment un fichier se nomme. Module pur, testable sans pile Supabase.
+ * Exports d'un projet, en PDF ou en Word : ce que l'écran propose, où en est
+ * une demande, et comment un fichier se nomme. Module pur, testable sans pile
+ * Supabase.
  *
  * Aucun import d'alias : ce module est aussi chargé tel quel par les tests
  * Node.
@@ -21,6 +22,42 @@ export const SECTIONS = {
 export type SectionExport = keyof typeof SECTIONS;
 
 export const ORDRE_SECTIONS = Object.keys(SECTIONS) as SectionExport[];
+
+/**
+ * Formats d'un dossier. Le format est l'action même de la tâche — la base
+ * n'en connaît pas d'autre — et la signature, les premiers octets que tout
+ * fichier de ce format présente : « %PDF- », ou « PK\x03\x04 » pour l'archive
+ * d'un DOCX. Un test d'architecture vérifie que la base admet ces actions.
+ */
+export const FORMATS_EXPORT = {
+  pdf: {
+    libelle: "PDF",
+    detail: "Mis en page, prêt à envoyer",
+    action: "pdf_export",
+    extension: "pdf",
+    type: "application/pdf",
+    signature: [0x25, 0x50, 0x44, 0x46, 0x2d],
+  },
+  docx: {
+    libelle: "Word",
+    detail: "À retoucher dans un traitement de texte",
+    action: "docx_export",
+    extension: "docx",
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    signature: [0x50, 0x4b, 0x03, 0x04],
+  },
+} as const;
+
+export type FormatExport = keyof typeof FORMATS_EXPORT;
+
+export const ORDRE_FORMATS = Object.keys(FORMATS_EXPORT) as FormatExport[];
+
+/** Actions de la base qui fabriquent un dossier, tous formats confondus. */
+export const ACTIONS_EXPORT = ORDRE_FORMATS.map((format) => FORMATS_EXPORT[format].action);
+
+export function estFormatExport(valeur: unknown): valeur is FormatExport {
+  return typeof valeur === "string" && Object.hasOwn(FORMATS_EXPORT, valeur);
+}
 
 /** Demande d'export, telle que la base l'attend. */
 export type DemandeExport = { sections: string[]; documents: string[] };
@@ -133,7 +170,7 @@ export const ERREURS_EXPORT = {
 export function messageErreurExport(code: string | undefined): string {
   switch (code) {
     case ERREURS_EXPORT.quota:
-      return "Le quota d'exports PDF de ce studio est épuisé pour la période en cours.";
+      return "Le quota d'exports de ce studio est épuisé pour la période en cours.";
     case ERREURS_EXPORT.devisPerime:
       return "Cette demande n'est plus valable : préparez le dossier à nouveau.";
     case ERREURS_EXPORT.cleEnConflit:
@@ -167,9 +204,9 @@ export function pages(nombre: number): string {
   return `${nombre} ${nombre > 1 ? "pages" : "page"}`;
 }
 
-/** « 1 export PDF », « 3 exports PDF ». */
-export function exportsPdf(nombre: number): string {
-  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "exports PDF" : "export PDF"}`;
+/** « 1 export », « 3 exports » : PDF et Word puisent dans le même quota. */
+export function nombreExports(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "exports" : "export"}`;
 }
 
 const NOM_MAX = 60;
@@ -179,7 +216,7 @@ const NOM_MAX = 60;
  * accent, chiffres et tirets seulement. Un en-tête HTTP n'admet pas
  * davantage, et un titre peut contenir n'importe quoi.
  */
-export function nomDeFichier(titre: string): string {
+export function nomDeFichier(titre: string, format: FormatExport = "pdf"): string {
   const base = titre
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -188,7 +225,7 @@ export function nomDeFichier(titre: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, NOM_MAX)
     .replace(/-+$/, "");
-  return `dossier-${base || "projet"}.pdf`;
+  return `dossier-${base || "projet"}.${FORMATS_EXPORT[format].extension}`;
 }
 
 /**
@@ -196,7 +233,7 @@ export function nomDeFichier(titre: string): string {
  * à l'ASCII, que tout navigateur comprend ; l'autre, encodé selon la RFC
  * 5987, qui garde les lettres du titre — ɛ, ɔ, ŋ comprises.
  */
-export function enTeteDeTelechargement(titre: string): string {
+export function enTeteDeTelechargement(titre: string, format: FormatExport = "pdf"): string {
   const lisible = titre
     // Ce qu'un nom de fichier n'admet pas, sous Windows comme ailleurs.
     .replace(/[\u0000-\u001f\u007f<>:"/\\|?*]+/g, " ")
@@ -204,11 +241,12 @@ export function enTeteDeTelechargement(titre: string): string {
     .trim()
     .slice(0, 100)
     .trim();
-  const encode = encodeURIComponent(`Dossier - ${lisible || "Projet"}.pdf`).replace(
+  const extension = FORMATS_EXPORT[format].extension;
+  const encode = encodeURIComponent(`Dossier - ${lisible || "Projet"}.${extension}`).replace(
     /['()*!]/g,
     (caractere) => `%${caractere.charCodeAt(0).toString(16).toUpperCase()}`,
   );
-  return `attachment; filename="${nomDeFichier(titre)}"; filename*=UTF-8''${encode}`;
+  return `attachment; filename="${nomDeFichier(titre, format)}"; filename*=UTF-8''${encode}`;
 }
 
 /** « 2 octobre 2026 » ; le premier du mois s'écrit « 1er », ce que `Intl` ne fait pas. */
@@ -218,9 +256,10 @@ export function premierDuMois(date: string): string {
 
 /**
  * Lit un fichier tel que l'API le rend : un `bytea` écrit en hexadécimal,
- * précédé de `\x`. Nul s'il n'a pas cette forme, ou n'est pas un PDF.
+ * précédé de `\x`. Nul s'il n'a pas cette forme, ou ne présente pas la
+ * signature du format attendu.
  */
-export function lireFichier(valeur: unknown): Uint8Array | null {
+export function lireFichier(valeur: unknown, format: FormatExport = "pdf"): Uint8Array | null {
   if (typeof valeur !== "string" || !/^\\x(?:[0-9a-f]{2})+$/i.test(valeur)) {
     return null;
   }
@@ -228,7 +267,5 @@ export function lireFichier(valeur: unknown): Uint8Array | null {
   for (let i = 0; i < octets.length; i += 1) {
     octets[i] = Number.parseInt(valeur.slice(2 + i * 2, 4 + i * 2), 16);
   }
-  // « %PDF- »
-  const signature = [0x25, 0x50, 0x44, 0x46, 0x2d];
-  return signature.every((octet, i) => octets[i] === octet) ? octets : null;
+  return FORMATS_EXPORT[format].signature.every((octet, i) => octets[i] === octet) ? octets : null;
 }

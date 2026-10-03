@@ -435,12 +435,13 @@ recommandations (« à améliorer ») sont configurables et traçables.
 
 ### Exports et stockage
 
-- Export PDF du dossier : livré (lots M1 et M2). Sections à la carte, documents
-  finalisés seulement, sans image ; fabriqué par le worker (`pdf_export`), rangé en
-  base (`project_exports`, 5 Mo, 30 jours), lisible du porteur, des éditeurs et des
-  administrateurs. Ne pas créer un second chemin d’export : étendre celui-ci.
-- Non livrés : DOCX (documents modifiables), ZIP du projet (textes en DOCX, budget
-  et plan de financement en XLSX).
+- Export du dossier en PDF (lots M1 et M2) et en Word (lot M3) : livré. Sections à
+  la carte, documents finalisés seulement, sans image ; fabriqué par le worker
+  (`pdf_export`, `docx_export` : le format est l’action), rangé en base
+  (`project_exports`, 5 Mo, 30 jours), lisible du porteur, des éditeurs et des
+  administrateurs ; un seul quota d’exports pour les deux formats. Ne pas créer un
+  second chemin d’export : étendre celui-ci.
+- Non livré : ZIP du projet (textes en DOCX, budget et plan de financement en XLSX).
 - Stockage privé et limite de stockage par plan : livrés. Les photos de profil sont
   hors quota de studio (2 Mo, une par compte).
 - Contrôler les octets avant/à la réception, type/taille réels et expiration
@@ -478,7 +479,7 @@ Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 | 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                    |
 | 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                                |
 | 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)       |
-| 11    | Exports PDF/DOCX/ZIP                                | PDF livré (lots M1 et M2) ; DOCX et ZIP à faire                                |
+| 11    | Exports PDF/DOCX/ZIP                                | PDF et DOCX livrés (lots M1, M2, M3) ; ZIP à faire                             |
 | 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                                 |
 
 Les onze agents restent dans le plan V1. Leur activation est progressive, avec

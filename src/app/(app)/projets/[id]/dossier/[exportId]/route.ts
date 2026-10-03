@@ -1,6 +1,11 @@
 import { type NextRequest } from "next/server";
 
-import { enTeteDeTelechargement, lireFichier } from "@/lib/exports";
+import {
+  enTeteDeTelechargement,
+  estFormatExport,
+  FORMATS_EXPORT,
+  lireFichier,
+} from "@/lib/exports";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,7 +21,7 @@ function introuvable(): Response {
 }
 
 /**
- * Téléchargement d'un dossier PDF.
+ * Téléchargement d'un dossier, en PDF ou en Word.
  *
  * Le fichier est rangé en base, pas dans le stockage : il ne se sert donc
  * pas par lien signé, mais par cette route, lue avec la session de
@@ -41,7 +46,7 @@ export async function GET(
   const [{ data: dossier }, { data: projet }] = await Promise.all([
     supabase
       .from("project_exports")
-      .select("file")
+      .select("file, format")
       .eq("id", exportId)
       .eq("project_id", id)
       .gt("expires_at", new Date().toISOString())
@@ -49,20 +54,24 @@ export async function GET(
     supabase.from("projects").select("title").eq("id", id).maybeSingle(),
   ]);
 
-  const fichier = lireFichier(dossier?.file);
-  if (!fichier || !projet) {
+  // Le format vient de la base, jamais de l'adresse : le fichier est servi
+  // sous le type que ses propres octets confirment.
+  const format = estFormatExport(dossier?.format) ? dossier.format : null;
+  const fichier = format ? lireFichier(dossier?.file, format) : null;
+  if (!format || !fichier || !projet) {
     return introuvable();
   }
+  const type = FORMATS_EXPORT[format].type;
 
   // En flux : une réponse d'un bloc est plafonnée par l'hébergeur en deçà de
   // ce que la base admet pour un export.
-  const flux = new Blob([fichier as BlobPart], { type: "application/pdf" }).stream();
+  const flux = new Blob([fichier as BlobPart], { type }).stream();
 
   return new Response(flux, {
     headers: {
-      "content-type": "application/pdf",
+      "content-type": type,
       "content-length": String(fichier.byteLength),
-      "content-disposition": enTeteDeTelechargement(projet.title),
+      "content-disposition": enTeteDeTelechargement(projet.title, format),
       // Un dossier peut contenir le budget : il ne se garde dans aucun cache.
       "cache-control": "private, no-store",
       "x-content-type-options": "nosniff",

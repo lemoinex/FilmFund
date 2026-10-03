@@ -25,6 +25,7 @@ réels).
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
 | M2  | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
+| M3  | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé localement | —              |
 | N   | Paiements                                                                                                                      | bloqué            | Décision 6, F  |
 | O   | Interface des quotas et incidents                                                                                              | bloqué            | F à N          |
 | P   | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous           |
@@ -134,6 +135,12 @@ finalisés y entrent ; le PDF est fabriqué par le worker, jamais par le navigat
 d'image dans la première version. Le fichier est rangé en base (5 Mo au plus, 30 jours),
 lisible du porteur, des éditeurs et des administrateurs. Lot M découpé en M1 (base et worker)
 et M2 (écran). Exploitation : `docs/worker.md`.
+
+Exports Word, décidés le 3 octobre 2026 (lot M3) : le même dossier, composé sur le même
+écran, sort au choix en PDF ou en Word ; un export Word consomme la même unité d'export
+qu'un PDF, sur le même quota (« exports par mois, PDF ou Word ») ; le fichier Word est
+fabriqué par le worker avec le paquet `docx`. Le format est l'action de la tâche
+(`pdf_export`, `docx_export`) ; un export identique ne se retrouve que dans son format.
 
 Profil, décidé le 2 octobre 2026 : lot Q découpé en Q1 (champs professionnels et page) et Q2
 (photo). Prénom, nom, pays, ville, profession et type ne sont lisibles que du titulaire et
