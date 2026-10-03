@@ -20,14 +20,19 @@ describe("Catalogue public", () => {
       ["gratuit", "pro", "studio"],
     );
 
-    const { data: versions } = await clientAnonyme()
-      .from("plan_versions")
-      .select("plan_code, version_number");
+    // Plan par plan, sa seule dernière version : lire toute la table pour y
+    // chercher un maximum dépendrait du nombre de versions accumulées, que
+    // l'API ne rend que par 1 000 lignes au plus (max_rows).
     for (const carte of offre) {
-      const derniere = Math.max(
-        ...versions.filter((v) => v.plan_code === carte.code).map((v) => v.version_number),
-      );
-      assert.equal(carte.version.version_number, derniere, `plan ${carte.code}`);
+      const { data: derniere, error } = await clientAnonyme()
+        .from("plan_versions")
+        .select("version_number")
+        .eq("plan_code", carte.code)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .single();
+      assert.ifError(error);
+      assert.equal(carte.version.version_number, derniere.version_number, `plan ${carte.code}`);
     }
   });
 
@@ -70,21 +75,29 @@ describe("Catalogue public", () => {
   it("un visiteur lit le barème, sans son auteur, et n'en publie aucune version", async () => {
     const visiteur = clientAnonyme();
 
-    const { data: bareme, error } = await visiteur
-      .from("text_unit_rate_versions")
-      .select(
-        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene, published_at",
-      )
-      .order("version_number");
+    // Une version à la fois, la première puis la dernière : la table entière
+    // ne tiendrait plus dans une réponse au-delà de 1 000 versions (max_rows).
+    const version = (derniere) =>
+      visiteur
+        .from("text_unit_rate_versions")
+        .select(
+          "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene, published_at",
+        )
+        .order("version_number", { ascending: !derniere })
+        .limit(1)
+        .single();
+
+    const { data: premiere, error } = await version(false);
     assert.ifError(error);
-    assert.ok(bareme.length >= 1);
-    assert.equal(bareme[0].treatment, 8, "valeur de mise en service");
+    assert.equal(premiere.treatment, 8, "valeur de mise en service");
 
     const { error: auteur } = await visiteur.from("text_unit_rate_versions").select("published_by");
     assert.ok(auteur, "l'auteur d'une version doit rester fermé");
 
     // La vitrine présente la dernière version publiée.
-    const poids = { ...bareme.at(-1) };
+    const { data: courante, error: lecture } = await version(true);
+    assert.ifError(lecture);
+    const poids = { ...courante };
     delete poids.version_number;
     delete poids.published_at;
     assert.deepEqual(await lireBareme(URL, PUBLISHABLE_KEY), poids);

@@ -214,14 +214,55 @@ export async function ouvrirBaseDuWorker() {
   }
 
   const { ouvrirBase } = await import("../worker/src/base.ts");
-  return ouvrirBase({
-    hote: "127.0.0.1",
-    port: Number(process.env.SUPABASE_DB_PORT ?? 54322),
-    base: "postgres",
-    utilisateur: "filmfund_worker",
-    motDePasse: MOT_DE_PASSE_WORKER_LOCAL,
-    tls: false,
-  });
+  return attendreLesProlongations(
+    ouvrirBase({
+      hote: "127.0.0.1",
+      port: Number(process.env.SUPABASE_DB_PORT ?? 54322),
+      base: "postgres",
+      utilisateur: "filmfund_worker",
+      motDePasse: MOT_DE_PASSE_WORKER_LOCAL,
+      tls: false,
+    }),
+  );
+}
+
+/**
+ * Fait attendre toute réclamation tant qu'une prolongation de bail est en vol.
+ *
+ * `traiterUnTravail` rend la main sans attendre la prolongation partie pendant
+ * qu'il concluait l'essai. Cette prolongation tardive ne prolonge rien, mais
+ * verrouille un instant la ligne de la tâche ; `reclamer_travail`, qui saute
+ * les lignes verrouillées, ne la voit alors pas. En production, la boucle
+ * reprend la tâche à la scrutation suivante, cinq secondes plus tard. Les
+ * suites, elles, enchaînent deux appels et attendent la tâche au second : sur
+ * une machine chargée, elles échouaient pour cette seule raison.
+ *
+ * Ce comportement de la boucle n'est donc plus visible des tests : c'est
+ * voulu. Il ne perd aucune tâche, et se lit ici.
+ */
+function attendreLesProlongations(base) {
+  const enVol = new Set();
+  const requete = base.query.bind(base);
+
+  base.query = (texte, ...reste) => {
+    const sql = typeof texte === "string" ? texte : "";
+    if (sql.includes("public.prolonger_bail(")) {
+      const prolongation = requete(texte, ...reste);
+      // Retombée, qu'elle ait abouti ou non : elle ne retient plus rien.
+      const suivi = prolongation.then(
+        () => enVol.delete(suivi),
+        () => enVol.delete(suivi),
+      );
+      enVol.add(suivi);
+      return prolongation;
+    }
+    if (sql.includes("public.reclamer_travail(")) {
+      return Promise.all(enVol).then(() => requete(texte, ...reste));
+    }
+    return requete(texte, ...reste);
+  };
+
+  return base;
 }
 
 /** Devis accepté : renvoie la tâche née de la réservation. */
