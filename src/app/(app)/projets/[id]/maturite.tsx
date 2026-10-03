@@ -1,11 +1,31 @@
 import Link from "next/link";
 
 import { BarreAvancement } from "@/components/ui/avancement";
-import { calculerMaturite, lireFaits, lirePonderations, type Maturite } from "@/lib/maturite";
+import {
+  calculerMaturite,
+  LIMITE_SCORES_LISTE,
+  lireFaits,
+  lirePonderations,
+  type Maturite,
+} from "@/lib/maturite";
 import { createClient } from "@/lib/supabase/server";
+
+type ClientServeur = Awaited<ReturnType<typeof createClient>>;
 
 /** Ce que le score mesure : dit partout où il paraît, pour qu'il ne soit pas pris pour un avis. */
 const PORTEE = "Ce score mesure ce qui est renseigné dans le projet, pas la qualité de l'écriture.";
+
+/** La dernière version publiée des pondérations : celle qui s'applique. */
+function ponderationsEnVigueur(supabase: ClientServeur) {
+  return supabase
+    .from("readiness_weight_versions")
+    .select(
+      "version_number, concept, narrative, characters, artistic_vision, feasibility, budget, financing, market, dossier",
+    )
+    .order("version_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+}
 
 type Chargement =
   /** Le score tient compte du budget : il suit sa règle de lecture. */
@@ -26,14 +46,7 @@ async function chargerMaturite(projetId: string): Promise<Chargement> {
   const [{ data: autorise }, { data: faits }, { data: ponderations }] = await Promise.all([
     supabase.rpc("peut_gerer_budget", { p_project_id: projetId }),
     supabase.rpc("faits_maturite", { p_project_id: projetId }),
-    supabase
-      .from("readiness_weight_versions")
-      .select(
-        "version_number, concept, narrative, characters, artistic_vision, feasibility, budget, financing, market, dossier",
-      )
-      .order("version_number", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    ponderationsEnVigueur(supabase),
   ]);
 
   if (autorise !== true) {
@@ -49,6 +62,63 @@ async function chargerMaturite(projetId: string): Promise<Chargement> {
     maturite: calculerMaturite(lus, version.poids),
     version: version.version,
   };
+}
+
+/**
+ * Scores de plusieurs projets, pour les listes : une lecture groupée au lieu
+ * de trois requêtes par carte.
+ *
+ * La base ne rend que les projets dont l'utilisateur gère le budget : les
+ * autres n'ont pas d'entrée, et leur carte n'affiche rien. Au-delà de
+ * `LIMITE_SCORES_LISTE`, les projets suivants restent sans score — il se lit
+ * toujours sur leur page.
+ */
+export async function chargerScores(projetIds: string[]): Promise<Map<string, number>> {
+  const scores = new Map<string, number>();
+  const demandes = projetIds.slice(0, LIMITE_SCORES_LISTE);
+  if (!demandes.length) {
+    return scores;
+  }
+
+  const supabase = await createClient();
+  const [{ data: lignes }, { data: ponderations }] = await Promise.all([
+    supabase.rpc("faits_maturite_projets", { p_project_ids: demandes }),
+    ponderationsEnVigueur(supabase),
+  ]);
+
+  const version = lirePonderations(ponderations);
+  if (!version) {
+    return scores;
+  }
+  for (const ligne of lignes ?? []) {
+    const faits = lireFaits(ligne.faits);
+    if (faits) {
+      scores.set(ligne.project_id, calculerMaturite(faits, version.poids).total);
+    }
+  }
+  return scores;
+}
+
+/**
+ * Score d'un projet dans une liste. Rien pour un projet sans score : le
+ * lecteur d'une équipe, ou un projet au-delà du plafond de la liste.
+ */
+export function EtiquetteMaturite({
+  score,
+  className,
+}: {
+  score: number | undefined;
+  className?: string;
+}) {
+  if (score === undefined) {
+    return null;
+  }
+  return (
+    <span className={className}>
+      Maturité <span aria-hidden="true">{score} / 100</span>
+      <span className="sr-only">{score} sur 100</span>
+    </span>
+  );
 }
 
 function nombreDeManques(maturite: Maturite): number {

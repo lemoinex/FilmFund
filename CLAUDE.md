@@ -427,8 +427,11 @@ recommandations (« à améliorer ») sont configurables et traçables.
   ajout seul) ; faits du projet par `faits_maturite()`, sous la RLS de
   l'appelant ; calcul dans `src/lib/maturite.ts`. Rien n'est stocké. Ne pas
   créer un second score : étendre celui-ci.
-- À faire (lot S2) : cartes de la liste des projets, écran de publication des
-  pondérations.
+- Score sur les listes et publication des pondérations : livrés (lot S2). Les
+  listes lisent les faits en lot par `faits_maturite_projets()` — cent projets
+  au plus, seuls ceux dont l'appelant gère le budget. L'administration publie
+  une version depuis « Score de maturité » (`/administration/ponderations`) ;
+  elle s'applique aussitôt à tous les projets.
 
 ### Budget, financement, calendrier
 
@@ -471,7 +474,8 @@ recommandations (« à améliorer ») sont configurables et traçables.
   Ne pas créer un second système de crédits.
 - Plans, prix, quotas et barème restent configurables par l’administration ;
   aucune utilisation IA illimitée implicite.
-- Admin livré : journal d’administration, plans et quotas.
+- Admin livré : journal d’administration, plans et quotas, pondérations du score
+  de maturité.
 - Admin prévu : utilisateurs (consulter, suspendre, rôles), opportunités (ajouter,
   modifier, supprimer, vérifier), statistiques anonymisées, fournisseurs/modèles/
   coûts/limites IA, abonnements.
@@ -486,7 +490,7 @@ Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 | 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                          |
 | 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                          |
 | 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                                  |
-| 3     | Assistant de création, score de maturité, dashboard | Dashboard, assistant (R1, R2) et score (S1) livrés ; lot S2 à faire            |
+| 3     | Assistant de création, score de maturité, dashboard | Dashboard, assistant (R1, R2) et score (S1, S2) livrés                         |
 | 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire                 |
 | 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                                  |
 | 6     | WEAVER                                              | Logline livrée (I1), recette en attente ; synopsis et note d’intention à faire |

@@ -4,9 +4,12 @@ import { redirect } from "next/navigation";
 
 import { ArrowRightIcon } from "@/components/icons";
 import { ROLES_PROJET } from "@/lib/equipes";
+import { LIMITE_SCORES_LISTE } from "@/lib/maturite";
 import { chargerMesProjets, type ResumeProjet } from "@/lib/mes-projets";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
+
+import { chargerScores, EtiquetteMaturite } from "./[id]/maturite";
 
 export const metadata: Metadata = {
   title: "Mes projets — filmfundAfrica",
@@ -28,6 +31,11 @@ export default async function ProjetsPage() {
   const { possedes, partages, autres } = await chargerMesProjets(supabase, user.id, {
     inclureAutres: true,
   });
+
+  // Dans l'ordre de la page : si le plafond coupe, ce sont les derniers
+  // projets affichés qui restent sans score.
+  const affiches = [...possedes, ...partages, ...autres];
+  const scores = await chargerScores(affiches.map((projet) => projet.id));
 
   return (
     <div className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
@@ -52,7 +60,7 @@ export default async function ProjetsPage() {
       </div>
 
       {possedes.length ? (
-        <ListeProjets projets={possedes} />
+        <ListeProjets projets={possedes} scores={scores} />
       ) : (
         <p className="border-navy-line text-light-muted mt-10 rounded-xl border border-dashed p-10 text-center text-sm">
           Vos projets apparaîtront ici.
@@ -67,7 +75,7 @@ export default async function ProjetsPage() {
           <p className="text-light-muted mt-2 text-sm leading-relaxed">
             Les projets dont vous faites partie de l&apos;équipe.
           </p>
-          <ListeProjets projets={partages} />
+          <ListeProjets projets={partages} scores={scores} />
         </section>
       ) : null}
 
@@ -80,14 +88,27 @@ export default async function ProjetsPage() {
             Visibles au titre de l&apos;administration : consultation et suppression, sans
             modification.
           </p>
-          <ListeProjets projets={autres} />
+          <ListeProjets projets={autres} scores={scores} />
         </section>
+      ) : null}
+
+      {affiches.length > LIMITE_SCORES_LISTE ? (
+        <p className="text-light-muted mt-8 text-xs leading-relaxed">
+          La maturité s&apos;affiche pour les {LIMITE_SCORES_LISTE} premiers projets de cette page.
+          Elle se lit toujours sur la page de chaque projet.
+        </p>
       ) : null}
     </div>
   );
 }
 
-function ListeProjets({ projets }: { projets: ResumeProjet[] }) {
+function ListeProjets({
+  projets,
+  scores,
+}: {
+  projets: ResumeProjet[];
+  scores: Map<string, number>;
+}) {
   return (
     <ul className="border-navy-line mt-8 divide-y divide-[var(--navy-line)] rounded-xl border">
       {projets.map((projet) => (
@@ -113,6 +134,10 @@ function ListeProjets({ projets }: { projets: ResumeProjet[] }) {
                   {ROLES_PROJET[projet.role]}
                 </span>
               ) : null}
+              <EtiquetteMaturite
+                score={scores.get(projet.id)}
+                className="border-gold/40 text-light rounded border px-2.5 py-1 tabular-nums"
+              />
               <span className="bg-navy-soft rounded px-2.5 py-1">{FORMATS[projet.format]}</span>
               <span className="text-gold bg-gold/10 rounded px-2.5 py-1">
                 {ETAPES[projet.stage]}

@@ -1,6 +1,7 @@
 /**
- * Score de maturité (lot S1) : les faits d'un projet selon qui les demande,
- * et les pondérations versionnées, contre la base locale.
+ * Score de maturité (lots S1 et S2) : les faits d'un projet selon qui les
+ * demande, seul ou en lot, et les pondérations versionnées, contre la base
+ * locale.
  *
  * Le calcul lui-même a sa propre suite, sans base. Ici se vérifie ce que la
  * RLS laisse lire : le score tient compte du budget et des financements, que
@@ -9,7 +10,12 @@
 import { strict as assert } from "node:assert";
 import { before, describe, it } from "node:test";
 
-import { calculerMaturite, lireFaits, lirePonderations } from "../src/lib/maturite.ts";
+import {
+  calculerMaturite,
+  LIMITE_SCORES_LISTE,
+  lireFaits,
+  lirePonderations,
+} from "../src/lib/maturite.ts";
 import {
   clientAnonyme,
   creerCompte,
@@ -235,6 +241,84 @@ describe("Score de maturité : faits d'un projet", () => {
       .eq("id", projet.id);
     assert.ifError(retour);
     assert.equal((await faitsPour(porteur, projet.id)).theme, false);
+  });
+
+  // Lot S2 : les listes de projets lisent les faits de plusieurs projets en
+  // une fois. La base n'y rend que ceux dont l'appelant gère le budget.
+  describe("en lot, pour les listes", () => {
+    let projetVoisin;
+
+    const enLot = async (compte, ids) => {
+      const { data, error } = await compte.client.rpc("faits_maturite_projets", {
+        p_project_ids: ids,
+      });
+      assert.ifError(error);
+      return data;
+    };
+
+    before(async () => {
+      // Au plan Gratuit, un studio n'a qu'un projet : le second est celui
+      // d'un autre compte, étranger à l'équipe du premier.
+      projetVoisin = await creerProjet(etranger, "Le Projet voisin");
+    });
+
+    it("le porteur et l'éditeur n'obtiennent que les projets dont ils gèrent le budget", async () => {
+      const demandes = [projet.id, projetVoisin.id, crypto.randomUUID()];
+      assert.deepEqual(await enLot(porteur, demandes), [{ project_id: projet.id, faits: FAITS }]);
+      assert.deepEqual(await enLot(editeur, demandes), [{ project_id: projet.id, faits: FAITS }]);
+    });
+
+    it("un lecteur n'obtient aucune ligne pour le projet qu'il lit : sa carte reste sans score", async () => {
+      assert.deepEqual(await enLot(lecteur, [projet.id, projetVoisin.id]), []);
+    });
+
+    it("un compte étranger n'obtient que son propre projet", async () => {
+      const lignes = await enLot(etranger, [projet.id, projetVoisin.id]);
+      assert.deepEqual(
+        lignes.map((ligne) => ligne.project_id),
+        [projetVoisin.id],
+      );
+      assert.ok(lireFaits(lignes[0].faits), "des faits lisibles par l'application");
+    });
+
+    it("un administrateur hors des équipes obtient tous les projets demandés", async () => {
+      const lignes = await enLot(administrateur, [projet.id, projetVoisin.id]);
+      assert.deepEqual(
+        lignes.map((ligne) => ligne.project_id).sort(),
+        [projet.id, projetVoisin.id].sort(),
+      );
+      assert.deepEqual(lignes.find((ligne) => ligne.project_id === projet.id).faits, FAITS);
+    });
+
+    it("un visiteur n'appelle pas la fonction", async () => {
+      const { data, error } = await clientAnonyme().rpc("faits_maturite_projets", {
+        p_project_ids: [projet.id],
+      });
+      assert.ok(error, "l'appel doit être refusé");
+      assert.equal(data, null);
+    });
+
+    it("cent projets au plus par lecture, comme le plafond de l'application", async () => {
+      const identifiants = (nombre) => Array.from({ length: nombre }, () => crypto.randomUUID());
+
+      assert.equal(LIMITE_SCORES_LISTE, 100);
+      assert.deepEqual(await enLot(porteur, [...identifiants(99), projet.id]), [
+        { project_id: projet.id, faits: FAITS },
+      ]);
+      assert.deepEqual(await enLot(porteur, []), []);
+
+      const { data, error } = await porteur.client.rpc("faits_maturite_projets", {
+        p_project_ids: [...identifiants(100), projet.id],
+      });
+      assert.equal(error?.code, "22023", "au-delà de cent, la lecture est refusée");
+      assert.equal(data, null);
+    });
+
+    it("le score d'une liste est celui de la page du projet", async () => {
+      const version = lirePonderations(await derniereVersion(porteur));
+      const [ligne] = await enLot(porteur, [projet.id]);
+      assert.equal(calculerMaturite(lireFaits(ligne.faits), version.poids).total, 76);
+    });
   });
 });
 

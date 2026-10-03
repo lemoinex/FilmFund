@@ -28,7 +28,7 @@ import { ETAPES, FORMATS } from "@/lib/projets";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
-import { ScoreMaturite } from "../projets/[id]/maturite";
+import { chargerScores, EtiquetteMaturite, ScoreMaturite } from "../projets/[id]/maturite";
 import { InvitationsRecues } from "./invitations";
 
 export const metadata: Metadata = {
@@ -160,6 +160,7 @@ async function ProjetEnCours({
     { data: etapes },
     { data: budgetAutorise },
     { data: peutEditer },
+    scores,
   ] = await Promise.all([
     supabase.from("projects").select("synopsis").eq("id", projet.id).maybeSingle(),
     supabase
@@ -181,6 +182,8 @@ async function ProjetEnCours({
       .eq("project_id", projet.id),
     supabase.rpc("peut_gerer_budget", { p_project_id: projet.id }),
     supabase.rpc("peut_editer_contenu", { p_project_id: projet.id }),
+    // Scores des autres projets récents ; le projet mis en avant a son encart.
+    chargerScores(autres.map((autre) => autre.id)),
   ]);
 
   const synopsis = detail?.synopsis?.trim() ?? "";
@@ -399,6 +402,7 @@ async function ProjetEnCours({
                 >
                   <span className="min-w-0 truncate font-serif">{autre.title}</span>
                   <span className="text-secondary flex shrink-0 flex-wrap gap-2 text-xs">
+                    <EtiquetteMaturite score={scores.get(autre.id)} className="tabular-nums" />
                     {autre.role ? <span>{ROLES_PROJET[autre.role]}</span> : null}
                     <span>{FORMATS[autre.format]}</span>
                     <span className="text-gold">{ETAPES[autre.stage]}</span>
