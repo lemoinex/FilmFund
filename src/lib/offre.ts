@@ -161,14 +161,20 @@ function clientPublic(url: string, clePubliable: string) {
   });
 }
 
+/** Le barème en vigueur, avec le numéro de la version dont il vient. */
+export type BaremeEnVigueur = BaremePublie & { version_number: number };
+
 /**
  * Dernière version publiée du barème, lue sans session. Null si la base est
  * injoignable : la vitrine l'explique alors sans chiffres.
+ *
+ * Le numéro de version accompagne les valeurs : deux versions peuvent porter
+ * les mêmes, et lui seul dit laquelle a été lue.
  */
 export async function lireBareme(
   url: string | undefined,
   clePubliable: string | undefined,
-): Promise<BaremePublie | null> {
+): Promise<BaremeEnVigueur | null> {
   try {
     if (!url || !clePubliable) {
       return null;
@@ -176,7 +182,7 @@ export async function lireBareme(
     const { data, error } = await clientPublic(url, clePubliable)
       .from("text_unit_rate_versions")
       .select(
-        "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
+        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
       )
       .order("version_number", { ascending: false })
       .limit(1)
@@ -192,6 +198,10 @@ export async function lireBareme(
  * Lit l'offre en base, sans session ni cookie : le catalogue est public.
  * Renvoie null si la base est injoignable ou mal configurée — la vitrine
  * présente alors l'offre plus tard, plutôt que de ne pas s'afficher.
+ *
+ * Chaque plan arrive avec sa seule dernière version : rapatrier toutes les
+ * versions pour y chercher la plus récente grossirait à chaque publication,
+ * et l'API tronque une réponse au-delà de 1 000 lignes.
  */
 export async function lireOffre(
   url: string | undefined,
@@ -201,21 +211,21 @@ export async function lireOffre(
     if (!url || !clePubliable) {
       return null;
     }
-    const supabase = clientPublic(url, clePubliable);
+    const { data, error } = await clientPublic(url, clePubliable)
+      .from("plans")
+      .select(
+        "code, name, position, plan_versions(plan_code, version_number, max_projects, max_members, storage_mb, text_units_per_month, images_per_month, pdf_exports_per_month, price_xaf_per_month)",
+      )
+      .order("version_number", { referencedTable: "plan_versions", ascending: false })
+      .limit(1, { referencedTable: "plan_versions" });
 
-    const [plans, versions] = await Promise.all([
-      supabase.from("plans").select("code, name, position"),
-      supabase
-        .from("plan_versions")
-        .select(
-          "plan_code, version_number, max_projects, max_members, storage_mb, text_units_per_month, images_per_month, pdf_exports_per_month, price_xaf_per_month",
-        ),
-    ]);
-
-    if (plans.error || versions.error) {
+    if (error) {
       return null;
     }
-    return composerOffre(plans.data, versions.data);
+    return composerOffre(
+      data.map(({ code, name, position }) => ({ code, name, position })),
+      data.flatMap((plan) => plan.plan_versions),
+    );
   } catch {
     return null;
   }

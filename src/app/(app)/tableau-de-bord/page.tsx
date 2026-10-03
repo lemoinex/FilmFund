@@ -12,7 +12,6 @@ import {
 } from "@/components/icons";
 import { BarreAvancement } from "@/components/ui/avancement";
 import { Couverture } from "@/components/ui/couverture";
-import { Onglets } from "@/components/ui/onglets";
 import { compterMots, libelleMots, STATUTS_DOCUMENT } from "@/lib/documents";
 import { ROLES_PROJET } from "@/lib/equipes";
 import { chargerMesProjets, type ResumeProjet } from "@/lib/mes-projets";
@@ -29,6 +28,7 @@ import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
 import { chargerScores, EtiquetteMaturite, ScoreMaturite } from "../projets/[id]/maturite";
+import { OngletsProjet } from "../projets/[id]/onglets";
 import { InvitationsRecues } from "./invitations";
 
 export const metadata: Metadata = {
@@ -243,27 +243,12 @@ async function ProjetEnCours({
         ) : null}
       </section>
 
-      <Onglets
-        className="mt-8"
-        libelle="Rubriques du projet"
-        actif="synthese"
-        onglets={[
-          { cle: "synthese", libelle: "Synthèse", href: "/tableau-de-bord" },
-          { cle: "documents", libelle: "Documents", href: `/projets/${projet.id}/documents` },
-          { cle: "storyboard", libelle: "Storyboard", href: `/projets/${projet.id}/storyboard` },
-          { cle: "planning", libelle: "Planning", href: `/projets/${projet.id}/planning` },
-          ...(budgetAutorise
-            ? [
-                { cle: "budget", libelle: "Budget", href: `/projets/${projet.id}/budget` },
-                {
-                  cle: "financements",
-                  libelle: "Financements",
-                  href: `/projets/${projet.id}/financements`,
-                },
-              ]
-            : []),
-          { cle: "equipe", libelle: "Équipe", href: `/projets/${projet.id}#equipe` },
-        ]}
+      {/* Les rubriques de la page du projet ; ici, la synthèse est le tableau de bord. */}
+      <OngletsProjet
+        projetId={projet.id}
+        actif="projet"
+        budget={budgetAutorise === true}
+        synthese="/tableau-de-bord"
       />
 
       <section

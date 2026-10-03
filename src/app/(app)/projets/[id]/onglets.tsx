@@ -1,4 +1,5 @@
-import { Onglets, type Onglet } from "@/components/ui/onglets";
+import { Onglets } from "@/components/ui/onglets";
+import { ongletsDuProjet } from "@/lib/onglets-projet";
 
 /**
  * Rubriques d'un projet.
@@ -6,11 +7,15 @@ import { Onglets, type Onglet } from "@/components/ui/onglets";
  * Les onglets Budget, Financements et Dossier n'apparaissent qu'à qui
  * peut les ouvrir : les proposer à un lecteur ne mènerait qu'à une page
  * introuvable. Équipe renvoie à la section de la page du projet.
+ *
+ * `synthese` : adresse du premier onglet quand ce n'est pas la page du
+ * projet — le tableau de bord, qui est la synthèse du projet mis en avant.
  */
 export function OngletsProjet({
   projetId,
   actif,
   budget,
+  synthese,
 }: {
   projetId: string;
   actif:
@@ -23,28 +28,14 @@ export function OngletsProjet({
     | "financements"
     | "dossier";
   budget: boolean;
+  synthese?: string;
 }) {
-  const onglets: Onglet[] = [
-    { cle: "projet", libelle: "Synthèse", href: `/projets/${projetId}` },
-    { cle: "fiche", libelle: "Fiche", href: `/projets/${projetId}/fiche` },
-    { cle: "documents", libelle: "Documents", href: `/projets/${projetId}/documents` },
-    { cle: "storyboard", libelle: "Storyboard", href: `/projets/${projetId}/storyboard` },
-    { cle: "planning", libelle: "Planning", href: `/projets/${projetId}/planning` },
-    // Budget et financements : mêmes droits, montants confidentiels.
-    ...(budget
-      ? [
-          { cle: "budget", libelle: "Budget", href: `/projets/${projetId}/budget` },
-          {
-            cle: "financements",
-            libelle: "Financements",
-            href: `/projets/${projetId}/financements`,
-          },
-          // Un dossier peut contenir le budget : il en suit les droits.
-          { cle: "dossier", libelle: "Dossier", href: `/projets/${projetId}/dossier` },
-        ]
-      : []),
-    { cle: "equipe", libelle: "Équipe", href: `/projets/${projetId}#equipe` },
-  ];
-
-  return <Onglets onglets={onglets} actif={actif} libelle="Rubriques du projet" className="mt-8" />;
+  return (
+    <Onglets
+      onglets={ongletsDuProjet(projetId, { budget, synthese })}
+      actif={actif}
+      libelle="Rubriques du projet"
+      className="mt-8"
+    />
+  );
 }
