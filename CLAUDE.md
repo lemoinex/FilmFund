@@ -373,13 +373,16 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 
 - CRUD de projet : livré. Un projet appartient à son porteur (`owner_id`) et à un
   studio (`studio_id`), pas à un `user_id`.
-- Existant : titre, format (`format`), étape (`stage`), logline, synopsis, couverture.
-- Prévu : genre, pays, langue, durée, synopsis court/long, thème, audience.
+- Existant : titre, format (`format`), étape (`stage`), logline, synopsis, couverture ;
+  fiche (lot R1) : genre, pays de production (`countries`, le premier est le
+  principal), langues, durée, synopsis court, thème, enjeux, vision artistique,
+  objectifs, public cible ; personnages (`project_characters`, modèle du storyboard).
 - Formats : documentaire, long métrage, court métrage, série, web-série, animation.
 - Étapes : idée, développement, écriture, préproduction, production,
   postproduction, terminé.
-- Assistant, non livré : informations générales, concept, personnages, enjeux,
-  vision, objectifs, public cible, puis création du projet.
+- Assistant : base livrée (lot R1), écrans à faire (lot R2) — informations
+  générales, concept, personnages, enjeux, vision, objectifs, public cible. Le
+  projet naît à la première étape ; chaque étape suivante complète sa fiche.
 
 ### Documents et édition
 

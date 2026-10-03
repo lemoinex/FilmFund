@@ -530,6 +530,57 @@ export type Database = {
           },
         ];
       };
+      project_characters: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          id: string;
+          name: string;
+          position: number;
+          project_id: string;
+          role: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          name: string;
+          position?: number;
+          project_id: string;
+          role?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          name?: string;
+          position?: number;
+          project_id?: string;
+          role?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_characters_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_characters_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_document_versions: {
         Row: {
           content: string;
@@ -921,41 +972,71 @@ export type Database = {
       };
       projects: {
         Row: {
+          artistic_vision: string;
+          audience: string;
+          countries: string[];
           cover_path: string | null;
           created_at: string;
+          duration_minutes: number | null;
           format: Database["public"]["Enums"]["project_format"];
+          genre: string | null;
+          goals: string;
           id: string;
+          languages: string;
           logline: string;
           owner_id: string;
+          short_synopsis: string;
           stage: Database["public"]["Enums"]["project_stage"];
+          stakes: string;
           studio_id: string;
           synopsis: string;
+          theme: string;
           title: string;
           updated_at: string;
         };
         Insert: {
+          artistic_vision?: string;
+          audience?: string;
+          countries?: string[];
           cover_path?: string | null;
           created_at?: string;
+          duration_minutes?: number | null;
           format?: Database["public"]["Enums"]["project_format"];
+          genre?: string | null;
+          goals?: string;
           id?: string;
+          languages?: string;
           logline?: string;
           owner_id: string;
+          short_synopsis?: string;
           stage?: Database["public"]["Enums"]["project_stage"];
+          stakes?: string;
           studio_id?: string;
           synopsis?: string;
+          theme?: string;
           title: string;
           updated_at?: string;
         };
         Update: {
+          artistic_vision?: string;
+          audience?: string;
+          countries?: string[];
           cover_path?: string | null;
           created_at?: string;
+          duration_minutes?: number | null;
           format?: Database["public"]["Enums"]["project_format"];
+          genre?: string | null;
+          goals?: string;
           id?: string;
+          languages?: string;
           logline?: string;
           owner_id?: string;
+          short_synopsis?: string;
           stage?: Database["public"]["Enums"]["project_stage"];
+          stakes?: string;
           studio_id?: string;
           synopsis?: string;
+          theme?: string;
           title?: string;
           updated_at?: string;
         };
