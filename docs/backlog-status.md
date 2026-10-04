@@ -569,32 +569,39 @@ puis le planning ; les financements restent au lot L, puisque proposer un organi
 montant de fonds serait inventer une source. Prix au barème : 6 unités texte pour un budget,
 40 lignes au plus par proposition.
 
-Le lot J3b-1 — base et worker des propositions de lignes de budget, sans écran — a été écrit,
-validé localement et fusionné par la PR 80 (`8d0805d`, fusion `f6421e5`, CI verte). **Il
-n'est pas en production.** Sa migration, `20261004160108_field_budget.sql`, n'a pas pu être
-poussée : la commande échouait dans le terminal d'où elle était lancée (« failed to
-initialise login role: TransportError »), ou partait d'un dossier qui ne contenait pas le
-fichier. Pendant un peu plus d'une heure, le code déployé a lu une colonne `budget_plan`
-absente : la vitrine a perdu les chiffres de son barème, et « Plans et quotas » ne pouvait
-plus publier de version. Aucune donnée n'a été touchée, et aucune demande de budget n'était
-possible, FIELD n'ayant pas d'écran.
+Le lot J3b-1 — base et worker des propositions de lignes de budget, sans écran — est écrit et
+validé localement (`8d0805d`). **Il n'est pas en production** : il y a été fusionné deux fois
+le 4 octobre 2026, et retiré deux fois, faute de sa migration
+`20261004160108_field_budget.sql`.
 
-La PR 81 (`a5e7fae`, fusion `6ca31b2`) a annulé la fusion : `main` est revenu exactement à
-`d94e029`, et la production a été relue saine à 18h22 UTC — worker à onze actions, vitrine
-avec ses chiffres, aucune erreur d'exécution.
+| Fusion           | Retrait          | Durée sans la migration | Ce qui a empêché la poussée                                                                         |
+| ---------------- | ---------------- | ----------------------- | --------------------------------------------------------------------------------------------------- |
+| PR 80, 17h11 UTC | PR 81, 18h22 UTC | 1 h 11                  | « TransportError » dans le terminal d'où elle partait, puis dossier sans le fichier                 |
+| PR 83, 18h50 UTC | PR 84, 19h36 UTC | 46 min                  | Poussée refusée à l'assistant par le garde-fou de son outil, après un essai à blanc pourtant réussi |
 
-Pour relivrer le lot, rien n'est à réécrire :
+Pendant ces deux intervalles, le code déployé lisait une colonne `budget_plan` absente : la
+vitrine a perdu les chiffres de son barème, et « Plans et quotas » ne pouvait plus publier de
+version. Aucune donnée n'a été touchée, et aucune demande de budget n'était possible, FIELD
+n'ayant pas d'écran. Après chaque retrait, la production a été relue saine : worker à onze
+actions, vitrine avec ses chiffres, aucune erreur d'exécution.
 
-1. obtenir un essai à blanc qui réussit (`npx supabase db push --dry-run`), depuis un dossier
-   qui contient le fichier de migration ;
-2. ouvrir une PR qui annule le commit `a5e7fae` — elle ramène le code, la migration, les
-   tests et la documentation du lot, dont le détail de la décision 9 ;
-3. fusionner, puis pousser la migration dans la minute.
+### Relivrer le lot : la migration d'abord
 
-Règle retenue de cet incident, après le même retard sur le lot J3a : **un lot qui porte une
-migration ne se fusionne qu'après un essai à blanc réussi, fait juste avant.** Une fusion
-déploie le code en une minute ; une migration qui ne suit pas laisse la production lire ce
-qui n'existe pas.
+Rien n'est à réécrire. Mais l'ordre change, parce que deux essais ont montré qu'un essai à
+blanc réussi ne garantit pas la poussée : **la migration part avant le code.** Elle est
+purement additive — une table, une colonne, des fonctions, des droits — et le code en
+production ne lit rien de ce qu'elle ajoute ; l'inverse n'est pas vrai.
+
+1. Depuis la branche de relivraison, qui contient le fichier, la personne qui a le droit de
+   pousser lance `npx supabase db push`, après un essai à blanc qui n'annonce que cette
+   migration.
+2. La migration est constatée dans la base de production : table, colonne, droits, fonctions.
+3. Seulement alors, la PR qui annule le commit `97b99c1` est fusionnée — elle ramène le code,
+   les tests et la documentation du lot.
+
+Règle retenue, qui vaut pour tout lot à venir : **un lot qui porte une migration additive
+pousse sa migration avant de fusionner son code**, et la poussée en production est faite par
+une personne, jamais supposée possible.
 
 Restent ensuite J3b-2 — l'écran des lignes proposées dans l'onglet Budget, avec la recette
 du lot — et J3b-3, les propositions de jalons de planning.
