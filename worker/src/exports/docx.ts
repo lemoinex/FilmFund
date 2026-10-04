@@ -254,8 +254,34 @@ function piedDePage(dossier: Dossier): Footer {
   });
 }
 
+/**
+ * Caractères que XML interdit : un seul dans un titre ou un texte — un saut de
+ * ligne souple collé depuis un traitement de texte, par exemple — et le
+ * fichier ne s'ouvre plus. La bibliothèque échappe les signes réservés, mais
+ * laisse passer ceux-là.
+ */
+const INTERDITS_XML =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+
+/** Le même contenu, ses textes débarrassés de ce que XML interdit. */
+function assainir<T>(valeur: T): T {
+  if (typeof valeur === "string") {
+    return valeur.replace(INTERDITS_XML, "") as T;
+  }
+  if (Array.isArray(valeur)) {
+    return valeur.map(assainir) as T;
+  }
+  if (typeof valeur === "object" && valeur !== null) {
+    return Object.fromEntries(
+      Object.entries(valeur).map(([cle, contenu]) => [cle, assainir(contenu)]),
+    ) as T;
+  }
+  return valeur;
+}
+
 /** Fabrique le fichier Word du dossier. */
-export async function rendreDocx(dossier: Dossier): Promise<Buffer> {
+export async function rendreDocx(contenu: Dossier): Promise<Buffer> {
+  const dossier = assainir(contenu);
   const document = new Document({
     title: dossier.titre,
     creator: "filmfundAfrica",
