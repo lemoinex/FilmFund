@@ -35,6 +35,7 @@ import {
   PROFIL_LOGLINE,
   PROFILS_WEAVER,
   type Profil,
+  type ProfilAppel,
 } from "../ia/profils.ts";
 
 /** Limite de la colonne `projects.logline`, tenue par le profil de la logline. */
@@ -170,15 +171,33 @@ export function lireTexte(texte: string, max: number): string | null {
   return /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(net) ? null : net;
 }
 
-/** Un livrable : son profil, la préparation de son message, la lecture de sa réponse. */
-type Livrable = {
-  profil: Profil;
+/**
+ * Un livrable : son profil, la préparation de son message, la lecture de sa
+ * réponse et son dépôt. Un texte ou une donnée structurée : ce qui en sort
+ * n'importe pas à la mécanique de l'appel.
+ */
+export type Livrable<T> = {
+  profil: ProfilAppel;
   /** Message pour le fournisseur ; null si le projet n'est plus accessible. */
   preparer: (attemptId: string) => Promise<string | null>;
-  lire: (texte: string, max: number) => string | null;
+  /** Null : la réponse n'est pas exploitable, rien ne sera déposé. */
+  lire: (texte: string) => T | null;
+  /** Dépose la proposition et conclut l'essai. */
+  deposer: (attemptId: string, valeur: T) => Promise<unknown>;
+  /** Motif inscrit sur la tâche quand la réponse n'est pas exploitable. */
+  inexploitable: string;
 };
 
-function creerExecuteur(base: Base, fournisseur: Fournisseur, livrable: Livrable): Executeur {
+/**
+ * Exécuteur d'un livrable : provision, appel, coût confirmé, dépôt. Les
+ * agents ne recopient pas cette mécanique — le coût d'un appel ne doit se
+ * compter qu'à un seul endroit.
+ */
+export function creerExecuteur<T>(
+  base: Base,
+  fournisseur: Fournisseur,
+  livrable: Livrable<T>,
+): Executeur {
   const { profil } = livrable;
   return async (travail, signal) => {
     const message = await livrable.preparer(travail.attemptId);
@@ -246,12 +265,12 @@ function creerExecuteur(base: Base, fournisseur: Fournisseur, livrable: Livrable
     if (reponse.arret !== "fin") {
       throw new EchecConnu("La réponse du fournisseur est incomplète.");
     }
-    const texte = livrable.lire(reponse.texte, profil.longueurMax);
-    if (!texte) {
-      throw new EchecConnu("La réponse du fournisseur n'est pas un texte exploitable.");
+    const valeur = livrable.lire(reponse.texte);
+    if (valeur === null) {
+      throw new EchecConnu(livrable.inexploitable);
     }
 
-    await livrerProposition(base, travail.attemptId, texte);
+    await livrable.deposer(travail.attemptId, valeur);
     return {};
   };
 }
@@ -269,9 +288,14 @@ export function executeursDeProfils(
   fournisseur: Fournisseur,
   profils: Readonly<Record<string, Profil>>,
 ): Readonly<Record<string, Executeur>> {
-  const livrable = (action: string, profil: Profil): Livrable =>
+  const commun = {
+    deposer: (attemptId: string, texte: string) => livrerProposition(base, attemptId, texte),
+    inexploitable: "La réponse du fournisseur n'est pas un texte exploitable.",
+  };
+  const livrable = (action: string, profil: Profil): Livrable<string> =>
     action === "logline"
       ? {
+          ...commun,
           profil,
           preparer: async (attemptId) => {
             const fiche = await lireContexte(base, attemptId);
@@ -280,12 +304,13 @@ export function executeursDeProfils(
           lire: (texte) => lireLogline(texte),
         }
       : {
+          ...commun,
           profil,
           preparer: async (attemptId) => {
             const contexte = await lireContexteRedaction(base, attemptId);
             return contexte ? composerContexte(contexte, profil.objectif ?? "") : null;
           },
-          lire: lireTexte,
+          lire: (texte) => lireTexte(texte, profil.longueurMax),
         };
 
   return Object.fromEntries(
