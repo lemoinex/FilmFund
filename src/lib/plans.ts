@@ -66,6 +66,7 @@ export const CHAMPS_BAREME = [
     min: 0,
     max: 1_000,
   },
+  { cle: "budget_plan", libelle: "Budget prévisionnel", unite: "unités", min: 0, max: 1_000 },
   { cle: "treatment", libelle: "Traitement", unite: "unités", min: 0, max: 1_000 },
   { cle: "bible", libelle: "Bible", unite: "unités", min: 0, max: 1_000 },
   {
