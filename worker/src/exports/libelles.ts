@@ -59,6 +59,7 @@ export const TYPES_DOCUMENT: Readonly<Record<string, string>> = {
   note_intention: "Note d'intention",
   synopsis: "Synopsis détaillé",
   traitement: "Traitement",
+  bible: "Bible de série",
   scenario: "Scénario",
   biographie: "Biographie et filmographie",
   lettre: "Lettre",

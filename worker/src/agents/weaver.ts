@@ -256,10 +256,18 @@ function creerExecuteur(base: Base, fournisseur: Fournisseur, livrable: Livrable
   };
 }
 
-/** Ce que WEAVER sait exécuter, avec ce fournisseur. */
-export function executeursWeaver(
+/**
+ * Exécuteurs d'un jeu de profils, avec ce fournisseur.
+ *
+ * La mécanique d'une rédaction ne dépend pas de l'agent : seule la logline
+ * s'écarte, par son contexte pauvre et sa lecture d'une phrase. Les agents
+ * qui écrivent du texte long — SCRIPT, et ceux qui suivront — reprennent
+ * cette fabrique plutôt que d'en recopier une.
+ */
+export function executeursDeProfils(
   base: Base,
   fournisseur: Fournisseur,
+  profils: Readonly<Record<string, Profil>>,
 ): Readonly<Record<string, Executeur>> {
   const livrable = (action: string, profil: Profil): Livrable =>
     action === "logline"
@@ -281,9 +289,17 @@ export function executeursWeaver(
         };
 
   return Object.fromEntries(
-    Object.entries(PROFILS_WEAVER).map(([action, profil]) => [
+    Object.entries(profils).map(([action, profil]) => [
       action,
       creerExecuteur(base, fournisseur, livrable(action, profil)),
     ]),
   );
+}
+
+/** Ce que WEAVER sait exécuter, avec ce fournisseur. */
+export function executeursWeaver(
+  base: Base,
+  fournisseur: Fournisseur,
+): Readonly<Record<string, Executeur>> {
+  return executeursDeProfils(base, fournisseur, PROFILS_WEAVER);
 }

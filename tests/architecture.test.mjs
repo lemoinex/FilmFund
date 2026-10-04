@@ -745,9 +745,9 @@ describe("Catalogue public", () => {
  * proposition qu'elle produira et savoir où l'appliquer. Un profil sans l'un
  * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
  */
-describe("Livrables de WEAVER", () => {
+describe("Livrables des agents", () => {
   const DEVIS = "supabase/migrations/20261003162159_exports_zip.sql";
-  const PROPOSITIONS = "supabase/migrations/20261003234544_weaver_synopsis.sql";
+  const PROPOSITIONS = "supabase/migrations/20261004025229_script_traitement_bible.sql";
 
   /** Corps de la fonction nommée, jusqu'à la suivante. */
   const corps = (migration, nom) => {
@@ -757,23 +757,29 @@ describe("Livrables de WEAVER", () => {
     return migration.slice(debut, suite === -1 ? undefined : suite);
   };
 
-  it("la base admet chaque action de WEAVER et la facture au barème", async () => {
-    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+  it("la base admet chaque action de chaque agent et la facture au barème", async () => {
+    const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
     const devis = lire(DEVIS);
     const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(devis)?.[1] ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 
     assert.ok(enBase.length >= 10, "lecture de la migration");
-    for (const action of Object.keys(PROFILS_WEAVER)) {
+    for (const action of Object.keys(PROFILS_IA)) {
       assert.ok(enBase.includes(action), action);
-      assert.match(devis, new RegExp(`when '${action}' then v_quantite :=`), `devis de ${action}`);
+      // Les sept livrables rédigés se facturent d'une ligne ; seuls le
+      // scénario et les dialogues, chiffrés par séquence ou par scène,
+      // s'écrivent sur plusieurs — et ils ne sont pas encore au catalogue.
+      assert.ok(
+        devis.includes(`when '${action}' then v_quantite := v_bareme.`),
+        `devis de ${action}`,
+      );
     }
   });
 
   it("la base accepte au dépôt la longueur que chaque profil annonce", async () => {
-    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
     const depot = corps(lire(PROPOSITIONS), "livrer_proposition");
-    for (const [action, profil] of Object.entries(PROFILS_WEAVER)) {
+    for (const [action, profil] of Object.entries(PROFILS_IA)) {
       assert.match(
         depot,
         new RegExp(`when '${action}' then\\s+v_max := ${profil.longueurMax};`),
@@ -783,27 +789,33 @@ describe("Livrables de WEAVER", () => {
   });
 
   it("la base sait où appliquer chaque action", async () => {
-    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
     const acceptation = corps(lire(PROPOSITIONS), "accepter_proposition");
-    for (const action of Object.keys(PROFILS_WEAVER)) {
+    for (const action of Object.keys(PROFILS_IA)) {
       assert.match(acceptation, new RegExp(`when '${action}' then v_max :=`), action);
     }
   });
 
-  it("le worker sait exécuter exactement les actions de ses profils", async () => {
+  it("chaque agent expose exactement les actions de ses profils", async () => {
     const { executeursWeaver } = await import("../worker/src/agents/weaver.ts");
-    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    const { executeursScript } = await import("../worker/src/agents/script.ts");
+    const { PROFILS_IA, PROFILS_SCRIPT, PROFILS_WEAVER } =
+      await import("../worker/src/ia/profils.ts");
     // Ni la base ni le fournisseur ne sont touchés : rien n'est appelé ici.
+    const vide = async () => ({});
+    assert.deepEqual(Object.keys(executeursWeaver({}, vide)), Object.keys(PROFILS_WEAVER));
+    assert.deepEqual(Object.keys(executeursScript({}, vide)), Object.keys(PROFILS_SCRIPT));
+    // Aucun profil n'est oublié par un agent, et aucun n'est servi deux fois.
     assert.deepEqual(
-      Object.keys(executeursWeaver({}, async () => ({}))),
-      Object.keys(PROFILS_WEAVER),
+      [...Object.keys(PROFILS_WEAVER), ...Object.keys(PROFILS_SCRIPT)].sort(),
+      Object.keys(PROFILS_IA).sort(),
     );
   });
 
   it("chaque profil est versionné, plafonné, et visé plus court que sa borne", async () => {
-    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
-    for (const [action, profil] of Object.entries(PROFILS_WEAVER)) {
-      assert.match(profil.id, /^weaver\.[a-z_]+@\d+$/, action);
+    const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
+    for (const [action, profil] of Object.entries(PROFILS_IA)) {
+      assert.match(profil.id, /^(weaver|script)\.[a-z_]+@\d+$/, action);
       assert.ok(profil.jetonsMax > 0, action);
       assert.ok(
         profil.longueurCible < profil.longueurMax,
@@ -836,13 +848,13 @@ describe("Écrans des propositions", () => {
 
   it("l'écran propose exactement les livrables que le worker sait écrire", async () => {
     const { ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
-    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
-    assert.deepEqual([...ORDRE_LIVRABLES].sort(), Object.keys(PROFILS_WEAVER).sort());
+    const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
+    assert.deepEqual([...ORDRE_LIVRABLES].sort(), Object.keys(PROFILS_IA).sort());
   });
 
   it("la borne de l'écran est celle que la base applique à l'acceptation", async () => {
     const { LIVRABLES_IA, ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
-    const migration = lire("supabase/migrations/20261003234544_weaver_synopsis.sql");
+    const migration = lire("supabase/migrations/20261004025229_script_traitement_bible.sql");
     const debut = migration.indexOf("create or replace function public.accepter_proposition");
     assert.ok(debut >= 0, "accepter_proposition introuvable");
     const acceptation = migration.slice(debut);

@@ -14,6 +14,10 @@ export const TYPES_DOCUMENT: Record<DocumentType, { libelle: string; description
     libelle: "Traitement",
     description: "Le récit développé, scène après scène, sans dialogues.",
   },
+  bible: {
+    libelle: "Bible de série",
+    description: "Le concept, l'univers, les personnages et l'arc de la saison.",
+  },
   scenario: {
     libelle: "Scénario",
     description: "Le texte du film, dialogues compris.",

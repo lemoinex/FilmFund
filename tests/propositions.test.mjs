@@ -99,6 +99,8 @@ describe("Propositions : catalogue des livrables", () => {
       "synopsis_standard",
       "synopsis_short",
       "synopsis_detailed",
+      "treatment",
+      "bible",
       "intention_note",
     ]);
   });
@@ -110,7 +112,7 @@ describe("Propositions : catalogue des livrables", () => {
     for (const refus of [
       "image",
       "pdf_export",
-      "treatment",
+      "screenplay",
       "LOGLINE",
       "",
       " logline",
@@ -146,6 +148,8 @@ describe("Propositions : catalogue des livrables", () => {
         synopsis_standard: "projet",
         synopsis_short: "fiche",
         synopsis_detailed: "documents",
+        treatment: "documents",
+        bible: "documents",
         intention_note: "documents",
       },
     );

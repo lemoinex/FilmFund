@@ -21,7 +21,9 @@ réels).
 | I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé en recette | —              |
 | I2a | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé en recette | —              |
 | I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —              |
-| J   | Autres agents                                                                                                                  | bloqué            | I1             |
+| J1  | SCRIPT : traitement et bible                                                                                                   | validé localement | recette        |
+| J2  | SCRIPT et VOICE : scénario et dialogues — textes longs                                                                         | à faire           | décision 8     |
+| J3  | ARC, FRAME, GEAR, FIELD : barème, actions et données structurées                                                               | à faire           | J1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1  | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
@@ -387,6 +389,26 @@ choix est irréversible. Les longueurs visées vivent dans les profils versionn�
 admises dans la base, et un test d'architecture refuse qu'elles divergent. Aucune table ni
 politique nouvelle. Reste à livrer : les écrans (I2b), et la recette, qui attend la recette de
 I1 — donc une clé Anthropic en état de marche.
+
+SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
+et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
+livrables de plus sur le chemin de WEAVER, dont le barème connaissait déjà les unités —
+8 et 10. Ils atterrissent chacun dans un document versionné, créé en brouillon, comme le
+synopsis détaillé. L'agent n'a pas de mécanique propre : il reprend la fabrique d'exécuteurs
+de WEAVER avec ses propres profils, `script.traitement@1` et `script.bible@1`.
+
+Ce découpage vient d'une limite de la base : **une proposition plafonne à 20 000 caractères**,
+soit une dizaine de pages. Un traitement de long métrage en fait davantage, et un scénario dix
+fois plus. Le traitement que SCRIPT produit est donc condensé, et le scénario ne peut pas être
+livré du tout en l'état. Trois issues restent ouvertes pour J2, et aucune n'est tranchée :
+livrer par séquence — le devis chiffre déjà par séquence —, relever le plafond de
+`ai_suggestions.content`, ou écrire directement dans le document sans proposition, ce que
+« aucun écrasement silencieux » interdit. C'est la décision 8.
+
+J3 est d'une autre nature : ARC, FRAME, GEAR et FIELD n'ont ni action ni unité au barème, et
+FRAME comme GEAR produisent des données structurées — focales, calculs électriques — qui ne
+sont pas des propositions de texte. Ce lot demandera une version du barème, l'écran
+d'administration qui la publie, et sans doute des tables.
 
 Écrans des propositions, décidés le 4 octobre 2026 (lot I2b) : l'encart de l'assistant se
 tient près de ce qu'il écrit — pitch et synopsis sur la page du projet, synopsis court dans la

@@ -207,10 +207,52 @@ export const PROFIL_NOTE_INTENTION: Profil = profilRedaction({
  * d'architecture vérifie que la base admet chacune de ces actions et que le
  * worker les expose toutes.
  */
+export const PROFIL_TRAITEMENT: Profil = profilRedaction({
+  id: "script.traitement@1",
+  effort: "high",
+  jetonsMax: 32_000,
+  longueurCible: 9000,
+  longueurMax: 20_000,
+  mission: "Tu aides un auteur à écrire le traitement de son projet.",
+  attendu:
+    "Un traitement raconte le film scène par scène, dans l'ordre, au présent et sans dialogues : ce qu'on voit, ce qu'on entend, ce que chaque scène fait avancer. Il nomme les lieux et les personnages présents, et va jusqu'au dénouement. Pas d'indications techniques, pas de numéros de plan.",
+  objectif: "Écris le traitement de ce projet.",
+});
+
+export const PROFIL_BIBLE: Profil = profilRedaction({
+  id: "script.bible@1",
+  effort: "high",
+  jetonsMax: 32_000,
+  longueurCible: 9000,
+  longueurMax: 20_000,
+  mission: "Tu aides un auteur à écrire la bible de sa série.",
+  attendu:
+    "Une bible de série pose le concept en une page, puis l'univers et ses règles, les personnages principaux avec ce qui les met en mouvement et ce qui les oppose, la mécanique d'un épisode, l'arc de la première saison et, pour chaque épisode, un paragraphe. Elle dit aussi à qui la série s'adresse.",
+  objectif: "Écris la bible de cette série.",
+});
+
+/**
+ * Ce que SCRIPT sait écrire. Même mécanique que WEAVER : seuls le profil et
+ * l'action changent.
+ */
+export const PROFILS_SCRIPT: Readonly<Record<string, Profil>> = {
+  treatment: PROFIL_TRAITEMENT,
+  bible: PROFIL_BIBLE,
+};
+
 export const PROFILS_WEAVER: Readonly<Record<string, Profil>> = {
   logline: PROFIL_LOGLINE,
   synopsis_short: PROFIL_SYNOPSIS_COURT,
   synopsis_standard: PROFIL_SYNOPSIS_STANDARD,
   synopsis_detailed: PROFIL_SYNOPSIS_DETAILLE,
   intention_note: PROFIL_NOTE_INTENTION,
+};
+
+/**
+ * Tous les profils en service, agents confondus : la liste que l'écran
+ * compare à la sienne, et que le worker expose.
+ */
+export const PROFILS_IA: Readonly<Record<string, Profil>> = {
+  ...PROFILS_WEAVER,
+  ...PROFILS_SCRIPT,
 };

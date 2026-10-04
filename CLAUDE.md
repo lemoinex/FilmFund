@@ -393,10 +393,12 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   note d’intention (lots I2a et I2b). Un texte accepté atterrit à sa place :
   pitch et synopsis dans le projet, synopsis court dans la fiche, synopsis
   détaillé et note d’intention dans un document versionné, créé en brouillon.
-  L’encart de l’assistant se tient dans la rubrique où ce texte se lit ; le
-  catalogue `LIVRABLES_IA` en est la seule source. Prévues : note de
-  réalisation, traitement, personnages, pitch oral/écrit, bible série,
-  scénario.
+  Traitement et bible de série (lot J1), par l’agent SCRIPT, dans un document
+  eux aussi. L’encart de l’assistant se tient dans la rubrique où ce texte se
+  lit ; le catalogue `LIVRABLES_IA` en est la seule source. Prévues : note de
+  réalisation, personnages, pitch oral/écrit, scénario et dialogues — ces deux
+  derniers dépassent les 20 000 caractères d’une proposition, et leur
+  livraison reste à décider.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
@@ -506,7 +508,7 @@ Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 | 6     | WEAVER                                              | Logline (I1) et rédactions (I2a, I2b) validées en recette le 4 octobre 2026 |
 | 7     | Budget, financement, calendrier, FIELD/GEAR         | Écrans livrés ; agents à faire (lot J)                                      |
 | 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                 |
-| 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                             |
+| 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | SCRIPT : traitement et bible livrés (J1) ; J2 et J3 à faire                 |
 | 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)    |
 | 11    | Exports PDF/DOCX/ZIP                                | PDF, DOCX et ZIP livrés (lots M1 à M5)                                      |
 | 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                              |
