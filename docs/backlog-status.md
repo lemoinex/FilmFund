@@ -21,7 +21,7 @@ réels).
 | I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé en recette | —              |
 | I2a | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé en recette | —              |
 | I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —              |
-| J1  | SCRIPT : traitement et bible                                                                                                   | validé localement | recette        |
+| J1  | SCRIPT : traitement et bible                                                                                                   | validé en recette | —              |
 | J2  | SCRIPT et VOICE : scénario et dialogues — textes longs                                                                         | à faire           | décision 8     |
 | J3  | ARC, FRAME, GEAR, FIELD : barème, actions et données structurées                                                               | à faire           | J1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
@@ -289,6 +289,55 @@ fichier ouvert dans Word et dans Excel (mode privé actif).
 Non couvert par cette recette : un éditeur et un lecteur réels, faute de second compte tant
 que le mode privé est actif (vérifiés localement et par les tests) ; la purge d'une archive
 arrivée à expiration ; un dossier dépassant la taille maximale d'un export.
+
+## Recette du lot J1
+
+Le 4 octobre 2026, un traitement et une bible de série ont été produits en production par un
+administrateur, de l'écran au document écrit (mode privé actif), sur le projet « mami wata ».
+
+- Fusion à 03h45 UTC, migration poussée aussitôt ; le worker, reconstruit par la fusion — le
+  lot touche `worker/` —, annonce ses **dix** actions à 03h46 : trois exports, la logline, les
+  quatre rédactions de WEAVER, le traitement et la bible.
+- Les quatre encarts de l'onglet Documents ont été relus à l'écran, chacun nommant sa cible :
+  « remplacerait le document « … », qui en garderait une version » pour les trois types déjà
+  présents, « aucun document de type « Bible de série » : la proposition en créerait un, en
+  brouillon » pour le quatrième.
+
+| Livrable    | Durée  | Caractères | Coût confirmé | Unités | Atterrissage                     |
+| ----------- | ------ | ---------- | ------------- | ------ | -------------------------------- |
+| `treatment` | 24,4 s | 2 437      | 0,039588 $    | 8/8    | document existant mis à jour, v1 |
+| `bible`     | 45,3 s | 5 263      | 0,080604 $    | 10/10  | document créé en brouillon, v1   |
+
+- Les deux réussies au premier essai, sur `claude-opus-5-5`, sans repli, avec leurs profils
+  `script.traitement@1` et `script.bible@1`.
+- **Les deux branches de l'atterrissage sont exercées** : le document « Traitement » existait,
+  vide — sa mise à jour a inscrit un `replaced_content` de zéro caractère, non nul, et créé sa
+  première version ; la bible n'existait pas — elle a été créée, en brouillon, avec sa
+  première version.
+- Dépense du mois après ces deux demandes : 0,544616 $ sur un plafond de 5 $. Quinze tâches
+  d'IA réussies depuis le début, zéro repli, zéro à rapprocher.
+
+### Longueurs réellement produites — à garder pour la décision 8
+
+Les textes produits sont très en deçà de ce que les profils visent, et plus encore du plafond
+de 20 000 caractères d'une proposition :
+
+| Livrable            | Visé par le profil | Produit | Plafond |
+| ------------------- | ------------------ | ------- | ------- |
+| `synopsis_detailed` | 12 000             | 1 804   | 20 000  |
+| `intention_note`    | 6 000              | 4 916   | 20 000  |
+| `treatment`         | 9 000              | 2 437   | 20 000  |
+| `bible`             | 9 000              | 5 263   | 20 000  |
+
+Sur un projet à la fiche maigre, ce n'est pas la colonne qui limite, c'est la matière
+disponible. Le plafond ne mordra que sur des projets bien renseignés — et il reste
+rédhibitoire pour un scénario, qui demande un ordre de grandeur de plus. La décision 8 garde
+donc tout son sens pour le lot J2, mais elle ne bloque que le scénario et les dialogues.
+
+Non couvert par cette recette : un éditeur et un lecteur réels, faute de second compte tant
+que le mode privé est actif (vérifiés localement et par les tests) ; une proposition de
+traitement ou de bible écartée plutôt qu'appliquée ; un document finalisé réécrit par une
+proposition, les deux documents touchés étant en brouillon.
 
 ## Décisions attendues
 
