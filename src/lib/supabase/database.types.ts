@@ -92,6 +92,76 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_suggestion_budget_lines: {
+        Row: {
+          budget_line_id: string | null;
+          category: Database["public"]["Enums"]["budget_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          state: string;
+          suggestion_id: string;
+          unit_cost: number;
+        };
+        Insert: {
+          budget_line_id?: string | null;
+          category: Database["public"]["Enums"]["budget_category"];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          state?: string;
+          suggestion_id: string;
+          unit_cost: number;
+        };
+        Update: {
+          budget_line_id?: string | null;
+          category?: Database["public"]["Enums"]["budget_category"];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          label?: string;
+          position?: number;
+          project_id?: string;
+          quantity?: number;
+          state?: string;
+          suggestion_id?: string;
+          unit_cost?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_budget_lines_budget_line_id_fkey";
+            columns: ["budget_line_id"];
+            isOneToOne: false;
+            referencedRelation: "budget_lines";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_budget_lines_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_budget_lines_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_suggestions: {
         Row: {
           action: string;
@@ -1517,6 +1587,7 @@ export type Database = {
       text_unit_rate_versions: {
         Row: {
           bible: number;
+          budget_plan: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
           id: string;
@@ -1533,6 +1604,7 @@ export type Database = {
         };
         Insert: {
           bible: number;
+          budget_plan: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
           id?: string;
@@ -1549,6 +1621,7 @@ export type Database = {
         };
         Update: {
           bible?: number;
+          budget_plan?: number;
           dialogue_per_scene?: number;
           dramatic_analysis?: number;
           id?: string;
@@ -1594,6 +1667,36 @@ export type Database = {
         };
       };
       accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
+      accepter_ligne_budget: {
+        Args: {
+          p_category?: string;
+          p_label?: string;
+          p_line_id: string;
+          p_quantity?: number;
+          p_unit_cost?: number;
+        };
+        Returns: {
+          budget_line_id: string | null;
+          category: Database["public"]["Enums"]["budget_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          state: string;
+          suggestion_id: string;
+          unit_cost: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_budget_lines";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       accepter_proposition: {
         Args: { p_content?: string; p_suggestion_id: string };
         Returns: {
@@ -1655,6 +1758,7 @@ export type Database = {
         Args: { p_studio_id: string };
         Returns: {
           bible: number;
+          budget_plan: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
           id: string;
@@ -1677,6 +1781,7 @@ export type Database = {
         };
       };
       cle_fournisseur: { Args: { p_provider: string }; Returns: string };
+      clore_proposition_budget: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_travail: {
         Args: {
           p_consumed: number;
@@ -1734,6 +1839,7 @@ export type Database = {
         };
       };
       contenu_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: Json };
+      contexte_budget: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_travail: {
@@ -1786,6 +1892,30 @@ export type Database = {
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       duree_bail_travail: { Args: Record<PropertyKey, never>; Returns: string };
       duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
+      ecarter_ligne_budget: {
+        Args: { p_line_id: string };
+        Returns: {
+          budget_line_id: string | null;
+          category: Database["public"]["Enums"]["budget_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          state: string;
+          suggestion_id: string;
+          unit_cost: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_budget_lines";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       ecarter_proposition: {
         Args: { p_suggestion_id: string };
         Returns: {
@@ -1867,11 +1997,36 @@ export type Database = {
         Args: { p_action: string; p_details: Json; p_project_id: string };
         Returns: undefined;
       };
+      ligne_budget_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          budget_line_id: string | null;
+          category: Database["public"]["Enums"]["budget_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          state: string;
+          suggestion_id: string;
+          unit_cost: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_budget_lines";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       livrer_export: {
         Args: { p_attempt_id: string; p_file: string; p_fingerprint: string; p_pages: number };
         Returns: string;
       };
       livrer_proposition: { Args: { p_attempt_id: string; p_content: string }; Returns: string };
+      livrer_proposition_budget: { Args: { p_attempt_id: string; p_lines: Json }; Returns: string };
       marquer_tentative_soumise: {
         Args: { p_attempt_id: string; p_provider_ref?: string };
         Returns: {
