@@ -82,27 +82,6 @@ importer son SDK ; le lint et `tests/architecture.test.mjs` refusent tout autre 
 - **Rien n'est écrit dans le projet** : le worker dépose une proposition
   (`ai_suggestions`) ; le porteur ou un éditeur l'applique — modifiée ou non — ou l'écarte.
 
-### Livrables structurés (lot J3b-1)
-
-FIELD ne rend pas un texte mais des lignes de budget (action `budget_plan`, profil
-`field.budget@1`).
-
-- **Schéma de sortie** : le profil porte un schéma JSON, que la passerelle envoie dans
-  `output_config.format`. Il fait partie de ce qui part chez le fournisseur : le modifier,
-  c'est publier une nouvelle version du profil.
-- **Trois contrôles** : le schéma chez le fournisseur, puis le worker
-  (`lireLignesBudget` : catégorie connue, libellé de 200 caractères au plus, quantité et coût
-  dans les bornes des colonnes, 40 lignes au plus), puis la base au dépôt
-  (`livrer_proposition_budget`). Une seule ligne invalide fait échouer la tâche : motif
-  « La réponse du fournisseur n'est pas une liste de lignes exploitable. », unités rendues.
-- **Ce qui part chez le fournisseur** : le projet, son contexte, sa vision, le nombre de
-  personnages, la devise et les lignes déjà saisies au budget, les jalons du planning. Ni
-  document, ni équipe, ni identifiant.
-- **Sans budget ouvert**, aucun devis n'est émis : la devise manquerait.
-- **Dépôt** : une proposition parente dont le texte est écrit par la base, et une ligne par
-  poste dans `ai_suggestion_budget_lines`. Rien n'entre au budget avant qu'une ligne soit
-  acceptée par `accepter_ligne_budget`.
-
 ### Clé d'API : écran Intégrations IA
 
 La clé ne se saisit ni dans Railway, ni dans Vercel, ni dans `.env.local` : elle se pose
