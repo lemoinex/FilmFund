@@ -53,8 +53,6 @@ select is_empty(
         'rapprocher_travail_admin',
         'accepter_proposition',
         'ecarter_proposition',
-        'accepter_ligne_budget',
-        'ecarter_ligne_budget',
         'definir_cle_fournisseur',
         'retirer_cle_fournisseur'
       )
