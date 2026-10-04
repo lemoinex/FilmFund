@@ -26,6 +26,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Outillage local, ignoré par Git : ses copies de travail contiennent
+    // d'autres builds du dépôt, que le lint parcourait jusqu'à y échouer.
+    ".claude/**",
   ]),
 ]);
 

@@ -40,8 +40,3 @@ export async function ouvrirSessionDepuisLien(
 
   return false;
 }
-
-/** Destination interne sûre : jamais une URL absolue fournie par la requête. */
-export function destinationInterne(valeur: string | null, defaut: string): string {
-  return valeur && valeur.startsWith("/") && !valeur.startsWith("//") ? valeur : defaut;
-}

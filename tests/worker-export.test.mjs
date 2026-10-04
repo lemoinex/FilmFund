@@ -484,6 +484,28 @@ describe("Dossier : Word", () => {
     assert.ok(document.includes("Paragraphe 400."));
     assert.ok(document.includes("Ligne 120"));
   });
+
+  it("retire les caractères que XML interdit, sans perdre le texte qui les entoure", async () => {
+    const contenu = contenuComplet();
+    // Un saut de ligne souple collé depuis un traitement de texte, et un
+    // caractère de contrôle : la base ne les refuse ni dans un titre, ni dans
+    // un document.
+    contenu.fiche.titre = "Mɔ́ŋ\u0001 ma\u000B Ɛyɔ";
+    contenu.documents[0].contenu = "Avant\u000Caprès, et un substitut isolé \uD83D ici.";
+    const dossier = composerDossier(contenu, new Date("2026-10-01T12:00:00Z"));
+    const archive = lireArchive(await rendreDocx(dossier));
+
+    // Le titre part dans le document, dans son pied de page et dans ses propriétés.
+    for (const [nom, xml] of archive) {
+      if (nom.endsWith(".xml")) {
+        assert.doesNotMatch(xml, /[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/, nom);
+        assert.doesNotMatch(xml, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/, nom);
+      }
+    }
+    const document = archive.get("word/document.xml");
+    assert.ok(document.includes("Mɔ́ŋ ma Ɛyɔ"));
+    assert.ok(document.includes("Avantaprès, et un substitut isolé  ici."));
+  });
 });
 
 describe("Dossier : classeur Excel", () => {
