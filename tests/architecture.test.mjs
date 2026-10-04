@@ -746,8 +746,8 @@ describe("Catalogue public", () => {
  * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
  */
 describe("Livrables des agents", () => {
-  const DEVIS = "supabase/migrations/20261003162159_exports_zip.sql";
-  const PROPOSITIONS = "supabase/migrations/20261004025229_script_traitement_bible.sql";
+  const DEVIS = "supabase/migrations/20261004102540_arc_analyse.sql";
+  const PROPOSITIONS = "supabase/migrations/20261004102540_arc_analyse.sql";
 
   /** Corps de la fonction nommée, jusqu'à la suivante. */
   const corps = (migration, nom) => {
@@ -799,15 +799,21 @@ describe("Livrables des agents", () => {
   it("chaque agent expose exactement les actions de ses profils", async () => {
     const { executeursWeaver } = await import("../worker/src/agents/weaver.ts");
     const { executeursScript } = await import("../worker/src/agents/script.ts");
-    const { PROFILS_IA, PROFILS_SCRIPT, PROFILS_WEAVER } =
+    const { executeursArc } = await import("../worker/src/agents/arc.ts");
+    const { PROFILS_ARC, PROFILS_IA, PROFILS_SCRIPT, PROFILS_WEAVER } =
       await import("../worker/src/ia/profils.ts");
     // Ni la base ni le fournisseur ne sont touchés : rien n'est appelé ici.
     const vide = async () => ({});
     assert.deepEqual(Object.keys(executeursWeaver({}, vide)), Object.keys(PROFILS_WEAVER));
     assert.deepEqual(Object.keys(executeursScript({}, vide)), Object.keys(PROFILS_SCRIPT));
+    assert.deepEqual(Object.keys(executeursArc({}, vide)), Object.keys(PROFILS_ARC));
     // Aucun profil n'est oublié par un agent, et aucun n'est servi deux fois.
     assert.deepEqual(
-      [...Object.keys(PROFILS_WEAVER), ...Object.keys(PROFILS_SCRIPT)].sort(),
+      [
+        ...Object.keys(PROFILS_WEAVER),
+        ...Object.keys(PROFILS_ARC),
+        ...Object.keys(PROFILS_SCRIPT),
+      ].sort(),
       Object.keys(PROFILS_IA).sort(),
     );
   });
@@ -815,7 +821,7 @@ describe("Livrables des agents", () => {
   it("chaque profil est versionné, plafonné, et visé plus court que sa borne", async () => {
     const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
     for (const [action, profil] of Object.entries(PROFILS_IA)) {
-      assert.match(profil.id, /^(weaver|script)\.[a-z_]+@\d+$/, action);
+      assert.match(profil.id, /^(weaver|arc|script)\.[a-z_]+@\d+$/, action);
       assert.ok(profil.jetonsMax > 0, action);
       assert.ok(
         profil.longueurCible < profil.longueurMax,
@@ -854,7 +860,7 @@ describe("Écrans des propositions", () => {
 
   it("la borne de l'écran est celle que la base applique à l'acceptation", async () => {
     const { LIVRABLES_IA, ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
-    const migration = lire("supabase/migrations/20261004025229_script_traitement_bible.sql");
+    const migration = lire("supabase/migrations/20261004102540_arc_analyse.sql");
     const debut = migration.indexOf("create or replace function public.accepter_proposition");
     assert.ok(debut >= 0, "accepter_proposition introuvable");
     const acceptation = migration.slice(debut);

@@ -77,6 +77,17 @@ export const LIVRABLES_IA = {
     longueurMax: 20_000,
     lignes: 16,
   },
+  dramatic_analysis: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition d'analyse dramaturgique",
+    bouton: "Proposer une analyse",
+    remplace: "Document actuel",
+    description:
+      "L'assistant lit la structure du récit, les arcs des personnages et ce qui manque pour que le projet tienne debout, à partir de la fiche, des personnages, de la vision et des documents finalisés, transmis pour cela à notre fournisseur d'IA. Il analyse : il ne réécrit rien.",
+    longueurMax: 20_000,
+    lignes: 16,
+  },
   treatment: {
     /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
     page: "documents",

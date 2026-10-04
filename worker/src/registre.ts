@@ -9,6 +9,7 @@
  * La clé ne quitte jamais cette fermeture : ni journal, ni valeur de retour.
  * Seule sa présence est observable du dehors.
  */
+import { executeursArc } from "./agents/arc.ts";
 import { executeursScript } from "./agents/script.ts";
 import { executeursWeaver } from "./agents/weaver.ts";
 import { lireCleFournisseur, type Base } from "./base.ts";
@@ -35,7 +36,11 @@ export function registreDesAgents({ base, journal, creerFournisseur }: OptionsRe
     cleAnthropic = cle;
     if (cle) {
       const fournisseur = creer(cle);
-      registre = { ...executeursWeaver(base, fournisseur), ...executeursScript(base, fournisseur) };
+      registre = {
+        ...executeursWeaver(base, fournisseur),
+        ...executeursArc(base, fournisseur),
+        ...executeursScript(base, fournisseur),
+      };
     } else {
       registre = {};
     }

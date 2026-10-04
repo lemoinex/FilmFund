@@ -22,6 +22,10 @@ export const TYPES_DOCUMENT: Record<DocumentType, { libelle: string; description
     libelle: "Scénario",
     description: "Le texte du film, dialogues compris.",
   },
+  analyse: {
+    libelle: "Analyse dramaturgique",
+    description: "La structure du récit, les arcs, ce qui tient et ce qui manque.",
+  },
   biographie: {
     libelle: "Biographie et filmographie",
     description: "Le parcours de l'auteur ou de l'équipe.",

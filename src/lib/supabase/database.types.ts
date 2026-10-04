@@ -1518,6 +1518,7 @@ export type Database = {
         Row: {
           bible: number;
           dialogue_per_scene: number;
+          dramatic_analysis: number;
           id: string;
           intention_note: number;
           logline: number;
@@ -1533,6 +1534,7 @@ export type Database = {
         Insert: {
           bible: number;
           dialogue_per_scene: number;
+          dramatic_analysis: number;
           id?: string;
           intention_note: number;
           logline: number;
@@ -1548,6 +1550,7 @@ export type Database = {
         Update: {
           bible?: number;
           dialogue_per_scene?: number;
+          dramatic_analysis?: number;
           id?: string;
           intention_note?: number;
           logline?: number;
@@ -1653,6 +1656,7 @@ export type Database = {
         Returns: {
           bible: number;
           dialogue_per_scene: number;
+          dramatic_analysis: number;
           id: string;
           intention_note: number;
           logline: number;
@@ -2136,6 +2140,7 @@ export type Database = {
         | "scenario"
         | "biographie"
         | "lettre"
+        | "analyse"
         | "autre";
       funding_kind:
         | "aide_publique"
@@ -2309,6 +2314,7 @@ export const Constants = {
         "scenario",
         "biographie",
         "lettre",
+        "analyse",
         "autre",
       ],
       funding_kind: [
