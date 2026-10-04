@@ -39,6 +39,15 @@ export function ouvrirBase(configuration: ConfigurationBase): pg.Pool {
     // Une connexion pour le travail en cours, une pour prolonger son bail.
     max: 2,
     application_name: "filmfund-worker",
+    /*
+     * Sans ces délais, une connexion coupée sans préavis laisse une requête
+     * en attente pour toujours : la boucle se fige, le processus reste en vie
+     * et rien ne le relance. La base borne déjà toute requête du worker à
+     * 30 secondes ; au-delà de 45, c'est donc qu'elle ne répond plus.
+     */
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 45_000,
+    keepAlive: true,
   });
 }
 
