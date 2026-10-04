@@ -7,7 +7,7 @@
 
 begin;
 
-select plan(11);
+select plan(16);
 
 insert into public.plans (code, name, position) values ('essai_stockage', 'Essai stockage', 201);
 insert into public.plan_versions (
@@ -41,6 +41,58 @@ select throws_ok(
   '53400',
   null,
   'Un fichier qui ferait dépasser la limite est refusé'
+);
+
+-- Déplacement : un fichier venu d'un autre studio pèse en entier sur le
+-- studio d'arrivée ; entre deux projets du même studio, il n'ajoute rien.
+insert into auth.users (id, email, aud, role)
+values ('00000000-0000-0000-0000-00000000b202', 'stockage-voisin@exemple.test', 'authenticated', 'authenticated');
+
+insert into public.projects (id, owner_id, title)
+values
+  ('00000000-0000-0000-0000-0000000000ca', '00000000-0000-0000-0000-00000000b202', 'Projet du studio voisin'),
+  ('00000000-0000-0000-0000-0000000000cb', '00000000-0000-0000-0000-00000000b201', 'Second projet du studio');
+
+insert into storage.objects (bucket_id, name, metadata)
+values ('project-images', '00000000-0000-0000-0000-0000000000ca/scenes/x.png', '{"size": 600000}');
+
+select throws_ok(
+  $$ update storage.objects set name = '00000000-0000-0000-0000-0000000000c9/scenes/x.png'
+     where name = '00000000-0000-0000-0000-0000000000ca/scenes/x.png' $$,
+  '53400',
+  null,
+  'Un fichier déplacé depuis un autre studio, au-delà de la limite, est refusé'
+);
+
+select throws_ok(
+  $$ update storage.objects
+     set name = '00000000-0000-0000-0000-0000000000c9/scenes/x.png', metadata = metadata
+     where name = '00000000-0000-0000-0000-0000000000ca/scenes/x.png' $$,
+  '53400',
+  null,
+  'Le même déplacement, taille réinscrite à l''identique, est refusé aussi'
+);
+
+select lives_ok(
+  $$ update storage.objects set name = '00000000-0000-0000-0000-0000000000cb/scenes/a.png'
+     where name = '00000000-0000-0000-0000-0000000000c9/scenes/a.png' $$,
+  'Déplacer un fichier entre deux projets du même studio n''ajoute rien'
+);
+
+select lives_ok(
+  $$ update storage.objects set name = '00000000-0000-0000-0000-0000000000c9/scenes/a.png'
+     where name = '00000000-0000-0000-0000-0000000000cb/scenes/a.png' $$,
+  'Et le ramener non plus'
+);
+
+select is(
+  (
+    select with_check
+    from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'Images : remplacement'
+  ) like '%couverture%scenes%',
+  true,
+  'Un fichier remplacé ou déplacé garde un chemin admis à l''envoi'
 );
 
 select lives_ok(

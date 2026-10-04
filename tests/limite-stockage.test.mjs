@@ -9,7 +9,13 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
-import { changerPlan, creerCompte, creerProjet, executerSqlLocal } from "./helpers.mjs";
+import {
+  changerPlan,
+  creerCompte,
+  creerProjet,
+  executerSqlLocal,
+  faireEntrer,
+} from "./helpers.mjs";
 
 const COMPARTIMENT = "project-images";
 const LIMITE_DU_PLAN = "53400";
@@ -108,5 +114,34 @@ describe("Limite de stockage", () => {
 
     const { error: suppression } = await compte.client.storage.from(COMPARTIMENT).remove([image]);
     assert.equal(suppression, null, suppression?.message);
+  });
+
+  it("déplacer une image vers le projet d'un studio plein est refusé, et elle reste où elle était", async () => {
+    const compte = await creerCompte("stockage-plein", "Studio plein", { plan: "gratuit" });
+    const voisin = await creerCompte("stockage-voisin", "Studio voisin", { plan: "gratuit" });
+    const plein = await creerProjet(compte, "Projet presque plein");
+    const ailleurs = await creerProjet(voisin, "Projet du voisin");
+    // Le même compte écrit dans les deux projets, de deux studios distincts.
+    await faireEntrer(voisin, ailleurs.id, compte, "editor");
+
+    await inscrireFichierFictif(compte, `${plein.id}/scenes/remplissage.png`, 104_857_590);
+    const depart = `${ailleurs.id}/scenes/image.png`;
+    const { error: envoi } = await envoyer(compte, depart);
+    assert.equal(envoi, null, envoi?.message);
+
+    const stockage = compte.client.storage.from(COMPARTIMENT);
+    const { error: refus } = await stockage.move(depart, `${plein.id}/scenes/image.png`);
+    assert.notEqual(refus, null, "le déplacement doit être refusé");
+    assert.deepEqual(await fichiers(compte, `${plein.id}/scenes`), ["remplissage.png"]);
+    assert.deepEqual(await fichiers(compte, `${ailleurs.id}/scenes`), ["image.png"]);
+
+    // Hors des dossiers admis à l'envoi : refusé aussi, même sans rien ajouter.
+    const { error: horsDossier } = await stockage.move(depart, `${ailleurs.id}/ailleurs/image.png`);
+    assert.notEqual(horsDossier, null, "un chemin hors des dossiers admis doit être refusé");
+    assert.deepEqual(await fichiers(compte, `${ailleurs.id}/scenes`), ["image.png"]);
+
+    // Dans le même projet, d'un nom à l'autre : rien ne s'y oppose.
+    const { error: renommage } = await stockage.move(depart, `${ailleurs.id}/scenes/autre.png`);
+    assert.equal(renommage, null, renommage?.message);
   });
 });
