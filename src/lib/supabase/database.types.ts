@@ -2132,6 +2132,7 @@ export type Database = {
         | "note_intention"
         | "synopsis"
         | "traitement"
+        | "bible"
         | "scenario"
         | "biographie"
         | "lettre"
@@ -2304,6 +2305,7 @@ export const Constants = {
         "note_intention",
         "synopsis",
         "traitement",
+        "bible",
         "scenario",
         "biographie",
         "lettre",

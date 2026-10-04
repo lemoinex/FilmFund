@@ -14,6 +14,7 @@ import { strict as assert } from "node:assert";
 import { createServer } from "node:http";
 import { after, before, describe, it } from "node:test";
 
+import { executeursScript } from "../worker/src/agents/script.ts";
 import {
   composerContexte,
   composerFiche,
@@ -29,6 +30,9 @@ import {
   enDollars,
   PROFIL_LOGLINE,
   PROFIL_SYNOPSIS_STANDARD,
+  PROFIL_TRAITEMENT,
+  PROFILS_IA,
+  PROFILS_SCRIPT,
   PROFILS_WEAVER,
 } from "../worker/src/ia/profils.ts";
 import { registreDesAgents } from "../worker/src/registre.ts";
@@ -522,7 +526,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
     await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
     await agents.relire();
 
-    assert.deepEqual(Object.keys(agents.lire()), Object.keys(PROFILS_WEAVER));
+    assert.deepEqual(Object.keys(agents.lire()).sort(), Object.keys(PROFILS_IA).sort());
     assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
     assert.deepEqual(
       evenements.map((e) => e.evenement),
@@ -552,7 +556,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
     await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
     const { agents, evenements } = registreObserve();
     await agents.relire();
-    assert.deepEqual(Object.keys(agents.lire()), Object.keys(PROFILS_WEAVER));
+    assert.deepEqual(Object.keys(agents.lire()).sort(), Object.keys(PROFILS_IA).sort());
 
     await definirCleFactice("anthropic", null);
     await agents.relire();
@@ -1058,5 +1062,105 @@ describe("WEAVER : synopsis et note d'intention", () => {
     assert.ok(message.includes("Format : court metrage"), message);
     assert.ok(message.includes("<personnages>\n(non renseigné)\n</personnages>"), message);
     assert.ok(message.endsWith("Écris le synopsis court de ce projet."), message);
+  });
+});
+
+/*
+ * SCRIPT (lot J1) : le traitement et la bible, de la tâche réclamée au
+ * document écrit. L'agent n'a pas de mécanique propre — il reprend la
+ * fabrique de WEAVER —, mais le chemin complet est éprouvé une fois : le
+ * registre le sert, la base accepte son dépôt, et le texte atterrit dans un
+ * document versionné.
+ */
+describe("SCRIPT : traitement et bible", () => {
+  let base;
+  let administrateur;
+
+  before(async () => {
+    base = await ouvrirBaseDuWorker();
+    administrateur = await creerCompte("admin-script", "Administration");
+    await promouvoirAdministrateur(administrateur.id);
+    await definirPlafondIa(1_000_000);
+  });
+
+  after(async () => {
+    await definirPlafondIa(5);
+    await base.end();
+  });
+
+  it("le traitement : proposition déposée, document créé et versionné", async () => {
+    const porteur = await creerCompte("script-traitement");
+    const projet = await creerProjet(porteur, "La Saison sèche");
+    const { error } = await porteur.client
+      .from("projects")
+      .update({ synopsis: "Un village attend la pluie." })
+      .eq("id", projet.id);
+    assert.ifError(error);
+
+    const tache = await engager(porteur, projet.id, "treatment", "script-traitement-cle");
+    const nettoyage = await sql(annulerLesAutresTaches([tache.id]));
+    assert.equal(nettoyage.code, 0, nettoyage.erreurs);
+
+    const { fournisseur, demandes } = fournisseurFactice(
+      reponseFactice("Séquence une.\n\nSéquence deux."),
+    );
+    assert.equal(
+      await traiterUnTravail({
+        base,
+        nom: "worker-script-test",
+        executeurs: executeursScript(base, fournisseur),
+        journal: () => {},
+        battementMs: 50,
+      }),
+      true,
+    );
+
+    // Le profil de SCRIPT, pas celui de WEAVER.
+    assert.equal(demandes[0].profil.id, PROFIL_TRAITEMENT.id);
+    assert.match(demandes[0].message, /Écris le traitement de ce projet\.$/);
+
+    const { data: proposition } = await porteur.client
+      .from("ai_suggestions")
+      .select("id, content, state, profile")
+      .eq("job_id", tache.id)
+      .single();
+    assert.equal(proposition.content, "Séquence une.\n\nSéquence deux.");
+    assert.equal(proposition.profile, PROFIL_TRAITEMENT.id);
+
+    // Aucun document tant que la proposition n'est pas appliquée.
+    const { data: avant } = await porteur.client
+      .from("project_documents")
+      .select("id")
+      .eq("project_id", projet.id);
+    assert.deepEqual(avant, []);
+
+    const { error: refus } = await porteur.client.rpc("accepter_proposition", {
+      p_suggestion_id: proposition.id,
+      p_content: null,
+    });
+    assert.ifError(refus);
+
+    const { data: document } = await porteur.client
+      .from("project_documents")
+      .select("id, type, title, status, content")
+      .eq("project_id", projet.id)
+      .single();
+    assert.equal(document.type, "traitement");
+    assert.equal(document.title, "Traitement");
+    assert.equal(document.status, "brouillon");
+    assert.equal(document.content, "Séquence une.\n\nSéquence deux.");
+
+    const { data: versions } = await porteur.client
+      .from("project_document_versions")
+      .select("version_number, content")
+      .eq("document_id", document.id);
+    assert.equal(versions.length, 1);
+    assert.equal(versions[0].content, "Séquence une.\n\nSéquence deux.");
+  });
+
+  it("le registre sert les deux agents dès qu'une clé est posée", async () => {
+    const { fournisseur } = fournisseurFactice(reponseFactice("x"));
+    assert.deepEqual(Object.keys(executeursScript(base, fournisseur)), Object.keys(PROFILS_SCRIPT));
+    assert.deepEqual(Object.keys(PROFILS_SCRIPT), ["treatment", "bible"]);
   });
 });

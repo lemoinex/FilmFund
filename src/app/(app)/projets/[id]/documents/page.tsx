@@ -29,9 +29,11 @@ const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
  * avant/après mentirait.
  */
 const LIVRABLES_DOCUMENTS: Readonly<
-  Record<ActionIa & ("synopsis_detailed" | "intention_note"), DocumentType>
+  Record<ActionIa & ("synopsis_detailed" | "intention_note" | "treatment" | "bible"), DocumentType>
 > = {
   synopsis_detailed: "synopsis",
+  treatment: "traitement",
+  bible: "bible",
   intention_note: "note_intention",
 };
 

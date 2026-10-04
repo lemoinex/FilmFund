@@ -77,6 +77,28 @@ export const LIVRABLES_IA = {
     longueurMax: 20_000,
     lignes: 16,
   },
+  treatment: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de traitement",
+    bouton: "Proposer un traitement",
+    remplace: "Document actuel",
+    description:
+      "L'assistant raconte le film scène par scène, sans dialogues, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
+    longueurMax: 20_000,
+    lignes: 16,
+  },
+  bible: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de bible de série",
+    bouton: "Proposer une bible de série",
+    remplace: "Document actuel",
+    description:
+      "L'assistant pose le concept, l'univers, les personnages, la mécanique d'un épisode et l'arc de la première saison, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
+    longueurMax: 20_000,
+    lignes: 16,
+  },
   intention_note: {
     /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
     page: "documents",
