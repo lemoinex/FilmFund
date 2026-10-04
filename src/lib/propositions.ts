@@ -7,6 +7,8 @@
  * Node.
  */
 
+const NOMBRE = new Intl.NumberFormat("fr-FR");
+
 /** Codes d'erreur de la base que l'écran traduit. */
 export const ERREURS_BASE = {
   quota: "53400",
@@ -125,6 +127,102 @@ export const LIVRABLES_IA = {
 
 export type ActionIa = keyof typeof LIVRABLES_IA;
 
+/**
+ * Ce que l'assistant sait proposer sous une autre forme qu'un texte : des
+ * lignes, acceptées ou écartées une à une. Tenu à part de `LIVRABLES_IA`,
+ * dont chaque entrée est un texte borné par une longueur ; un test
+ * d'architecture lie celui-ci aux profils structurés du worker.
+ *
+ * Le navigateur choisit un livrable de cette liste, et rien d'autre.
+ */
+export const LIVRABLES_STRUCTURES = {
+  budget_plan: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "budget",
+    titre: "Proposition de lignes de budget",
+    bouton: "Proposer des lignes de budget",
+    description:
+      "L'assistant propose des lignes de dépense à partir de la fiche du projet, du budget déjà saisi et du planning, transmis pour cela à notre fournisseur d'IA.",
+    /**
+     * Dit à chaque affichage des lignes : l'assistant n'a aucune grille
+     * tarifaire, et un montant proposé ne doit pas passer pour une donnée.
+     */
+    avertissement:
+      "Estimations de l'assistant, sans grille tarifaire : vérifiez chaque montant avant de l'accepter.",
+    /** Lignes qu'une proposition peut porter : la borne de la base et du profil. */
+    lignesMax: 40,
+  },
+} as const;
+
+export type ActionStructuree = keyof typeof LIVRABLES_STRUCTURES;
+
+/** Vrai pour une action du catalogue structuré : tout ce qui vient du navigateur passe par là. */
+export function estActionStructuree(valeur: unknown): valeur is ActionStructuree {
+  return typeof valeur === "string" && Object.hasOwn(LIVRABLES_STRUCTURES, valeur);
+}
+
+/** Ligne proposée, telle que l'écran la lit. */
+export type LigneProposee = {
+  id: string;
+  position: number;
+  category: string;
+  label: string;
+  quantity: number;
+  unit_cost: number;
+  state: string;
+};
+
+/**
+ * Où en est une proposition de lignes : combien attendent une décision,
+ * combien ont été acceptées ou écartées, et ce que pèsent celles qui
+ * attendent. Le total est compté en centimes entiers, comme le budget :
+ * additionner des flottants finit par afficher un centime de trop.
+ */
+export function bilanLignes(lignes: readonly LigneProposee[]): {
+  enAttente: number;
+  acceptees: number;
+  ecartees: number;
+  totalEnAttenteCentimes: number;
+} {
+  let enAttente = 0;
+  let acceptees = 0;
+  let ecartees = 0;
+  let totalEnAttenteCentimes = 0;
+  for (const ligne of lignes) {
+    if (ligne.state === "accepted") {
+      acceptees += 1;
+    } else if (ligne.state === "dismissed") {
+      ecartees += 1;
+    } else {
+      enAttente += 1;
+      totalEnAttenteCentimes += Math.round(Number(ligne.quantity) * Number(ligne.unit_cost) * 100);
+    }
+  }
+  return { enAttente, acceptees, ecartees, totalEnAttenteCentimes };
+}
+
+/** « 1 ligne », « 12 lignes ». */
+export function nombreLignes(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "lignes" : "ligne"}`;
+}
+
+/**
+ * Ce que l'écran dit après « tout accepter », qui n'est pas atomique : si une
+ * ligne est refusée en chemin, les précédentes sont déjà entrées au budget,
+ * et l'écran doit le dire plutôt que d'annoncer un échec.
+ */
+export function messageLot(acceptees: number, demandees: number): string {
+  if (acceptees >= demandees) {
+    return `${nombreLignes(acceptees)} ${acceptees > 1 ? "ajoutées" : "ajoutée"} au budget.`;
+  }
+  if (acceptees === 0) {
+    return "Aucune ligne n'a pu être ajoutée. Réessayez dans un instant.";
+  }
+  return `${nombreLignes(acceptees)} sur ${NOMBRE.format(demandees)} ${
+    acceptees > 1 ? "ajoutées" : "ajoutée"
+  } au budget ; les autres attendent toujours votre décision.`;
+}
+
 /** Ordre d'affichage, et liste de référence pour les tests. */
 export const ORDRE_LIVRABLES = Object.keys(LIVRABLES_IA) as ActionIa[];
 
@@ -200,8 +298,6 @@ export function messageErreur(code: string | undefined): string {
       return "La demande n'a pas abouti. Réessayez dans un instant.";
   }
 }
-
-const NOMBRE = new Intl.NumberFormat("fr-FR");
 
 /** Nombre écrit à la française : « 1 500 ». */
 export function enNombre(nombre: number): string {

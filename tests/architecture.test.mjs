@@ -897,6 +897,16 @@ describe("Livrables structurés", () => {
     assert.ok(PROFIL_BUDGET.systeme.includes(String(PROFIL_BUDGET.lignesMax)));
   });
 
+  it("l'écran propose exactement les livrables structurés que le worker sait produire", async () => {
+    const { LIVRABLES_STRUCTURES } = await import("../src/lib/propositions.ts");
+    const { PROFILS_FIELD } = await import("../worker/src/ia/profils.ts");
+    assert.deepEqual(Object.keys(LIVRABLES_STRUCTURES).sort(), Object.keys(PROFILS_FIELD).sort());
+    // La borne de l'écran est celle du profil, donc celle de la base.
+    for (const [action, profil] of Object.entries(PROFILS_FIELD)) {
+      assert.equal(LIVRABLES_STRUCTURES[action].lignesMax, profil.lignesMax, action);
+    }
+  });
+
   it("FIELD expose exactement les actions de ses profils", async () => {
     const { executeursField } = await import("../worker/src/agents/field.ts");
     const { PROFILS_FIELD } = await import("../worker/src/ia/profils.ts");
