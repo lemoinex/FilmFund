@@ -20,7 +20,7 @@ réels).
 | I1  | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé localement | recette        |
 | I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé localement | recette de I1  |
 | I2a | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé localement | recette de I1  |
-| I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | à faire           | I2a            |
+| I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé localement | recette de I1  |
 | J   | Autres agents                                                                                                                  | bloqué            | I1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
@@ -358,6 +358,16 @@ choix est irréversible. Les longueurs visées vivent dans les profils versionn�
 admises dans la base, et un test d'architecture refuse qu'elles divergent. Aucune table ni
 politique nouvelle. Reste à livrer : les écrans (I2b), et la recette, qui attend la recette de
 I1 — donc une clé Anthropic en état de marche.
+
+Écrans des propositions, décidés le 4 octobre 2026 (lot I2b) : l'encart de l'assistant se
+tient près de ce qu'il écrit — pitch et synopsis sur la page du projet, synopsis court dans la
+fiche, synopsis détaillé et note d'intention dans les documents. Un catalogue unique
+(`LIVRABLES_IA`) porte libellés, longueurs et rubrique ; les actions serveur refusent toute
+action qui n'y figure pas, et un test d'architecture refuse que ses bornes s'écartent de celles
+de la base. Pour un livrable qui atterrit dans un document, l'écran montre celui que la base
+réécrira — le plus récemment modifié de son type — et le dit ; s'il n'en existe pas, il annonce
+qu'un document sera créé en brouillon. Une seule boucle de rafraîchissement par rubrique, même
+avec deux encarts.
 
 Score de maturité, décidé le 3 octobre 2026 (lot S) : sans IA, le score mesure ce qui est
 renseigné dans le projet, critère par critère, et ne juge pas la qualité de l'écriture —

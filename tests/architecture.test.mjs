@@ -818,3 +818,116 @@ describe("Livrables de WEAVER", () => {
     }
   });
 });
+
+/*
+ * Écrans des propositions (lot I2b). Le catalogue de l'écran, les profils du
+ * worker et les bornes de la base décrivent les mêmes livrables : un écart
+ * ferait proposer un livrable que le worker ne sait pas écrire, ou composer
+ * un texte que la base refuserait d'appliquer.
+ */
+describe("Écrans des propositions", () => {
+  const PAGES = {
+    projet: "src/app/(app)/projets/[id]/page.tsx",
+    fiche: "src/app/(app)/projets/[id]/fiche/page.tsx",
+    documents: "src/app/(app)/projets/[id]/documents/page.tsx",
+  };
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("l'écran propose exactement les livrables que le worker sait écrire", async () => {
+    const { ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
+    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    assert.deepEqual([...ORDRE_LIVRABLES].sort(), Object.keys(PROFILS_WEAVER).sort());
+  });
+
+  it("la borne de l'écran est celle que la base applique à l'acceptation", async () => {
+    const { LIVRABLES_IA, ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
+    const migration = lire("supabase/migrations/20261003234544_weaver_synopsis.sql");
+    const debut = migration.indexOf("create or replace function public.accepter_proposition");
+    assert.ok(debut >= 0, "accepter_proposition introuvable");
+    const acceptation = migration.slice(debut);
+
+    for (const action of ORDRE_LIVRABLES) {
+      assert.match(
+        acceptation,
+        new RegExp(`when '${action}' then v_max := ${LIVRABLES_IA[action].longueurMax};`),
+        `borne de ${action}`,
+      );
+    }
+  });
+
+  it("la demande transmet le livrable à la base, après l'avoir validé", () => {
+    const actions = sansCommentaires(lire("src/app/(app)/projets/[id]/actions-ia.ts"));
+    assert.match(actions, /p_action: action/);
+    assert.doesNotMatch(actions, /p_action: "logline"/);
+
+    for (const nom of [
+      "demanderDevis",
+      "lancerProposition",
+      "annulerProposition",
+      "appliquerProposition",
+      "ecarterProposition",
+    ]) {
+      const debut = actions.indexOf(`export async function ${nom}`);
+      assert.ok(debut >= 0, nom);
+      const suite = actions.indexOf("\nexport ", debut + 1);
+      const corps = actions.slice(debut, suite === -1 ? undefined : suite);
+      assert.match(corps, /estActionIa\(action\)/, `${nom} valide le livrable`);
+      assert.match(corps, /exigerAcces|session\(\)/, `${nom} exige une session`);
+    }
+  });
+
+  it("chaque rubrique porte les encarts de ses livrables", async () => {
+    const { LIVRABLES_IA, ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
+    for (const action of ORDRE_LIVRABLES) {
+      const page = LIVRABLES_IA[action].page;
+      assert.ok(Object.hasOwn(PAGES, page), `${action} : rubrique ${page} inconnue`);
+      assert.match(lire(PAGES[page]), new RegExp(`"${action}"`), `${action} dans ${page}`);
+    }
+  });
+
+  it("aucune longueur de texte n'est écrite en dur dans l'encart", async () => {
+    const { LIVRABLES_IA, ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
+    const encart = sansCommentaires(lire("src/app/(app)/projets/[id]/proposition.tsx"));
+    assert.match(encart, /maxLength=\{livrable\.longueurMax\}/);
+    assert.match(encart, /rows=\{livrable\.lignes\}/);
+    for (const action of ORDRE_LIVRABLES) {
+      assert.ok(
+        !encart.includes(String(LIVRABLES_IA[action].longueurMax)),
+        `${action} : sa longueur ne doit venir que du catalogue`,
+      );
+    }
+  });
+
+  it("l'encart n'est rendu qu'à qui peut engager les unités du studio", () => {
+    for (const chemin of Object.values(PAGES)) {
+      const page = sansCommentaires(lire(chemin));
+      assert.match(page, /peutDemander \? \(/, chemin);
+      // Appliquer reste au porteur et aux éditeurs, administrateur compris.
+      assert.match(page, /peutAppliquer=\{(peutEditer|peutAppliquer)\}/, chemin);
+    }
+  });
+
+  it("une seule boucle de rafraîchissement par rubrique", () => {
+    const encart = lire("src/app/(app)/projets/[id]/proposition.tsx");
+    // Le minuteur vit dans le composant que la page rend une fois.
+    assert.match(encart, /export function RafraichissementPropositions/);
+    assert.equal(encart.match(/setInterval/g)?.length, 1);
+    for (const chemin of Object.values(PAGES)) {
+      const page = lire(chemin);
+      assert.equal(
+        page.match(/<RafraichissementPropositions/g)?.length,
+        1,
+        `${chemin} : un seul rafraîchissement`,
+      );
+    }
+  });
+
+  it("la lecture des étapes reste bornée à une ligne par livrable", () => {
+    const serveur = sansCommentaires(lire("src/lib/propositions-serveur.ts"));
+    assert.match(serveur, /\.limit\(1\)/);
+    assert.match(serveur, /\.maybeSingle\(\)/);
+    // Rien n'est lu pour qui n'a pas le droit de demander.
+    assert.match(serveur, /if \(!peutDemander\) \{\s*return etapes;/);
+  });
+});

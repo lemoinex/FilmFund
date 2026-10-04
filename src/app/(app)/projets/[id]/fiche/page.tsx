@@ -9,9 +9,11 @@ import { lireAcces } from "@/lib/equipes";
 import { dureeEnClair, GENRES, ROLES_PERSONNAGE } from "@/lib/fiche";
 import { listerPays } from "@/lib/profils";
 import { ETAPES, FORMATS } from "@/lib/projets";
+import { attenteEnCours, lireEtapes } from "@/lib/propositions-serveur";
 import { createClient } from "@/lib/supabase/server";
 
 import { OngletsProjet } from "../onglets";
+import { Proposition, RafraichissementPropositions } from "../proposition";
 
 export const metadata: Metadata = {
   title: "Fiche du projet — filmfundAfrica",
@@ -30,6 +32,9 @@ function libelle<T extends Record<string, string>>(codes: T, valeur: string | nu
  * l'équipe la lit, comme le projet ; porteur et éditeurs la complètent par
  * l'assistant.
  */
+/** Le livrable que cette rubrique porte : le synopsis court s'y lit. */
+const LIVRABLES_FICHE = ["synopsis_short"] as const;
+
 export default async function FichePage({
   params,
   searchParams,
@@ -41,24 +46,30 @@ export default async function FichePage({
   const { assistant } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: projet }, { data: accesBrut }, { data: budget }, { data: personnages }] =
-    await Promise.all([
-      supabase
-        .from("projects")
-        .select(
-          "id, title, format, stage, logline, genre, countries, languages, duration_minutes, short_synopsis, theme, stakes, artistic_vision, goals, audience",
-        )
-        .eq("id", id)
-        .maybeSingle(),
-      supabase.rpc("acces_au_projet", { p_project_id: id }),
-      supabase.rpc("peut_gerer_budget", { p_project_id: id }),
-      supabase
-        .from("project_characters")
-        .select("id, name, role, description")
-        .eq("project_id", id)
-        .order("position")
-        .order("created_at"),
-    ]);
+  const [
+    { data: projet },
+    { data: accesBrut },
+    { data: estAdmin },
+    { data: budget },
+    { data: personnages },
+  ] = await Promise.all([
+    supabase
+      .from("projects")
+      .select(
+        "id, title, format, stage, logline, genre, countries, languages, duration_minutes, short_synopsis, theme, stakes, artistic_vision, goals, audience",
+      )
+      .eq("id", id)
+      .maybeSingle(),
+    supabase.rpc("acces_au_projet", { p_project_id: id }),
+    supabase.rpc("is_admin"),
+    supabase.rpc("peut_gerer_budget", { p_project_id: id }),
+    supabase
+      .from("project_characters")
+      .select("id, name, role, description")
+      .eq("project_id", id)
+      .order("position")
+      .order("created_at"),
+  ]);
 
   if (!projet) {
     notFound();
@@ -67,6 +78,11 @@ export default async function FichePage({
   const acces = lireAcces(accesBrut);
   const peutEditer = acces === "owner" || acces === "editor";
   const modifier = peutEditer ? (cle: CleEtape) => `/projets/${id}/assistant/${cle}` : null;
+
+  // Assistant d'écriture : même règle que la fonction SQL peut_engager_unites,
+  // qui a le dernier mot. Les lecteurs n'engagent pas les unités du studio.
+  const peutDemander = peutEditer || estAdmin === true;
+  const etapes = await lireEtapes(supabase, id, LIVRABLES_FICHE, peutDemander);
 
   const noms = new Map(listerPays().map(({ code, nom }) => [code, nom]));
   const pays = projet.countries.map((code, index) => {
@@ -171,6 +187,19 @@ export default async function FichePage({
           <Texte>{projet.audience}</Texte>
         </Section>
       </div>
+
+      {peutDemander ? (
+        <>
+          <RafraichissementPropositions actif={attenteEnCours(etapes.values())} />
+          <Proposition
+            projetId={id}
+            action="synopsis_short"
+            texteActuel={projet.short_synopsis}
+            etape={etapes.get("synopsis_short") ?? { etape: "repos" }}
+            peutAppliquer={peutEditer}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

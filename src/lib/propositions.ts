@@ -1,13 +1,11 @@
 /**
- * Propositions de l'assistant d'écriture : où en est une demande, vue de
- * l'écran. Module pur, testable sans pile Supabase.
+ * Propositions de l'assistant d'écriture : ce qu'il sait produire, où en est
+ * une demande, et comment l'écran en parle. Module pur, testable sans pile
+ * Supabase.
  *
  * Aucun import d'alias : ce module est aussi chargé tel quel par les tests
  * Node.
  */
-
-/** Limite de la colonne `projects.logline`. */
-export const PITCH_MAX = 500;
 
 /** Codes d'erreur de la base que l'écran traduit. */
 export const ERREURS_BASE = {
@@ -21,10 +19,94 @@ export const ERREURS_BASE = {
   propositionDejaTraitee: "PR001",
 } as const;
 
+/**
+ * Ce que l'assistant sait écrire, par action de tâche.
+ *
+ * `longueurMax` est la borne que la base applique à l'acceptation : l'écran
+ * la reprend pour ne pas laisser composer un texte qu'elle refuserait. Un
+ * test d'architecture vérifie qu'elles s'accordent, et que chaque action est
+ * bien celle d'un profil du worker.
+ *
+ * Le navigateur choisit un livrable de cette liste, et rien d'autre : ni
+ * modèle, ni budget, ni limite. Le profil, le fournisseur et le coût sont
+ * décidés par le worker ; les droits et les quotas, par la base.
+ */
+export const LIVRABLES_IA = {
+  logline: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "projet",
+    titre: "Proposition de pitch",
+    bouton: "Proposer un pitch",
+    /** Ce que la proposition remplacerait, nommé comme à l'écran. */
+    remplace: "Pitch actuel",
+    description:
+      "L'assistant rédige une proposition à partir de la fiche du projet — titre, format, étape, synopsis et pitch actuel —, transmise pour cela à notre fournisseur d'IA.",
+    longueurMax: 500,
+    lignes: 4,
+  },
+  synopsis_standard: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "projet",
+    titre: "Proposition de synopsis",
+    bouton: "Proposer un synopsis",
+    remplace: "Synopsis actuel",
+    description:
+      "L'assistant rédige le récit du début au dénouement, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
+    longueurMax: 20_000,
+    lignes: 14,
+  },
+  synopsis_short: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "fiche",
+    titre: "Proposition de synopsis court",
+    bouton: "Proposer un synopsis court",
+    remplace: "Synopsis court actuel",
+    description:
+      "L'assistant résume le film en un ou deux paragraphes, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
+    longueurMax: 1500,
+    lignes: 8,
+  },
+  synopsis_detailed: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de synopsis détaillé",
+    bouton: "Proposer un synopsis détaillé",
+    remplace: "Document actuel",
+    description:
+      "L'assistant déroule le récit séquence par séquence, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
+    longueurMax: 20_000,
+    lignes: 16,
+  },
+  intention_note: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de note d'intention",
+    bouton: "Proposer une note d'intention",
+    remplace: "Document actuel",
+    description:
+      "L'assistant écrit la note à la première personne, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
+    longueurMax: 20_000,
+    lignes: 16,
+  },
+} as const;
+
+export type ActionIa = keyof typeof LIVRABLES_IA;
+
+/** Ordre d'affichage, et liste de référence pour les tests. */
+export const ORDRE_LIVRABLES = Object.keys(LIVRABLES_IA) as ActionIa[];
+
+/** Vrai pour une action du catalogue : tout ce qui vient du navigateur passe par là. */
+export function estActionIa(valeur: unknown): valeur is ActionIa {
+  return typeof valeur === "string" && Object.hasOwn(LIVRABLES_IA, valeur);
+}
+
+/** Limite de la colonne `projects.logline`, telle que l'écran la connaît. */
+export const PITCH_MAX = LIVRABLES_IA.logline.longueurMax;
+
 export type TacheVue = { id: string; state: string } | null;
 export type PropositionVue = { id: string; content: string; state: string } | null;
 
-export type EtapePitch =
+export type EtapeProposition =
   /** Rien en cours : une demande peut être faite. */
   | { etape: "repos" }
   /** La dernière demande a échoué ; l'unité a été rendue. */
@@ -37,11 +119,11 @@ export type EtapePitch =
   | { etape: "proposition"; propositionId: string; texte: string };
 
 /**
- * Étape affichée, d'après la dernière tâche de pitch du projet et sa
- * proposition. Un état inconnu ramène au repos : mieux vaut laisser
+ * Étape affichée, d'après la dernière tâche de cette action sur le projet et
+ * sa proposition. Un état inconnu ramène au repos : mieux vaut laisser
  * redemander que d'afficher une attente sans fin.
  */
-export function etapePitch(tache: TacheVue, proposition: PropositionVue): EtapePitch {
+export function etapeProposition(tache: TacheVue, proposition: PropositionVue): EtapeProposition {
   if (!tache) {
     return { etape: "repos" };
   }

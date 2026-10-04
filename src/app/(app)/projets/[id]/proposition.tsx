@@ -4,14 +4,20 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { Message } from "@/components/ui/form";
-import { enNombre, PITCH_MAX, unitesTexte, type EtapePitch } from "@/lib/propositions";
+import {
+  enNombre,
+  LIVRABLES_IA,
+  unitesTexte,
+  type ActionIa,
+  type EtapeProposition,
+} from "@/lib/propositions";
 
 import {
-  annulerPitch,
+  annulerProposition,
   appliquerProposition,
-  demanderDevisPitch,
+  demanderDevis,
   ecarterProposition,
-  lancerPitch,
+  lancerProposition,
   type Devis,
 } from "./actions-ia";
 
@@ -20,29 +26,53 @@ const BOUTON_PRINCIPAL =
 const BOUTON_SECONDAIRE =
   "border-navy-line hover:border-light-muted rounded-full border px-5 py-2.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60";
 
-/** Rythme de rafraîchissement tant que la proposition se prépare. */
+/** Rythme de rafraîchissement tant qu'une proposition se prépare. */
 const RAFRAICHISSEMENT_MS = 3000;
 
 /**
- * Demande de pitch à l'assistant d'écriture : devis, confirmation, suivi,
- * puis proposition à comparer, modifier, appliquer ou écarter.
+ * Une seule boucle de rafraîchissement par page, quel que soit le nombre
+ * d'encarts : la page sait lesquels attendent, et n'en rafraîchit la route
+ * qu'une fois.
+ */
+export function RafraichissementPropositions({ actif }: { actif: boolean }) {
+  const router = useRouter();
+  useEffect(() => {
+    if (!actif) {
+      return;
+    }
+    const minuterie = setInterval(() => router.refresh(), RAFRAICHISSEMENT_MS);
+    return () => clearInterval(minuterie);
+  }, [actif, router]);
+  return null;
+}
+
+/**
+ * Demande de rédaction à l'assistant : devis, confirmation, suivi, puis
+ * proposition à comparer, modifier, appliquer ou écarter.
  *
  * Tout ce qui compte est décidé côté serveur : ce composant n'affiche que
  * l'étape calculée par la page, et ses boutons ne font qu'appeler des
- * actions qui revérifient chaque droit.
+ * actions qui revérifient chaque droit. Le livrable vient du catalogue, que
+ * les actions revalident de leur côté.
  */
-export function PropositionLogline({
+export function Proposition({
   projetId,
-  pitchActuel,
+  action,
+  texteActuel,
+  precision,
   etape,
   peutAppliquer,
 }: {
   projetId: string;
-  pitchActuel: string;
-  etape: EtapePitch;
+  action: ActionIa;
+  texteActuel: string;
+  /** Ce que la proposition écrirait précisément — le document visé, par exemple. */
+  precision?: string;
+  etape: EtapeProposition;
   /** Porteur et éditeurs : un administrateur hors de l'équipe peut demander et écarter, pas appliquer. */
   peutAppliquer: boolean;
 }) {
+  const livrable = LIVRABLES_IA[action];
   const router = useRouter();
   const [enCours, demarrer] = useTransition();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -60,19 +90,10 @@ export function PropositionLogline({
     setTexte(proposition?.texte ?? "");
   }
 
-  const enPreparation = etape.etape === "en_attente" || etape.etape === "en_cours";
-  useEffect(() => {
-    if (!enPreparation) {
-      return;
-    }
-    const minuterie = setInterval(() => router.refresh(), RAFRAICHISSEMENT_MS);
-    return () => clearInterval(minuterie);
-  }, [enPreparation, router]);
-
-  function executer(action: () => Promise<{ erreur: string } | object>, apres?: () => void) {
+  function executer(suite: () => Promise<{ erreur: string } | object>, apres?: () => void) {
     setErreur(null);
     demarrer(async () => {
-      const resultat = await action();
+      const resultat = await suite();
       if ("erreur" in resultat) {
         setErreur(resultat.erreur);
       } else {
@@ -82,10 +103,10 @@ export function PropositionLogline({
     });
   }
 
-  function demanderDevis() {
+  function obtenirDevis() {
     setErreur(null);
     demarrer(async () => {
-      const resultat = await demanderDevisPitch(projetId);
+      const resultat = await demanderDevis(projetId, action);
       if ("erreur" in resultat) {
         setErreur(resultat.erreur);
       } else {
@@ -96,17 +117,18 @@ export function PropositionLogline({
 
   return (
     <section
-      aria-labelledby="assistant-pitch"
+      aria-labelledby={`assistant-${action}`}
       className="border-navy-line mt-10 rounded-xl border p-5 sm:p-6"
     >
-      <h2 id="assistant-pitch" className="text-sm font-medium">
-        Assistant d&apos;écriture : proposition de pitch
+      <h2 id={`assistant-${action}`} className="text-sm font-medium">
+        Assistant d&apos;écriture : {livrable.titre.toLowerCase()}
       </h2>
       <p className="text-light-muted mt-2 text-sm leading-relaxed text-pretty">
-        L&apos;assistant rédige une proposition à partir de la fiche du projet — titre, format,
-        étape, synopsis et pitch actuel —, transmise pour cela à notre fournisseur d&apos;IA. Rien
-        n&apos;est remplacé sans votre accord.
+        {livrable.description} Rien n&apos;est remplacé sans votre accord.
       </p>
+      {precision ? (
+        <p className="text-light-muted mt-2 text-sm leading-relaxed text-pretty">{precision}</p>
+      ) : null}
 
       {erreur ? (
         <div className="mt-4">
@@ -116,18 +138,18 @@ export function PropositionLogline({
 
       {etape.etape === "echec" && !demande ? (
         <p role="status" className="text-light-muted mt-4 text-sm leading-relaxed">
-          La dernière demande n&apos;a pas abouti. L&apos;unité réservée a été rendue.
+          La dernière demande n&apos;a pas abouti. Les unités réservées ont été rendues.
         </p>
       ) : null}
 
       {(etape.etape === "repos" || etape.etape === "echec") && !demande ? (
         <button
           type="button"
-          onClick={demanderDevis}
+          onClick={obtenirDevis}
           disabled={enCours}
           className={`${BOUTON_PRINCIPAL} mt-5`}
         >
-          {enCours ? "Un instant…" : "Proposer un pitch"}
+          {enCours ? "Un instant…" : livrable.bouton}
         </button>
       ) : null}
 
@@ -144,7 +166,7 @@ export function PropositionLogline({
               disabled={enCours}
               onClick={() =>
                 executer(
-                  () => lancerPitch(projetId, demande.devis.id, demande.cle),
+                  () => lancerProposition(projetId, action, demande.devis.id, demande.cle),
                   () => setDemande(null),
                 )
               }
@@ -172,7 +194,7 @@ export function PropositionLogline({
           <button
             type="button"
             disabled={enCours}
-            onClick={() => executer(() => annulerPitch(projetId, etape.tacheId))}
+            onClick={() => executer(() => annulerProposition(projetId, action, etape.tacheId))}
             className={`${BOUTON_SECONDAIRE} mt-4`}
           >
             Annuler la demande
@@ -188,8 +210,8 @@ export function PropositionLogline({
 
       {etape.etape === "a_rapprocher" ? (
         <p role="status" className="text-light-muted mt-5 text-sm leading-relaxed text-pretty">
-          Cette demande a été interrompue avant sa fin. Son issue est en cours de vérification ;
-          l&apos;unité reste réservée d&apos;ici là.
+          Cette demande a été interrompue avant sa fin. Son issue est en cours de vérification ; les
+          unités restent réservées d&apos;ici là.
         </p>
       ) : null}
 
@@ -197,30 +219,32 @@ export function PropositionLogline({
         <div className="mt-5">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <h3 className="text-light-muted text-xs tracking-wide uppercase">Pitch actuel</h3>
-              <p className="mt-2 text-sm leading-relaxed text-pretty">
-                {pitchActuel || <span className="text-light-muted">Pas encore de pitch.</span>}
+              <h3 className="text-light-muted text-xs tracking-wide uppercase">
+                {livrable.remplace}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-pretty whitespace-pre-line">
+                {texteActuel || <span className="text-light-muted">Rien pour l&apos;instant.</span>}
               </p>
             </div>
             <div>
               <label
-                htmlFor="proposition-pitch"
+                htmlFor={`proposition-${action}`}
                 className="text-light-muted block text-xs tracking-wide uppercase"
               >
                 {peutAppliquer ? "Proposition, modifiable" : "Proposition"}
               </label>
               <textarea
-                id="proposition-pitch"
-                rows={7}
-                maxLength={PITCH_MAX}
+                id={`proposition-${action}`}
+                rows={livrable.lignes}
+                maxLength={livrable.longueurMax}
                 readOnly={!peutAppliquer}
                 value={texte}
                 onChange={(evenement) => setTexte(evenement.target.value)}
-                aria-describedby="proposition-pitch-longueur"
+                aria-describedby={`proposition-${action}-longueur`}
                 className="border-navy-line bg-navy focus:border-gold mt-2 w-full resize-y rounded-lg border px-4 py-3 text-sm leading-relaxed transition-colors outline-none"
               />
-              <p id="proposition-pitch-longueur" className="text-light-muted mt-1 text-xs">
-                {texte.length} / {PITCH_MAX} caractères
+              <p id={`proposition-${action}-longueur`} className="text-light-muted mt-1 text-xs">
+                {enNombre(texte.length)} / {enNombre(livrable.longueurMax)} caractères
               </p>
             </div>
           </div>
@@ -231,7 +255,9 @@ export function PropositionLogline({
                 type="button"
                 disabled={enCours || !texte.trim()}
                 onClick={() =>
-                  executer(() => appliquerProposition(projetId, proposition.propositionId, texte))
+                  executer(() =>
+                    appliquerProposition(projetId, action, proposition.propositionId, texte),
+                  )
                 }
                 className={BOUTON_PRINCIPAL}
               >
@@ -242,7 +268,7 @@ export function PropositionLogline({
               type="button"
               disabled={enCours}
               onClick={() =>
-                executer(() => ecarterProposition(projetId, proposition.propositionId))
+                executer(() => ecarterProposition(projetId, action, proposition.propositionId))
               }
               className={BOUTON_SECONDAIRE}
             >

@@ -7,7 +7,7 @@ import { Couverture } from "@/components/ui/couverture";
 import { EnvoiImage } from "@/components/ui/envoi-image";
 import { lireAcces, ROLES_PROJET } from "@/lib/equipes";
 import { ETAPES, FORMATS } from "@/lib/projets";
-import { etapePitch, type EtapePitch } from "@/lib/propositions";
+import { attenteEnCours, lireEtapes } from "@/lib/propositions-serveur";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,12 +17,15 @@ import { Equipe } from "./equipe";
 import { FormulaireEdition } from "./formulaire";
 import { MaturiteDuDossier } from "./maturite";
 import { OngletsProjet } from "./onglets";
-import { PropositionLogline } from "./proposition-logline";
+import { Proposition, RafraichissementPropositions } from "./proposition";
 
 export const metadata: Metadata = {
   title: "Projet — filmfundAfrica",
   robots: { index: false, follow: false },
 };
+
+/** Les livrables que cette page porte : le texte qu'ils écrivent s'y lit. */
+const LIVRABLES_PAGE = ["logline", "synopsis_standard"] as const;
 
 export default async function ProjetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -67,26 +70,10 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
 
   // Assistant d'écriture : même règle que la fonction SQL peut_engager_unites,
   // qui a le dernier mot. Les lecteurs n'engagent pas les unités du studio.
-  const peutDemanderPitch = peutEditer || estAdmin === true;
-  let etape: EtapePitch = { etape: "repos" };
-  if (peutDemanderPitch) {
-    const { data: tache } = await supabase
-      .from("jobs")
-      .select("id, state")
-      .eq("project_id", id)
-      .eq("action", "logline")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const { data: proposition } = tache
-      ? await supabase
-          .from("ai_suggestions")
-          .select("id, content, state")
-          .eq("job_id", tache.id)
-          .maybeSingle()
-      : { data: null };
-    etape = etapePitch(tache, proposition);
-  }
+  const peutDemander = peutEditer || estAdmin === true;
+  // Les deux livrables que cette page écrit : le pitch et le synopsis, tous
+  // deux affichés et modifiés ici.
+  const etapes = await lireEtapes(supabase, id, LIVRABLES_PAGE, peutDemander);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
@@ -147,13 +134,24 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
         )}
       </div>
 
-      {peutDemanderPitch ? (
-        <PropositionLogline
-          projetId={projet.id}
-          pitchActuel={projet.logline}
-          etape={etape}
-          peutAppliquer={peutEditer}
-        />
+      {peutDemander ? (
+        <>
+          <RafraichissementPropositions actif={attenteEnCours(etapes.values())} />
+          <Proposition
+            projetId={projet.id}
+            action="logline"
+            texteActuel={projet.logline}
+            etape={etapes.get("logline") ?? { etape: "repos" }}
+            peutAppliquer={peutEditer}
+          />
+          <Proposition
+            projetId={projet.id}
+            action="synopsis_standard"
+            texteActuel={projet.synopsis}
+            etape={etapes.get("synopsis_standard") ?? { etape: "repos" }}
+            peutAppliquer={peutEditer}
+          />
+        </>
       ) : null}
 
       <Equipe projetId={projet.id} acces={acces} utilisateurId={user.id} />

@@ -12,8 +12,11 @@ import { after, before, describe, it } from "node:test";
 import {
   enNombre,
   ERREURS_BASE,
-  etapePitch,
+  estActionIa,
+  etapeProposition,
+  LIVRABLES_IA,
   messageErreur,
+  ORDRE_LIVRABLES,
   PITCH_MAX,
   unitesTexte,
 } from "../src/lib/propositions.ts";
@@ -32,32 +35,41 @@ describe("Propositions : étapes de l'écran", () => {
   const proposition = (state) => ({ id: "p", content: "Un pitch proposé.", state });
 
   it("sans tâche, ou après une annulation, une demande peut être faite", () => {
-    assert.deepEqual(etapePitch(null, null), { etape: "repos" });
-    assert.deepEqual(etapePitch(tache("cancelled"), null), { etape: "repos" });
+    assert.deepEqual(etapeProposition(null, null), { etape: "repos" });
+    assert.deepEqual(etapeProposition(tache("cancelled"), null), { etape: "repos" });
   });
 
   it("suit la tâche : en attente (annulable), en cours, à rapprocher, en échec", () => {
-    assert.deepEqual(etapePitch(tache("queued"), null), { etape: "en_attente", tacheId: "t" });
-    assert.deepEqual(etapePitch(tache("running"), null), { etape: "en_cours" });
-    assert.deepEqual(etapePitch(tache("awaiting_reconciliation"), null), {
+    assert.deepEqual(etapeProposition(tache("queued"), null), {
+      etape: "en_attente",
+      tacheId: "t",
+    });
+    assert.deepEqual(etapeProposition(tache("running"), null), { etape: "en_cours" });
+    assert.deepEqual(etapeProposition(tache("awaiting_reconciliation"), null), {
       etape: "a_rapprocher",
     });
-    assert.deepEqual(etapePitch(tache("failed"), null), { etape: "echec" });
+    assert.deepEqual(etapeProposition(tache("failed"), null), { etape: "echec" });
   });
 
   it("n'affiche une proposition que tant qu'elle attend une décision", () => {
-    assert.deepEqual(etapePitch(tache("succeeded"), proposition("proposed")), {
+    assert.deepEqual(etapeProposition(tache("succeeded"), proposition("proposed")), {
       etape: "proposition",
       propositionId: "p",
       texte: "Un pitch proposé.",
     });
-    assert.deepEqual(etapePitch(tache("succeeded"), proposition("accepted")), { etape: "repos" });
-    assert.deepEqual(etapePitch(tache("succeeded"), proposition("dismissed")), { etape: "repos" });
-    assert.deepEqual(etapePitch(tache("succeeded"), null), { etape: "repos" });
+    assert.deepEqual(etapeProposition(tache("succeeded"), proposition("accepted")), {
+      etape: "repos",
+    });
+    assert.deepEqual(etapeProposition(tache("succeeded"), proposition("dismissed")), {
+      etape: "repos",
+    });
+    assert.deepEqual(etapeProposition(tache("succeeded"), null), { etape: "repos" });
   });
 
   it("ramène un état inconnu au repos plutôt qu'à une attente sans fin", () => {
-    assert.deepEqual(etapePitch(tache("etat_futur"), proposition("proposed")), { etape: "repos" });
+    assert.deepEqual(etapeProposition(tache("etat_futur"), proposition("proposed")), {
+      etape: "repos",
+    });
   });
 
   it("traduit chaque erreur connue de la base, sans jamais montrer son code", () => {
@@ -77,6 +89,66 @@ describe("Propositions : étapes de l'écran", () => {
     // Le séparateur de milliers français est une espace insécable étroite.
     assert.equal(enNombre(1500).replace(/\s/u, " "), "1 500");
     assert.equal(PITCH_MAX, 500);
+  });
+});
+
+describe("Propositions : catalogue des livrables", () => {
+  it("porte les cinq livrables de WEAVER, dans l'ordre d'affichage", () => {
+    assert.deepEqual(ORDRE_LIVRABLES, [
+      "logline",
+      "synopsis_standard",
+      "synopsis_short",
+      "synopsis_detailed",
+      "intention_note",
+    ]);
+  });
+
+  it("n'admet qu'une action du catalogue : rien de ce que le navigateur envoie d'autre", () => {
+    for (const action of ORDRE_LIVRABLES) {
+      assert.ok(estActionIa(action), action);
+    }
+    for (const refus of [
+      "image",
+      "pdf_export",
+      "treatment",
+      "LOGLINE",
+      "",
+      " logline",
+      null,
+      undefined,
+      42,
+      { action: "logline" },
+    ]) {
+      assert.equal(estActionIa(refus), false, String(refus));
+    }
+  });
+
+  it("dit pour chaque livrable ce que l'écran doit afficher", () => {
+    for (const action of ORDRE_LIVRABLES) {
+      const livrable = LIVRABLES_IA[action];
+      assert.ok(livrable.titre.length > 0, action);
+      assert.ok(livrable.bouton.startsWith("Proposer"), action);
+      assert.ok(livrable.remplace.length > 0, action);
+      // La description dit que le contexte part chez le fournisseur : rien
+      // n'est transmis en silence.
+      assert.match(livrable.description, /fournisseur d'IA/, action);
+      assert.ok(livrable.longueurMax >= 500, action);
+      assert.ok(livrable.lignes >= 4, action);
+      assert.ok(["projet", "fiche", "documents"].includes(livrable.page), action);
+    }
+  });
+
+  it("range chaque livrable là où le texte qu'il écrit se lit", () => {
+    assert.deepEqual(
+      Object.fromEntries(ORDRE_LIVRABLES.map((action) => [action, LIVRABLES_IA[action].page])),
+      {
+        logline: "projet",
+        synopsis_standard: "projet",
+        synopsis_short: "fiche",
+        synopsis_detailed: "documents",
+        intention_note: "documents",
+      },
+    );
   });
 });
 
