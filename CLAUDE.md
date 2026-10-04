@@ -495,21 +495,21 @@ recommandations (« à améliorer ») sont configurables et traçables.
 `docs/backlog-status.md` est la source de vérité : lots A à P, avec leur statut.
 Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 
-| Étape | Contenu                                             | État au 4 octobre 2026                                                       |
-| ----- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
-| 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                        |
-| 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                        |
-| 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                                |
-| 3     | Assistant de création, score de maturité, dashboard | Dashboard, assistant (R1, R2) et score (S1, S2) livrés                       |
-| 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire               |
-| 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                                |
-| 6     | WEAVER                                              | Logline (I1) et rédactions (I2a, I2b) livrées ; recette en attente de la clé |
-| 7     | Budget, financement, calendrier, FIELD/GEAR         | Écrans livrés ; agents à faire (lot J)                                       |
-| 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                  |
-| 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                              |
-| 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)     |
-| 11    | Exports PDF/DOCX/ZIP                                | PDF, DOCX et ZIP livrés (lots M1 à M5)                                       |
-| 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                               |
+| Étape | Contenu                                             | État au 4 octobre 2026                                                      |
+| ----- | --------------------------------------------------- | --------------------------------------------------------------------------- |
+| 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                       |
+| 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                       |
+| 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                               |
+| 3     | Assistant de création, score de maturité, dashboard | Dashboard, assistant (R1, R2) et score (S1, S2) livrés                      |
+| 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire              |
+| 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                               |
+| 6     | WEAVER                                              | Logline (I1) et rédactions (I2a, I2b) validées en recette le 4 octobre 2026 |
+| 7     | Budget, financement, calendrier, FIELD/GEAR         | Écrans livrés ; agents à faire (lot J)                                      |
+| 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                 |
+| 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                             |
+| 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)    |
+| 11    | Exports PDF/DOCX/ZIP                                | PDF, DOCX et ZIP livrés (lots M1 à M5)                                      |
+| 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                              |
 
 Les onze agents restent dans le plan V1. Leur activation est progressive, avec
 contrôle des coûts, tests, permissions et validation métier.
