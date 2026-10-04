@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { accesAutorise, MESSAGE_INSCRIPTIONS_FERMEES, modePriveActif } from "@/lib/acces-prive";
+import { destinationInterne } from "@/lib/destination-interne";
 import { createClient } from "@/lib/supabase/server";
 
 export type EtatFormulaire = { erreur: string } | { message: string } | null;
@@ -24,14 +25,6 @@ function validerMotDePasse(motDePasse: string): string | null {
     return "Le mot de passe doit mêler lettres et chiffres.";
   }
   return null;
-}
-
-/** Destination après connexion. Toujours interne, jamais une URL absolue. */
-function destination(valeur: FormDataEntryValue | null): string {
-  const suite = typeof valeur === "string" ? valeur : "";
-  // Une redirection ouverte permettrait d'envoyer l'utilisateur sur un site
-  // tiers depuis un lien qui a l'air légitime.
-  return suite.startsWith("/") && !suite.startsWith("//") ? suite : "/tableau-de-bord";
 }
 
 export async function connexion(
@@ -67,7 +60,8 @@ export async function connexion(
     redirect("/acces-refuse");
   }
 
-  redirect(destination(formData.get("suite")));
+  // Destination toujours interne, jamais une adresse fournie telle quelle.
+  redirect(destinationInterne(formData.get("suite"), "/tableau-de-bord"));
 }
 
 export async function inscription(

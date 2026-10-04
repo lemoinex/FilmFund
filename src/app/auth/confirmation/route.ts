@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { destinationInterne, ouvrirSessionDepuisLien } from "@/lib/supabase/ouvrir-session";
+import { destinationInterne } from "@/lib/destination-interne";
+import { ouvrirSessionDepuisLien } from "@/lib/supabase/ouvrir-session";
 
 /**
  * Point d'arrivée des liens de confirmation d'adresse e-mail.
