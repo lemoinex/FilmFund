@@ -10,7 +10,6 @@
  * Seule sa présence est observable du dehors.
  */
 import { executeursArc } from "./agents/arc.ts";
-import { executeursField } from "./agents/field.ts";
 import { executeursScript } from "./agents/script.ts";
 import { executeursWeaver } from "./agents/weaver.ts";
 import { lireCleFournisseur, type Base } from "./base.ts";
@@ -41,7 +40,6 @@ export function registreDesAgents({ base, journal, creerFournisseur }: OptionsRe
         ...executeursWeaver(base, fournisseur),
         ...executeursArc(base, fournisseur),
         ...executeursScript(base, fournisseur),
-        ...executeursField(base, fournisseur),
       };
     } else {
       registre = {};
