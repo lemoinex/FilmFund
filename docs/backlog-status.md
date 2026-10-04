@@ -19,7 +19,8 @@ réels).
 | H2  | Worker Node (`worker/`) et son déploiement sur Railway                                                                         | validé en recette | —              |
 | I1  | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé localement | recette        |
 | I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé localement | recette de I1  |
-| I2  | WEAVER : synopsis court / standard / détaillé, note d'intention                                                                | à faire           | recette de I1  |
+| I2a | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé localement | recette de I1  |
+| I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | à faire           | I2a            |
 | J   | Autres agents                                                                                                                  | bloqué            | I1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
@@ -342,6 +343,21 @@ déclarée. Nombres et dates y restent des nombres et des dates ; un texte n'y d
 formule. Aucune table ni politique nouvelle : trois fonctions de la base reprises. Reste à
 livrer : ouverture d'une archive d'essai dans Word et Excel par l'utilisateur, fusion,
 migration poussée, redéploiement du worker, puis recette. Exploitation : `docs/worker.md`.
+
+Synopsis et note d'intention, décidés le 4 octobre 2026 (lot I2, découpé en I2a — base,
+profils et agent — et I2b — écrans) : quatre actions de plus sur le chemin du pitch, dont le
+devis connaissait déjà les unités. Le contexte d'une rédaction est plus riche que celui de la
+logline — fiche du projet, personnages, vision, documents finalisés — et il est lu par une
+fonction distincte, `contexte_redaction` : le profil `weaver.logline@1` garde le contexte pour
+lequel il a été écrit, puisque lui en donner davantage changerait sa version. Chaque texte
+accepté atterrit à sa place : le synopsis court dans la fiche, le synopsis standard dans le
+synopsis du projet, le synopsis détaillé et la note d'intention dans un document, versionné
+par le lot B — rien n'est écrasé sans trace, et le document naît en brouillon, à l'équipe de
+le finaliser. Un type de document `synopsis` est ajouté ; un enum ne se rétrécissant pas, ce
+choix est irréversible. Les longueurs visées vivent dans les profils versionnés, les longueurs
+admises dans la base, et un test d'architecture refuse qu'elles divergent. Aucune table ni
+politique nouvelle. Reste à livrer : les écrans (I2b), et la recette, qui attend la recette de
+I1 — donc une clé Anthropic en état de marche.
 
 Score de maturité, décidé le 3 octobre 2026 (lot S) : sans IA, le score mesure ce qui est
 renseigné dans le projet, critère par critère, et ne juge pas la qualité de l'écriture —

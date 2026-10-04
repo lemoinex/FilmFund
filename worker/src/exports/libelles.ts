@@ -57,6 +57,7 @@ export const ROLES_PERSONNAGE: Readonly<Record<string, string>> = {
 
 export const TYPES_DOCUMENT: Readonly<Record<string, string>> = {
   note_intention: "Note d'intention",
+  synopsis: "Synopsis détaillé",
   traitement: "Traitement",
   scenario: "Scénario",
   biographie: "Biographie et filmographie",

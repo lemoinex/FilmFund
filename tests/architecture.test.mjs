@@ -738,3 +738,83 @@ describe("Catalogue public", () => {
     );
   });
 });
+
+/*
+ * Livrables de WEAVER. Un profil versionné noue une action de tâche à ses
+ * consignes ; la base doit admettre cette action, la facturer, accepter la
+ * proposition qu'elle produira et savoir où l'appliquer. Un profil sans l'un
+ * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
+ */
+describe("Livrables de WEAVER", () => {
+  const DEVIS = "supabase/migrations/20261003162159_exports_zip.sql";
+  const PROPOSITIONS = "supabase/migrations/20261003234544_weaver_synopsis.sql";
+
+  /** Corps de la fonction nommée, jusqu'à la suivante. */
+  const corps = (migration, nom) => {
+    const debut = migration.indexOf(`create or replace function public.${nom}`);
+    assert.ok(debut >= 0, nom);
+    const suite = migration.indexOf("create or replace function public.", debut + 1);
+    return migration.slice(debut, suite === -1 ? undefined : suite);
+  };
+
+  it("la base admet chaque action de WEAVER et la facture au barème", async () => {
+    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    const devis = lire(DEVIS);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(devis)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+
+    assert.ok(enBase.length >= 10, "lecture de la migration");
+    for (const action of Object.keys(PROFILS_WEAVER)) {
+      assert.ok(enBase.includes(action), action);
+      assert.match(devis, new RegExp(`when '${action}' then v_quantite :=`), `devis de ${action}`);
+    }
+  });
+
+  it("la base accepte au dépôt la longueur que chaque profil annonce", async () => {
+    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    const depot = corps(lire(PROPOSITIONS), "livrer_proposition");
+    for (const [action, profil] of Object.entries(PROFILS_WEAVER)) {
+      assert.match(
+        depot,
+        new RegExp(`when '${action}' then\\s+v_max := ${profil.longueurMax};`),
+        `borne de ${action}`,
+      );
+    }
+  });
+
+  it("la base sait où appliquer chaque action", async () => {
+    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    const acceptation = corps(lire(PROPOSITIONS), "accepter_proposition");
+    for (const action of Object.keys(PROFILS_WEAVER)) {
+      assert.match(acceptation, new RegExp(`when '${action}' then v_max :=`), action);
+    }
+  });
+
+  it("le worker sait exécuter exactement les actions de ses profils", async () => {
+    const { executeursWeaver } = await import("../worker/src/agents/weaver.ts");
+    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    // Ni la base ni le fournisseur ne sont touchés : rien n'est appelé ici.
+    assert.deepEqual(
+      Object.keys(executeursWeaver({}, async () => ({}))),
+      Object.keys(PROFILS_WEAVER),
+    );
+  });
+
+  it("chaque profil est versionné, plafonné, et visé plus court que sa borne", async () => {
+    const { PROFILS_WEAVER } = await import("../worker/src/ia/profils.ts");
+    for (const [action, profil] of Object.entries(PROFILS_WEAVER)) {
+      assert.match(profil.id, /^weaver\.[a-z_]+@\d+$/, action);
+      assert.ok(profil.jetonsMax > 0, action);
+      assert.ok(
+        profil.longueurCible < profil.longueurMax,
+        `${action} : ${profil.longueurCible} visé pour ${profil.longueurMax} admis`,
+      );
+      // La longueur visée vient du profil, et se lit dans ses consignes.
+      assert.ok(
+        profil.systeme.includes(String(profil.longueurCible)) ||
+          profil.systeme.includes(profil.longueurCible.toLocaleString("fr-FR")),
+        `${action} : la consigne ne dit pas la longueur visée`,
+      );
+    }
+  });
+});

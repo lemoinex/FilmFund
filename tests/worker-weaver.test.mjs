@@ -14,11 +14,23 @@ import { strict as assert } from "node:assert";
 import { createServer } from "node:http";
 import { after, before, describe, it } from "node:test";
 
-import { composerFiche, executeursWeaver, lireLogline } from "../worker/src/agents/weaver.ts";
+import {
+  composerContexte,
+  composerFiche,
+  executeursWeaver,
+  lireLogline,
+  lireTexte,
+} from "../worker/src/agents/weaver.ts";
 import { traiterUnTravail } from "../worker/src/boucle.ts";
 import { EchecConnu } from "../worker/src/executeurs.ts";
 import { creerFournisseurAnthropic } from "../worker/src/ia/passerelle.ts";
-import { coutMicroDollars, enDollars, PROFIL_LOGLINE } from "../worker/src/ia/profils.ts";
+import {
+  coutMicroDollars,
+  enDollars,
+  PROFIL_LOGLINE,
+  PROFIL_SYNOPSIS_STANDARD,
+  PROFILS_WEAVER,
+} from "../worker/src/ia/profils.ts";
 import { registreDesAgents } from "../worker/src/registre.ts";
 import {
   annulerLesAutresTaches,
@@ -139,9 +151,16 @@ describe("WEAVER : logline", () => {
     return { travail, proposition, reglement, couts, confirmes };
   }
 
-  it("ne sait exécuter que la logline", () => {
+  it("sait exécuter les cinq livrables de WEAVER, et eux seuls", () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
-    assert.deepEqual(Object.keys(executeursWeaver(base, fournisseur)), ["logline"]);
+    assert.deepEqual(Object.keys(executeursWeaver(base, fournisseur)), Object.keys(PROFILS_WEAVER));
+    assert.deepEqual(Object.keys(PROFILS_WEAVER), [
+      "logline",
+      "synopsis_short",
+      "synopsis_standard",
+      "synopsis_detailed",
+      "intention_note",
+    ]);
   });
 
   it("succès : proposition déposée, coût confirmé, unité consommée, pitch intact", async () => {
@@ -503,7 +522,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
     await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
     await agents.relire();
 
-    assert.deepEqual(Object.keys(agents.lire()), ["logline"]);
+    assert.deepEqual(Object.keys(agents.lire()), Object.keys(PROFILS_WEAVER));
     assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
     assert.deepEqual(
       evenements.map((e) => e.evenement),
@@ -533,7 +552,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
     await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
     const { agents, evenements } = registreObserve();
     await agents.relire();
-    assert.deepEqual(Object.keys(agents.lire()), ["logline"]);
+    assert.deepEqual(Object.keys(agents.lire()), Object.keys(PROFILS_WEAVER));
 
     await definirCleFactice("anthropic", null);
     await agents.relire();
@@ -795,5 +814,249 @@ describe("Passerelle Anthropic, contre un serveur local factice", () => {
         ],
       ],
     );
+  });
+});
+
+/*
+ * WEAVER (lot I2a) : les quatre livrables rédigés. Le chemin est celui de la
+ * logline — devis, réservation, tâche, provision, appel, coût, proposition —,
+ * et seuls le contexte envoyé et la lecture de la réponse changent. Toujours
+ * aucun appel payant : le fournisseur est factice.
+ */
+describe("WEAVER : synopsis et note d'intention", () => {
+  let base;
+  let administrateur;
+
+  before(async () => {
+    base = await ouvrirBaseDuWorker();
+    administrateur = await creerCompte("admin-redaction", "Administration");
+    await promouvoirAdministrateur(administrateur.id);
+    await definirPlafondIa(1_000_000);
+  });
+
+  after(async () => {
+    await definirPlafondIa(5);
+    await base.end();
+  });
+
+  function options(fournisseur) {
+    return {
+      base,
+      nom: "worker-redaction-test",
+      executeurs: executeursWeaver(base, fournisseur),
+      journal: () => {},
+      battementMs: 50,
+    };
+  }
+
+  /** Un projet à la fiche remplie, deux personnages, un document finalisé et un brouillon. */
+  async function preparer(prefixe, action) {
+    const porteur = await creerCompte(prefixe);
+    const projet = await creerProjet(porteur, `Les Eaux de ${prefixe}`);
+    const { error } = await porteur.client
+      .from("projects")
+      .update({
+        format: "long_metrage",
+        stage: "ecriture",
+        logline: "Une pêcheuse défend sa plage.",
+        synopsis: "Le synopsis d'origine.",
+        genre: "drame",
+        countries: ["CM", "SN"],
+        languages: "Batanga, français",
+        duration_minutes: 95,
+        short_synopsis: "Le synopsis court d'origine.",
+        theme: "La transmission",
+        stakes: "Perdre la plage, c'est perdre le village.",
+        artistic_vision: "Caméra à l'épaule, lumière naturelle.",
+        goals: "Trouver un coproducteur.",
+        audience: "Festivals et salles.",
+      })
+      .eq("id", projet.id);
+    assert.ifError(error);
+
+    const { error: refusPersonnages } = await porteur.client.from("project_characters").insert([
+      {
+        project_id: projet.id,
+        name: "Ɛyɔ",
+        role: "principal",
+        description: "Pêcheuse, quarante ans.",
+        position: 0,
+      },
+      {
+        project_id: projet.id,
+        name: "Le promoteur",
+        role: "secondaire",
+        description: "",
+        position: 1,
+      },
+    ]);
+    assert.ifError(refusPersonnages);
+
+    const { error: refusDocuments } = await porteur.client.from("project_documents").insert([
+      {
+        project_id: projet.id,
+        type: "note_intention",
+        title: "Note d'intention",
+        content: "La note d'origine.",
+        status: "finalise",
+      },
+      {
+        project_id: projet.id,
+        type: "traitement",
+        title: "Traitement",
+        content: "Un brouillon.",
+        status: "brouillon",
+      },
+    ]);
+    assert.ifError(refusDocuments);
+
+    const tache = await engager(porteur, projet.id, action, `${prefixe}-cle`);
+    const nettoyage = await sql(annulerLesAutresTaches([tache.id]));
+    assert.equal(nettoyage.code, 0, nettoyage.erreurs);
+    return { porteur, projet, tache };
+  }
+
+  it("un synopsis : contexte complet envoyé, proposition déposée, projet intact", async () => {
+    const { porteur, projet, tache } = await preparer("redaction-succes", "synopsis_standard");
+    const { fournisseur, demandes } = fournisseurFactice(
+      reponseFactice("Premier paragraphe.\r\n\r\n\r\nSecond paragraphe.  \n"),
+    );
+
+    assert.equal(await traiterUnTravail(options(fournisseur)), true);
+
+    const { data: travail } = await porteur.client
+      .from("jobs")
+      .select("state")
+      .eq("id", tache.id)
+      .single();
+    assert.equal(travail.state, "succeeded");
+
+    // Fins de ligne normalisées, lignes vides en trop resserrées.
+    const { data: proposition } = await porteur.client
+      .from("ai_suggestions")
+      .select("content, profile, state")
+      .eq("job_id", tache.id)
+      .single();
+    assert.equal(proposition.content, "Premier paragraphe.\n\nSecond paragraphe.");
+    assert.equal(proposition.profile, PROFIL_SYNOPSIS_STANDARD.id);
+    assert.equal(proposition.state, "proposed");
+
+    // Rien n'est appliqué sans décision : le synopsis du projet n'a pas bougé.
+    const { data: inchange } = await porteur.client
+      .from("projects")
+      .select("synopsis")
+      .eq("id", projet.id)
+      .single();
+    assert.equal(inchange.synopsis, "Le synopsis d'origine.");
+
+    assert.equal(demandes.length, 1);
+    assert.equal(demandes[0].profil.id, PROFIL_SYNOPSIS_STANDARD.id);
+
+    // Les blocs du contexte, dans l'ordre imposé, et l'objectif en dernier.
+    const message = demandes[0].message;
+    const rangs = ["<projet>", "<contexte>", "<personnages>", "<vision>", "<documents>"].map(
+      (balise) => message.indexOf(balise),
+    );
+    assert.ok(
+      rangs.every((rang, index) => rang >= 0 && (index === 0 || rang > rangs[index - 1])),
+      message,
+    );
+    assert.ok(message.trimEnd().endsWith(PROFIL_SYNOPSIS_STANDARD.objectif), message);
+
+    // La fiche, les personnages et le document finalisé y sont ; le brouillon non.
+    for (const attendu of [
+      "Les Eaux de redaction-succes",
+      "CM, SN",
+      "Ɛyɔ (principal)",
+      "Pêcheuse, quarante ans.",
+      "Caméra à l'épaule, lumière naturelle.",
+      "La note d'origine.",
+    ]) {
+      assert.ok(message.includes(attendu), attendu);
+    }
+    assert.ok(!message.includes("Un brouillon."), "un brouillon ne part pas chez le fournisseur");
+
+    // Rien qui désigne un compte ne part chez le fournisseur.
+    for (const interdit of [porteur.id, porteur.email, projet.id, tache.id]) {
+      assert.ok(!message.includes(interdit), interdit);
+    }
+  });
+
+  it("une réponse trop longue pour l'action échoue, et l'unité est rendue", async () => {
+    const { porteur, tache } = await preparer("redaction-trop-long", "synopsis_short");
+    const { fournisseur } = fournisseurFactice(
+      reponseFactice("x".repeat(1501)),
+      reponseFactice("y".repeat(1501)),
+    );
+
+    // Deux échecs connus : la tâche échoue, sans troisième essai.
+    assert.equal(await traiterUnTravail(options(fournisseur)), true);
+    assert.equal(await traiterUnTravail(options(fournisseur)), true);
+
+    const { data: travail } = await porteur.client
+      .from("jobs")
+      .select("state, attempts, reason, reservation_id")
+      .eq("id", tache.id)
+      .single();
+    assert.equal(travail.state, "failed");
+    assert.equal(travail.attempts, 2);
+    assert.match(travail.reason, /n'est pas un texte exploitable/);
+
+    const { data: proposition } = await porteur.client
+      .from("ai_suggestions")
+      .select("id")
+      .eq("job_id", tache.id)
+      .maybeSingle();
+    assert.equal(proposition, null);
+
+    const { data: reglement } = await porteur.client
+      .from("reservation_settlements")
+      .select("consumed, released")
+      .eq("reservation_id", travail.reservation_id)
+      .single();
+    assert.deepEqual([reglement.consumed, reglement.released], [0, 1]);
+  });
+
+  it("remet une réponse en texte de plusieurs paragraphes, ou la refuse", () => {
+    assert.equal(lireTexte("  Un seul.  ", 100), "Un seul.");
+    assert.equal(lireTexte("Un.\r\n\r\nDeux.", 100), "Un.\n\nDeux.");
+    assert.equal(lireTexte("Un.\n\n\n\nDeux.", 100), "Un.\n\nDeux.");
+    assert.equal(lireTexte("Ligne.   \nSuite.", 100), "Ligne.\nSuite.");
+    assert.equal(lireTexte("   ", 100), null);
+    assert.equal(lireTexte("x".repeat(100), 100).length, 100);
+    assert.equal(lireTexte("x".repeat(101), 100), null);
+    assert.equal(lireTexte("Un texte\u0001troué.", 100), null);
+  });
+
+  it("dit les champs absents plutôt que de les taire", () => {
+    const message = composerContexte(
+      {
+        action: "synopsis_short",
+        projet: {
+          titre: "Sans fiche",
+          format: "court_metrage",
+          etape: "idee",
+          genre: null,
+          pays: null,
+          langues: null,
+          duree: null,
+        },
+        contexte: {
+          pitch: null,
+          synopsis_court: null,
+          synopsis: null,
+          theme: null,
+          enjeux: null,
+        },
+        personnages: [],
+        vision: { artistique: null, objectifs: null, public: null },
+        documents: [],
+      },
+      "Écris le synopsis court de ce projet.",
+    );
+    assert.ok(message.includes("Genre : (non renseigné)"), message);
+    assert.ok(message.includes("Format : court metrage"), message);
+    assert.ok(message.includes("<personnages>\n(non renseigné)\n</personnages>"), message);
+    assert.ok(message.endsWith("Écris le synopsis court de ce projet."), message);
   });
 });

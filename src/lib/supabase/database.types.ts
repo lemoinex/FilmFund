@@ -1731,6 +1731,7 @@ export type Database = {
       };
       contenu_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_travail: {
         Args: { p_attempt_id: string };
         Returns: {
@@ -2128,7 +2129,13 @@ export type Database = {
         | "imprevus";
       document_status: "brouillon" | "en_relecture" | "finalise";
       document_type:
-        "note_intention" | "traitement" | "scenario" | "biographie" | "lettre" | "autre";
+        | "note_intention"
+        | "synopsis"
+        | "traitement"
+        | "scenario"
+        | "biographie"
+        | "lettre"
+        | "autre";
       funding_kind:
         | "aide_publique"
         | "coproduction"
@@ -2293,7 +2300,15 @@ export const Constants = {
         "imprevus",
       ],
       document_status: ["brouillon", "en_relecture", "finalise"],
-      document_type: ["note_intention", "traitement", "scenario", "biographie", "lettre", "autre"],
+      document_type: [
+        "note_intention",
+        "synopsis",
+        "traitement",
+        "scenario",
+        "biographie",
+        "lettre",
+        "autre",
+      ],
       funding_kind: [
         "aide_publique",
         "coproduction",

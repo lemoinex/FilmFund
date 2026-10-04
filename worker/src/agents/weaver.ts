@@ -1,18 +1,29 @@
 /**
- * WEAVER : logline, synopsis et note d'intention. Ce lot n'ouvre que la
- * logline.
+ * WEAVER : logline, synopsis court, standard, détaillé et note d'intention.
  *
  * L'agent ne connaît ni la clé d'API ni le SDK : il reçoit un fournisseur de
  * la passerelle. Les tests lui en donnent un factice, désigné comme tel.
+ *
+ * Un seul exécuteur sert les cinq actions : la provision, l'appel, le coût
+ * confirmé et le dépôt de la proposition sont les mêmes. Deux choses
+ * changent d'un livrable à l'autre, et elles seules : le message préparé pour
+ * le fournisseur, et la lecture de sa réponse.
+ *
+ * La logline garde le contexte pauvre de `contexte_travail` : son profil,
+ * figé en version 1, a été écrit pour ce que cette fonction rend. Les quatre
+ * autres lisent `contexte_redaction`, qui porte la fiche du projet, ses
+ * personnages, sa vision et ses documents finalisés.
  */
 import {
   codeDe,
   confirmerCout,
   lireContexte,
+  lireContexteRedaction,
   livrerProposition,
   PLAFOND_ATTEINT,
   provisionnerCout,
   type Base,
+  type ContexteRedaction,
   type Fiche,
 } from "../base.ts";
 import { EchecConnu, type Executeur } from "../executeurs.ts";
@@ -22,15 +33,16 @@ import {
   enDollars,
   estimerJetons,
   PROFIL_LOGLINE,
+  PROFILS_WEAVER,
   type Profil,
 } from "../ia/profils.ts";
 
-/** Limite de la colonne `projects.logline`. */
-const LOGLINE_MAX = 500;
+/** Limite de la colonne `projects.logline`, tenue par le profil de la logline. */
+const LOGLINE_MAX = PROFIL_LOGLINE.longueurMax;
 
 /**
- * Ce qui est transmis au fournisseur : la fiche du projet, et rien d'autre.
- * Les balises séparent la donnée des consignes du profil.
+ * Ce qui est transmis au fournisseur pour une logline : la fiche du projet,
+ * et rien d'autre. Les balises séparent la donnée des consignes du profil.
  */
 export function composerFiche(fiche: Fiche): string {
   const lisible = (code: string) => code.replaceAll("_", " ");
@@ -43,6 +55,84 @@ export function composerFiche(fiche: Fiche): string {
     `Synopsis : ${fiche.synopsis.trim() || "(aucun)"}`,
     "</fiche>",
   ].join("\n");
+}
+
+/** Valeur absente : dite comme telle, jamais devinée ni passée sous silence. */
+const ABSENT = "(non renseigné)";
+
+function champ(libelle: string, valeur: string | number | null | undefined): string {
+  const texte = typeof valeur === "number" ? String(valeur) : (valeur ?? "").trim();
+  return `${libelle} : ${texte || ABSENT}`;
+}
+
+/**
+ * Ce qui est transmis au fournisseur pour un livrable rédigé, dans l'ordre
+ * imposé : projet, contexte, personnages, vision, documents, puis l'objectif.
+ * L'objectif vient en dernier, après la donnée, pour que la demande ne soit
+ * pas noyée.
+ */
+export function composerContexte(contexte: ContexteRedaction, objectif: string): string {
+  const lisible = (code: string) => code.replaceAll("_", " ");
+  const { projet, personnages, vision, documents } = contexte;
+  const blocs = [
+    [
+      "<projet>",
+      champ("Titre", projet.titre),
+      champ("Format", lisible(projet.format)),
+      champ("Étape", lisible(projet.etape)),
+      champ("Genre", projet.genre && lisible(projet.genre)),
+      champ("Pays de production", projet.pays?.join(", ")),
+      champ("Langues", projet.langues),
+      champ("Durée en minutes", projet.duree),
+      "</projet>",
+    ].join("\n"),
+    [
+      "<contexte>",
+      champ("Pitch", contexte.contexte.pitch),
+      champ("Synopsis court", contexte.contexte.synopsis_court),
+      champ("Synopsis", contexte.contexte.synopsis),
+      champ("Thème", contexte.contexte.theme),
+      champ("Enjeux", contexte.contexte.enjeux),
+      "</contexte>",
+    ].join("\n"),
+    [
+      "<personnages>",
+      ...(personnages.length
+        ? personnages.map((personnage) =>
+            [
+              `- ${personnage.nom} (${lisible(personnage.role)})`,
+              personnage.description.trim() ? `  ${personnage.description.trim()}` : null,
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          )
+        : [ABSENT]),
+      "</personnages>",
+    ].join("\n"),
+    [
+      "<vision>",
+      champ("Vision artistique", vision.artistique),
+      champ("Objectifs", vision.objectifs),
+      champ("Public cible", vision.public),
+      "</vision>",
+    ].join("\n"),
+    [
+      "<documents>",
+      ...(documents.length
+        ? documents.map((document) =>
+            [
+              `<document type="${lisible(document.type)}">`,
+              document.titre,
+              "",
+              document.contenu,
+              "</document>",
+            ].join("\n"),
+          )
+        : [ABSENT]),
+      "</documents>",
+    ].join("\n"),
+  ];
+  return [...blocs, objectif].join("\n\n");
 }
 
 /**
@@ -59,13 +149,42 @@ export function lireLogline(texte: string): string | null {
   return nette.length >= 1 && nette.length <= LOGLINE_MAX ? nette : null;
 }
 
-function creerExecuteurLogline(base: Base, fournisseur: Fournisseur, profil: Profil): Executeur {
+/**
+ * Remet la réponse en un texte de plusieurs paragraphes : fins de ligne
+ * normalisées, lignes vides en trop resserrées, caractères de contrôle
+ * refusés — la base les refuserait au dépôt. Null si le texte est vide ou
+ * trop long pour l'action.
+ */
+export function lireTexte(texte: string, max: number): string | null {
+  const net = texte
+    .replaceAll("\r\n", "\n")
+    .replaceAll("\r", "\n")
+    .replace(/[ \t]+$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (net.length < 1 || net.length > max) {
+    return null;
+  }
+  // Caractères de contrôle que la base refuse au dépôt, saut de ligne et
+  // tabulation exceptés.
+  return /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(net) ? null : net;
+}
+
+/** Un livrable : son profil, la préparation de son message, la lecture de sa réponse. */
+type Livrable = {
+  profil: Profil;
+  /** Message pour le fournisseur ; null si le projet n'est plus accessible. */
+  preparer: (attemptId: string) => Promise<string | null>;
+  lire: (texte: string, max: number) => string | null;
+};
+
+function creerExecuteur(base: Base, fournisseur: Fournisseur, livrable: Livrable): Executeur {
+  const { profil } = livrable;
   return async (travail, signal) => {
-    const fiche = await lireContexte(base, travail.attemptId);
-    if (!fiche) {
+    const message = await livrable.preparer(travail.attemptId);
+    if (message === null) {
       throw new EchecConnu("Le projet de cette tâche n'est plus accessible.");
     }
-    const message = composerFiche(fiche);
 
     // Provision au pire : toute l'entrée, et le plafond de sortie.
     const pire = [
@@ -127,12 +246,12 @@ function creerExecuteurLogline(base: Base, fournisseur: Fournisseur, profil: Pro
     if (reponse.arret !== "fin") {
       throw new EchecConnu("La réponse du fournisseur est incomplète.");
     }
-    const logline = lireLogline(reponse.texte);
-    if (!logline) {
-      throw new EchecConnu("La réponse du fournisseur n'est pas une logline exploitable.");
+    const texte = livrable.lire(reponse.texte, profil.longueurMax);
+    if (!texte) {
+      throw new EchecConnu("La réponse du fournisseur n'est pas un texte exploitable.");
     }
 
-    await livrerProposition(base, travail.attemptId, logline);
+    await livrerProposition(base, travail.attemptId, texte);
     return {};
   };
 }
@@ -142,5 +261,29 @@ export function executeursWeaver(
   base: Base,
   fournisseur: Fournisseur,
 ): Readonly<Record<string, Executeur>> {
-  return { logline: creerExecuteurLogline(base, fournisseur, PROFIL_LOGLINE) };
+  const livrable = (action: string, profil: Profil): Livrable =>
+    action === "logline"
+      ? {
+          profil,
+          preparer: async (attemptId) => {
+            const fiche = await lireContexte(base, attemptId);
+            return fiche ? composerFiche(fiche) : null;
+          },
+          lire: (texte) => lireLogline(texte),
+        }
+      : {
+          profil,
+          preparer: async (attemptId) => {
+            const contexte = await lireContexteRedaction(base, attemptId);
+            return contexte ? composerContexte(contexte, profil.objectif ?? "") : null;
+          },
+          lire: lireTexte,
+        };
+
+  return Object.fromEntries(
+    Object.entries(PROFILS_WEAVER).map(([action, profil]) => [
+      action,
+      creerExecuteur(base, fournisseur, livrable(action, profil)),
+    ]),
+  );
 }

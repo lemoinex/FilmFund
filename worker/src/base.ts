@@ -176,6 +176,55 @@ export async function lireContexte(base: Base, attemptId: string): Promise<Fiche
   };
 }
 
+/** Personnage d'un projet, tel que la base le remet au worker. */
+export type Personnage = { nom: string; role: string; description: string };
+
+/** Document finalisé d'un projet, tel que la base le remet au worker. */
+export type DocumentProjet = { type: string; titre: string; contenu: string };
+
+/**
+ * Contexte d'une tâche de rédaction : la fiche du projet, ses personnages,
+ * sa vision et ses documents finalisés. Plus riche que `Fiche`, qui reste le
+ * contexte de la logline — son profil a été écrit pour elle.
+ */
+export type ContexteRedaction = {
+  action: string;
+  projet: {
+    titre: string;
+    format: string;
+    etape: string;
+    genre: string | null;
+    pays: string[] | null;
+    langues: string | null;
+    duree: number | null;
+  };
+  contexte: {
+    pitch: string | null;
+    synopsis_court: string | null;
+    synopsis: string | null;
+    theme: string | null;
+    enjeux: string | null;
+  };
+  personnages: Personnage[];
+  vision: { artistique: string | null; objectifs: string | null; public: string | null };
+  documents: DocumentProjet[];
+};
+
+/**
+ * Contexte de rédaction de la tâche en cours ; null si l'essai ne nous
+ * appartient plus, si le projet n'existe plus, ou si l'action n'est pas une
+ * rédaction.
+ */
+export async function lireContexteRedaction(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteRedaction | null> {
+  const { rows } = await base.query("select public.contexte_redaction($1) as contexte", [
+    attemptId,
+  ]);
+  return rows[0]?.contexte ?? null;
+}
+
 /**
  * Inscrit, avant l'appel, ce qu'il coûterait au pire. Lève `PLAFOND_ATTEINT`
  * si le plafond du mois serait dépassé, `ESSAI_PERDU` si la tâche a été
