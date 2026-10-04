@@ -61,6 +61,7 @@ export const TYPES_DOCUMENT: Readonly<Record<string, string>> = {
   traitement: "Traitement",
   bible: "Bible de série",
   scenario: "Scénario",
+  analyse: "Analyse dramaturgique",
   biographie: "Biographie et filmographie",
   lettre: "Lettre",
   autre: "Autre document",

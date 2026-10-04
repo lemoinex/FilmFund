@@ -14,6 +14,7 @@ import { strict as assert } from "node:assert";
 import { createServer } from "node:http";
 import { after, before, describe, it } from "node:test";
 
+import { executeursArc } from "../worker/src/agents/arc.ts";
 import { executeursScript } from "../worker/src/agents/script.ts";
 import {
   composerContexte,
@@ -28,9 +29,11 @@ import { creerFournisseurAnthropic } from "../worker/src/ia/passerelle.ts";
 import {
   coutMicroDollars,
   enDollars,
+  PROFIL_ANALYSE,
   PROFIL_LOGLINE,
   PROFIL_SYNOPSIS_STANDARD,
   PROFIL_TRAITEMENT,
+  PROFILS_ARC,
   PROFILS_IA,
   PROFILS_SCRIPT,
   PROFILS_WEAVER,
@@ -1162,5 +1165,122 @@ describe("SCRIPT : traitement et bible", () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
     assert.deepEqual(Object.keys(executeursScript(base, fournisseur)), Object.keys(PROFILS_SCRIPT));
     assert.deepEqual(Object.keys(PROFILS_SCRIPT), ["treatment", "bible"]);
+  });
+});
+
+/*
+ * ARC (lot J3a) : l'analyse dramaturgique, de la tâche réclamée au document
+ * écrit. Même fabrique que WEAVER et SCRIPT ; ce qui lui est propre est
+ * éprouvé ici : son profil, son document, et le fait qu'il ne réécrit rien
+ * du projet qu'il lit.
+ */
+describe("ARC : analyse dramaturgique", () => {
+  let base;
+  let administrateur;
+
+  before(async () => {
+    base = await ouvrirBaseDuWorker();
+    administrateur = await creerCompte("admin-arc", "Administration");
+    await promouvoirAdministrateur(administrateur.id);
+    await definirPlafondIa(1_000_000);
+  });
+
+  after(async () => {
+    await definirPlafondIa(5);
+    await base.end();
+  });
+
+  it("l'analyse : proposition déposée, document créé et versionné, projet intact", async () => {
+    const porteur = await creerCompte("arc-analyse");
+    const projet = await creerProjet(porteur, "Le Fleuve immobile");
+    const { error } = await porteur.client
+      .from("projects")
+      .update({ logline: "Un passeur sans rive.", synopsis: "Un passeur refuse de débarquer." })
+      .eq("id", projet.id);
+    assert.ifError(error);
+
+    const tache = await engager(porteur, projet.id, "dramatic_analysis", "arc-analyse-cle");
+    const nettoyage = await sql(annulerLesAutresTaches([tache.id]));
+    assert.equal(nettoyage.code, 0, nettoyage.erreurs);
+
+    const { fournisseur, demandes } = fournisseurFactice(
+      reponseFactice("Structure.\n\nArcs.\n\nCe qui manque."),
+    );
+    assert.equal(
+      await traiterUnTravail({
+        base,
+        nom: "worker-arc-test",
+        executeurs: executeursArc(base, fournisseur),
+        journal: () => {},
+        battementMs: 50,
+      }),
+      true,
+    );
+
+    // Le profil d'ARC, et le synopsis qu'il doit lire.
+    assert.equal(demandes[0].profil.id, PROFIL_ANALYSE.id);
+    assert.match(demandes[0].message, /Un passeur refuse de débarquer\./);
+    assert.match(demandes[0].message, /Analyse la dramaturgie de ce projet\.$/);
+
+    const { data: proposition } = await porteur.client
+      .from("ai_suggestions")
+      .select("id, content, state, profile")
+      .eq("job_id", tache.id)
+      .single();
+    assert.equal(proposition.content, "Structure.\n\nArcs.\n\nCe qui manque.");
+    assert.equal(proposition.profile, PROFIL_ANALYSE.id);
+
+    // Quatre unités, comme au barème : rien n'est rendu sur une tâche réussie.
+    const { data: travail } = await porteur.client
+      .from("jobs")
+      .select("state, reservation_id")
+      .eq("id", tache.id)
+      .single();
+    assert.equal(travail.state, "succeeded");
+    const { data: reglement } = await porteur.client
+      .from("reservation_settlements")
+      .select("consumed, released")
+      .eq("reservation_id", travail.reservation_id)
+      .single();
+    assert.deepEqual(reglement, { consumed: 4, released: 0 });
+
+    const { error: refus } = await porteur.client.rpc("accepter_proposition", {
+      p_suggestion_id: proposition.id,
+      p_content: null,
+    });
+    assert.ifError(refus);
+
+    const { data: document } = await porteur.client
+      .from("project_documents")
+      .select("id, type, title, status, content")
+      .eq("project_id", projet.id)
+      .single();
+    assert.equal(document.type, "analyse");
+    assert.equal(document.title, "Analyse dramaturgique");
+    assert.equal(document.status, "brouillon");
+    assert.equal(document.content, "Structure.\n\nArcs.\n\nCe qui manque.");
+
+    const { data: versions } = await porteur.client
+      .from("project_document_versions")
+      .select("version_number, content")
+      .eq("document_id", document.id);
+    assert.equal(versions.length, 1);
+
+    // ARC lit : le projet garde son pitch et son synopsis.
+    const { data: apres } = await porteur.client
+      .from("projects")
+      .select("logline, synopsis")
+      .eq("id", projet.id)
+      .single();
+    assert.deepEqual(apres, {
+      logline: "Un passeur sans rive.",
+      synopsis: "Un passeur refuse de débarquer.",
+    });
+  });
+
+  it("sait exécuter l'analyse, et elle seule", () => {
+    const { fournisseur } = fournisseurFactice(reponseFactice("x"));
+    assert.deepEqual(Object.keys(executeursArc(base, fournisseur)), Object.keys(PROFILS_ARC));
+    assert.deepEqual(Object.keys(PROFILS_ARC), ["dramatic_analysis"]);
   });
 });

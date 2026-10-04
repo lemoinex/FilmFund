@@ -29,12 +29,17 @@ const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
  * avant/après mentirait.
  */
 const LIVRABLES_DOCUMENTS: Readonly<
-  Record<ActionIa & ("synopsis_detailed" | "intention_note" | "treatment" | "bible"), DocumentType>
+  Record<
+    ActionIa &
+      ("synopsis_detailed" | "dramatic_analysis" | "intention_note" | "treatment" | "bible"),
+    DocumentType
+  >
 > = {
   synopsis_detailed: "synopsis",
   treatment: "traitement",
   bible: "bible",
   intention_note: "note_intention",
+  dramatic_analysis: "analyse",
 };
 
 export default async function DocumentsPage({

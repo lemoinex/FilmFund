@@ -59,6 +59,13 @@ export const CHAMPS_BAREME = [
   { cle: "synopsis_standard", libelle: "Synopsis standard", unite: "unités", min: 0, max: 1_000 },
   { cle: "synopsis_detailed", libelle: "Synopsis détaillé", unite: "unités", min: 0, max: 1_000 },
   { cle: "intention_note", libelle: "Note d'intention", unite: "unités", min: 0, max: 1_000 },
+  {
+    cle: "dramatic_analysis",
+    libelle: "Analyse dramaturgique",
+    unite: "unités",
+    min: 0,
+    max: 1_000,
+  },
   { cle: "treatment", libelle: "Traitement", unite: "unités", min: 0, max: 1_000 },
   { cle: "bible", libelle: "Bible", unite: "unités", min: 0, max: 1_000 },
   {

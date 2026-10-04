@@ -240,6 +240,23 @@ export const PROFILS_SCRIPT: Readonly<Record<string, Profil>> = {
   bible: PROFIL_BIBLE,
 };
 
+export const PROFIL_ANALYSE: Profil = profilRedaction({
+  id: "arc.analyse@1",
+  effort: "high",
+  jetonsMax: 24_000,
+  longueurCible: 7000,
+  longueurMax: 20_000,
+  mission: "Tu aides un auteur à voir la structure dramatique de son projet.",
+  attendu:
+    "Une analyse dramaturgique dit ce que le dossier contient, pas ce qu'il devrait être : la structure telle qu'elle apparaît — situation, élément déclencheur, progression, bascule, dénouement —, l'arc de chaque personnage principal, ce qui tient, et ce qui manque pour que le récit tienne debout. Nomme un manque quand le dossier ne dit rien d'une étape, sans inventer ce qui la comblerait. Tu analyses : tu ne réécris pas le projet, et tu ne juges pas le talent de son auteur.",
+  objectif: "Analyse la dramaturgie de ce projet.",
+});
+
+/** Ce qu'ARC sait écrire : il lit le projet et en rend une lecture. */
+export const PROFILS_ARC: Readonly<Record<string, Profil>> = {
+  dramatic_analysis: PROFIL_ANALYSE,
+};
+
 export const PROFILS_WEAVER: Readonly<Record<string, Profil>> = {
   logline: PROFIL_LOGLINE,
   synopsis_short: PROFIL_SYNOPSIS_COURT,
@@ -254,5 +271,6 @@ export const PROFILS_WEAVER: Readonly<Record<string, Profil>> = {
  */
 export const PROFILS_IA: Readonly<Record<string, Profil>> = {
   ...PROFILS_WEAVER,
+  ...PROFILS_ARC,
   ...PROFILS_SCRIPT,
 };

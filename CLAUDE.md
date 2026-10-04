@@ -394,7 +394,8 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   pitch et synopsis dans le projet, synopsis court dans la fiche, synopsis
   détaillé et note d’intention dans un document versionné, créé en brouillon.
   Traitement et bible de série (lot J1), par l’agent SCRIPT, dans un document
-  eux aussi. L’encart de l’assistant se tient dans la rubrique où ce texte se
+  eux aussi ; analyse dramaturgique (lot J3a), par l’agent ARC, qui lit le
+  projet sans le réécrire. L’encart de l’assistant se tient dans la rubrique où ce texte se
   lit ; le catalogue `LIVRABLES_IA` en est la seule source. Prévues : note de
   réalisation, personnages, pitch oral/écrit, scénario et dialogues — ces deux
   derniers dépassent les 20 000 caractères d’une proposition, et leur
