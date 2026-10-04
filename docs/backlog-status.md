@@ -17,10 +17,10 @@ réels).
 | G   | Devis, réservation atomique, idempotence                                                                                       | validé en recette | —              |
 | H1  | Tâches persistantes, outbox, rapprochement — en base : tâches, essais, rôle dédié du worker                                    | validé en recette | —              |
 | H2  | Worker Node (`worker/`) et son déploiement sur Railway                                                                         | validé en recette | —              |
-| I1  | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé localement | recette        |
-| I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé localement | recette de I1  |
-| I2a | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé localement | recette de I1  |
-| I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé localement | recette de I1  |
+| I1  | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé en recette | —              |
+| I1b | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé en recette | —              |
+| I2a | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé en recette | —              |
+| I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —              |
 | J   | Autres agents                                                                                                                  | bloqué            | I1             |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
@@ -39,19 +39,48 @@ réels).
 | S1  | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —              |
 | S2  | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —              |
 
-## Recette de I1
+## Recette de WEAVER : I1, I1b, I2a et I2b
 
-Au 2 octobre 2026, la recette du pitch n'a pas abouti : chaque demande est refusée par
-Anthropic, faute de crédit sur le compte (`400 invalid_request_error`). Aucune tâche n'a
-encore réussi en production : la requête elle-même n'a donc jamais été validée par la vraie
-API.
+Le 4 octobre 2026, les cinq livrables de l'assistant d'écriture ont été produits en
+production par un administrateur, de l'écran au texte appliqué (mode privé actif).
 
-- Le motif d'un refus se lit désormais dans les journaux du worker, et un refus ne pèse plus
-  sur le plafond mensuel (`docs/worker.md`, « Coûts et plafond »).
-- Les provisions des essais refusés avant ce correctif ont été soldées à zéro.
-- Reste à faire : créditer le compte de la clé enregistrée dans « Intégrations IA », relancer
-  un pitch, puis vérifier une tâche réussie, une proposition affichée et un coût confirmé non
-  nul. I1 et I1b passeront alors « validé en recette », ce qui ouvre I2.
+Jusqu'au 3 octobre, aucune demande n'aboutissait : douze tâches `logline` ont échoué entre le
+1er et le 3 octobre, d'abord en 400 — « Your credit balance is too low » —, puis en 401 après
+une première clé invalide. Le motif se lit dans les journaux du worker, et un refus ne pèse
+pas sur le plafond mensuel : les provisions de ces douze tâches sont soldées à zéro, et leurs
+unités ont été rendues. **Le premier appel réel a réussi le 3 octobre à 02h49 UTC.**
+
+Onze tâches d'IA ont réussi depuis, toutes au premier essai, toutes sur `claude-opus-5-5`,
+**aucun repli**, aucune tâche à rapprocher. Dix propositions appliquées, une écartée.
+
+| Livrable            | Durée  | Caractères | Coût confirmé | Atterrissage vérifié                      |
+| ------------------- | ------ | ---------- | ------------- | ----------------------------------------- |
+| `logline`           | 6,5 s  | 185        | 0,008756 $    | `projects.logline`                        |
+| `synopsis_standard` | 16,3 s | 1 152      | 0,027412 $    | `projects.synopsis`                       |
+| `synopsis_short`    | 10,5 s | 429        | 0,019896 $    | `projects.short_synopsis`                 |
+| `synopsis_detailed` | 16,2 s | 1 804      | 0,028380 $    | document `synopsis` créé, version 1       |
+| `intention_note`    | 40,1 s | 4 916      | 0,067588 $    | document `note_intention` créé, version 1 |
+| `intention_note`    | 53,1 s | 4 722      | 0,089048 $    | même document, **version 2**              |
+
+- Chaque proposition porte son profil versionné : `weaver.logline@1`, `synopsis_court@1`,
+  `synopsis_standard@1`, `synopsis_detaille@1`, `note_intention@1`.
+- Les unités ont été consommées exactement comme devisées — 1, 2, 1, 3, 3, 3 — et rien n'a été
+  rendu sur une tâche réussie.
+- **Rien n'est écrasé sans trace** : la seconde note d'intention a remplacé la première, le
+  document porte deux versions — 4 916 puis 4 722 caractères — et le texte remplacé est
+  conservé dans la proposition. C'est l'invariant central du lot, vérifié en réel.
+- Un document créé par une acceptation naît **en brouillon** : à l'équipe de le finaliser, un
+  dossier n'emportant que des documents finalisés.
+- Une proposition écartée n'écrit rien nulle part : vérifié sur le premier synopsis détaillé.
+- Dépense du mois : 0,329756 $ sur un plafond de 5 $.
+- Les encarts des trois rubriques ont été relus à l'écran par l'utilisateur : page du projet
+  (pitch, synopsis), fiche (synopsis court), documents (synopsis détaillé, note d'intention),
+  chacun nommant le document qu'il remplacerait.
+
+Non couvert par cette recette : un éditeur et un lecteur réels, faute de second compte tant
+que le mode privé est actif (vérifiés localement et par les tests) ; l'annulation d'une tâche
+en attente et le rapprochement d'une tâche interrompue, qu'aucune demande réelle n'a produits ;
+une demande refusée pour quota épuisé, le studio d'essai disposant de 1 500 unités.
 
 ## Recette du lot M
 
