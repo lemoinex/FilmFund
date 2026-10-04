@@ -24,7 +24,7 @@ réels).
 | J1  | SCRIPT : traitement et bible                                                                                                   | validé en recette | —                  |
 | J2  | SCRIPT et VOICE : scénario et dialogues — textes longs                                                                         | à faire           | décision 8         |
 | J3a | ARC : analyse dramaturgique                                                                                                    | validé en recette | —                  |
-| J3b | FIELD : budget, financement et calendrier — données structurées                                                                | à faire           | décision 9         |
+| J3b | FIELD : budget, financement et calendrier — données structurées (J3b-1 écrit, retiré de la production : voir plus bas)         | validé localement | poussée migration  |
 | J3c | FRAME et GEAR : découpage technique, matériel et calculs électriques                                                           | à faire           | cahier des charges |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7     |
 | L   | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7     |
@@ -559,3 +559,42 @@ maturité » (`/administration/ponderations`) : neuf entiers dont le total fait 
 par l'action puis par la base ; la version s'applique aussitôt à tous les projets, puisque
 rien n'est stocké. Aucune version n'a encore été publiée en production depuis cet écran : la
 première publication y sera un changement réel, à relire au journal.
+
+## Lot J3b-1 : écrit, retiré de la production, à relivrer
+
+La **décision 9** est prise depuis le 4 octobre 2026 : une proposition peut porter des données
+structurées. Elle garde son parent dans `ai_suggestions` et range ses données dans une table
+fille typée, où chaque ligne est acceptée ou écartée une à une. FIELD ne couvre que le budget
+puis le planning ; les financements restent au lot L, puisque proposer un organisme ou un
+montant de fonds serait inventer une source. Prix au barème : 6 unités texte pour un budget,
+40 lignes au plus par proposition.
+
+Le lot J3b-1 — base et worker des propositions de lignes de budget, sans écran — a été écrit,
+validé localement et fusionné par la PR 80 (`8d0805d`, fusion `f6421e5`, CI verte). **Il
+n'est pas en production.** Sa migration, `20261004160108_field_budget.sql`, n'a pas pu être
+poussée : la commande échouait dans le terminal d'où elle était lancée (« failed to
+initialise login role: TransportError »), ou partait d'un dossier qui ne contenait pas le
+fichier. Pendant un peu plus d'une heure, le code déployé a lu une colonne `budget_plan`
+absente : la vitrine a perdu les chiffres de son barème, et « Plans et quotas » ne pouvait
+plus publier de version. Aucune donnée n'a été touchée, et aucune demande de budget n'était
+possible, FIELD n'ayant pas d'écran.
+
+La PR 81 (`a5e7fae`, fusion `6ca31b2`) a annulé la fusion : `main` est revenu exactement à
+`d94e029`, et la production a été relue saine à 18h22 UTC — worker à onze actions, vitrine
+avec ses chiffres, aucune erreur d'exécution.
+
+Pour relivrer le lot, rien n'est à réécrire :
+
+1. obtenir un essai à blanc qui réussit (`npx supabase db push --dry-run`), depuis un dossier
+   qui contient le fichier de migration ;
+2. ouvrir une PR qui annule le commit `a5e7fae` — elle ramène le code, la migration, les
+   tests et la documentation du lot, dont le détail de la décision 9 ;
+3. fusionner, puis pousser la migration dans la minute.
+
+Règle retenue de cet incident, après le même retard sur le lot J3a : **un lot qui porte une
+migration ne se fusionne qu'après un essai à blanc réussi, fait juste avant.** Une fusion
+déploie le code en une minute ; une migration qui ne suit pas laisse la production lire ce
+qui n'existe pas.
+
+Restent ensuite J3b-2 — l'écran des lignes proposées dans l'onglet Budget, avec la recette
+du lot — et J3b-3, les propositions de jalons de planning.
