@@ -4,12 +4,15 @@ import { notFound } from "next/navigation";
 
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { enCentimes, formaterMontant, ORDRE_POSTES, POSTES } from "@/lib/budgets";
+import { etapeProposition, type EtapeProposition, type LigneProposee } from "@/lib/propositions";
 import { createClient } from "@/lib/supabase/server";
 import type { BudgetCategory } from "@/lib/supabase/types";
 
 import { OngletsProjet } from "../onglets";
+import { RafraichissementPropositions } from "../proposition";
 import { supprimerLigne } from "./actions";
 import { FormulaireDevise, FormulaireLigne } from "./formulaires";
+import { LignesProposees } from "./lignes-proposees";
 
 export const metadata: Metadata = {
   title: "Budget — filmfundAfrica",
@@ -61,6 +64,8 @@ export default async function BudgetPage({
     notFound();
   }
 
+  const assistant = budget ? await lireAssistant(supabase, projet.id) : null;
+
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 sm:py-16">
       <Link
@@ -77,12 +82,18 @@ export default async function BudgetPage({
       <OngletsProjet projetId={projet.id} actif="budget" budget />
 
       {budget ? (
-        <Budget
-          projetId={projet.id}
-          devise={budget.currency}
-          lignes={lignes ?? []}
-          ligneEnModification={ligneEnModification}
-        />
+        <>
+          <RafraichissementPropositions
+            actif={assistant?.etape.etape === "en_attente" || assistant?.etape.etape === "en_cours"}
+          />
+          <Budget
+            projetId={projet.id}
+            devise={budget.currency}
+            lignes={lignes ?? []}
+            ligneEnModification={ligneEnModification}
+            assistant={assistant ?? { etape: { etape: "repos" }, lignes: [] }}
+          />
+        </>
       ) : (
         <section aria-labelledby="ouverture-titre" className="mt-10 max-w-xl">
           <h2 id="ouverture-titre" className="font-serif text-2xl leading-tight">
@@ -100,16 +111,64 @@ export default async function BudgetPage({
   );
 }
 
+type Assistant = { etape: EtapeProposition; lignes: LigneProposee[] };
+
+/**
+ * Où en est la dernière demande de lignes de budget sur ce projet, et les
+ * lignes de sa proposition si elle attend encore une décision.
+ *
+ * Trois lectures bornées, sous la RLS de l'appelant : la dernière tâche, sa
+ * proposition, ses lignes — quarante au plus. Rien n'est lu tant que la
+ * proposition n'est pas ouverte.
+ */
+async function lireAssistant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+): Promise<Assistant> {
+  const { data: tache } = await supabase
+    .from("jobs")
+    .select("id, state")
+    .eq("project_id", projetId)
+    .eq("action", "budget_plan")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: proposition } = tache
+    ? await supabase
+        .from("ai_suggestions")
+        .select("id, content, state")
+        .eq("job_id", tache.id)
+        .maybeSingle()
+    : { data: null };
+
+  const etape = etapeProposition(tache, proposition);
+  if (etape.etape !== "proposition") {
+    return { etape, lignes: [] };
+  }
+
+  const { data: lignes } = await supabase
+    .from("ai_suggestion_budget_lines")
+    .select("id, position, category, label, quantity, unit_cost, state")
+    .eq("suggestion_id", etape.propositionId)
+    .order("position")
+    .limit(40);
+
+  return { etape, lignes: lignes ?? [] };
+}
+
 function Budget({
   projetId,
   devise,
   lignes,
   ligneEnModification,
+  assistant,
 }: {
   projetId: string;
   devise: string;
   lignes: Ligne[];
   ligneEnModification?: string;
+  assistant: Assistant;
 }) {
   const montant = (centimes: number) => formaterMontant(centimes, devise);
 
@@ -160,6 +219,13 @@ function Budget({
           </Indicateur>
         </dl>
       </section>
+
+      <LignesProposees
+        projetId={projetId}
+        devise={devise}
+        etape={assistant.etape}
+        lignes={assistant.lignes}
+      />
 
       {postes.length ? (
         <section aria-labelledby="repartition-titre" className="mt-12">
