@@ -23,7 +23,7 @@ réels).
 | I2b | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —                  |
 | J1  | SCRIPT : traitement et bible                                                                                                   | validé en recette | —                  |
 | J2  | SCRIPT et VOICE : scénario et dialogues — textes longs                                                                         | à faire           | décision 8         |
-| J3a | ARC : analyse dramaturgique                                                                                                    | validé localement | recette            |
+| J3a | ARC : analyse dramaturgique                                                                                                    | validé en recette | —                  |
 | J3b | FIELD : budget, financement et calendrier — données structurées                                                                | à faire           | décision 9         |
 | J3c | FRAME et GEAR : découpage technique, matériel et calculs électriques                                                           | à faire           | cahier des charges |
 | K   | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7     |
@@ -340,6 +340,48 @@ Non couvert par cette recette : un éditeur et un lecteur réels, faute de secon
 que le mode privé est actif (vérifiés localement et par les tests) ; une proposition de
 traitement ou de bible écartée plutôt qu'appliquée ; un document finalisé réécrit par une
 proposition, les deux documents touchés étant en brouillon.
+
+## Recette du lot J3a
+
+Le 4 octobre 2026, une analyse dramaturgique a été produite en production par un
+administrateur, de l'écran au document écrit (mode privé actif), sur le projet « mami wata ».
+
+- Fusion de la PR 78 (`cb17436`) à 15h02 UTC ; le worker, reconstruit par la fusion — le lot
+  touche `worker/` —, annonce ses **onze** actions à 15h03, dont `dramatic_analysis`.
+- **La migration n'a été poussée qu'une vingtaine de minutes après la fusion**, constatée en
+  base à 15h26 UTC : le dépôt d'où partait la poussée n'avait pas été mis à jour, puis l'essai
+  à blanc a échoué deux fois sur « failed to initialise login role: TransportError ». Dans
+  l'intervalle, le code d'ARC tournait sans sa colonne : aucune erreur d'exécution chez
+  Vercel, aucune demande d'analyse tentée. La vitrine, mise en cache cinq minutes, a servi son
+  barème sans chiffres jusqu'à sa relecture.
+- En base, relu après la migration : 40 migrations sur 40 ; colonne `dramatic_analysis`
+  obligatoire et sans défaut, à 4 sur la version 1 du barème ; ses droits de lecture
+  (visiteurs) et d'insertion (comptes connectés) ; le type `analyse` ; les deux contraintes et
+  les quatre fonctions reprises. Lue sous le rôle des visiteurs, la colonne rend 4.
+- Vitrine relue dans un navigateur : « 4 pour une analyse dramaturgique », entre la note
+  d'intention et le traitement.
+
+| Livrable            | Durée  | Caractères | Coût confirmé | Unités | Atterrissage                   |
+| ------------------- | ------ | ---------- | ------------- | ------ | ------------------------------ |
+| `dramatic_analysis` | 42,7 s | 7 305      | 0,104196 $    | 4/4    | document créé en brouillon, v1 |
+
+- Devis à 15h42 UTC, 4 unités texte ; tâche réclamée cinq secondes après sa création, réussie
+  au premier essai sur `claude-opus-5-5`, sans repli, avec le profil `arc.analyse@1` ; 7 164
+  jetons en entrée, 3 777 en sortie.
+- Proposition appliquée telle quelle 24 secondes plus tard : document « Analyse
+  dramaturgique » créé en brouillon, avec sa première version, aux 7 305 caractères de la
+  proposition — pour 7 000 visés par le profil.
+- **ARC n'a rien réécrit** : le projet porte encore sa date de modification du 4 octobre à
+  02h32 UTC, antérieure à la demande.
+- Dépense du mois après cette demande : 0,762204 $ sur un plafond de 5 $ ; aucune tâche à
+  rapprocher.
+
+Non couvert par cette recette : l'encart de l'onglet Documents et le champ « Analyse
+dramaturgique » de « Plans et quotas », que l'utilisateur a employés mais qui n'ont été relus
+par aucune capture ; la publication d'une version du barème portant le nouveau prix (vérifiée
+par les tests) ; une seconde analyse sur le même projet, qui réécrirait le document en lui
+gardant une version ; une proposition écartée ; un éditeur et un lecteur réels, faute de
+second compte tant que le mode privé est actif (vérifiés localement et par les tests).
 
 ## Décisions attendues
 
