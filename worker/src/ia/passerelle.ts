@@ -10,10 +10,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 import { EchecConnu } from "../executeurs.ts";
-import type { Profil, UsageModele } from "./profils.ts";
+import type { ProfilAppel, UsageModele } from "./profils.ts";
 
 export type DemandeIA = {
-  profil: Profil;
+  profil: ProfilAppel;
   /** Contenu du tour utilisateur : le contexte du projet, mis en forme par l'agent. */
   message: string;
 };
@@ -62,7 +62,13 @@ export function creerFournisseurAnthropic(cleApi: string): Fournisseur {
           // modèle de repli qu'il recommande, dans le même appel.
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
-          output_config: { effort: profil.effort },
+          // Un profil structuré contraint la réponse à son schéma ; le worker
+          // et la base la contrôlent encore, le schéma ne bornant ni les
+          // nombres ni les longueurs.
+          output_config: {
+            effort: profil.effort,
+            ...(profil.schema ? { format: { type: "json_schema", schema: profil.schema } } : {}),
+          },
           system: profil.systeme,
           messages: [{ role: "user", content: message }],
         },
