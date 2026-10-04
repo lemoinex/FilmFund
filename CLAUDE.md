@@ -311,7 +311,8 @@ L’utilisateur voit un copilote unifié, pas onze applications séparées.
 
 Un agent/opération reste désactivé tant que son fournisseur, ses limites, son
 budget, ses permissions et ses tests ne sont pas validés. WEAVER/logline (appelée
-« pitch » à l’écran) est le premier flux livré.
+« pitch » à l’écran) est le premier flux livré ; ses synopsis et sa note d’intention
+suivent le même chemin (lot I2a), profils versionnés dans `worker/src/ia/profils.ts`.
 
 ### BOARD
 
@@ -388,9 +389,12 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 ### Documents et édition
 
 - Documents et versions (sauvegarder, modifier, restaurer) : livrés.
-- Générations prévues : logline, synopsis court/long, note d’intention,
-  note de réalisation, traitement, personnages, pitch oral/écrit, bible série,
-  scénario.
+- Générations livrées : logline (pitch) ; synopsis court, standard et détaillé,
+  note d’intention (lot I2a, base et agent — écrans à faire). Un texte accepté
+  atterrit à sa place : synopsis court et standard dans la fiche du projet,
+  synopsis détaillé et note d’intention dans un document versionné, créé en
+  brouillon. Prévues : note de réalisation, traitement, personnages,
+  pitch oral/écrit, bible série, scénario.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
@@ -489,21 +493,21 @@ recommandations (« à améliorer ») sont configurables et traçables.
 `docs/backlog-status.md` est la source de vérité : lots A à P, avec leur statut.
 Toujours le lire avant de commencer ; ne jamais replanifier un lot livré.
 
-| Étape | Contenu                                             | État au 2 octobre 2026                                                         |
-| ----- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
-| 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                          |
-| 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                          |
-| 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                                  |
-| 3     | Assistant de création, score de maturité, dashboard | Dashboard, assistant (R1, R2) et score (S1, S2) livrés                         |
-| 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire                 |
-| 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                                  |
-| 6     | WEAVER                                              | Logline livrée (I1), recette en attente ; synopsis et note d’intention à faire |
-| 7     | Budget, financement, calendrier, FIELD/GEAR         | Écrans livrés ; agents à faire (lot J)                                         |
-| 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                    |
-| 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                                |
-| 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)       |
-| 11    | Exports PDF/DOCX/ZIP                                | PDF, DOCX et ZIP livrés (lots M1 à M5)                                         |
-| 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                                 |
+| Étape | Contenu                                             | État au 4 octobre 2026                                                        |
+| ----- | --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 0     | Audit, variables, lint/build, fondations sécurité   | Livré                                                                         |
+| 1     | Auth, profils, session, mode privé, RLS de base     | Livré                                                                         |
+| 2     | Studios (socle), projets, équipes, isolation        | Livré (lot E)                                                                 |
+| 3     | Assistant de création, score de maturité, dashboard | Dashboard, assistant (R1, R2) et score (S1, S2) livrés                        |
+| 4     | Documents, éditeur, versions, autosave              | Documents et versions livrés (lot B) ; éditeur enrichi à faire                |
+| 5     | Couche IA, coûts, quotas, tâches, worker            | Livré (lots F, G, H1, H2, I1)                                                 |
+| 6     | WEAVER                                              | Logline (I1) et rédactions (I2a) livrées, recette en attente ; écrans à faire |
+| 7     | Budget, financement, calendrier, FIELD/GEAR         | Écrans livrés ; agents à faire (lot J)                                        |
+| 8     | Opportunités, sources, MATCH/SCOUT/GRIOT            | À faire (lot L, décision 7)                                                   |
+| 9     | Personnages, arcs, SCRIPT/VOICE/ARC/FRAME           | À faire (lot J)                                                               |
+| 10    | BOARD, profils image, quotas image                  | Storyboard manuel et stockage livrés ; BOARD à faire (lot K, décision 7)      |
+| 11    | Exports PDF/DOCX/ZIP                                | PDF, DOCX et ZIP livrés (lots M1 à M5)                                        |
+| 12    | Administration, paiements, notifications, recette   | Journal et plans livrés ; lots N, O, P à faire                                |
 
 Les onze agents restent dans le plan V1. Leur activation est progressive, avec
 contrôle des coûts, tests, permissions et validation métier.
