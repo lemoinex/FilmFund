@@ -6,6 +6,10 @@ export const TYPES_DOCUMENT: Record<DocumentType, { libelle: string; description
     libelle: "Note d'intention",
     description: "Pourquoi ce film, pourquoi vous, pourquoi maintenant.",
   },
+  synopsis: {
+    libelle: "Synopsis détaillé",
+    description: "Le récit déroulé séquence par séquence, du début au dénouement.",
+  },
   traitement: {
     libelle: "Traitement",
     description: "Le récit développé, scène après scène, sans dialogues.",
