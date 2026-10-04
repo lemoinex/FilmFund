@@ -445,6 +445,13 @@ recommandations (« à améliorer ») sont configurables et traçables.
 ### Budget, financement, calendrier
 
 - Budget, planning et suivi des financements : écrans livrés.
+- Propositions structurées (décision 9, lot J3b-1) : FIELD propose des lignes de budget.
+  La proposition garde son parent dans `ai_suggestions` et ses lignes dans
+  `ai_suggestion_budget_lines`, acceptées ou écartées une à une ; elles suivent
+  `peut_gerer_budget`, et le texte du parent, écrit par la base, ne porte aucun montant.
+  Base et worker livrés, écran à venir (J3b-2). Ne pas créer un second modèle de
+  proposition structurée : BOARD et MATCH reprennent celui-ci. FIELD ne propose ni
+  financeur ni montant de financement.
 - Budget audiovisuel, lignes prévues :
   - développement : recherche, écriture, repérages ;
   - préproduction : casting, préparation, autorisations ;

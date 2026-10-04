@@ -34,6 +34,7 @@ import {
   PROFIL_SYNOPSIS_STANDARD,
   PROFIL_TRAITEMENT,
   PROFILS_ARC,
+  PROFILS_FIELD,
   PROFILS_IA,
   PROFILS_SCRIPT,
   PROFILS_WEAVER,
@@ -529,7 +530,10 @@ describe("Registre des agents : la clé vient du coffre", () => {
     await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
     await agents.relire();
 
-    assert.deepEqual(Object.keys(agents.lire()).sort(), Object.keys(PROFILS_IA).sort());
+    assert.deepEqual(
+      Object.keys(agents.lire()).sort(),
+      [...Object.keys(PROFILS_IA), ...Object.keys(PROFILS_FIELD)].sort(),
+    );
     assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
     assert.deepEqual(
       evenements.map((e) => e.evenement),
@@ -559,7 +563,10 @@ describe("Registre des agents : la clé vient du coffre", () => {
     await definirCleFactice("anthropic", "sk-ant-factice-registre-aaaaaaaa");
     const { agents, evenements } = registreObserve();
     await agents.relire();
-    assert.deepEqual(Object.keys(agents.lire()).sort(), Object.keys(PROFILS_IA).sort());
+    assert.deepEqual(
+      Object.keys(agents.lire()).sort(),
+      [...Object.keys(PROFILS_IA), ...Object.keys(PROFILS_FIELD)].sort(),
+    );
 
     await definirCleFactice("anthropic", null);
     await agents.relire();
