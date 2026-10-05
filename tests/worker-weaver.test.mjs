@@ -1259,6 +1259,44 @@ describe("SCRIPT : traitement et bible", () => {
     );
   });
 
+  it("deux scénarios : le finalisé est lu en entier, la fin vient de celui qui recevra le texte", async () => {
+    const porteur = await creerCompte("script-deux-scenarios");
+    const projet = await creerProjet(porteur, "Deux versions");
+    // Un scénario finalisé, puis un brouillon plus récent : c'est le second
+    // que l'acceptation complétera, et le premier ne doit pas disparaître.
+    const { error: premier } = await porteur.client.from("project_documents").insert({
+      project_id: projet.id,
+      type: "scenario",
+      title: "Scénario, première version",
+      content: "EXT. FLEUVE — JOUR\n\nLe bac accoste.",
+      status: "finalise",
+    });
+    assert.ifError(premier);
+    const { error: second } = await porteur.client.from("project_documents").insert({
+      project_id: projet.id,
+      type: "scenario",
+      title: "Scénario",
+      content: "INT. CASE — NUIT\n\nUne lampe tempête.",
+    });
+    assert.ifError(second);
+
+    const { demandes } = await proposerSequence(
+      porteur,
+      projet.id,
+      "script-deux-scenarios-cle",
+      "La suite, dans la case.",
+      "INT. CASE — NUIT\n\nLa lampe s'éteint.",
+    );
+    const { message } = demandes[0];
+    const documents = /<documents>([\s\S]*)<\/documents>/.exec(message)?.[1] ?? "";
+    const dejaEcrit =
+      /<scenario_deja_ecrit>([\s\S]*)<\/scenario_deja_ecrit>/.exec(message)?.[1] ?? "";
+    assert.match(documents, /Le bac accoste\./);
+    assert.doesNotMatch(documents, /Une lampe tempête\./);
+    assert.match(dejaEcrit, /Une lampe tempête\./);
+    assert.doesNotMatch(dejaEcrit, /Le bac accoste\./);
+  });
+
   it("sans scénario, la séquence l'ouvre : document créé en brouillon", async () => {
     const porteur = await creerCompte("script-ouverture");
     const projet = await creerProjet(porteur, "Premier plan");

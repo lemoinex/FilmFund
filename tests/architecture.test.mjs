@@ -763,7 +763,9 @@ describe("Catalogue public", () => {
  * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
  */
 describe("Livrables des agents", () => {
-  const DEVIS = "supabase/migrations/20261005130000_script_scenario.sql";
+  // Le devis et le contexte ont été repris par le correctif du lot J2a ; le
+  // dépôt et l'acceptation datent de sa première migration.
+  const DEVIS = "supabase/migrations/20261005150000_scenario_contexte.sql";
   const PROPOSITIONS = "supabase/migrations/20261005130000_script_scenario.sql";
 
   /** Corps de la fonction nommée, jusqu'à la suivante. */
@@ -858,15 +860,16 @@ describe("Livrables des agents", () => {
     assert.equal(Number(borne), consigneDe("screenplay")?.longueurMax);
     assert.match(devis, /jsonb_typeof\(v_parametres -> 'sequence'\) is distinct from 'string'/);
 
-    // Le contexte joint la description et la fin du scénario, sans répéter le
-    // scénario parmi les documents.
+    // Le contexte joint la description et la fin du document cible. Lui seul
+    // est écarté des documents finalisés : un autre scénario reste lu.
     const contexte = corps(migration, "contexte_redaction");
     assert.match(contexte, /'sequence', v_job\.params ->> 'sequence'/);
     assert.match(contexte, /'fin', right\(d\.content, \d+\)/);
-    assert.match(contexte, /v_job\.action <> 'screenplay' or d\.type <> 'scenario'/);
+    assert.match(contexte, /and d\.id is distinct from v_scenario/);
+    assert.doesNotMatch(contexte, /d\.type <> 'scenario'/);
 
     // L'acceptation ajoute à la fin : ce qui précède reste en tête, intact.
-    const acceptation = corps(migration, "accepter_proposition");
+    const acceptation = corps(lire(PROPOSITIONS), "accepter_proposition");
     assert.match(acceptation, /else v_ancien \|\| E'\\n\\n' \|\| v_final/);
     assert.match(acceptation, /char_length\(v_ancien\) \+ 2 \+ char_length\(v_final\) > 200000/);
 

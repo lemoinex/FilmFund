@@ -148,7 +148,7 @@ describe("Propositions : catalogue des livrables", () => {
     for (const action of ORDRE_LIVRABLES) {
       const consigne = consigneDe(action);
       if (action === "screenplay") {
-        assert.equal(consigne?.longueurMax, 800);
+        assert.equal(consigne?.longueurMax, 1200);
         assert.ok(consigne.libelle.length > 0 && consigne.aide.length > 0);
       } else {
         assert.equal(consigne, null, action);

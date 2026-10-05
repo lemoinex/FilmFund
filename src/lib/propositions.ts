@@ -131,7 +131,7 @@ export const LIVRABLES_IA = {
     consigne: {
       libelle: "Séquence à écrire",
       aide: "Dites où elle se passe, qui s'y trouve et ce qui s'y joue. L'assistant ne relit que la fin du scénario : rappelez ce qu'il doit savoir du début.",
-      longueurMax: 800,
+      longueurMax: 1200,
     },
   },
   intention_note: {

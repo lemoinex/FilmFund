@@ -172,7 +172,7 @@ describe("Devis et réservations", () => {
         ["screenplay", { sequences: 1 }],
         ["screenplay", { sequences: 1, sequence: "   " }],
         ["screenplay", { sequences: 1, sequence: 42 }],
-        ["screenplay", { sequences: 1, sequence: "a".repeat(801) }],
+        ["screenplay", { sequences: 1, sequence: "a".repeat(1201) }],
         ["screenplay", { sequences: 1, sequence: "cloche\u0007" }],
         ["dialogue", { scenes: 0 }],
         ["image", { count: 101 }],
