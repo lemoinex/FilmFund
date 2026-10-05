@@ -1235,3 +1235,155 @@ describe("Écrans des propositions", () => {
     assert.match(serveur, /if \(!peutDemander\) \{\s*return etapes;/);
   });
 });
+
+/*
+ * Découpage technique et matériel (lot J3c-1). L'écran borne ce que la base
+ * borne ; les trois tables portent les protections du storyboard ; et le
+ * besoin électrique sort d'un seul module, qui ne certifie rien.
+ */
+describe("Découpage et matériel", () => {
+  const MIGRATION = "supabase/migrations/20261005210000_decoupage_materiel.sql";
+  const TABLES = ["scene_shots", "project_gear", "project_power_settings"];
+
+  const sansCommentaires = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("l'écran borne les plans et le matériel comme la base", async () => {
+    const decoupage = await import("../src/lib/decoupage.ts");
+    const materiel = await import("../src/lib/materiel.ts");
+    const migration = lire(MIGRATION);
+    const bornes = Object.fromEntries(
+      [...migration.matchAll(/check \((\w+) between (\d+) and (\d+)\)/g)].map((m) => [
+        m[1],
+        { min: Number(m[2]), max: Number(m[3]) },
+      ]),
+    );
+
+    assert.deepEqual(bornes, {
+      position: { min: 1, max: 1000 },
+      focal_mm: { ...decoupage.FOCALE_MM },
+      duration_seconds: { ...decoupage.DUREE_PLAN_SECONDES },
+      quantity: { ...materiel.QUANTITE },
+      unit_power_watts: { ...materiel.PUISSANCE_WATTS },
+      voltage_volts: { ...materiel.TENSION_VOLTS },
+      generator_margin_percent: { ...materiel.MARGE_POURCENT },
+    });
+    assert.ok(
+      migration.includes(`char_length(description) <= ${decoupage.DESCRIPTION_PLAN_MAX}`),
+      "description d'un plan",
+    );
+    assert.ok(
+      migration.includes(`char_length(btrim(label)) between 1 and ${materiel.DESIGNATION_MAX}`),
+      "désignation d'un équipement",
+    );
+    // Une position au-delà de la borne de la base ferait échouer un ajout.
+    assert.ok(decoupage.PLANS_PAR_SCENE_MAX <= bornes.position.max);
+  });
+
+  it("les réglages par défaut de l'écran sont ceux de la base", async () => {
+    const { REGLAGES_PAR_DEFAUT } = await import("../src/lib/materiel.ts");
+    const migration = lire(MIGRATION);
+    assert.ok(
+      migration.includes(`voltage_volts integer not null default ${REGLAGES_PAR_DEFAUT.tension}`),
+    );
+    assert.ok(
+      migration.includes(
+        `generator_margin_percent integer not null default ${REGLAGES_PAR_DEFAUT.marge}`,
+      ),
+    );
+  });
+
+  it("l'écran propose les angles, mouvements et catégories que la base connaît", async () => {
+    const { ANGLES, MOUVEMENTS } = await import("../src/lib/decoupage.ts");
+    const { CATEGORIES_MATERIEL } = await import("../src/lib/materiel.ts");
+    const migration = lire(MIGRATION);
+    const valeurs = (type) => {
+      const liste =
+        new RegExp(`create type public\\.${type} as enum \\(([^)]+)\\)`).exec(migration)?.[1] ?? "";
+      return [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    };
+
+    assert.deepEqual(Object.keys(ANGLES), valeurs("shot_angle"));
+    assert.deepEqual(Object.keys(MOUVEMENTS), valeurs("shot_movement"));
+    assert.deepEqual(Object.keys(CATEGORIES_MATERIEL), valeurs("gear_category"));
+  });
+
+  it("chaque table est protégée comme le storyboard : verrou, journal et droits par colonne", () => {
+    const migration = lire(MIGRATION);
+    const journal = lire("src/lib/journal-administration.ts");
+    for (const table of TABLES) {
+      assert.match(
+        migration,
+        new RegExp(`alter table public\\.${table} enable row level security`),
+      );
+      assert.match(migration, new RegExp(`on public\\.${table}\\s+as restrictive`), table);
+      assert.match(
+        migration,
+        new RegExp(
+          `create trigger ${table}_journal_admin\\s+before insert or update or delete on public\\.${table}\\s+for each row\\s+execute function public\\.journaliser_intervention_admin\\(\\)`,
+        ),
+        table,
+      );
+      assert.match(
+        migration,
+        new RegExp(
+          `revoke all on table public\\.${table} from anon;\\s*revoke update on table public\\.${table} from authenticated;\\s*grant update \\(`,
+        ),
+        table,
+      );
+      // Sans libellé, le journal d'administration afficherait le nom de la table.
+      assert.match(journal, new RegExp(`^ {2}${table}: "[^"]+",$`, "m"), table);
+    }
+    // La fonction de déplacement ne donne aucun droit : elle suit la RLS.
+    assert.match(migration, /function public\.deplacer_plan[\s\S]*?security invoker/);
+    assert.doesNotMatch(migration, /^security definer/m);
+  });
+
+  it("chaque action vérifie la session avant d'écrire, et l'auteur ne vient pas du formulaire", () => {
+    for (const [chemin, attendues] of [
+      ["src/app/(app)/projets/[id]/storyboard/actions.ts", 8],
+      ["src/app/(app)/projets/[id]/materiel/actions.ts", 4],
+    ]) {
+      const source = sansCommentaires(lire(chemin));
+      const corps = source.split("\nexport async function ").slice(1);
+      assert.equal(corps.length, attendues, `${chemin} : lecture des actions`);
+      for (const fonction of corps) {
+        const nom = fonction.slice(0, fonction.indexOf("("));
+        const garde = fonction.indexOf("exigerAcces(supabase)");
+        const ecriture = fonction.search(/\.(insert|update|delete|rpc)\(/);
+        assert.ok(garde > 0, `${nom} : garde introuvable`);
+        assert.ok(ecriture > garde, `${nom} : l'écriture doit suivre la garde`);
+      }
+      assert.doesNotMatch(source, /formData\.get\("(created_by|project_id|owner_id)"\)/);
+      assert.doesNotMatch(source, /SECRET|service_role/i);
+    }
+  });
+
+  it("le besoin électrique sort du module de calcul, et l'écran dit qu'il n'est pas une norme", () => {
+    const page = sansCommentaires(lire("src/app/(app)/projets/[id]/materiel/page.tsx"));
+    assert.match(page, /besoinElectrique\(liste, reglages\)/);
+    // Aucune arithmétique sur les puissances dans la page : un second calcul
+    // finirait par diverger du premier.
+    assert.doesNotMatch(page, /unit_power_watts\s*[*/+]|[*/+]\s*\w+\.unit_power_watts/);
+    assert.match(page, /ne\s+sont\s+pas\s+une\s+norme/);
+    assert.match(page, /chef\s+électricien/);
+    assert.match(page, /sans\s+puissance\s+renseignée/);
+
+    // Le module de calcul n'importe rien : ni base, ni modèle.
+    assert.doesNotMatch(lire("src/lib/materiel-calculs.ts"), /^import /m);
+  });
+
+  it("les plans s'ajoutent à la scène sans toucher à son cadrage principal", () => {
+    const actions = sansCommentaires(lire("src/app/(app)/projets/[id]/storyboard/actions.ts"));
+    const plans = actions.slice(actions.indexOf("function validerPlan"));
+    assert.ok(plans.length > 500, "lecture des actions des plans");
+    assert.doesNotMatch(plans, /from\("storyboard_scenes"\)/);
+    assert.match(plans, /rpc\("deplacer_plan"/);
+
+    const onglets = lire("src/lib/onglets-projet.ts");
+    assert.match(
+      onglets,
+      /\{ cle: "materiel", libelle: "Matériel", href: `\$\{base\}\/materiel` \}/,
+    );
+  });
+});

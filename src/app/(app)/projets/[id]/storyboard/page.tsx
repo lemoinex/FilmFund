@@ -7,6 +7,7 @@ import Image from "next/image";
 import { StoryboardIcon } from "@/components/icons";
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { EnvoiImage } from "@/components/ui/envoi-image";
+import { PLANS_PAR_SCENE_MAX } from "@/lib/decoupage";
 import { CADRAGES, enteteScene, numeroScene } from "@/lib/storyboard";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +16,8 @@ import { definirImageScene, retirerImageScene } from "../images/actions";
 import { OngletsProjet } from "../onglets";
 import { deplacerScene, supprimerScene } from "./actions";
 import { FormulaireScene, type SceneEditable } from "./formulaire";
+import type { PlanEditable } from "./formulaire-plan";
+import { PlansScene } from "./plans";
 
 export const metadata: Metadata = {
   title: "Storyboard — filmfundAfrica",
@@ -26,29 +29,53 @@ export default async function StoryboardPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ scene?: string }>;
+  searchParams: Promise<{ scene?: string; plan?: string; decoupage?: string }>;
 }) {
   const { id } = await params;
-  const { scene: sceneEnModification } = await searchParams;
+  const {
+    scene: sceneEnModification,
+    plan: planEnModification,
+    decoupage: decoupageOuvert,
+  } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: projet }, { data: peutEditer }, { data: budget }, { data: scenes }] =
-    await Promise.all([
-      supabase.from("projects").select("id, title").eq("id", id).maybeSingle(),
-      supabase.rpc("peut_editer_contenu", { p_project_id: id }),
-      supabase.rpc("peut_gerer_budget", { p_project_id: id }),
-      supabase
-        .from("storyboard_scenes")
-        .select("id, title, setting, location, time_of_day, shot, description, image_path")
-        .eq("project_id", id)
-        .order("position"),
-    ]);
+  const [
+    { data: projet },
+    { data: peutEditer },
+    { data: budget },
+    { data: scenes },
+    { data: plans },
+  ] = await Promise.all([
+    supabase.from("projects").select("id, title").eq("id", id).maybeSingle(),
+    supabase.rpc("peut_editer_contenu", { p_project_id: id }),
+    supabase.rpc("peut_gerer_budget", { p_project_id: id }),
+    supabase
+      .from("storyboard_scenes")
+      .select("id, title, setting, location, time_of_day, shot, description, image_path")
+      .eq("project_id", id)
+      .order("position"),
+    supabase
+      .from("scene_shots")
+      .select("id, scene_id, shot, focal_mm, angle, movement, description, duration_seconds")
+      .eq("project_id", id)
+      .order("position"),
+  ]);
 
   if (!projet) {
     notFound();
   }
 
   const liste = scenes ?? [];
+
+  // Les plans de chaque scène, dans leur ordre ; bornés comme l'ajout l'est.
+  const plansParScene = new Map<string, PlanEditable[]>();
+  for (const { scene_id, ...plan } of plans ?? []) {
+    const deLaScene = plansParScene.get(scene_id) ?? [];
+    if (deLaScene.length < PLANS_PAR_SCENE_MAX) {
+      deLaScene.push(plan);
+    }
+    plansParScene.set(scene_id, deLaScene);
+  }
   const liens = await liensSignes(
     supabase,
     liste.map((s) => s.image_path),
@@ -96,6 +123,9 @@ export default async function StoryboardPage({
                   index={index}
                   total={liste.length}
                   peutEditer={peutEditer === true}
+                  plans={plansParScene.get(scene.id) ?? []}
+                  planEnModification={planEnModification}
+                  decoupageOuvert={decoupageOuvert === scene.id}
                 />
               )}
             </li>
@@ -141,6 +171,9 @@ function Planche({
   index,
   total,
   peutEditer,
+  plans,
+  planEnModification,
+  decoupageOuvert,
 }: {
   projetId: string;
   scene: SceneEditable;
@@ -149,8 +182,12 @@ function Planche({
   index: number;
   total: number;
   peutEditer: boolean;
+  plans: PlanEditable[];
+  planEnModification?: string;
+  decoupageOuvert: boolean;
 }) {
   const numero = numeroScene(index);
+  const planDeLaScene = plans.some((plan) => plan.id === planEnModification);
 
   return (
     <>
@@ -207,6 +244,17 @@ function Planche({
         ) : (
           <div className="flex-1" />
         )}
+
+        <PlansScene
+          projetId={projetId}
+          sceneId={scene.id}
+          numeroScene={numero}
+          cadragePrincipal={scene.shot}
+          plans={plans}
+          planEnModification={planDeLaScene ? planEnModification : undefined}
+          ouvert={decoupageOuvert || planDeLaScene}
+          peutEditer={peutEditer}
+        />
 
         {peutEditer ? (
           <div className="border-app-line mt-5 flex flex-wrap items-center gap-1 border-t pt-4">

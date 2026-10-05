@@ -30,7 +30,7 @@ réels).
 | J3b-2  | FIELD : écran des lignes proposées dans l'onglet Budget                                                                        | validé en recette | —              |
 | J3b-3a | FIELD : propositions de jalons de planning — base, profil, agent                                                               | validé en recette | —              |
 | J3b-3b | FIELD : écran des jalons proposés dans l'onglet Planning                                                                       | validé en recette | —              |
-| J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | à faire           | —              |
+| J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | validé localement | —              |
 | J3c-2  | FRAME : propositions de plans pour une scène                                                                                   | à faire           | J3c-1          |
 | J3c-3  | GEAR : propositions de matériel                                                                                                | à faire           | J3c-1          |
 | J3c-4  | Exports : sections « Découpage » et « Matériel »                                                                               | à faire           | J3c-1          |
@@ -882,6 +882,22 @@ Quatre lots : J3c-1, les tables et la saisie manuelle, sans IA et utile seul ; J
 propose les plans d'une scène (4 unités) ; J3c-3, GEAR propose une liste de matériel (5
 unités) ; J3c-4, les sections du dossier. Ni marque, ni loueur, ni prix : les prix restent au
 budget.
+
+J3c-1, écrit le 5 octobre 2026 : trois tables et aucun appel d'IA. `scene_shots` range les
+plans d'une scène — un plan porte le projet de sa scène, et une clé étrangère composée
+refuse qu'il en porte un autre — ; `project_gear`, le matériel d'un projet ;
+`project_power_settings`, la tension et la marge, dans leur propre table plutôt que sur
+`projects`, qu'un administrateur ne réécrit pas. Mêmes droits que le storyboard, journal
+d'administration compris. Les plans se saisissent sous chaque scène de l'onglet Storyboard,
+dans un volet replié ; le matériel a son onglet, « Matériel », ouvert à toute l'équipe.
+
+Le besoin électrique sort d'un seul module (`src/lib/materiel-calculs.ts`), recalculé à
+chaque lecture et jamais stocké : charge simultanée, intensité — charge ÷ tension, en
+monophasé, sans facteur de puissance — et groupe conseillé, marge comprise. Un équipement
+sans puissance renseignée n'entre pas dans le calcul, et l'écran dit combien sont dans ce
+cas. La tension se règle de 100 à 250 V : au-delà, l'alimentation serait triphasée et la
+formule fausse. Deux bornes d'écran, sans équivalent en base : 50 plans par scène, 300
+lignes de matériel par projet.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

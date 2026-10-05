@@ -956,6 +956,60 @@ export type Database = {
           },
         ];
       };
+      project_gear: {
+        Row: {
+          category: Database["public"]["Enums"]["gear_category"];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          label: string;
+          project_id: string;
+          quantity: number;
+          simultaneous: boolean;
+          unit_power_watts: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          category: Database["public"]["Enums"]["gear_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label: string;
+          project_id: string;
+          quantity?: number;
+          simultaneous?: boolean;
+          unit_power_watts?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          category?: Database["public"]["Enums"]["gear_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label?: string;
+          project_id?: string;
+          quantity?: number;
+          simultaneous?: boolean;
+          unit_power_watts?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_gear_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_gear_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_invitations: {
         Row: {
           created_at: string;
@@ -1102,6 +1156,38 @@ export type Database = {
             foreignKeyName: "project_milestones_project_id_fkey";
             columns: ["project_id"];
             isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_power_settings: {
+        Row: {
+          created_at: string;
+          generator_margin_percent: number;
+          project_id: string;
+          updated_at: string;
+          voltage_volts: number;
+        };
+        Insert: {
+          created_at?: string;
+          generator_margin_percent?: number;
+          project_id: string;
+          updated_at?: string;
+          voltage_volts?: number;
+        };
+        Update: {
+          created_at?: string;
+          generator_margin_percent?: number;
+          project_id?: string;
+          updated_at?: string;
+          voltage_volts?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_power_settings_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: true;
             referencedRelation: "projects";
             referencedColumns: ["id"];
           },
@@ -1483,6 +1569,76 @@ export type Database = {
             columns: ["studio_id"];
             isOneToOne: false;
             referencedRelation: "studios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      scene_shots: {
+        Row: {
+          angle: Database["public"]["Enums"]["shot_angle"];
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          duration_seconds: number | null;
+          focal_mm: number | null;
+          id: string;
+          movement: Database["public"]["Enums"]["shot_movement"];
+          position: number;
+          project_id: string;
+          scene_id: string;
+          shot: Database["public"]["Enums"]["shot_type"];
+          updated_at: string;
+        };
+        Insert: {
+          angle?: Database["public"]["Enums"]["shot_angle"];
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          duration_seconds?: number | null;
+          focal_mm?: number | null;
+          id?: string;
+          movement?: Database["public"]["Enums"]["shot_movement"];
+          position: number;
+          project_id: string;
+          scene_id: string;
+          shot: Database["public"]["Enums"]["shot_type"];
+          updated_at?: string;
+        };
+        Update: {
+          angle?: Database["public"]["Enums"]["shot_angle"];
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          duration_seconds?: number | null;
+          focal_mm?: number | null;
+          id?: string;
+          movement?: Database["public"]["Enums"]["shot_movement"];
+          position?: number;
+          project_id?: string;
+          scene_id?: string;
+          shot?: Database["public"]["Enums"]["shot_type"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "plan_de_sa_scene";
+            columns: ["scene_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "storyboard_scenes";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "scene_shots_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "scene_shots_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
             referencedColumns: ["id"];
           },
         ];
@@ -1992,6 +2148,7 @@ export type Database = {
         Returns: undefined;
       };
       depense_ia_du_mois: { Args: Record<PropertyKey, never>; Returns: number };
+      deplacer_plan: { Args: { p_plan_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       duree_bail_travail: { Args: Record<PropertyKey, never>; Returns: string };
       duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
@@ -2460,6 +2617,7 @@ export type Database = {
         | "residence"
         | "autre";
       funding_status: "a_preparer" | "deposee" | "acceptee" | "refusee";
+      gear_category: "image" | "lumiere" | "son" | "machinerie" | "energie" | "regie";
       milestone_status: "a_faire" | "en_cours" | "termine";
       profile_type: "AUTHOR" | "DIRECTOR" | "PRODUCER";
       project_format:
@@ -2475,6 +2633,8 @@ export type Database = {
         | "termine";
       scene_setting: "int" | "ext" | "int_ext";
       scene_time: "jour" | "nuit" | "aube" | "crepuscule";
+      shot_angle: "normal" | "plongee" | "contre_plongee";
+      shot_movement: "fixe" | "panoramique" | "travelling" | "epaule" | "autre";
       shot_type:
         | "plan_ensemble"
         | "plan_large"
@@ -2636,6 +2796,7 @@ export const Constants = {
         "autre",
       ],
       funding_status: ["a_preparer", "deposee", "acceptee", "refusee"],
+      gear_category: ["image", "lumiere", "son", "machinerie", "energie", "regie"],
       milestone_status: ["a_faire", "en_cours", "termine"],
       profile_type: ["AUTHOR", "DIRECTOR", "PRODUCER"],
       project_format: [
@@ -2658,6 +2819,8 @@ export const Constants = {
       ],
       scene_setting: ["int", "ext", "int_ext"],
       scene_time: ["jour", "nuit", "aube", "crepuscule"],
+      shot_angle: ["normal", "plongee", "contre_plongee"],
+      shot_movement: ["fixe", "panoramique", "travelling", "epaule", "autre"],
       shot_type: [
         "plan_ensemble",
         "plan_large",

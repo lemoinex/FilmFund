@@ -31,6 +31,7 @@ export function ongletsDuProjet(
     { cle: "fiche", libelle: "Fiche", href: `${base}/fiche` },
     { cle: "documents", libelle: "Documents", href: `${base}/documents` },
     { cle: "storyboard", libelle: "Storyboard", href: `${base}/storyboard` },
+    { cle: "materiel", libelle: "Matériel", href: `${base}/materiel` },
     { cle: "planning", libelle: "Planning", href: `${base}/planning` },
     // Budget et financements : mêmes droits, montants confidentiels.
     ...(budget
