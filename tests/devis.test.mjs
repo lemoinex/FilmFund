@@ -141,8 +141,12 @@ describe("Devis et réservations", () => {
       const duree = (new Date(traitement.expires_at) - Date.now()) / 60_000;
       assert.ok(duree > 14 && duree <= 15, `validité de ${duree} minutes`);
 
-      const scenario = await devisValide(porteur, projet.id, "screenplay", { sequences: 3 });
-      assert.equal(scenario.quantity, 6);
+      // Une séquence par demande, décrite par l'équipe : 2 unités.
+      const scenario = await devisValide(porteur, projet.id, "screenplay", {
+        sequences: 1,
+        sequence: "Maya entre dans la maison.",
+      });
+      assert.equal(scenario.quantity, 2);
 
       const dialogues = await devisValide(porteur, projet.id, "dialogue", { scenes: 4 });
       assert.equal(dialogues.quantity, 4);
@@ -162,6 +166,14 @@ describe("Devis et réservations", () => {
         ["screenplay", {}],
         ["screenplay", { sequences: 2.5 }],
         ["screenplay", { sequences: "3" }],
+        // Une séquence par demande, et sa description : ni deux séquences,
+        // ni une description absente, vide, démesurée ou d'un autre type.
+        ["screenplay", { sequences: 2, sequence: "Deux séquences d'un coup." }],
+        ["screenplay", { sequences: 1 }],
+        ["screenplay", { sequences: 1, sequence: "   " }],
+        ["screenplay", { sequences: 1, sequence: 42 }],
+        ["screenplay", { sequences: 1, sequence: "a".repeat(801) }],
+        ["screenplay", { sequences: 1, sequence: "cloche\u0007" }],
         ["dialogue", { scenes: 0 }],
         ["image", { count: 101 }],
       ]) {
@@ -287,8 +299,8 @@ describe("Devis et réservations", () => {
 
     it("même clé, autre demande : conflit", async () => {
       const { porteur, projet } = await porteurEtProjet("idem-conflit");
-      const deux = await devisValide(porteur, projet.id, "screenplay", { sequences: 2 });
-      const trois = await devisValide(porteur, projet.id, "screenplay", { sequences: 3 });
+      const deux = await devisValide(porteur, projet.id, "dialogue", { scenes: 2 });
+      const trois = await devisValide(porteur, projet.id, "dialogue", { scenes: 3 });
 
       assert.ifError((await accepter(porteur, deux.quote_id, "cle-partagee")).error);
       const { error } = await accepter(porteur, trois.quote_id, "cle-partagee");

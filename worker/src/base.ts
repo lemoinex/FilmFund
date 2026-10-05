@@ -217,6 +217,16 @@ export type ContexteRedaction = {
   personnages: Personnage[];
   vision: { artistique: string | null; objectifs: string | null; public: string | null };
   documents: DocumentProjet[];
+  /**
+   * Séquence à écrire, décrite par l'équipe : présente pour un scénario, et
+   * pour lui seul.
+   */
+  sequence?: string | null;
+  /**
+   * Scénario déjà écrit, pour s'y raccorder : sa longueur et sa fin. Null
+   * s'il n'existe pas encore ; absent des autres actions.
+   */
+  scenario?: { longueur: number; fin: string } | null;
 };
 
 /**

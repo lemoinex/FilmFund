@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { Message } from "@/components/ui/form";
 import {
+  consigneDe,
   enNombre,
   LIVRABLES_IA,
   unitesTexte,
@@ -79,6 +80,10 @@ export function Proposition({
   // Le devis affiché et la clé de sa demande : la clé naît avec le devis et
   // ne change plus, si bien qu'un double clic ne réserve qu'une fois.
   const [demande, setDemande] = useState<{ devis: Devis; cle: string } | null>(null);
+  // Ce que l'équipe précise avant le devis, pour un livrable qui le demande.
+  // Le serveur la revalide : elle part chez le fournisseur.
+  const consigne = consigneDe(action);
+  const [saisie, setSaisie] = useState("");
 
   const proposition = etape.etape === "proposition" ? etape : null;
   const [texte, setTexte] = useState(proposition?.texte ?? "");
@@ -106,7 +111,7 @@ export function Proposition({
   function obtenirDevis() {
     setErreur(null);
     demarrer(async () => {
-      const resultat = await demanderDevis(projetId, action);
+      const resultat = await demanderDevis(projetId, action, consigne ? saisie : undefined);
       if ("erreur" in resultat) {
         setErreur(resultat.erreur);
       } else {
@@ -143,18 +148,50 @@ export function Proposition({
       ) : null}
 
       {(etape.etape === "repos" || etape.etape === "echec") && !demande ? (
-        <button
-          type="button"
-          onClick={obtenirDevis}
-          disabled={enCours}
-          className={`${BOUTON_PRINCIPAL} mt-5`}
-        >
-          {enCours ? "Un instant…" : livrable.bouton}
-        </button>
+        <>
+          {consigne ? (
+            <div className="mt-5">
+              <label htmlFor={`consigne-${action}`} className="block text-sm font-medium">
+                {consigne.libelle}
+              </label>
+              <p
+                id={`consigne-${action}-aide`}
+                className="text-light-muted mt-1 text-sm leading-relaxed text-pretty"
+              >
+                {consigne.aide}
+              </p>
+              <textarea
+                id={`consigne-${action}`}
+                rows={4}
+                maxLength={consigne.longueurMax}
+                value={saisie}
+                onChange={(evenement) => setSaisie(evenement.target.value)}
+                aria-describedby={`consigne-${action}-aide consigne-${action}-longueur`}
+                className="border-navy-line bg-navy focus:border-gold mt-2 w-full resize-y rounded-lg border px-4 py-3 text-sm leading-relaxed transition-colors outline-none"
+              />
+              <p id={`consigne-${action}-longueur`} className="text-light-muted mt-1 text-xs">
+                {enNombre(saisie.length)} / {enNombre(consigne.longueurMax)} caractères
+              </p>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={obtenirDevis}
+            disabled={enCours || (consigne !== null && !saisie.trim())}
+            className={`${BOUTON_PRINCIPAL} mt-5`}
+          >
+            {enCours ? "Un instant…" : livrable.bouton}
+          </button>
+        </>
       ) : null}
 
       {(etape.etape === "repos" || etape.etape === "echec") && demande ? (
         <div className="mt-5">
+          {consigne ? (
+            <p className="text-light-muted mb-3 text-sm leading-relaxed text-pretty whitespace-pre-line">
+              <span className="text-light">{consigne.libelle} :</span> {saisie.trim()}
+            </p>
+          ) : null}
           <p role="status" className="text-sm leading-relaxed text-pretty">
             Cette proposition compte {unitesTexte(demande.devis.quantite)}. Il en reste{" "}
             {enNombre(demande.devis.disponible)} sur {enNombre(demande.devis.allocation)} pour la
@@ -167,7 +204,10 @@ export function Proposition({
               onClick={() =>
                 executer(
                   () => lancerProposition(projetId, action, demande.devis.id, demande.cle),
-                  () => setDemande(null),
+                  () => {
+                    setDemande(null);
+                    setSaisie("");
+                  },
                 )
               }
               className={BOUTON_PRINCIPAL}

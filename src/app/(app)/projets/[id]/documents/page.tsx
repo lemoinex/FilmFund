@@ -31,16 +31,57 @@ const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
 const LIVRABLES_DOCUMENTS: Readonly<
   Record<
     ActionIa &
-      ("synopsis_detailed" | "dramatic_analysis" | "intention_note" | "treatment" | "bible"),
+      (
+        | "synopsis_detailed"
+        | "dramatic_analysis"
+        | "intention_note"
+        | "treatment"
+        | "bible"
+        | "screenplay"
+      ),
     DocumentType
   >
 > = {
   synopsis_detailed: "synopsis",
   treatment: "traitement",
   bible: "bible",
+  screenplay: "scenario",
   intention_note: "note_intention",
   dramatic_analysis: "analyse",
 };
+
+/**
+ * Une séquence s'ajoute à la fin du scénario au lieu de le remplacer : en
+ * regard de la proposition, l'écran n'en montre que la fin, là où elle se
+ * raccordera — pas un document qui peut compter 200 000 caractères.
+ */
+const FIN_DU_SCENARIO = 2000;
+
+/** Ce que l'encart affiche du document visé, et ce qu'il annonce en faire. */
+function viseDuLivrable(
+  action: keyof typeof LIVRABLES_DOCUMENTS,
+  vise: { title: string; content: string } | null,
+): { texteActuel: string; precision: string } {
+  if (!vise) {
+    return {
+      texteActuel: "",
+      precision: `Aucun document de type « ${TYPES_DOCUMENT[LIVRABLES_DOCUMENTS[action]].libelle} » : la proposition en créerait un, en brouillon.`,
+    };
+  }
+  if (action === "screenplay") {
+    return {
+      texteActuel:
+        vise.content.length > FIN_DU_SCENARIO
+          ? `[…] ${vise.content.slice(-FIN_DU_SCENARIO)}`
+          : vise.content,
+      precision: `La séquence s'ajouterait à la fin du document « ${vise.title} », sans rien y remplacer ; il en garderait une version.`,
+    };
+  }
+  return {
+    texteActuel: vise.content,
+    precision: `La proposition remplacerait le document « ${vise.title} », qui en garderait une version.`,
+  };
+}
 
 export default async function DocumentsPage({
   params,
@@ -180,18 +221,14 @@ export default async function DocumentsPage({
         <>
           <RafraichissementPropositions actif={attenteEnCours(etapes.values())} />
           {actions.map((action) => {
-            const vise = vises.get(action) ?? null;
+            const { texteActuel, precision } = viseDuLivrable(action, vises.get(action) ?? null);
             return (
               <Proposition
                 key={action}
                 projetId={id}
                 action={action}
-                texteActuel={vise?.content ?? ""}
-                precision={
-                  vise
-                    ? `La proposition remplacerait le document « ${vise.title} », qui en garderait une version.`
-                    : `Aucun document de type « ${TYPES_DOCUMENT[LIVRABLES_DOCUMENTS[action]].libelle} » : la proposition en créerait un, en brouillon.`
-                }
+                texteActuel={texteActuel}
+                precision={precision}
                 etape={etapes.get(action) ?? { etape: "repos" }}
                 peutAppliquer={peutAppliquer}
               />

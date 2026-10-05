@@ -10,10 +10,12 @@ import { strict as assert } from "node:assert";
 import { after, before, describe, it } from "node:test";
 
 import {
+  consigneDe,
   enNombre,
   ERREURS_BASE,
   estActionIa,
   etapeProposition,
+  lireConsigne,
   LIVRABLES_IA,
   messageErreur,
   ORDRE_LIVRABLES,
@@ -102,6 +104,7 @@ describe("Propositions : catalogue des livrables", () => {
       "dramatic_analysis",
       "treatment",
       "bible",
+      "screenplay",
       "intention_note",
     ]);
   });
@@ -113,7 +116,7 @@ describe("Propositions : catalogue des livrables", () => {
     for (const refus of [
       "image",
       "pdf_export",
-      "screenplay",
+      "dialogue",
       "LOGLINE",
       "",
       " logline",
@@ -141,6 +144,39 @@ describe("Propositions : catalogue des livrables", () => {
     }
   });
 
+  it("seule la séquence de scénario demande une consigne, bornée", () => {
+    for (const action of ORDRE_LIVRABLES) {
+      const consigne = consigneDe(action);
+      if (action === "screenplay") {
+        assert.equal(consigne?.longueurMax, 800);
+        assert.ok(consigne.libelle.length > 0 && consigne.aide.length > 0);
+      } else {
+        assert.equal(consigne, null, action);
+      }
+    }
+  });
+
+  it("n'admet une consigne que nette, non vide et sous sa borne", () => {
+    assert.equal(lireConsigne("  Maya entre dans la maison.  ", 800), "Maya entre dans la maison.");
+    assert.equal(lireConsigne("Ligne une\r\nLigne deux", 800), "Ligne une\nLigne deux");
+    assert.equal(lireConsigne("a".repeat(800), 800)?.length, 800);
+    const refus = [
+      "",
+      "   ",
+      "\n\n",
+      "a".repeat(801),
+      "nul\u0000",
+      "cloche\u0007",
+      null,
+      undefined,
+      42,
+      {},
+    ];
+    for (const valeur of refus) {
+      assert.equal(lireConsigne(valeur, 800), null, JSON.stringify(valeur));
+    }
+  });
+
   it("range chaque livrable là où le texte qu'il écrit se lit", () => {
     assert.deepEqual(
       Object.fromEntries(ORDRE_LIVRABLES.map((action) => [action, LIVRABLES_IA[action].page])),
@@ -152,6 +188,7 @@ describe("Propositions : catalogue des livrables", () => {
         dramatic_analysis: "documents",
         treatment: "documents",
         bible: "documents",
+        screenplay: "documents",
         intention_note: "documents",
       },
     );

@@ -396,10 +396,13 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   Traitement et bible de série (lot J1), par l’agent SCRIPT, dans un document
   eux aussi ; analyse dramaturgique (lot J3a), par l’agent ARC, qui lit le
   projet sans le réécrire. L’encart de l’assistant se tient dans la rubrique où ce texte se
-  lit ; le catalogue `LIVRABLES_IA` en est la seule source. Prévues : note de
-  réalisation, personnages, pitch oral/écrit, scénario et dialogues — ces deux
-  derniers dépassent les 20 000 caractères d’une proposition, et leur
-  livraison reste à décider.
+  lit ; le catalogue `LIVRABLES_IA` en est la seule source. Scénario (lot J2a,
+  décision 8) : une séquence par demande, décrite par l’équipe, que
+  l’acceptation **ajoute à la fin** du document « Scénario » au lieu de le
+  remplacer — un scénario ne tient ni dans une proposition (20 000 caractères)
+  ni dans un appel. Ne pas relever ce plafond ni écrire un scénario d’un bloc.
+  Prévues : note de réalisation, personnages, pitch oral/écrit, dialogues
+  (lot J2b, à cadrer).
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
