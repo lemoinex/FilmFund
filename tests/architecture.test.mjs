@@ -900,6 +900,91 @@ describe("Livrables des agents", () => {
 });
 
 /*
+ * VOICE (lot J2b-1) : les dialogues d'une scène. Le passage du scénario est
+ * désigné par la demande et scellé par son empreinte ; la base le relit au
+ * devis, à la préparation de l'appel et à l'acceptation. Un contrôle oublié
+ * ferait remplacer le mauvais passage d'un scénario retouché entre-temps.
+ */
+describe("Dialogues de VOICE", () => {
+  const MIGRATION = "supabase/migrations/20261005190000_voice_dialogues.sql";
+  const corps = (nom) => {
+    const migration = lire(MIGRATION);
+    const debut = migration.indexOf(`create or replace function public.${nom}`);
+    assert.ok(debut >= 0, nom);
+    return migration.slice(debut, migration.indexOf("$$;", debut));
+  };
+
+  it("le passage est relu et contrôlé aux trois étapes", () => {
+    for (const nom of ["creer_devis", "contexte_dialogue", "accepter_proposition"]) {
+      assert.match(corps(nom), /public\.passage_du_scenario\(/, nom);
+    }
+    const passage = corps("passage_du_scenario");
+    // Le document est celui du projet, et un scénario ; l'empreinte scelle le texte.
+    assert.match(passage, /d\.project_id = p_project_id/);
+    assert.match(passage, /d\.type = 'scenario'/);
+    assert.match(passage, /md5\(v_passage\) <> \(p_params ->> 'empreinte'\)/);
+    assert.match(passage, /v_longueur not between 1 and 6000/);
+    // Interne : jamais appelable depuis l'API.
+    assert.match(
+      lire(MIGRATION),
+      /revoke all on function public\.passage_du_scenario\(uuid, jsonb\) from public, anon, authenticated;/,
+    );
+    assert.doesNotMatch(lire(MIGRATION), /grant execute on function public\.passage_du_scenario/);
+  });
+
+  it("l'acceptation verrouille le document, puis ne remplace que le passage", () => {
+    const acceptation = corps("accepter_proposition");
+    const verrou = acceptation.indexOf("for update;", acceptation.indexOf("d.type = 'scenario'"));
+    const controle = acceptation.indexOf("v_ancien := public.passage_du_scenario(");
+    assert.ok(verrou >= 0 && controle > verrou, "le passage est relu après le verrou");
+    assert.match(
+      acceptation,
+      /left\(d\.content, v_debut\) \|\| v_final \|\| substr\(d\.content, v_debut \+ v_longueur \+ 1\)/,
+    );
+    assert.match(acceptation, /using errcode = 'PR002';/);
+  });
+
+  it("la base borne la scène réécrite comme le profil, et une scène par demande", async () => {
+    const { PROFILS_IA, PROFILS_VOICE } = await import("../worker/src/ia/profils.ts");
+    const depot = corps("livrer_proposition");
+    const acceptation = corps("accepter_proposition");
+    for (const [action, profil] of Object.entries(PROFILS_VOICE)) {
+      assert.match(depot, new RegExp(`when '${action}' then v_max := ${profil.longueurMax};`));
+      assert.match(
+        acceptation,
+        new RegExp(`when '${action}' then v_max := ${profil.longueurMax};`),
+      );
+      assert.match(profil.id, /^voice\.[a-z_]+@\d+$/, action);
+      // Tenu à part des encarts de texte : il part d'une sélection.
+      assert.ok(!(action in PROFILS_IA), action);
+    }
+    assert.match(corps("creer_devis"), /parametre_entier\(v_parametres, 'scenes', 1\)/);
+  });
+
+  it("le devis repris garde chaque livrable déjà ouvert", async () => {
+    const { PROFILS_FIELD, PROFILS_IA } = await import("../worker/src/ia/profils.ts");
+    const devis = corps("creer_devis");
+    for (const action of [...Object.keys(PROFILS_IA), ...Object.keys(PROFILS_FIELD)]) {
+      assert.ok(devis.includes(`when '${action}' then`), action);
+    }
+    // Le scénario garde sa séquence unique et la borne de sa description.
+    assert.match(devis, /parametre_entier\(v_parametres, 'sequences', 1\)/);
+    assert.match(devis, /not between 1 and 1200/);
+    // Les propositions de textes gardent leurs bornes et leurs atterrissages.
+    const acceptation = corps("accepter_proposition");
+    for (const action of Object.keys(PROFILS_IA)) {
+      assert.match(acceptation, new RegExp(`when '${action}' then v_max :=`), action);
+    }
+    assert.match(acceptation, /else v_ancien \|\| E'\\n\\n' \|\| v_final/);
+  });
+
+  it("le registre sert VOICE avec les autres agents", () => {
+    const registre = lire("worker/src/registre.ts");
+    assert.match(registre, /\.\.\.executeursVoice\(base, fournisseur\)/);
+  });
+});
+
+/*
  * FIELD (lot J3b-1) : un livrable structuré. Son profil n'annonce pas une
  * longueur mais un schéma et un nombre de lignes ; la base doit admettre son
  * action, connaître les mêmes catégories et la même borne, sans quoi tout

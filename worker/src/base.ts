@@ -482,3 +482,31 @@ export async function livrerPropositionPlanning(
     throw erreur;
   }
 }
+
+/**
+ * Ce que VOICE lit pour réécrire les répliques d'une scène : le projet, ses
+ * personnages, la scène désignée par la demande, et ce qui la précède.
+ */
+export type ContexteDialogue = {
+  action: string;
+  projet: ContexteRedaction["projet"];
+  contexte: ContexteRedaction["contexte"];
+  personnages: Personnage[];
+  /** Le passage du scénario à réécrire, relu et contrôlé par la base. */
+  scene: string;
+  /** Ce qui précède la scène dans le document : vide si elle l'ouvre. */
+  avant: string;
+};
+
+/**
+ * Contexte de la tâche de dialogues en cours ; null si l'essai ne nous
+ * appartient plus, si le projet n'existe plus, ou si le passage désigné n'est
+ * plus celui du scénario — rien ne doit alors être envoyé.
+ */
+export async function lireContexteDialogue(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteDialogue | null> {
+  const { rows } = await base.query("select public.contexte_dialogue($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}

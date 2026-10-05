@@ -1941,6 +1941,7 @@ export type Database = {
       };
       contenu_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: Json };
       contexte_budget: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_dialogue: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
@@ -2218,6 +2219,7 @@ export type Database = {
         Returns: number;
       };
       parametres_export: { Args: { p_params: Json }; Returns: Json };
+      passage_du_scenario: { Args: { p_params: Json; p_project_id: string }; Returns: string };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites_pour: {

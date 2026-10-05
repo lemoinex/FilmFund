@@ -82,6 +82,25 @@ importer son SDK ; le lint et `tests/architecture.test.mjs` refusent tout autre 
 - **Rien n'est écrit dans le projet** : le worker dépose une proposition
   (`ai_suggestions`) ; le porteur ou un éditeur l'applique — modifiée ou non — ou l'écarte.
 
+### Dialogues d'une scène (lot J2b-1)
+
+VOICE réécrit les répliques d'une scène du scénario (action `dialogue`, profil
+`voice.dialogues@1`), et elles seules : intitulés et didascalies restent tels quels.
+
+- **Le passage est désigné, pas transporté** : les paramètres de la demande portent le
+  document, la position et la longueur du passage en caractères, et son empreinte MD5. Le
+  texte de la scène ne voyage pas dans le devis, plafonné à 2 000 octets.
+- **Trois relectures** par `passage_du_scenario` : au devis, à la préparation de l'appel, à
+  l'acceptation. Si le passage n'est plus celui qui a été désigné, le devis est refusé, la
+  tâche échoue sans appel — unités rendues —, ou l'acceptation est refusée (code `PR002`) :
+  rien n'est remplacé, la proposition reste lisible.
+- **Ce qui part chez le fournisseur** : le projet, ses personnages, la scène, et les 3 000
+  caractères qui la précèdent. Ni la suite du scénario, ni les autres documents.
+- **Bornes** : une scène par demande, 6 000 caractères au plus ; 12 000 pour la scène
+  réécrite.
+- **Atterrissage** : seul le passage est remplacé dans le document, qui garde une version ;
+  la scène remplacée est conservée dans la proposition.
+
 ### Livrables structurés (lot J3b-1)
 
 FIELD ne rend pas un texte mais des lignes de budget (action `budget_plan`, profil
