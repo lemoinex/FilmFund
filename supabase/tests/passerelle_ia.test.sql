@@ -18,19 +18,19 @@ update public.jobs set lease_until = now() + interval '1 day' where state = 'run
 
 -- Repères du test, lus sous n'importe quel rôle : ils s'exécutent avec les
 -- droits du propriétaire, sans quoi la RLS les rendrait muets.
-create function pg_temp.travail(p_cle text) returns uuid language sql security definer as $$
+create function pg_temp.travail(p_cle text) returns uuid language sql stable security definer as $$
   select j.id from public.jobs j
   join public.reservations r on r.id = j.reservation_id
   where r.idempotency_key = p_cle;
 $$;
 
-create function pg_temp.essai(p_cle text) returns uuid language sql security definer as $$
+create function pg_temp.essai(p_cle text) returns uuid language sql stable security definer as $$
   select a.id from public.job_attempts a
   join public.jobs j on j.id = a.job_id
   where j.id = pg_temp.travail(p_cle) and a.number = j.attempts;
 $$;
 
-create function pg_temp.proposition(p_cle text) returns uuid language sql security definer as $$
+create function pg_temp.proposition(p_cle text) returns uuid language sql stable security definer as $$
   select s.id from public.ai_suggestions s where s.job_id = pg_temp.travail(p_cle);
 $$;
 
