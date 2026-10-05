@@ -20,6 +20,7 @@ export const ERREURS_BASE = {
   invalide: "22023",
   tacheDejaPrise: "TR002",
   propositionDejaTraitee: "PR001",
+  passageChange: "PR002",
 } as const;
 
 /**
@@ -343,6 +344,88 @@ export function messageLotJalons(acceptes: number, demandes: number): string {
   } au planning ; les autres attendent toujours votre décision.`;
 }
 
+/**
+ * Les dialogues d'une scène (agent VOICE). Ce livrable ne se demande pas
+ * depuis un encart de texte mais depuis une sélection dans le scénario : il
+ * est tenu à part de `LIVRABLES_IA`. Ses bornes sont celles de la base ; un
+ * test d'architecture vérifie qu'elles s'accordent.
+ */
+export const LIVRABLE_DIALOGUE = {
+  action: "dialogue",
+  titre: "Dialogues d'une scène",
+  bouton: "Proposer les dialogues",
+  description:
+    "L'assistant réécrit les répliques de la scène que vous sélectionnez dans le texte, à partir de la scène, de ce qui la précède, de la fiche du projet et de ses personnages, transmis pour cela à notre fournisseur d'IA. Il ne touche ni aux intitulés ni aux didascalies.",
+  /** Longueur d'un passage, telle que la base l'admet au devis. */
+  passageMax: 6000,
+  /** Longueur de la scène réécrite, telle que la base l'admet à l'acceptation. */
+  longueurMax: 12_000,
+  lignes: 16,
+} as const;
+
+/** Où se trouve un passage dans un document, en caractères — et non en unités UTF-16. */
+export type PassageLocalise = { debut: number; longueur: number; passage: string };
+
+/**
+ * Retrouve dans le contenu enregistré le passage que l'équipe a sélectionné.
+ *
+ * Le navigateur n'envoie que le texte : c'est le serveur qui le localise,
+ * pour que ni une position ni une empreinte ne viennent d'ailleurs. Le
+ * passage doit figurer une fois, et une seule — deux occurrences ne diraient
+ * pas laquelle remplacer. Les positions sont comptées en caractères, comme la
+ * base les compte : un emoji vaut un caractère, pas deux.
+ *
+ * Un champ de texte rend ses fins de ligne en « \n », quand un contenu
+ * enregistré peut les porter en « \r\n » : les deux écritures sont essayées.
+ */
+export function localiserPassage(
+  contenu: string,
+  selection: unknown,
+  max: number = LIVRABLE_DIALOGUE.passageMax,
+): PassageLocalise | { erreur: string } {
+  if (typeof selection !== "string" || !selection.trim()) {
+    return { erreur: "Sélectionnez d'abord une scène dans le texte du scénario." };
+  }
+  const nette = selection.replaceAll("\r\n", "\n").trim();
+  const candidats = contenu.includes("\r\n") ? [nette.replaceAll("\n", "\r\n"), nette] : [nette];
+
+  for (const passage of candidats) {
+    const position = contenu.indexOf(passage);
+    if (position < 0) {
+      continue;
+    }
+    if (contenu.indexOf(passage, position + 1) >= 0) {
+      return {
+        erreur:
+          "Ce passage figure plusieurs fois dans le scénario : sélectionnez-en davantage, pour qu'il n'y en ait qu'un.",
+      };
+    }
+    const longueur = [...passage].length;
+    if (longueur > max) {
+      return {
+        erreur: `Ce passage est trop long : ${NOMBRE.format(max)} caractères au plus, soit une scène.`,
+      };
+    }
+    return { debut: [...contenu.slice(0, position)].length, longueur, passage };
+  }
+  return {
+    erreur:
+      "Ce passage ne figure pas dans le scénario enregistré : enregistrez le document, puis sélectionnez la scène de nouveau.",
+  };
+}
+
+/**
+ * Passage que désignent une position et une longueur en caractères. Sert à
+ * montrer la scène en regard de sa réécriture ; la base, elle, contrôle son
+ * empreinte avant de la remplacer.
+ */
+export function extrairePassage(contenu: string, debut: number, longueur: number): string {
+  if (!Number.isInteger(debut) || !Number.isInteger(longueur) || debut < 0 || longueur < 1) {
+    return "";
+  }
+  return [...contenu].slice(debut, debut + longueur).join("");
+}
+
 /** Ordre d'affichage, et liste de référence pour les tests. */
 export const ORDRE_LIVRABLES = Object.keys(LIVRABLES_IA) as ActionIa[];
 
@@ -441,6 +524,8 @@ export function messageErreur(code: string | undefined): string {
       return "La proposition est déjà en cours de rédaction : elle ne s'annule plus.";
     case ERREURS_BASE.propositionDejaTraitee:
       return "Cette proposition a déjà été appliquée ou écartée.";
+    case ERREURS_BASE.passageChange:
+      return "Le scénario a changé à cet endroit depuis la demande : la scène ne peut plus y être remplacée. Reportez la proposition à la main, ou écartez-la.";
     default:
       return "La demande n'a pas abouti. Réessayez dans un instant.";
   }
