@@ -385,6 +385,44 @@ par les tests) ; une seconde analyse sur le même projet, qui réécrirait le do
 gardant une version ; une proposition écartée ; un éditeur et un lecteur réels, faute de
 second compte tant que le mode privé est actif (vérifiés localement et par les tests).
 
+## Audit de sécurité et de fiabilité du 5 octobre 2026
+
+Hors lot. Le dépôt et la production ont été relus : garde du middleware, authentification,
+redirections, garde des actions serveur, téléchargement des exports, envois d'images et de
+photos, passerelle, boucle du worker, fonctions `security definer` en production. Les
+migrations et les écrans n'ont pas été relus ligne à ligne. Aucune faille critique ni élevée.
+
+Trois constats, tous traités :
+
+- **Le worker ne s'arrêtait jamais proprement en production.** Démarré par `npm start`, il
+  ne recevait pas le signal d'arrêt, et Railway ne lui laissait aucun délai : à chaque
+  redéploiement, les journaux portaient `npm error signal SIGTERM` à la place de
+  `arret_demande` et `worker_arrete`. Une tâche en cours aurait été coupée, et un appel d'IA
+  payé puis perdu ; aucun cas ne s'est produit. Le service est réglé depuis 11h06 UTC sur un
+  démarrage direct par `node src/index.ts`, un délai d'arrêt de 200 secondes et l'attente de
+  la CI ; la configuration active a été relue, et le worker tourne depuis 11h07 UTC comme
+  processus principal de son conteneur. `docs/worker.md` le décrit (PR 92, `07f0583`).
+- **`/profil` manquait aux routes gardées par le middleware.** Aucune donnée n'était
+  exposée — la coque, la page et chaque action revérifiaient la session et le mode privé —,
+  mais une couche de garde manquait. Corrigé, avec un test d'architecture qui exige que
+  chaque rubrique de l'espace connecté y figure (PR 91, `486f8e9`).
+- **Un commentaire de la passerelle** disait que la clé d'API vient de l'environnement du
+  worker ; elle vient du coffre depuis le lot I1b. Corrigé (PR 91).
+
+Validé localement : 683 tests de l'API et 554 tests SQL ; le nouveau test tombe quand on
+retire `/profil`. Les deux PR sont en production.
+
+**Reste à valider en recette** : l'arrêt propre lui-même, qui ne se lira qu'au prochain
+redéploiement du worker, par `arret_demande` puis `worker_arrete` ; et, dans un navigateur,
+le retour sur `/profil` après connexion.
+
+Relevé et laissé en l'état : la protection contre les mots de passe compromis est désactivée
+dans Supabase Auth — à activer avant la levée du mode privé ; 22 clés étrangères sans index,
+sans effet au volume actuel ; la convention `middleware` de Next.js 16, dépréciée au profit
+de `proxy` ; pas de politique de sécurité de contenu au-delà de l'interdiction des cadres.
+Un fichier `railway.json` n'a pas été retenu pour le réglage du worker : Railway a déprécié
+ce mécanisme, hors service le 1er décembre 2026.
+
 ## Décisions attendues
 
 Voir `docs/implementation-audit.md`, section 11. Décisions 1, 3 et 4 prises le 30 septembre
