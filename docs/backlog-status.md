@@ -5,45 +5,45 @@ réellement validé. Deux statuts de fin sont distincts : **validé localement**
 navigateur sur la pile locale) et **validé en recette** (conditions réelles, fournisseurs
 réels).
 
-| Lot   | Ticket                                                                                                                         | Statut            | Bloqué par              |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------- | ----------------------- |
-| A     | Journal des actions d'administration                                                                                           | validé en recette | —                       |
-| B     | Versions de documents                                                                                                          | validé en recette | —                       |
-| C     | Envois d'images orphelins                                                                                                      | validé en recette | —                       |
-| D     | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré)                                 | validé en recette | —                       |
-| E     | Modèle studio (socle : studio personnel, projets rattachés, isolation)                                                         | validé en recette | —                       |
-| F     | Plans, profils, registres distincts — F1 : plans versionnés, abonnements, limites projets et membres ; F2 : limite de stockage | validé en recette | —                       |
-| F3    | Offre publique sur la vitrine (catalogue lisible par les visiteurs, section Tarifs)                                            | validé en recette | —                       |
-| G     | Devis, réservation atomique, idempotence                                                                                       | validé en recette | —                       |
-| H1    | Tâches persistantes, outbox, rapprochement — en base : tâches, essais, rôle dédié du worker                                    | validé en recette | —                       |
-| H2    | Worker Node (`worker/`) et son déploiement sur Railway                                                                         | validé en recette | —                       |
-| I1    | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé en recette | —                       |
-| I1b   | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé en recette | —                       |
-| I2a   | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé en recette | —                       |
-| I2b   | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —                       |
-| J1    | SCRIPT : traitement et bible                                                                                                   | validé en recette | —                       |
-| J2    | SCRIPT et VOICE : scénario et dialogues — textes longs                                                                         | à faire           | décision 8              |
-| J3a   | ARC : analyse dramaturgique                                                                                                    | validé en recette | —                       |
-| J3b-1 | FIELD : propositions de lignes de budget — base, profil, agent                                                                 | validé localement | recette (en production) |
-| J3b-2 | FIELD : écran des lignes proposées dans l'onglet Budget                                                                        | validé localement | recette (en production) |
-| J3b-3 | FIELD : propositions de jalons de planning                                                                                     | à faire           | J3b-2                   |
-| J3c   | FRAME et GEAR : découpage technique, matériel et calculs électriques                                                           | à faire           | cahier des charges      |
-| K     | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7          |
-| L     | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7          |
-| M1    | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —                       |
-| M2    | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —                       |
-| M3    | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —                       |
-| M4    | Exports : la fiche du projet et ses personnages dans le dossier, en PDF comme en Word                                          | validé en recette | —                       |
-| M5    | Exports ZIP : un fichier Word par texte, un classeur Excel par tableau, même écran, même quota                                 | validé en recette | —                       |
-| N     | Paiements                                                                                                                      | bloqué            | Décision 6, F           |
-| O     | Interface des quotas et incidents                                                                                              | bloqué            | F à N                   |
-| P     | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous                    |
-| Q1    | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —                       |
-| Q2    | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —                       |
-| R1    | Assistant de création, base : fiche du projet et personnages                                                                   | validé en recette | —                       |
-| R2    | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —                       |
-| S1    | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —                       |
-| S2    | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —                       |
+| Lot   | Ticket                                                                                                                         | Statut            | Bloqué par         |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------- | ------------------ |
+| A     | Journal des actions d'administration                                                                                           | validé en recette | —                  |
+| B     | Versions de documents                                                                                                          | validé en recette | —                  |
+| C     | Envois d'images orphelins                                                                                                      | validé en recette | —                  |
+| D     | Durcissements mineurs (`is_admin()` en `(select …)`, `touch_updated_at`, test du jeton expiré)                                 | validé en recette | —                  |
+| E     | Modèle studio (socle : studio personnel, projets rattachés, isolation)                                                         | validé en recette | —                  |
+| F     | Plans, profils, registres distincts — F1 : plans versionnés, abonnements, limites projets et membres ; F2 : limite de stockage | validé en recette | —                  |
+| F3    | Offre publique sur la vitrine (catalogue lisible par les visiteurs, section Tarifs)                                            | validé en recette | —                  |
+| G     | Devis, réservation atomique, idempotence                                                                                       | validé en recette | —                  |
+| H1    | Tâches persistantes, outbox, rapprochement — en base : tâches, essais, rôle dédié du worker                                    | validé en recette | —                  |
+| H2    | Worker Node (`worker/`) et son déploiement sur Railway                                                                         | validé en recette | —                  |
+| I1    | Passerelle IA et premier agent (WEAVER) : le pitch de bout en bout                                                             | validé en recette | —                  |
+| I1b   | Intégrations IA : les clés des fournisseurs posées depuis l'administration, rangées au coffre                                  | validé en recette | —                  |
+| I2a   | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé en recette | —                  |
+| I2b   | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —                  |
+| J1    | SCRIPT : traitement et bible                                                                                                   | validé en recette | —                  |
+| J2    | SCRIPT et VOICE : scénario et dialogues — textes longs                                                                         | à faire           | décision 8         |
+| J3a   | ARC : analyse dramaturgique                                                                                                    | validé en recette | —                  |
+| J3b-1 | FIELD : propositions de lignes de budget — base, profil, agent                                                                 | validé en recette | —                  |
+| J3b-2 | FIELD : écran des lignes proposées dans l'onglet Budget                                                                        | validé en recette | —                  |
+| J3b-3 | FIELD : propositions de jalons de planning                                                                                     | à faire           | —                  |
+| J3c   | FRAME et GEAR : découpage technique, matériel et calculs électriques                                                           | à faire           | cahier des charges |
+| K     | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7     |
+| L     | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7     |
+| M1    | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —                  |
+| M2    | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —                  |
+| M3    | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —                  |
+| M4    | Exports : la fiche du projet et ses personnages dans le dossier, en PDF comme en Word                                          | validé en recette | —                  |
+| M5    | Exports ZIP : un fichier Word par texte, un classeur Excel par tableau, même écran, même quota                                 | validé en recette | —                  |
+| N     | Paiements                                                                                                                      | bloqué            | Décision 6, F      |
+| O     | Interface des quotas et incidents                                                                                              | bloqué            | F à N              |
+| P     | Recette intégrée avant ouverture commerciale                                                                                   | bloqué            | Tous               |
+| Q1    | Page de profil : prénom, nom, pays, ville, profession, type ; accueil du tableau de bord                                       | validé en recette | —                  |
+| Q2    | Photo de profil (stockage privé, politiques, contrôle des octets)                                                              | validé en recette | —                  |
+| R1    | Assistant de création, base : fiche du projet et personnages                                                                   | validé en recette | —                  |
+| R2    | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —                  |
+| S1    | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —                  |
+| S2    | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —                  |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -385,6 +385,43 @@ par les tests) ; une seconde analyse sur le même projet, qui réécrirait le do
 gardant une version ; une proposition écartée ; un éditeur et un lecteur réels, faute de
 second compte tant que le mode privé est actif (vérifiés localement et par les tests).
 
+## Recette du lot J3b : J3b-1 et J3b-2
+
+Le 5 octobre 2026, des lignes de budget ont été proposées en production par un
+administrateur, de l'écran aux lignes entrées au budget (mode privé actif), sur le projet
+« une maison hantée », dont le budget portait déjà une ligne.
+
+| Livrable      | Durée  | Lignes | Coût confirmé | Unités | Atterrissage                      |
+| ------------- | ------ | ------ | ------------- | ------ | --------------------------------- |
+| `budget_plan` | 34,8 s | 38     | 0,092968 $    | 6/6    | trois lignes acceptées, au budget |
+
+- Devis à 12h49 UTC, 6 unités texte ; tâche réclamée trois secondes après sa création,
+  réussie au premier essai sur `claude-opus-5-5`, sans repli, avec le profil
+  `field.budget@1` ; 4 952 jetons en entrée, 3 658 en sortie, pour 0,342656 $ provisionnés.
+- **Le schéma de sortie est accepté par le vrai fournisseur**, aux côtés du repli côté
+  serveur : c'est ce que seule la recette pouvait établir. Les 38 lignes — pour 40 au plus —
+  ont passé les contrôles du worker, puis ceux de la base au dépôt.
+- **Le cloisonnement tient** : le texte de la proposition parente est « 38 lignes de budget
+  proposées par l'assistant. », sans aucun montant.
+- Trois lignes acceptées une à une, entrées au budget à la quantité et au coût proposés ;
+  onze écartées une à une ; les vingt-quatre restantes écartées d'un bloc par « Écarter le
+  reste ». Le budget du projet compte quatre lignes, celle d'origine intacte.
+- Dépense du mois après cette demande : 0,855172 $ sur un plafond de 5 $ ; aucune tâche à
+  rapprocher, aucune erreur d'exécution chez Vercel, rien d'autre aux journaux du worker que
+  la réclamation et la réussite.
+- L'écran a été déclaré conforme par l'utilisateur, sans capture.
+
+Relevé lors de cette recette, laissé en l'état : écartée d'un bloc, la proposition finit à
+l'état « écartée » alors que trois de ses lignes sont au budget, là où la décision 9 la dit
+« appliquée dès qu'une ligne a été acceptée ». Les données sont justes ; seule l'étiquette de
+la proposition parente est discutable, et la changer demanderait une migration.
+
+Non couvert par cette recette : une ligne corrigée avant d'être acceptée, et « Tout
+accepter » (vérifiés localement et par les tests) ; la liste des lignes en largeur mobile ;
+une réponse du fournisseur hors bornes, qui ferait échouer la tâche et rendrait les unités
+(vérifiée par les tests) ; un éditeur et un lecteur réels, faute de second compte tant que le
+mode privé est actif (vérifiés localement et par les tests).
+
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
 Hors lot. Le dépôt et la production ont été relus : garde du middleware, authentification,
@@ -621,7 +658,8 @@ PR 88 (`ea92510`) fusionnée à 20h47 UTC, PR 87 (`e79b2f4`) à 20h51 UTC. Relu 
 production le 5 octobre : 41 migrations, la dernière étant celle du lot ; la table
 `ai_suggestion_budget_lines` et la colonne `budget_plan` du barème y sont. **La recette reste
 à faire** : aucune tâche `budget_plan` n'a encore été demandée en production, aucune ligne
-n'y a été proposée. Les deux lots gardent donc leur statut « validé localement ».
+n'y a été proposée. Les deux lots gardent donc leur statut « validé localement ». La recette
+a eu lieu le jour même : voir « Recette du lot J3b ».
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
