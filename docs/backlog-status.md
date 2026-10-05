@@ -22,7 +22,8 @@ réels).
 | I2a   | WEAVER : synopsis court / standard / détaillé et note d'intention — base, profils, agent                                       | validé en recette | —                  |
 | I2b   | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —                  |
 | J1    | SCRIPT : traitement et bible                                                                                                   | validé en recette | —                  |
-| J2    | SCRIPT et VOICE : scénario et dialogues — textes longs                                                                         | à faire           | décision 8         |
+| J2a   | SCRIPT : le scénario, une séquence par demande, ajoutée à la fin du document                                                   | validé en recette | —                  |
+| J2b   | VOICE : dialogues                                                                                                              | à faire           | cadrage            |
 | J3a   | ARC : analyse dramaturgique                                                                                                    | validé en recette | —                  |
 | J3b-1 | FIELD : propositions de lignes de budget — base, profil, agent                                                                 | validé en recette | —                  |
 | J3b-2 | FIELD : écran des lignes proposées dans l'onglet Budget                                                                        | validé en recette | —                  |
@@ -422,6 +423,47 @@ une réponse du fournisseur hors bornes, qui ferait échouer la tâche et rendra
 (vérifiée par les tests) ; un éditeur et un lecteur réels, faute de second compte tant que le
 mode privé est actif (vérifiés localement et par les tests).
 
+## Recette du lot J2a
+
+Le 5 octobre 2026, deux séquences de scénario ont été écrites en production par un
+administrateur, de l'écran au document (mode privé actif), sur le projet « une maison
+hantée ».
+
+Livraison dans l'ordre retenu : migration poussée par l'utilisateur et constatée en base
+avant la fusion — 42 migrations —, puis PR 95 (`0b02896`) à 14h18 UTC. Le worker, redéployé
+après la CI de `main`, annonce ses **treize** actions à 14h24, dont `screenplay`.
+
+| Séquence            | Durée  | Caractères | Coût confirmé | Unités | Atterrissage                        |
+| ------------------- | ------ | ---------- | ------------- | ------ | ----------------------------------- |
+| première, 14h41 UTC | 52,1 s | 6 094      | 0,127876 $    | 2/2    | ouvre un document « Scénario » vide |
+| seconde, 15h25 UTC  | 46,9 s | 3 690      | 0,126396 $    | 2/2    | ajoutée à la suite, version 6       |
+
+- Les deux réussies au premier essai, sur `claude-opus-5-5`, sans repli, avec le profil
+  `script.scenario@1` ; 9 794 puis 12 289 jetons en entrée, 4 435 puis 3 862 en sortie.
+- **L'ajout à la fin est exact** : à la seconde séquence, le document est passé de 6 196 à
+  9 888 caractères — le texte d'avant, une ligne vide, puis la séquence. Sa version 6 est, au
+  caractère près, la version 5 suivie de la séquence ; rien de ce qui précédait n'a bougé.
+- Une description mince donne une séquence courte : seize caractères de description pour la
+  seconde, 3 690 caractères produits, là où la première, décrite en 800 caractères, en
+  faisait 6 094 — pour 8 000 visés par le profil.
+- Dépense du mois après ces deux demandes : 1,109444 $ sur un plafond de 5 $ ; aucune tâche à
+  rapprocher, aucune erreur d'exécution chez Vercel.
+
+**Défaut relevé à la première séquence, corrigé le jour même.** Le projet portait alors deux
+scénarios : un finalisé de 6 244 caractères, et un brouillon plus récent, vide. Le contexte
+retirait des documents finalisés tous ceux de type scénario et ne donnait que la fin du
+document cible : SCRIPT a écrit sans voir le premier. Seul le document cible est désormais
+écarté, et la description passe de 800 à 1 200 caractères — celle de la recette touchait la
+borne (PR 96, `00debbe`, migration poussée avant la fusion, 43 migrations).
+
+Non couvert par cette recette : le projet à deux scénarios, l'utilisateur ayant supprimé le
+premier avant la seconde séquence (vérifié par le test ajouté avec le correctif) ; un scénario
+arrivé à sa longueur maximale, une proposition modifiée avant d'être appliquée, une
+proposition écartée (vérifiés par les tests) ; un éditeur et un lecteur réels, faute de second
+compte tant que le mode privé est actif. L'écran a servi aux deux demandes, mais n'a été relu
+par aucune capture. Une séquence s'ajoute aussi à un scénario finalisé, qui le reste : c'est
+le comportement des autres livrables, laissé tel quel.
+
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
 Hors lot. Le dépôt et la production ont été relus : garde du middleware, authentification,
@@ -449,9 +491,12 @@ Trois constats, tous traités :
 Validé localement : 683 tests de l'API et 554 tests SQL ; le nouveau test tombe quand on
 retire `/profil`. Les deux PR sont en production.
 
-**Reste à valider en recette** : l'arrêt propre lui-même, qui ne se lira qu'au prochain
-redéploiement du worker, par `arret_demande` puis `worker_arrete` ; et, dans un navigateur,
-le retour sur `/profil` après connexion.
+**L'arrêt propre est prouvé** : au redéploiement du lot J2a, le 5 octobre à 14h24 UTC,
+l'ancien conteneur a reçu SIGTERM et a journalisé `arret_demande` puis `worker_arrete`, sans
+`npm error`. Depuis que l'attente de la CI est activée, le worker ne redémarre qu'une fois la
+CI de `main` verte, soit six minutes environ après une fusion.
+
+**Reste à valider en recette** : dans un navigateur, le retour sur `/profil` après connexion.
 
 Relevé et laissé en l'état : la protection contre les mots de passe compromis est désactivée
 dans Supabase Auth — à activer avant la levée du mode privé ; 22 clés étrangères sans index,
@@ -660,6 +705,29 @@ production le 5 octobre : 41 migrations, la dernière étant celle du lot ; la t
 à faire** : aucune tâche `budget_plan` n'a encore été demandée en production, aucune ligne
 n'y a été proposée. Les deux lots gardent donc leur statut « validé localement ». La recette
 a eu lieu le jour même : voir « Recette du lot J3b ».
+
+Scénario et décision 8, tranchée le 5 octobre 2026 (lot J2, découpé en J2a — SCRIPT, le
+scénario — et J2b — VOICE, les dialogues) : **un scénario se livre séquence par séquence**.
+Il ne tient ni dans une proposition, plafonnée à 20 000 caractères, ni dans un appel au
+fournisseur, borné à trois minutes ; relever le plafond pour l'écrire d'un bloc ferait payer
+une réponse tronquée. Le devis chiffrait déjà par séquence : il n'en admet plus qu'une par
+demande, à 2 unités.
+
+L'équipe décrit la séquence à chaque demande, en 1 200 caractères au plus ; aucune table de
+séquences n'est créée, un séquencier pouvant venir plus tard. SCRIPT lit la fiche, les
+personnages, la vision, les documents finalisés et les 6 000 derniers caractères du scénario
+où la séquence atterrira — brouillon compris, seule exception à « finalisés seulement » : on
+n'enchaîne pas sur un texte qu'on n'a pas lu. Il ne relit pas le début d'un long scénario, et
+l'écran le dit.
+
+L'acceptation est la première qui **ajoute** au lieu de remplacer : la séquence se place à la
+fin du document « Scénario », après une ligne vide, et le document garde une version. Au-delà
+de 200 000 caractères, elle est refusée avec un message qui le dit. Le profil
+`script.scenario@1` est écrit à la main : une séquence n'est pas faite de paragraphes, et ses
+répliques ne figurent dans aucun dossier. Aucune table, politique ni droit nouveaux.
+
+J2b reste à cadrer : réécrire les dialogues d'une scène suppose de désigner un passage du
+scénario et de le remplacer sans écraser le reste, ce que rien ne sait faire aujourd'hui.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
