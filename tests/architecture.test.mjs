@@ -763,8 +763,8 @@ describe("Catalogue public", () => {
  * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
  */
 describe("Livrables des agents", () => {
-  const DEVIS = "supabase/migrations/20261004102540_arc_analyse.sql";
-  const PROPOSITIONS = "supabase/migrations/20261004102540_arc_analyse.sql";
+  const DEVIS = "supabase/migrations/20261005130000_script_scenario.sql";
+  const PROPOSITIONS = "supabase/migrations/20261005130000_script_scenario.sql";
 
   /** Corps de la fonction nommée, jusqu'à la suivante. */
   const corps = (migration, nom) => {
@@ -777,17 +777,25 @@ describe("Livrables des agents", () => {
   it("la base admet chaque action de chaque agent et la facture au barème", async () => {
     const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
     const devis = lire(DEVIS);
-    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(devis)?.[1] ?? "";
+    // La liste des actions admises date du lot J3b-1 : le scénario y figurait
+    // déjà, et la migration du lot J2a n'a pas eu à la reprendre.
+    const liste =
+      /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(
+        lire("supabase/migrations/20261004160108_field_budget.sql"),
+      )?.[1] ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 
     assert.ok(enBase.length >= 10, "lecture de la migration");
     for (const action of Object.keys(PROFILS_IA)) {
       assert.ok(enBase.includes(action), action);
-      // Les sept livrables rédigés se facturent d'une ligne ; seuls le
-      // scénario et les dialogues, chiffrés par séquence ou par scène,
-      // s'écrivent sur plusieurs — et ils ne sont pas encore au catalogue.
+      // Les livrables rédigés se facturent d'une ligne ; le scénario,
+      // chiffré par séquence, s'écrit sur plusieurs.
       assert.ok(
-        devis.includes(`when '${action}' then v_quantite := v_bareme.`),
+        devis.includes(`when '${action}' then v_quantite := v_bareme.`) ||
+          (action === "screenplay" &&
+            /when 'screenplay' then\s+(--.*\s+)*v_quantite := v_bareme\.screenplay_per_sequence/.test(
+              devis,
+            )),
         `devis de ${action}`,
       );
     }
@@ -833,6 +841,43 @@ describe("Livrables des agents", () => {
       ].sort(),
       Object.keys(PROFILS_IA).sort(),
     );
+  });
+
+  it("un scénario se demande une séquence à la fois, et s'ajoute au document", async () => {
+    const { consigneDe } = await import("../src/lib/propositions.ts");
+    const migration = lire(DEVIS);
+
+    // Une séquence par tâche : en facturer davantage ferait payer ce que le
+    // worker n'écrirait pas.
+    const devis = corps(migration, "creer_devis");
+    assert.match(devis, /parametre_entier\(v_parametres, 'sequences', 1\)/);
+
+    // La description part chez le fournisseur : l'écran et la base la
+    // bornent à la même longueur.
+    const borne = /char_length\(btrim\(v_sequence\)\) not between 1 and (\d+)/.exec(devis)?.[1];
+    assert.equal(Number(borne), consigneDe("screenplay")?.longueurMax);
+    assert.match(devis, /jsonb_typeof\(v_parametres -> 'sequence'\) is distinct from 'string'/);
+
+    // Le contexte joint la description et la fin du scénario, sans répéter le
+    // scénario parmi les documents.
+    const contexte = corps(migration, "contexte_redaction");
+    assert.match(contexte, /'sequence', v_job\.params ->> 'sequence'/);
+    assert.match(contexte, /'fin', right\(d\.content, \d+\)/);
+    assert.match(contexte, /v_job\.action <> 'screenplay' or d\.type <> 'scenario'/);
+
+    // L'acceptation ajoute à la fin : ce qui précède reste en tête, intact.
+    const acceptation = corps(migration, "accepter_proposition");
+    assert.match(acceptation, /else v_ancien \|\| E'\\n\\n' \|\| v_final/);
+    assert.match(acceptation, /char_length\(v_ancien\) \+ 2 \+ char_length\(v_final\) > 200000/);
+
+    // Le navigateur ne choisit pas le nombre de séquences, et seul un
+    // livrable qui en demande une reçoit une consigne.
+    const actions = lire("src/app/(app)/projets/[id]/actions-ia.ts");
+    assert.match(actions, /parametres = \{ sequences: 1, sequence: texte \}/);
+    assert.match(actions, /lireConsigne\(consigne, attendue\.longueurMax\)/);
+    for (const action of ["logline", "treatment", "bible", "dramatic_analysis"]) {
+      assert.equal(consigneDe(action), null, action);
+    }
   });
 
   it("chaque profil est versionné, plafonné, et visé plus court que sa borne", async () => {
@@ -955,7 +1000,7 @@ describe("Écrans des propositions", () => {
 
   it("la borne de l'écran est celle que la base applique à l'acceptation", async () => {
     const { LIVRABLES_IA, ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
-    const migration = lire("supabase/migrations/20261004102540_arc_analyse.sql");
+    const migration = lire("supabase/migrations/20261005130000_script_scenario.sql");
     const debut = migration.indexOf("create or replace function public.accepter_proposition");
     assert.ok(debut >= 0, "accepter_proposition introuvable");
     const acceptation = migration.slice(debut);

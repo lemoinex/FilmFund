@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 
-import { estActionIa, LIVRABLES_IA, messageErreur, type ActionIa } from "@/lib/propositions";
+import {
+  consigneDe,
+  estActionIa,
+  lireConsigne,
+  LIVRABLES_IA,
+  messageErreur,
+  type ActionIa,
+} from "@/lib/propositions";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
@@ -59,10 +66,27 @@ function revalider(projetId: string, action: ActionIa): void {
 export async function demanderDevis(
   projetId: string,
   action: string,
+  consigne?: string,
 ): Promise<{ devis: Devis } | Echec> {
   if (!UUID.test(projetId) || !estActionIa(action)) {
     return DEMANDE_INVALIDE;
   }
+
+  // Seul un livrable qui en demande une reçoit une consigne : elle part chez
+  // le fournisseur, et n'a pas à se glisser dans une autre demande. Une
+  // séquence par demande : le nombre n'est pas choisi par le navigateur.
+  const attendue = consigneDe(action);
+  let parametres: { sequences: number; sequence: string } | Record<string, never> = {};
+  if (attendue) {
+    const texte = lireConsigne(consigne, attendue.longueurMax);
+    if (!texte) {
+      return {
+        erreur: `${attendue.libelle} : de 1 à ${attendue.longueurMax} caractères sont attendus.`,
+      };
+    }
+    parametres = { sequences: 1, sequence: texte };
+  }
+
   const acces = await session();
   if ("erreur" in acces) {
     return acces;
@@ -71,7 +95,7 @@ export async function demanderDevis(
   const { data, error } = await acces.supabase.rpc("creer_devis", {
     p_project_id: projetId,
     p_action: action,
-    p_params: {},
+    p_params: parametres,
   });
   const devis = data?.[0];
   if (error || !devis) {

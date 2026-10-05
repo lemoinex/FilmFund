@@ -31,6 +31,7 @@ import {
   enDollars,
   PROFIL_ANALYSE,
   PROFIL_LOGLINE,
+  PROFIL_SCENARIO,
   PROFIL_SYNOPSIS_STANDARD,
   PROFIL_TRAITEMENT,
   PROFILS_ARC,
@@ -1168,10 +1169,187 @@ describe("SCRIPT : traitement et bible", () => {
     assert.equal(versions[0].content, "Séquence une.\n\nSéquence deux.");
   });
 
+  /** Mène une demande de séquence jusqu'à sa proposition, avec un fournisseur factice. */
+  async function proposerSequence(porteur, projetId, cle, description, reponse) {
+    const tache = await engager(porteur, projetId, "screenplay", cle, {
+      sequences: 1,
+      sequence: description,
+    });
+    const nettoyage = await sql(annulerLesAutresTaches([tache.id]));
+    assert.equal(nettoyage.code, 0, nettoyage.erreurs);
+
+    const { fournisseur, demandes } = fournisseurFactice(reponseFactice(reponse));
+    assert.equal(
+      await traiterUnTravail({
+        base,
+        nom: "worker-script-test",
+        executeurs: executeursScript(base, fournisseur),
+        journal: () => {},
+        battementMs: 50,
+      }),
+      true,
+    );
+    const { data: proposition } = await porteur.client
+      .from("ai_suggestions")
+      .select("id, content, state, profile")
+      .eq("job_id", tache.id)
+      .single();
+    return { demandes, proposition };
+  }
+
+  it("une séquence : description et fin du scénario envoyées, texte ajouté au document", async () => {
+    const porteur = await creerCompte("script-sequence");
+    const projet = await creerProjet(porteur, "La Maison des lianes");
+    const debut = "EXT. VILLAGE — JOUR\n\nMaya descend du car.";
+    const { data: scenario, error } = await porteur.client
+      .from("project_documents")
+      .insert({ project_id: projet.id, type: "scenario", title: "Scénario", content: debut })
+      .select("id")
+      .single();
+    assert.ifError(error);
+
+    const sequence = "INT. MAISON — NUIT\n\nMaya pousse la porte.\n\nMAYA\nIl y a quelqu'un ?";
+    const { demandes, proposition } = await proposerSequence(
+      porteur,
+      projet.id,
+      "script-sequence-cle",
+      "Maya entre dans la maison, de nuit.",
+      sequence,
+    );
+
+    // Le profil de la séquence, sa description, et la fin de ce qui est écrit
+    // — brouillon compris : on n'enchaîne pas sur un texte qu'on n'a pas lu.
+    assert.equal(demandes[0].profil.id, PROFIL_SCENARIO.id);
+    assert.match(demandes[0].message, /<sequence_a_ecrire>\nMaya entre dans la maison, de nuit\./);
+    assert.match(demandes[0].message, /<scenario_deja_ecrit>[\s\S]*Maya descend du car\./);
+    assert.match(demandes[0].message, /Écris cette séquence du scénario\.$/);
+    assert.equal(proposition.content, sequence);
+    assert.equal(proposition.profile, PROFIL_SCENARIO.id);
+
+    // Rien n'est écrit tant que la proposition n'est pas appliquée.
+    const lire = async () =>
+      (
+        await porteur.client
+          .from("project_documents")
+          .select("content")
+          .eq("id", scenario.id)
+          .single()
+      ).data.content;
+    assert.equal(await lire(), debut);
+
+    const { data: appliquee, error: refus } = await porteur.client.rpc("accepter_proposition", {
+      p_suggestion_id: proposition.id,
+      p_content: null,
+    });
+    assert.ifError(refus);
+
+    // Ajoutée à la fin : ce qui précède reste en tête, à l'identique.
+    assert.equal(await lire(), `${debut}\n\n${sequence}`);
+    // Rien n'a été remplacé, et le document garde une version de plus.
+    assert.equal(appliquee.replaced_content, "");
+    assert.equal(appliquee.final_content, sequence);
+    const { data: versions } = await porteur.client
+      .from("project_document_versions")
+      .select("version_number, content")
+      .eq("document_id", scenario.id)
+      .order("version_number");
+    assert.deepEqual(
+      versions.map((version) => version.content),
+      [debut, `${debut}\n\n${sequence}`],
+    );
+  });
+
+  it("sans scénario, la séquence l'ouvre : document créé en brouillon", async () => {
+    const porteur = await creerCompte("script-ouverture");
+    const projet = await creerProjet(porteur, "Premier plan");
+    const { demandes, proposition } = await proposerSequence(
+      porteur,
+      projet.id,
+      "script-ouverture-cle",
+      "Ouverture : la route, à l'aube.",
+      "EXT. ROUTE — AUBE\n\nUn car approche.",
+    );
+    assert.match(demandes[0].message, /\(rien encore : cette séquence ouvre le scénario\)/);
+
+    const { data: appliquee, error } = await porteur.client.rpc("accepter_proposition", {
+      p_suggestion_id: proposition.id,
+      p_content: null,
+    });
+    assert.ifError(error);
+    assert.equal(appliquee.replaced_content, null);
+
+    const { data: document } = await porteur.client
+      .from("project_documents")
+      .select("type, title, status, content")
+      .eq("project_id", projet.id)
+      .single();
+    assert.deepEqual(document, {
+      type: "scenario",
+      title: "Scénario",
+      status: "brouillon",
+      content: "EXT. ROUTE — AUBE\n\nUn car approche.",
+    });
+  });
+
+  it("un scénario plein refuse la séquence, et reste intact", async () => {
+    const porteur = await creerCompte("script-plein");
+    const projet = await creerProjet(porteur, "Trop long");
+    const plein = "a".repeat(199_990);
+    const { data: scenario, error } = await porteur.client
+      .from("project_documents")
+      .insert({ project_id: projet.id, type: "scenario", title: "Scénario", content: plein })
+      .select("id")
+      .single();
+    assert.ifError(error);
+
+    const { proposition } = await proposerSequence(
+      porteur,
+      projet.id,
+      "script-plein-cle",
+      "Une séquence de trop.",
+      "INT. SALLE — JOUR\n\nPlus de place.",
+    );
+    const { error: refus } = await porteur.client.rpc("accepter_proposition", {
+      p_suggestion_id: proposition.id,
+      p_content: null,
+    });
+    assert.equal(refus?.code, "22023");
+
+    const { data: apres } = await porteur.client
+      .from("project_documents")
+      .select("content")
+      .eq("id", scenario.id)
+      .single();
+    assert.equal(apres.content.length, plein.length);
+    // La proposition attend toujours : elle peut être écartée, ou appliquée
+    // une fois le document allégé.
+    const { data: etat } = await porteur.client
+      .from("ai_suggestions")
+      .select("state")
+      .eq("id", proposition.id)
+      .single();
+    assert.equal(etat.state, "proposed");
+  });
+
+  it("le traitement ne reçoit ni description ni fin de scénario : son message ne change pas", () => {
+    const message = composerContexte(
+      {
+        action: "treatment",
+        projet: { titre: "T", format: "court_metrage", etape: "idee" },
+        contexte: {},
+        personnages: [],
+        vision: {},
+        documents: [],
+      },
+      "Écris le traitement de ce projet.",
+    );
+    assert.doesNotMatch(message, /sequence_a_ecrire|scenario_deja_ecrit/);
+  });
+
   it("le registre sert les deux agents dès qu'une clé est posée", async () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
     assert.deepEqual(Object.keys(executeursScript(base, fournisseur)), Object.keys(PROFILS_SCRIPT));
-    assert.deepEqual(Object.keys(PROFILS_SCRIPT), ["treatment", "bible"]);
+    assert.deepEqual(Object.keys(PROFILS_SCRIPT), ["treatment", "bible", "screenplay"]);
   });
 });
 

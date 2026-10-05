@@ -133,6 +133,30 @@ export function composerContexte(contexte: ContexteRedaction, objectif: string):
       "</documents>",
     ].join("\n"),
   ];
+
+  // Une séquence de scénario, et elle seule, porte deux blocs de plus : les
+  // autres livrables gardent le message pour lequel leur profil a été écrit.
+  if (contexte.sequence !== undefined) {
+    const { scenario } = contexte;
+    blocs.push(
+      [
+        "<scenario_deja_ecrit>",
+        ...(scenario?.fin.trim()
+          ? [
+              `Longueur écrite : ${scenario.longueur} caractères. En voici la fin :`,
+              "",
+              scenario.fin,
+            ]
+          : ["(rien encore : cette séquence ouvre le scénario)"]),
+        "</scenario_deja_ecrit>",
+      ].join("\n"),
+      [
+        "<sequence_a_ecrire>",
+        (contexte.sequence ?? "").trim() || ABSENT,
+        "</sequence_a_ecrire>",
+      ].join("\n"),
+    );
+  }
   return [...blocs, objectif].join("\n\n");
 }
 

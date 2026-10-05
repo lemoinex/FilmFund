@@ -17,6 +17,7 @@ export const ERREURS_BASE = {
   devisDejaAccepte: "DV003",
   debit: "DV005",
   refus: "42501",
+  invalide: "22023",
   tacheDejaPrise: "TR002",
   propositionDejaTraitee: "PR001",
 } as const;
@@ -111,6 +112,27 @@ export const LIVRABLES_IA = {
       "L'assistant pose le concept, l'univers, les personnages, la mécanique d'un épisode et l'arc de la première saison, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
     longueurMax: 20_000,
     lignes: 16,
+  },
+  screenplay: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de séquence de scénario",
+    bouton: "Proposer cette séquence",
+    remplace: "Fin du scénario actuel",
+    description:
+      "L'assistant écrit une séquence du scénario, dialogues compris, à partir de votre description, de la fiche du projet, de ses personnages, de sa vision, de ses documents finalisés et de la fin du scénario déjà écrit — brouillon compris —, transmis pour cela à notre fournisseur d'IA. Un scénario s'écrit ainsi séquence par séquence.",
+    longueurMax: 20_000,
+    lignes: 16,
+    /**
+     * Ce livrable ne se demande pas d'un clic : l'équipe dit quelle séquence
+     * écrire. La borne est celle que la base applique au devis ; un test
+     * d'architecture vérifie qu'elles s'accordent.
+     */
+    consigne: {
+      libelle: "Séquence à écrire",
+      aide: "Dites où elle se passe, qui s'y trouve et ce qui s'y joue. L'assistant ne relit que la fin du scénario : rappelez ce qu'il doit savoir du début.",
+      longueurMax: 800,
+    },
   },
   intention_note: {
     /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
@@ -231,6 +253,31 @@ export function estActionIa(valeur: unknown): valeur is ActionIa {
   return typeof valeur === "string" && Object.hasOwn(LIVRABLES_IA, valeur);
 }
 
+/** Ce qu'un livrable demande à l'équipe de préciser avant un devis, s'il le demande. */
+export type Consigne = { libelle: string; aide: string; longueurMax: number };
+
+/** Consigne du livrable, ou null s'il se demande d'un clic. */
+export function consigneDe(action: ActionIa): Consigne | null {
+  const livrable = LIVRABLES_IA[action];
+  return "consigne" in livrable ? livrable.consigne : null;
+}
+
+/**
+ * Remet une consigne saisie en texte admissible : fins de ligne normalisées,
+ * espaces de bord retirés. Null si elle est vide, trop longue, ou porte un
+ * caractère de contrôle — la base la refuserait au devis.
+ */
+export function lireConsigne(valeur: unknown, max: number): string | null {
+  if (typeof valeur !== "string") {
+    return null;
+  }
+  const nette = valeur.replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
+  if (nette.length < 1 || nette.length > max) {
+    return null;
+  }
+  return /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(nette) ? null : nette;
+}
+
 /** Limite de la colonne `projects.logline`, telle que l'écran la connaît. */
 export const PITCH_MAX = LIVRABLES_IA.logline.longueurMax;
 
@@ -290,6 +337,8 @@ export function messageErreur(code: string | undefined): string {
       return "Trop de demandes en une minute : patientez un instant.";
     case ERREURS_BASE.refus:
       return "Vous n'avez pas le droit de faire cette demande sur ce projet.";
+    case ERREURS_BASE.invalide:
+      return "Ce texte n'est pas admis tel quel : il est vide, trop long, ou le document qui le recevrait est plein.";
     case ERREURS_BASE.tacheDejaPrise:
       return "La proposition est déjà en cours de rédaction : elle ne s'annule plus.";
     case ERREURS_BASE.propositionDejaTraitee:
