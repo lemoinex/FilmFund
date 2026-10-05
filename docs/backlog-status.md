@@ -533,11 +533,13 @@ sans migration.
 - L'écran, que rien n'avait montré dans un navigateur avant la recette, a servi à toute la
   demande : sélection, devis, comparaison, remplacement.
 
-Relevé en préparant la recette, laissé en l'état : un scénario peut porter deux sortes de fins
+Relevé en préparant la recette, corrigé depuis : un scénario peut porter deux sortes de fins
 de ligne — celles de l'éditeur, et celles d'un texte ajouté par l'assistant. La localisation
-du passage retrouve une scène dans l'une ou l'autre partie, pas une sélection à cheval sur
-leur jonction ; elle refuse alors, sans jamais remplacer le mauvais texte, et enregistrer le
-document uniformise le tout.
+du passage retrouvait une scène dans l'une ou l'autre partie, mais refusait une sélection à
+cheval sur leur jonction. Elle cherche désormais dans le contenu ramené à une seule sorte de
+fin de ligne, et rend le passage tel que le document l'écrit ; deux passages qui ne diffèrent
+que par leurs fins de ligne sont tenus pour ambigus, ce que l'ancienne recherche ne voyait
+pas.
 
 Non couvert par cette recette : un scénario modifié à cet endroit entre la demande et
 l'acceptation, et un document non enregistré, que l'encart doit refuser (vérifiés par les
