@@ -174,6 +174,22 @@ export const LIVRABLES_STRUCTURES = {
     /** Lignes qu'une proposition peut porter : la borne de la base et du profil. */
     lignesMax: 40,
   },
+  schedule_plan: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "planning",
+    titre: "Proposition de jalons de planning",
+    bouton: "Proposer des jalons",
+    description:
+      "L'assistant propose des jalons — un titre, une phase, une durée — à partir de la fiche du projet et du planning déjà saisi, transmis pour cela à notre fournisseur d'IA. Il ne propose aucune date : vous datez chaque jalon en l'acceptant.",
+    /**
+     * Dit à chaque affichage des jalons : l'assistant ne connaît pas le
+     * calendrier de l'équipe, et une durée proposée n'est pas un engagement.
+     */
+    avertissement:
+      "Durées estimées par l'assistant, sans connaître votre calendrier : vérifiez chaque jalon avant de l'accepter.",
+    /** Jalons qu'une proposition peut porter : la borne de la base et du profil. */
+    lignesMax: 30,
+  },
 } as const;
 
 export type ActionStructuree = keyof typeof LIVRABLES_STRUCTURES;

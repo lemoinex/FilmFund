@@ -424,3 +424,61 @@ export async function purgerExports(base: Base): Promise<number> {
   const { rows } = await base.query("select public.purger_exports_expires() as nombre");
   return Number(rows[0].nombre);
 }
+
+/** Jalon de planning, tel que le worker le dépose : contrôlé de nouveau par la base. */
+export type JalonPropose = { title: string; phase: string; duration_days: number };
+
+/**
+ * Ce que FIELD lit pour proposer un planning : le projet, ce qu'il raconte,
+ * et le planning déjà saisi. Ni budget, ni documents, ni équipe.
+ */
+export type ContextePlanning = {
+  action: string;
+  projet: ContexteRedaction["projet"];
+  contexte: ContexteRedaction["contexte"];
+  vision: ContexteRedaction["vision"];
+  /** Nombre de personnages : de quoi estimer un tournage, sans les nommer. */
+  personnages: number;
+  planning: {
+    titre: string;
+    phase: string;
+    statut: string;
+    debut: string | null;
+    echeance: string | null;
+  }[];
+};
+
+/**
+ * Contexte de la tâche de planning en cours ; null si l'essai ne nous
+ * appartient plus ou si le projet n'existe plus.
+ */
+export async function lireContextePlanning(
+  base: Base,
+  attemptId: string,
+): Promise<ContextePlanning | null> {
+  const { rows } = await base.query("select public.contexte_planning($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose les jalons proposés et conclut l'essai. Faux : l'essai ne nous
+ * appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionPlanning(
+  base: Base,
+  attemptId: string,
+  jalons: readonly JalonPropose[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_planning($1, $2::jsonb)", [
+      attemptId,
+      JSON.stringify(jalons),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}

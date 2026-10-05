@@ -1,9 +1,10 @@
 /**
  * FIELD : budget, financement et calendrier.
  *
- * Ce lot n'ouvre que le budget. Premier agent dont la proposition n'est pas
- * un texte : il rend des lignes — catégorie, libellé, quantité, coût
- * unitaire — que l'équipe accepte ou écarte une à une.
+ * Premier agent dont la proposition n'est pas un texte : il rend des lignes
+ * de budget — catégorie, libellé, quantité, coût unitaire — ou des jalons de
+ * planning — titre, phase, durée —, que l'équipe accepte ou écarte un à un.
+ * Il ne propose ni financeur, ni montant de financement, ni date.
  *
  * La mécanique de l'appel est celle de WEAVER : provision, appel, coût
  * confirmé, dépôt. Deux choses lui sont propres, et elles seules : le
@@ -12,14 +13,23 @@
  */
 import {
   lireContexteBudget,
+  lireContextePlanning,
   livrerPropositionBudget,
+  livrerPropositionPlanning,
   type Base,
   type ContexteBudget,
+  type ContextePlanning,
+  type JalonPropose,
   type LigneBudget,
 } from "../base.ts";
 import type { Executeur } from "../executeurs.ts";
 import type { Fournisseur } from "../ia/passerelle.ts";
-import { CATEGORIES_BUDGET, PROFILS_FIELD, type ProfilStructure } from "../ia/profils.ts";
+import {
+  CATEGORIES_BUDGET,
+  PHASES_PLANNING,
+  PROFILS_FIELD,
+  type ProfilStructure,
+} from "../ia/profils.ts";
 
 import { creerExecuteur } from "./weaver.ts";
 
@@ -175,15 +185,145 @@ function executeurBudget(base: Base, fournisseur: Fournisseur, profil: ProfilStr
   });
 }
 
+/** Bornes d'un jalon, telles que la base les contrôle au dépôt. */
+const DUREE_MAX = 730;
+const TITRE_MAX = 200;
+
+/**
+ * Ce qui est transmis au fournisseur pour un planning : le projet, son
+ * contexte, sa vision, le planning déjà saisi, puis l'objectif. Le budget n'y
+ * figure pas : les lecteurs de l'équipe lisent le planning, pas le budget.
+ */
+export function composerContextePlanning(contexte: ContextePlanning, objectif: string): string {
+  const lisible = (code: string) => code.replaceAll("_", " ");
+  const { projet, vision, planning } = contexte;
+  const blocs = [
+    [
+      "<projet>",
+      champ("Titre", projet.titre),
+      champ("Format", lisible(projet.format)),
+      champ("Étape", lisible(projet.etape)),
+      champ("Genre", projet.genre && lisible(projet.genre)),
+      champ("Pays de production", projet.pays?.join(", ")),
+      champ("Langues", projet.langues),
+      champ("Durée en minutes", projet.duree),
+      champ("Nombre de personnages", contexte.personnages),
+      "</projet>",
+    ].join("\n"),
+    [
+      "<contexte>",
+      champ("Pitch", contexte.contexte.pitch),
+      champ("Synopsis court", contexte.contexte.synopsis_court),
+      champ("Synopsis", contexte.contexte.synopsis),
+      champ("Thème", contexte.contexte.theme),
+      champ("Enjeux", contexte.contexte.enjeux),
+      "</contexte>",
+    ].join("\n"),
+    [
+      "<vision>",
+      champ("Vision artistique", vision.artistique),
+      champ("Objectifs", vision.objectifs),
+      champ("Public cible", vision.public),
+      "</vision>",
+    ].join("\n"),
+    [
+      "<planning>",
+      "Jalons déjà saisis :",
+      ...(planning.length
+        ? planning.map(
+            (jalon) =>
+              `- ${jalon.titre} (${lisible(jalon.phase)}, ${lisible(jalon.statut)}) : du ${jalon.debut ?? ABSENT} au ${jalon.echeance ?? ABSENT}`,
+          )
+        : ["(aucun)"]),
+      "</planning>",
+    ].join("\n"),
+  ];
+  return [...blocs, objectif].join("\n\n");
+}
+
+/**
+ * Remet la réponse en jalons. Null si ce n'en est pas : JSON illisible, liste
+ * vide ou trop longue, ou un seul jalon hors bornes — une proposition à
+ * moitié valide ne se dépose pas.
+ *
+ * Le schéma envoyé au fournisseur ne borne ni les nombres ni les longueurs :
+ * ce contrôle-ci le fait, et la base le refait au dépôt.
+ */
+export function lireJalons(texte: string, max: number): JalonPropose[] | null {
+  let reponse: unknown;
+  try {
+    reponse = JSON.parse(texte);
+  } catch {
+    return null;
+  }
+  const bruts = (reponse as { lines?: unknown } | null)?.lines;
+  if (!Array.isArray(bruts) || bruts.length < 1 || bruts.length > max) {
+    return null;
+  }
+
+  const phases: readonly string[] = PHASES_PLANNING;
+  const jalons: JalonPropose[] = [];
+  for (const brut of bruts) {
+    if (typeof brut !== "object" || brut === null) {
+      return null;
+    }
+    const { title, phase, duration_days } = brut as Record<string, unknown>;
+    if (
+      typeof title !== "string" ||
+      typeof phase !== "string" ||
+      !phases.includes(phase) ||
+      typeof duration_days !== "number" ||
+      !Number.isInteger(duration_days) ||
+      duration_days < 1 ||
+      duration_days > DUREE_MAX
+    ) {
+      return null;
+    }
+    const titre = title.replace(/\s+/g, " ").trim();
+    if (titre.length < 1 || titre.length > TITRE_MAX || /[\u0000-\u001f\u007f]/.test(titre)) {
+      return null;
+    }
+    jalons.push({ title: titre, phase, duration_days });
+  }
+  return jalons;
+}
+
+function executeurPlanning(
+  base: Base,
+  fournisseur: Fournisseur,
+  profil: ProfilStructure,
+): Executeur {
+  return creerExecuteur<JalonPropose[]>(base, fournisseur, {
+    profil,
+    preparer: async (attemptId) => {
+      const contexte = await lireContextePlanning(base, attemptId);
+      return contexte ? composerContextePlanning(contexte, profil.objectif) : null;
+    },
+    lire: (texte) => lireJalons(texte, profil.lignesMax),
+    deposer: (attemptId, jalons) => livrerPropositionPlanning(base, attemptId, jalons),
+    inexploitable: "La réponse du fournisseur n'est pas une liste de jalons exploitable.",
+  });
+}
+
+/**
+ * Fabrique de l'exécuteur de chaque action de FIELD. Un profil sans fabrique
+ * ne serait servi par personne : un test d'architecture les tient accordés.
+ */
+const FABRIQUES: Readonly<
+  Record<string, (base: Base, fournisseur: Fournisseur, profil: ProfilStructure) => Executeur>
+> = {
+  budget_plan: executeurBudget,
+  schedule_plan: executeurPlanning,
+};
+
 /** Ce que FIELD sait exécuter, avec ce fournisseur. */
 export function executeursField(
   base: Base,
   fournisseur: Fournisseur,
 ): Readonly<Record<string, Executeur>> {
   return Object.fromEntries(
-    Object.entries(PROFILS_FIELD).map(([action, profil]) => [
-      action,
-      executeurBudget(base, fournisseur, profil),
-    ]),
+    Object.entries(PROFILS_FIELD).flatMap(([action, profil]) =>
+      FABRIQUES[action] ? [[action, FABRIQUES[action](base, fournisseur, profil)]] : [],
+    ),
   );
 }

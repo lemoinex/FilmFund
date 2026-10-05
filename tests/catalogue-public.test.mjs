@@ -23,7 +23,7 @@ import {
 const VALEURS_PLAN =
   "max_projects, max_members, storage_mb, text_units_per_month, images_per_month, pdf_exports_per_month, price_xaf_per_month";
 const VALEURS_BAREME =
-  "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, dramatic_analysis, budget_plan, treatment, bible, screenplay_per_sequence, dialogue_per_scene";
+  "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, dramatic_analysis, budget_plan, schedule_plan, treatment, bible, screenplay_per_sequence, dialogue_per_scene";
 
 describe("Catalogue public", () => {
   /*

@@ -411,9 +411,9 @@ describe("FIELD : proposition de budget", () => {
     assert.deepEqual([reglement.consumed, reglement.released], [0, 6]);
   });
 
-  it("sait exécuter le budget, et lui seul", () => {
+  it("sait exécuter le budget et le planning, et eux seuls", () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
     assert.deepEqual(Object.keys(executeursField(base, fournisseur)), Object.keys(PROFILS_FIELD));
-    assert.deepEqual(Object.keys(PROFILS_FIELD), ["budget_plan"]);
+    assert.deepEqual(Object.keys(PROFILS_FIELD), ["budget_plan", "schedule_plan"]);
   });
 });

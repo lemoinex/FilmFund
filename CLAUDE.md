@@ -456,6 +456,11 @@ recommandations (« à améliorer ») sont configurables et traçables.
   `LIVRABLES_STRUCTURES`, actions dans `budget/actions-ia.ts`) écrits. Ne pas créer un second modèle de
   proposition structurée : BOARD et MATCH reprennent celui-ci. FIELD ne propose ni
   financeur ni montant de financement.
+- Jalons de planning (lot J3b-3a) : même modèle, table `ai_suggestion_milestones`. FIELD
+  propose un titre, une phase et une durée, **jamais de date** : l’équipe date le jalon
+  en l’acceptant. Les jalons proposés suivent les droits du planning — lus de toute
+  l’équipe, décidés par `peut_editer_contenu` —, et le contexte de l’agent ne porte pas
+  le budget. Base et worker écrits ; l’écran de l’onglet Planning reste à faire (J3b-3b).
 - Budget audiovisuel, lignes prévues :
   - développement : recherche, écriture, repérages ;
   - préproduction : casting, préparation, autorisations ;

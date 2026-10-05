@@ -103,6 +103,25 @@ FIELD ne rend pas un texte mais des lignes de budget (action `budget_plan`, prof
   poste dans `ai_suggestion_budget_lines`. Rien n'entre au budget avant qu'une ligne soit
   acceptée par `accepter_ligne_budget`.
 
+FIELD propose aussi des jalons de planning (lot J3b-3a, action `schedule_plan`, profil
+`field.planning@1`), sur le même chemin.
+
+- **Aucune date** : un jalon proposé porte un titre, une phase et une durée en jours. FIELD
+  ne connaît ni le jour ni le calendrier de l'équipe ; elle date le jalon en l'acceptant.
+  Sans date, la durée estimée est gardée dans les notes du jalon.
+- **Contrôles** : le schéma chez le fournisseur, puis le worker (`lireJalons` : phase connue
+  hors « terminé », titre de 200 caractères au plus, durée entière de 1 à 730 jours, 30
+  jalons au plus), puis la base au dépôt (`livrer_proposition_planning`). Un seul jalon
+  invalide fait échouer la tâche : motif « La réponse du fournisseur n'est pas une liste de
+  jalons exploitable. », unités rendues.
+- **Ce qui part chez le fournisseur** : le projet, son contexte, sa vision, le nombre de
+  personnages et les jalons déjà saisis. Jamais le budget : les lecteurs de l'équipe lisent
+  le planning, pas le budget.
+- **Dépôt** : une proposition parente dont le texte est écrit par la base, et une ligne par
+  jalon dans `ai_suggestion_milestones`, lisible de toute l'équipe. Rien n'entre au planning
+  avant qu'un jalon soit accepté par `accepter_jalon_propose`, réservé à qui écrit le
+  planning.
+
 ### Clé d'API : écran Intégrations IA
 
 La clé ne se saisit ni dans Railway, ni dans Vercel, ni dans `.env.local` : elle se pose

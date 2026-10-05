@@ -763,9 +763,11 @@ describe("Catalogue public", () => {
  * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
  */
 describe("Livrables des agents", () => {
-  // Le devis et le contexte ont été repris par le correctif du lot J2a ; le
-  // dépôt et l'acceptation datent de sa première migration.
-  const DEVIS = "supabase/migrations/20261005150000_scenario_contexte.sql";
+  // Le devis a été repris en dernier par le planning de FIELD ; le contexte,
+  // par le correctif du lot J2a ; le dépôt et l'acceptation datent de sa
+  // première migration.
+  const DEVIS = "supabase/migrations/20261005170000_field_planning.sql";
+  const CONTEXTE = "supabase/migrations/20261005150000_scenario_contexte.sql";
   const PROPOSITIONS = "supabase/migrations/20261005130000_script_scenario.sql";
 
   /** Corps de la fonction nommée, jusqu'à la suivante. */
@@ -779,12 +781,7 @@ describe("Livrables des agents", () => {
   it("la base admet chaque action de chaque agent et la facture au barème", async () => {
     const { PROFILS_IA } = await import("../worker/src/ia/profils.ts");
     const devis = lire(DEVIS);
-    // La liste des actions admises date du lot J3b-1 : le scénario y figurait
-    // déjà, et la migration du lot J2a n'a pas eu à la reprendre.
-    const liste =
-      /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(
-        lire("supabase/migrations/20261004160108_field_budget.sql"),
-      )?.[1] ?? "";
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(devis)?.[1] ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 
     assert.ok(enBase.length >= 10, "lecture de la migration");
@@ -862,7 +859,7 @@ describe("Livrables des agents", () => {
 
     // Le contexte joint la description et la fin du document cible. Lui seul
     // est écarté des documents finalisés : un autre scénario reste lu.
-    const contexte = corps(migration, "contexte_redaction");
+    const contexte = corps(lire(CONTEXTE), "contexte_redaction");
     assert.match(contexte, /'sequence', v_job\.params ->> 'sequence'/);
     assert.match(contexte, /'fin', right\(d\.content, \d+\)/);
     assert.match(contexte, /and d\.id is distinct from v_scenario/);
@@ -910,10 +907,12 @@ describe("Livrables des agents", () => {
  */
 describe("Livrables structurés", () => {
   const MIGRATION = "supabase/migrations/20261004160108_field_budget.sql";
+  // Le planning reprend le devis après le budget : c'est lui qui fait foi.
+  const PLANNING = "supabase/migrations/20261005170000_field_planning.sql";
 
   it("la base admet l'action de chaque profil structuré et la facture au barème", async () => {
     const { PROFILS_FIELD, PROFILS_IA } = await import("../worker/src/ia/profils.ts");
-    const migration = lire(MIGRATION);
+    const migration = lire(PLANNING);
     const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 
@@ -960,6 +959,65 @@ describe("Livrables structurés", () => {
       new RegExp(`v_nombre not between 1 and ${PROFIL_BUDGET.lignesMax} then`),
     );
     assert.ok(PROFIL_BUDGET.systeme.includes(String(PROFIL_BUDGET.lignesMax)));
+  });
+
+  it("le schéma du planning ne connaît que les phases de la base, et aucune date", async () => {
+    const { PHASES_PLANNING, PROFIL_PLANNING } = await import("../worker/src/ia/profils.ts");
+    const migration = lire(PLANNING);
+    const { schema } = PROFIL_PLANNING;
+    const jalon = schema.properties.lines.items;
+
+    // Les phases admises au dépôt et à l'acceptation sont celles du profil.
+    const listes = [...migration.matchAll(/in \(\s*('idee'[^)]+)\)/g)].map((m) =>
+      [...m[1].matchAll(/'(\w+)'/g)].map((n) => n[1]),
+    );
+    assert.equal(listes.length, 2, "dépôt et acceptation");
+    for (const liste of listes) {
+      assert.deepEqual(liste, [...PHASES_PLANNING]);
+    }
+    assert.deepEqual(jalon.properties.phase.enum, [...PHASES_PLANNING]);
+    assert.ok(!PHASES_PLANNING.includes("termine"));
+    for (const phase of PHASES_PLANNING) {
+      assert.ok(PROFIL_PLANNING.systeme.includes(phase), phase);
+    }
+
+    // Strict, et sans date : l'agent ne connaît pas le calendrier de l'équipe.
+    assert.equal(schema.additionalProperties, false);
+    assert.equal(jalon.additionalProperties, false);
+    assert.deepEqual(jalon.required, ["title", "phase", "duration_days"]);
+    assert.deepEqual(Object.keys(jalon.properties), ["title", "phase", "duration_days"]);
+    assert.match(PROFIL_PLANNING.systeme, /Ne propose aucune date/);
+
+    // La borne du profil est celle de la base.
+    assert.match(
+      migration,
+      new RegExp(`v_nombre not between 1 and ${PROFIL_PLANNING.lignesMax} then`),
+    );
+    assert.ok(PROFIL_PLANNING.systeme.includes(String(PROFIL_PLANNING.lignesMax)));
+    assert.match(migration, /duration_days between 1 and 730/);
+  });
+
+  it("les jalons proposés suivent les droits du planning, et le contexte ignore le budget", () => {
+    const migration = lire(PLANNING);
+    // Lus de toute l'équipe, comme le planning ; décidés par qui l'écrit.
+    assert.match(
+      migration,
+      /on public\.ai_suggestion_milestones for select\s+to authenticated\s+using \(public\.acces_au_projet\(project_id\) is not null or \(select public\.is_admin\(\)\)\)/,
+    );
+    assert.match(
+      migration,
+      /not coalesce\(public\.peut_editer_contenu\(v_jalon\.project_id\), false\)/,
+    );
+    assert.match(
+      migration,
+      /revoke all on table public\.ai_suggestion_milestones from anon, authenticated/,
+    );
+
+    const debut = migration.indexOf("create or replace function public.contexte_planning");
+    const contexte = migration.slice(debut, migration.indexOf("$$;", debut));
+    assert.ok(debut >= 0);
+    assert.doesNotMatch(contexte, /budget/);
+    assert.doesNotMatch(contexte, /project_documents/);
   });
 
   it("l'écran propose exactement les livrables structurés que le worker sait produire", async () => {

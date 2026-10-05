@@ -130,6 +130,7 @@ export type BaremePublie = {
   intention_note: number;
   dramatic_analysis: number;
   budget_plan: number;
+  schedule_plan: number;
   treatment: number;
   bible: number;
   screenplay_per_sequence: number;
@@ -152,6 +153,7 @@ export function uniteTexteEnMots(bareme: BaremePublie): string {
     `${n(bareme.intention_note)} pour une note d'intention`,
     `${n(bareme.dramatic_analysis)} pour une analyse dramaturgique`,
     `${n(bareme.budget_plan)} pour un budget prévisionnel`,
+    `${n(bareme.schedule_plan)} pour un planning prévisionnel`,
     `${n(bareme.treatment)} pour un traitement`,
     `${n(bareme.bible)} pour une bible`,
     `${n(bareme.screenplay_per_sequence)} par séquence de scénario`,
@@ -186,7 +188,7 @@ export async function lireBareme(
     const { data, error } = await clientPublic(url, clePubliable)
       .from("text_unit_rate_versions")
       .select(
-        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, dramatic_analysis, budget_plan, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
+        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, dramatic_analysis, budget_plan, schedule_plan, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
       )
       .order("version_number", { ascending: false })
       .limit(1)
