@@ -179,6 +179,23 @@ describe("Pages introuvables", () => {
     });
     assert.deepEqual(sansGarde, []);
   });
+
+  it("le middleware garde chaque rubrique de l'espace connecté", () => {
+    // La coque revérifie la session, mais le middleware est seul à refuser
+    // une action postée par un compte que le mode privé tient à l'écart, et
+    // à mémoriser la destination d'un visiteur renvoyé à la connexion.
+    const liste = /const ROUTES_PROTEGEES = \[([^\]]*)\]/.exec(lire(MIDDLEWARE))?.[1] ?? "";
+    const gardees = [...liste.matchAll(/"(\/[^"]+)"/g)].map((m) => m[1]).sort();
+    const rubriques = [
+      ...new Set(
+        SOURCES.map((f) => /^src\/app\/\(app\)\/([^/]+)\//.exec(f)?.[1])
+          .filter(Boolean)
+          .map((nom) => `/${nom}`),
+      ),
+    ].sort();
+    assert.ok(rubriques.includes("/tableau-de-bord"));
+    assert.deepEqual(gardees, rubriques);
+  });
 });
 
 /*
