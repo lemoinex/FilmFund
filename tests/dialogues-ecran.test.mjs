@@ -57,6 +57,38 @@ describe("Dialogues : localisation du passage", () => {
     assert.equal(extrairePassage(windows, localise.debut, localise.longueur), localise.passage);
   });
 
+  it("retrouve une scène à cheval sur deux sortes de fins de ligne", () => {
+    // Le début enregistré par l'éditeur, en « \r\n » ; la suite ajoutée par un
+    // agent, en « \n ». La jonction tombe au milieu de la scène.
+    const coupe = SCENARIO.indexOf("LA MÈRE");
+    const meles = SCENARIO.slice(0, coupe).replaceAll("\n", "\r\n") + SCENARIO.slice(coupe);
+    assert.ok(meles.includes("\r\n") && /[^\r]\n/.test(meles), "le contenu mêle les deux");
+
+    const localise = localiserPassage(meles, SCENE);
+    assert.equal(localise.erreur, undefined);
+    // Le passage rendu est celui du contenu tel qu'il est écrit, pas la sélection.
+    assert.equal(localise.passage.replaceAll("\r\n", "\n"), SCENE);
+    assert.ok(localise.passage.includes("\r\n") && /[^\r]\n/.test(localise.passage));
+    assert.equal(extrairePassage(meles, localise.debut, localise.longueur), localise.passage);
+    assert.equal(localise.longueur, [...localise.passage].length);
+  });
+
+  it("n'emporte pas le « \\r » de la fin de ligne qui suit le passage", () => {
+    const windows = SCENARIO.replaceAll("\n", "\r\n");
+    const localise = localiserPassage(windows, SCENE);
+    assert.ok(!localise.passage.endsWith("\r"));
+    assert.ok(!localise.passage.startsWith("\n"));
+    // Le dernier passage du document, sans rien après lui.
+    const dernier = localiserPassage(windows, APRES);
+    assert.equal(dernier.passage, APRES.replaceAll("\n", "\r\n"));
+    assert.equal(extrairePassage(windows, dernier.debut, dernier.longueur), dernier.passage);
+  });
+
+  it("une sélection qui ne diffère d'un autre passage que par ses fins de ligne reste ambiguë", () => {
+    const double = `${SCENE.replaceAll("\n", "\r\n")}\n\n${SCENE}`;
+    assert.match(localiserPassage(double, SCENE).erreur, /plusieurs fois/);
+  });
+
   it("refuse une sélection vide, absente, ambiguë ou trop longue, en disant pourquoi", () => {
     for (const vide of ["", "   \n ", null, undefined, 42]) {
       assert.match(localiserPassage(SCENARIO, vide).erreur, /Sélectionnez d'abord/);
@@ -94,6 +126,11 @@ describe("Dialogues : ce que le serveur calcule, la base l'accepte", () => {
   for (const [nom, contenu] of [
     ["fins de ligne « \\n », emoji et accents", SCENARIO],
     ["fins de ligne « \\r\\n »", SCENARIO.replaceAll("\n", "\r\n")],
+    [
+      "fins de ligne mêlées, la jonction au milieu de la scène",
+      SCENARIO.slice(0, SCENARIO.indexOf("LA MÈRE")).replaceAll("\n", "\r\n") +
+        SCENARIO.slice(SCENARIO.indexOf("LA MÈRE")),
+    ],
   ]) {
     it(`devis accordé pour un passage localisé : ${nom}`, async () => {
       const porteur = await creerCompte("dialogues-ecran");

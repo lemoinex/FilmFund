@@ -376,7 +376,11 @@ export type PassageLocalise = { debut: number; longueur: number; passage: string
  * base les compte : un emoji vaut un caractère, pas deux.
  *
  * Un champ de texte rend ses fins de ligne en « \n », quand un contenu
- * enregistré peut les porter en « \r\n » : les deux écritures sont essayées.
+ * enregistré peut les porter en « \r\n » — ou les mêler : le texte venu de
+ * l'éditeur d'un côté, celui qu'un agent a ajouté de l'autre. La recherche se
+ * fait donc dans le contenu ramené à « \n », et le passage rendu est celui du
+ * contenu tel qu'il est écrit, fins de ligne comprises : c'est sur lui que la
+ * base calcule ses positions et contrôle l'empreinte.
  */
 export function localiserPassage(
   contenu: string,
@@ -387,31 +391,45 @@ export function localiserPassage(
     return { erreur: "Sélectionnez d'abord une scène dans le texte du scénario." };
   }
   const nette = selection.replaceAll("\r\n", "\n").trim();
-  const candidats = contenu.includes("\r\n") ? [nette.replaceAll("\n", "\r\n"), nette] : [nette];
 
-  for (const passage of candidats) {
-    const position = contenu.indexOf(passage);
-    if (position < 0) {
+  // Contenu sans les « \r » des « \r\n », et, pour chacun de ses indices,
+  // l'indice qui lui correspond dans le contenu d'origine.
+  let ramene = "";
+  const origine: number[] = [];
+  for (let i = 0; i < contenu.length; i += 1) {
+    if (contenu[i] === "\r" && contenu[i + 1] === "\n") {
       continue;
     }
-    if (contenu.indexOf(passage, position + 1) >= 0) {
-      return {
-        erreur:
-          "Ce passage figure plusieurs fois dans le scénario : sélectionnez-en davantage, pour qu'il n'y en ait qu'un.",
-      };
-    }
-    const longueur = [...passage].length;
-    if (longueur > max) {
-      return {
-        erreur: `Ce passage est trop long : ${NOMBRE.format(max)} caractères au plus, soit une scène.`,
-      };
-    }
-    return { debut: [...contenu.slice(0, position)].length, longueur, passage };
+    origine.push(i);
+    ramene += contenu[i];
   }
-  return {
-    erreur:
-      "Ce passage ne figure pas dans le scénario enregistré : enregistrez le document, puis sélectionnez la scène de nouveau.",
-  };
+
+  const position = ramene.indexOf(nette);
+  if (position < 0) {
+    return {
+      erreur:
+        "Ce passage ne figure pas dans le scénario enregistré : enregistrez le document, puis sélectionnez la scène de nouveau.",
+    };
+  }
+  if (ramene.indexOf(nette, position + 1) >= 0) {
+    return {
+      erreur:
+        "Ce passage figure plusieurs fois dans le scénario : sélectionnez-en davantage, pour qu'il n'y en ait qu'un.",
+    };
+  }
+
+  // Du premier au dernier caractère du passage, dans le contenu d'origine :
+  // un « \r » qui suivrait le dernier n'en fait pas partie.
+  const debut = origine[position];
+  const passage = contenu.slice(debut, origine[position + nette.length - 1] + 1);
+
+  const longueur = [...passage].length;
+  if (longueur > max) {
+    return {
+      erreur: `Ce passage est trop long : ${NOMBRE.format(max)} caractères au plus, soit une scène.`,
+    };
+  }
+  return { debut: [...contenu.slice(0, debut)].length, longueur, passage };
 }
 
 /**
