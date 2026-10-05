@@ -261,6 +261,88 @@ export function messageLot(acceptees: number, demandees: number): string {
   } au budget ; les autres attendent toujours votre décision.`;
 }
 
+/** Jalon proposé, tel que l'écran le lit. */
+export type JalonPropose = {
+  id: string;
+  position: number;
+  title: string;
+  phase: string;
+  duration_days: number;
+  state: string;
+};
+
+/** Où en est une proposition de jalons : combien attendent, sont entrés au planning ou écartés. */
+export function bilanJalons(jalons: readonly JalonPropose[]): {
+  enAttente: number;
+  acceptes: number;
+  ecartes: number;
+} {
+  let enAttente = 0;
+  let acceptes = 0;
+  let ecartes = 0;
+  for (const jalon of jalons) {
+    if (jalon.state === "accepted") {
+      acceptes += 1;
+    } else if (jalon.state === "dismissed") {
+      ecartes += 1;
+    } else {
+      enAttente += 1;
+    }
+  }
+  return { enAttente, acceptes, ecartes };
+}
+
+/** « 1 jalon », « 12 jalons ». */
+export function nombreJalons(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "jalons" : "jalon"}`;
+}
+
+/** « 1 jour », « 30 jours ». */
+export function dureeEnJours(jours: number): string {
+  return `${NOMBRE.format(jours)} ${jours > 1 ? "jours" : "jour"}`;
+}
+
+/**
+ * Échéance qu'une durée donne à partir d'un début, bornes comprises : un
+ * jalon d'un jour finit le jour où il commence. Proposée à l'écran, jamais
+ * imposée — l'équipe la corrige. Null si le début n'est pas une date.
+ */
+export function echeanceProposee(debut: string, dureeJours: number): string | null {
+  const lu = /^(\d{4})-(\d{2})-(\d{2})$/.exec(debut);
+  if (!lu || !Number.isInteger(dureeJours) || dureeJours < 1) {
+    return null;
+  }
+  const [annee, mois, jour] = [Number(lu[1]), Number(lu[2]), Number(lu[3])];
+  const date = new Date(Date.UTC(annee, mois - 1, jour));
+  // Un 31 février est remis au mois suivant par Date : ce n'est pas une date.
+  if (
+    date.getUTCFullYear() !== annee ||
+    date.getUTCMonth() !== mois - 1 ||
+    date.getUTCDate() !== jour
+  ) {
+    return null;
+  }
+  date.setUTCDate(date.getUTCDate() + dureeJours - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Ce que l'écran dit après « tout accepter » des jalons, qui n'est pas
+ * atomique : si un jalon est refusé en chemin, les précédents sont déjà au
+ * planning, et l'écran doit le dire plutôt que d'annoncer un échec.
+ */
+export function messageLotJalons(acceptes: number, demandes: number): string {
+  if (acceptes >= demandes) {
+    return `${nombreJalons(acceptes)} ${acceptes > 1 ? "ajoutés" : "ajouté"} au planning, sans date.`;
+  }
+  if (acceptes === 0) {
+    return "Aucun jalon n'a pu être ajouté. Réessayez dans un instant.";
+  }
+  return `${nombreJalons(acceptes)} sur ${NOMBRE.format(demandes)} ${
+    acceptes > 1 ? "ajoutés" : "ajouté"
+  } au planning ; les autres attendent toujours votre décision.`;
+}
+
 /** Ordre d'affichage, et liste de référence pour les tests. */
 export const ORDRE_LIVRABLES = Object.keys(LIVRABLES_IA) as ActionIa[];
 
