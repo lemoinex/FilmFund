@@ -4,8 +4,9 @@
  * tout autre import : aucun agent, aucune route, aucun composant n'appelle
  * un fournisseur sans passer par ici.
  *
- * La clé d'API vient de l'environnement du worker, jamais du dépôt ; elle
- * n'est ni journalisée ni renvoyée.
+ * La clé d'API vient du coffre de la base, lue par le registre des agents,
+ * jamais du dépôt ni de l'environnement ; elle n'est ni journalisée ni
+ * renvoyée.
  */
 import Anthropic from "@anthropic-ai/sdk";
 
