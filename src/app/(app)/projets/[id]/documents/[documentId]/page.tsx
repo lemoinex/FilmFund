@@ -4,11 +4,19 @@ import { notFound } from "next/navigation";
 
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { compterMots, libelleMots, TYPES_DOCUMENT } from "@/lib/documents";
+import {
+  etapeProposition,
+  extrairePassage,
+  LIVRABLE_DIALOGUE,
+  type EtapeProposition,
+} from "@/lib/propositions";
 import { createClient } from "@/lib/supabase/server";
 
+import { RafraichissementPropositions } from "../../proposition";
 import { supprimerDocument } from "../actions";
 import { EditeurDocument } from "../formulaires";
 import { BadgeStatut } from "../statut";
+import { Dialogues } from "./dialogues";
 import { HistoriqueVersions } from "./historique";
 
 export const metadata: Metadata = {
@@ -44,6 +52,13 @@ export default async function DocumentPage({
 
   const projet = document.projects;
 
+  // Les dialogues d'une scène ne se demandent que sur un scénario, par qui
+  // peut l'écrire : rien n'est lu pour les autres.
+  const dialogues =
+    peutEditer && document.type === "scenario"
+      ? await lireDialogues(supabase, projet.id, document.id, document.content)
+      : null;
+
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
       <Link
@@ -65,6 +80,23 @@ export default async function DocumentPage({
              */}
             <EditeurDocument projetId={projet.id} document={document} />
           </div>
+
+          {dialogues ? (
+            <>
+              <RafraichissementPropositions
+                actif={
+                  dialogues.etape.etape === "en_attente" || dialogues.etape.etape === "en_cours"
+                }
+              />
+              <Dialogues
+                projetId={projet.id}
+                documentId={document.id}
+                contenuEnregistre={document.content}
+                sceneActuelle={dialogues.scene}
+                etape={dialogues.etape}
+              />
+            </>
+          ) : null}
 
           <HistoriqueVersions projetId={projet.id} documentId={document.id} />
 
@@ -101,4 +133,52 @@ export default async function DocumentPage({
       {peutEditer ? null : <HistoriqueVersions projetId={projet.id} documentId={document.id} />}
     </div>
   );
+}
+
+/**
+ * Où en est la dernière demande de dialogues sur ce document, et la scène
+ * que sa proposition remplacerait.
+ *
+ * Deux lectures bornées, sous la RLS de l'appelant. La scène montrée en
+ * regard est relue dans le document d'après la position de la demande : si
+ * le scénario a changé à cet endroit, ce n'est plus elle — la base, qui
+ * contrôle son empreinte, refusera alors le remplacement.
+ */
+async function lireDialogues(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+  documentId: string,
+  contenu: string,
+): Promise<{ etape: EtapeProposition; scene: string }> {
+  const { data: tache } = await supabase
+    .from("jobs")
+    .select("id, state, params")
+    .eq("project_id", projetId)
+    .eq("action", LIVRABLE_DIALOGUE.action)
+    .eq("params->>document", documentId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: proposition } = tache
+    ? await supabase
+        .from("ai_suggestions")
+        .select("id, content, state")
+        .eq("job_id", tache.id)
+        .maybeSingle()
+    : { data: null };
+
+  const etape = etapeProposition(tache, proposition);
+  if (etape.etape !== "proposition" || !tache) {
+    return { etape, scene: "" };
+  }
+
+  const parametres =
+    tache.params && typeof tache.params === "object" && !Array.isArray(tache.params)
+      ? tache.params
+      : {};
+  return {
+    etape,
+    scene: extrairePassage(contenu, Number(parametres.debut), Number(parametres.longueur)),
+  };
 }

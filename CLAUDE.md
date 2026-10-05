@@ -404,8 +404,11 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   Dialogues (lot J2b-1, agent VOICE) : les répliques d’une scène, désignée par un
   passage du scénario — document, position, longueur, empreinte — que la base relit au
   devis, avant l’appel et à l’acceptation (`passage_du_scenario`). Seul ce passage est
-  remplacé ; si le scénario a changé à cet endroit, l’acceptation est refusée. Base et
-  worker écrits ; l’écran, dans l’éditeur du scénario, reste à faire (J2b-2). Prévues :
+  remplacé ; si le scénario a changé à cet endroit, l’acceptation est refusée. Écran (J2b-2) sous
+  l’éditeur du scénario : le navigateur n’envoie que le texte sélectionné, le serveur le
+  retrouve dans le document enregistré et calcule position et empreinte
+  (`localiserPassage`, `documents/[documentId]/actions-ia.ts`) ; l’encart refuse d’agir sur
+  un document non enregistré et recharge la page après une acceptation. Prévues :
   note de réalisation, personnages, pitch oral/écrit.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
