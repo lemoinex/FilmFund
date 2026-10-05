@@ -401,8 +401,12 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   l’acceptation **ajoute à la fin** du document « Scénario » au lieu de le
   remplacer — un scénario ne tient ni dans une proposition (20 000 caractères)
   ni dans un appel. Ne pas relever ce plafond ni écrire un scénario d’un bloc.
-  Prévues : note de réalisation, personnages, pitch oral/écrit, dialogues
-  (lot J2b, à cadrer).
+  Dialogues (lot J2b-1, agent VOICE) : les répliques d’une scène, désignée par un
+  passage du scénario — document, position, longueur, empreinte — que la base relit au
+  devis, avant l’appel et à l’acceptation (`passage_du_scenario`). Seul ce passage est
+  remplacé ; si le scénario a changé à cet endroit, l’acceptation est refusée. Base et
+  worker écrits ; l’écran, dans l’éditeur du scénario, reste à faire (J2b-2). Prévues :
+  note de réalisation, personnages, pitch oral/écrit.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,

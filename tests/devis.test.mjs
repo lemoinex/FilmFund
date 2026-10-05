@@ -150,9 +150,6 @@ describe("Devis et réservations", () => {
       });
       assert.equal(scenario.quantity, 2);
 
-      const dialogues = await devisValide(porteur, projet.id, "dialogue", { scenes: 4 });
-      assert.equal(dialogues.quantity, 4);
-
       const images = await devisValide(porteur, projet.id, "image", { count: 4 });
       assert.deepEqual([images.unit, images.quantity, images.allowance], ["image", 4, 10]);
 
@@ -177,6 +174,10 @@ describe("Devis et réservations", () => {
         ["screenplay", { sequences: 1, sequence: "a".repeat(1201) }],
         ["screenplay", { sequences: 1, sequence: "cloche\u0007" }],
         ["dialogue", { scenes: 0 }],
+        // Une scène par demande, et son passage du scénario : ni quatre
+        // scènes, ni une scène sans passage désigné.
+        ["dialogue", { scenes: 4 }],
+        ["dialogue", { scenes: 1 }],
         ["image", { count: 101 }],
       ]) {
         const { error } = await devis(porteur, projet.id, action, params);
@@ -301,8 +302,8 @@ describe("Devis et réservations", () => {
 
     it("même clé, autre demande : conflit", async () => {
       const { porteur, projet } = await porteurEtProjet("idem-conflit");
-      const deux = await devisValide(porteur, projet.id, "dialogue", { scenes: 2 });
-      const trois = await devisValide(porteur, projet.id, "dialogue", { scenes: 3 });
+      const deux = await devisValide(porteur, projet.id, "image", { count: 2 });
+      const trois = await devisValide(porteur, projet.id, "image", { count: 3 });
 
       assert.ifError((await accepter(porteur, deux.quote_id, "cle-partagee")).error);
       const { error } = await accepter(porteur, trois.quote_id, "cle-partagee");

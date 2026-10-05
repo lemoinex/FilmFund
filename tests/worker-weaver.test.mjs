@@ -38,6 +38,7 @@ import {
   PROFILS_FIELD,
   PROFILS_IA,
   PROFILS_SCRIPT,
+  PROFILS_VOICE,
   PROFILS_WEAVER,
 } from "../worker/src/ia/profils.ts";
 import { registreDesAgents } from "../worker/src/registre.ts";
@@ -533,7 +534,11 @@ describe("Registre des agents : la clé vient du coffre", () => {
 
     assert.deepEqual(
       Object.keys(agents.lire()).sort(),
-      [...Object.keys(PROFILS_IA), ...Object.keys(PROFILS_FIELD)].sort(),
+      [
+        ...Object.keys(PROFILS_IA),
+        ...Object.keys(PROFILS_VOICE),
+        ...Object.keys(PROFILS_FIELD),
+      ].sort(),
     );
     assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
     assert.deepEqual(
@@ -566,7 +571,11 @@ describe("Registre des agents : la clé vient du coffre", () => {
     await agents.relire();
     assert.deepEqual(
       Object.keys(agents.lire()).sort(),
-      [...Object.keys(PROFILS_IA), ...Object.keys(PROFILS_FIELD)].sort(),
+      [
+        ...Object.keys(PROFILS_IA),
+        ...Object.keys(PROFILS_VOICE),
+        ...Object.keys(PROFILS_FIELD),
+      ].sort(),
     );
 
     await definirCleFactice("anthropic", null);
