@@ -162,6 +162,73 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_milestones: {
+        Row: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          duration_days: number;
+          id: string;
+          milestone_id: string | null;
+          phase: Database["public"]["Enums"]["project_stage"];
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          duration_days: number;
+          id?: string;
+          milestone_id?: string | null;
+          phase: Database["public"]["Enums"]["project_stage"];
+          position: number;
+          project_id: string;
+          state?: string;
+          suggestion_id: string;
+          title: string;
+        };
+        Update: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          duration_days?: number;
+          id?: string;
+          milestone_id?: string | null;
+          phase?: Database["public"]["Enums"]["project_stage"];
+          position?: number;
+          project_id?: string;
+          state?: string;
+          suggestion_id?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_milestones_milestone_id_fkey";
+            columns: ["milestone_id"];
+            isOneToOne: false;
+            referencedRelation: "project_milestones";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_milestones_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_milestones_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_suggestions: {
         Row: {
           action: string;
@@ -1595,6 +1662,7 @@ export type Database = {
           logline: number;
           published_at: string;
           published_by: string | null;
+          schedule_plan: number;
           screenplay_per_sequence: number;
           synopsis_detailed: number;
           synopsis_short: number;
@@ -1612,6 +1680,7 @@ export type Database = {
           logline: number;
           published_at?: string;
           published_by?: string | null;
+          schedule_plan: number;
           screenplay_per_sequence: number;
           synopsis_detailed: number;
           synopsis_short: number;
@@ -1629,6 +1698,7 @@ export type Database = {
           logline?: number;
           published_at?: string;
           published_by?: string | null;
+          schedule_plan?: number;
           screenplay_per_sequence?: number;
           synopsis_detailed?: number;
           synopsis_short?: number;
@@ -1667,6 +1737,35 @@ export type Database = {
         };
       };
       accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
+      accepter_jalon_propose: {
+        Args: {
+          p_due_on?: string;
+          p_line_id: string;
+          p_phase?: string;
+          p_starts_on?: string;
+          p_title?: string;
+        };
+        Returns: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          duration_days: number;
+          id: string;
+          milestone_id: string | null;
+          phase: Database["public"]["Enums"]["project_stage"];
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          title: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_milestones";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       accepter_ligne_budget: {
         Args: {
           p_category?: string;
@@ -1766,6 +1865,7 @@ export type Database = {
           logline: number;
           published_at: string;
           published_by: string | null;
+          schedule_plan: number;
           screenplay_per_sequence: number;
           synopsis_detailed: number;
           synopsis_short: number;
@@ -1782,6 +1882,7 @@ export type Database = {
       };
       cle_fournisseur: { Args: { p_provider: string }; Returns: string };
       clore_proposition_budget: { Args: { p_suggestion_id: string }; Returns: undefined };
+      clore_proposition_planning: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_travail: {
         Args: {
           p_consumed: number;
@@ -1841,6 +1942,7 @@ export type Database = {
       contenu_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: Json };
       contexte_budget: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_travail: {
         Args: { p_attempt_id: string };
@@ -1892,6 +1994,29 @@ export type Database = {
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       duree_bail_travail: { Args: Record<PropertyKey, never>; Returns: string };
       duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
+      ecarter_jalon_propose: {
+        Args: { p_line_id: string };
+        Returns: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          duration_days: number;
+          id: string;
+          milestone_id: string | null;
+          phase: Database["public"]["Enums"]["project_stage"];
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          title: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_milestones";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       ecarter_ligne_budget: {
         Args: { p_line_id: string };
         Returns: {
@@ -1993,6 +2118,29 @@ export type Database = {
       };
       images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      jalon_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          duration_days: number;
+          id: string;
+          milestone_id: string | null;
+          phase: Database["public"]["Enums"]["project_stage"];
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          title: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_milestones";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       journaliser: {
         Args: { p_action: string; p_details: Json; p_project_id: string };
         Returns: undefined;
@@ -2027,6 +2175,10 @@ export type Database = {
       };
       livrer_proposition: { Args: { p_attempt_id: string; p_content: string }; Returns: string };
       livrer_proposition_budget: { Args: { p_attempt_id: string; p_lines: Json }; Returns: string };
+      livrer_proposition_planning: {
+        Args: { p_attempt_id: string; p_lines: Json };
+        Returns: string;
+      };
       marquer_tentative_soumise: {
         Args: { p_attempt_id: string; p_provider_ref?: string };
         Returns: {

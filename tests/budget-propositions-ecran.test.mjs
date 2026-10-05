@@ -39,9 +39,17 @@ const ligne = (state, quantity = 1, unit_cost = 100, position = 1) => ({
 });
 
 describe("Lignes proposées : catalogue", () => {
-  it("ne propose que le budget, tenu à part des textes", () => {
-    assert.deepEqual(Object.keys(LIVRABLES_STRUCTURES), ["budget_plan"]);
+  it("ne propose que le budget et le planning, tenus à part des textes", () => {
+    assert.deepEqual(Object.keys(LIVRABLES_STRUCTURES), ["budget_plan", "schedule_plan"]);
     assert.equal(LIVRABLES_STRUCTURES.budget_plan.page, "budget");
+    assert.equal(LIVRABLES_STRUCTURES.schedule_plan.page, "planning");
+    assert.ok(!("schedule_plan" in LIVRABLES_IA));
+    assert.equal(estActionStructuree("schedule_plan"), true);
+    // Le planning annonce qu'il ne propose aucune date, et que ses durées
+    // sont des estimations.
+    assert.match(LIVRABLES_STRUCTURES.schedule_plan.description, /aucune date/);
+    assert.match(LIVRABLES_STRUCTURES.schedule_plan.description, /fournisseur d'IA/);
+    assert.match(LIVRABLES_STRUCTURES.schedule_plan.avertissement, /estimées/);
     // Un livrable structuré n'est pas un texte, et inversement.
     assert.ok(!("budget_plan" in LIVRABLES_IA));
     assert.equal(estActionIa("budget_plan"), false);
