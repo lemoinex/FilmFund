@@ -40,14 +40,16 @@ Au début de chaque tâche :
 | Worker, passerelle IA, coûts      | `docs/worker.md`                                    |
 | Rôles d’Anthropic et d’OpenAI     | `docs/roles-anthropic-openai-filmfund-africa.md`    |
 | Produit, périmètre MVP, rôles     | `docs/product/PRD_MVP.md`                           |
+| Découpage, matériel, électricité  | `docs/product/CDC_FRAME_GEAR.md`                    |
 | Règles d’exécution                | `docs/engineering/VIBECODING_RULES.md`              |
 | Sécurité, risques, garde-fous     | `docs/engineering/GUARDRAILS_BACKLOG.md`            |
 | Lots et ordre d’exécution         | `docs/engineering/LOTS_IMPLEMENTATION.md`           |
 | Décisions d’architecture          | `docs/decisions/ADR-0001-architecture-and-scope.md` |
 | Landing page                      | `docs/design/LANDING_PAGE_SPEC.md`                  |
 
-Les six derniers documents ne sont pas encore versionnés : signaler leur absence,
-ne jamais en supposer le contenu.
+Six de ces documents ne sont pas encore versionnés — `PRD_MVP.md`, les trois de
+`docs/engineering/`, l’ADR et `LANDING_PAGE_SPEC.md` : signaler leur absence, ne jamais en
+supposer le contenu.
 
 Ne pas lire récursivement le dépôt. Exclure par défaut `.next/`, `node_modules/`,
 lockfiles, fichiers binaires, logs et gros fichiers non liés. Ne pas refaire un
