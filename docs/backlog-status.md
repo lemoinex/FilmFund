@@ -23,7 +23,8 @@ réels).
 | I2b    | WEAVER : écrans de génération, comparaison et application des propositions                                                     | validé en recette | —                  |
 | J1     | SCRIPT : traitement et bible                                                                                                   | validé en recette | —                  |
 | J2a    | SCRIPT : le scénario, une séquence par demande, ajoutée à la fin du document                                                   | validé en recette | —                  |
-| J2b    | VOICE : dialogues                                                                                                              | à faire           | cadrage            |
+| J2b-1  | VOICE : dialogues d'une scène — base, profil, agent                                                                            | validé en recette | —                  |
+| J2b-2  | VOICE : écran des dialogues, sous l'éditeur du scénario                                                                        | validé en recette | —                  |
 | J3a    | ARC : analyse dramaturgique                                                                                                    | validé en recette | —                  |
 | J3b-1  | FIELD : propositions de lignes de budget — base, profil, agent                                                                 | validé en recette | —                  |
 | J3b-2  | FIELD : écran des lignes proposées dans l'onglet Budget                                                                        | validé en recette | —                  |
@@ -499,6 +500,50 @@ tests) ; la largeur mobile ; un lecteur de l'équipe, qui lit les jalons propos�
 décider, et un éditeur réel, faute de second compte tant que le mode privé est actif (vérifiés
 par les tests) ; une réponse du fournisseur hors bornes (vérifiée par les tests).
 
+## Recette du lot J2b : J2b-1 et J2b-2
+
+Le 5 octobre 2026, les répliques d'une scène ont été réécrites en production par un
+administrateur, de la sélection dans le scénario à la scène remplacée (mode privé actif), sur
+le projet « une maison hantée ».
+
+Livraison dans l'ordre retenu : migration poussée par l'utilisateur et constatée en base
+avant la fusion — 45 migrations —, PR 102 (`542e477`) à 18h43 UTC, le worker annonçant ses
+**quinze** actions à 18h50, dont `dialogue` ; puis l'écran, PR 103 (`e247847`) à 19h05 UTC,
+sans migration.
+
+| Livrable   | Durée | Passage | Scène réécrite | Coût confirmé | Unités | Atterrissage                |
+| ---------- | ----- | ------- | -------------- | ------------- | ------ | --------------------------- |
+| `dialogue` | 8,6 s | 821     | 800            | 0,021440 $    | 1/1    | passage remplacé, version 9 |
+
+- Devis à 19h17 UTC, 1 unité texte ; tâche envoyée au fournisseur un dixième de seconde
+  après sa création, réussie au premier essai sur `claude-opus-5-5`, sans repli, avec le
+  profil `voice.dialogues@1` ; 1 360 jetons en entrée, 800 en sortie.
+- **La chaîne du passage tient en conditions réelles** : la sélection faite dans le
+  navigateur a été retrouvée par le serveur dans le document enregistré, désignée à la base
+  par sa position, sa longueur et son empreinte, puis relue au devis, avant l'appel et à
+  l'acceptation.
+- **Seul le passage a été remplacé** : la version 9 du document est, au caractère près, la
+  version 8 dont les 821 premiers caractères ont laissé place aux 800 de la scène réécrite —
+  5 747 puis 5 726 caractères. La scène remplacée est conservée dans la proposition.
+- **VOICE s'en est tenu aux répliques** : quatorze lignes avant, quatorze après ; treize sont
+  identiques au même rang, une seule a changé, et les deux lignes en capitales — intitulé de
+  scène et nom de personnage — sont intactes.
+- Proposition appliquée telle quelle huit secondes après son arrivée. Dépense du mois :
+  1,182832 $ sur un plafond de 5 $ ; aucune tâche à rapprocher, aucune erreur chez Vercel.
+- L'écran, que rien n'avait montré dans un navigateur avant la recette, a servi à toute la
+  demande : sélection, devis, comparaison, remplacement.
+
+Relevé en préparant la recette, laissé en l'état : un scénario peut porter deux sortes de fins
+de ligne — celles de l'éditeur, et celles d'un texte ajouté par l'assistant. La localisation
+du passage retrouve une scène dans l'une ou l'autre partie, pas une sélection à cheval sur
+leur jonction ; elle refuse alors, sans jamais remplacer le mauvais texte, et enregistrer le
+document uniformise le tout.
+
+Non couvert par cette recette : un scénario modifié à cet endroit entre la demande et
+l'acceptation, et un document non enregistré, que l'encart doit refuser (vérifiés par les
+tests) ; une scène réécrite retouchée avant d'être appliquée, une proposition écartée ; la
+largeur mobile ; un éditeur réel, faute de second compte tant que le mode privé est actif.
+
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
 Hors lot. Le dépôt et la production ont été relus : garde du middleware, authentification,
@@ -795,6 +840,29 @@ aucune tâche `schedule_plan` n'a encore été demandée en production, et l'éc
 aucun navigateur — ni par les tests, qui le lisent comme du texte, ni par une capture. Les
 deux lots gardent donc leur statut « validé localement ». La recette a eu lieu
 le soir même : voir « Recette du lot J3b-3 ».
+
+Dialogues de VOICE, cadrés le 5 octobre 2026 (lot J2b, découpé en J2b-1 — base et worker —
+et J2b-2 — écran) : réécrire les répliques d'une scène, c'est remplacer un passage du
+scénario sans toucher au reste. Le scénario étant un texte continu, sans scènes en base, la
+scène est **désignée par un passage** — document, position et longueur en caractères — et
+scellée par son empreinte. Une table de scènes aurait été plus solide, mais c'était un lot
+entier avant la première réplique.
+
+Le texte de la scène ne voyage pas dans le devis, plafonné à 2 000 octets : la base le relit
+elle-même, au devis, à la préparation de l'appel et à l'acceptation (`passage_du_scenario`).
+Si le scénario a changé à cet endroit, le devis est refusé, la tâche échoue sans appel, ou
+l'acceptation est refusée : rien n'est remplacé, la proposition reste lisible. Une scène par
+demande, 6 000 caractères au plus ; 12 000 pour la scène réécrite.
+
+VOICE ne réécrit que les répliques : intitulés et didascalies restent tels quels, pour que la
+proposition se compare à la scène ligne à ligne. Il lit le projet, ses personnages, la scène
+et les 3 000 caractères qui la précèdent — ni la suite du scénario, ni les autres documents.
+
+À l'écran, le navigateur n'envoie que le texte sélectionné : le serveur le retrouve dans le
+document enregistré, exige qu'il n'y figure qu'une fois, et calcule position et empreinte.
+L'éditeur gardant en mémoire le texte qu'il a chargé, l'encart refuse d'agir sur un document
+non enregistré et recharge la page après une acceptation — sans quoi un enregistrement
+suivant écraserait la scène tout juste remplacée.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
