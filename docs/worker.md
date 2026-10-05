@@ -298,8 +298,16 @@ from public.project_exports;
 ## Réglages du service Railway
 
 - Dépôt `lemoinex/FilmFund`, branche `main`, **dossier racine `worker`**.
-- Démarrage : `npm start` (`node src/index.ts` ; Node 22 exécute le TypeScript tel quel).
-- Redéploiement seulement quand `worker/**` change.
+- Démarrage : `node src/index.ts`, directement (Node 22 exécute le TypeScript tel quel).
+  Jamais `npm start` : npm devient alors le processus principal, le signal d'arrêt ne
+  parvient pas au worker, et la tâche en cours est coupée au lieu d'être menée à son terme.
+- Délai d'arrêt (_draining_) : 200 secondes entre SIGTERM et SIGKILL, au-dessus des trois
+  minutes que la passerelle laisse à un appel. La valeur par défaut de Railway est zéro.
+- Attente de la CI (_Wait for CI_) : Railway ne déploie qu'une fois la CI GitHub verte sur
+  `main`, soit quelques minutes après la fusion.
+- Redéploiement seulement quand `worker/**` change. Un redéploiement doit laisser aux
+  journaux `arret_demande` puis `worker_arrete` ; `npm error signal SIGTERM` à leur place
+  signale un démarrage par npm.
 - Redémarrage en cas d'échec. Aucun domaine public : le worker n'écoute rien.
 - Région Europe, proche de la base (`eu-west-1`).
 
