@@ -24,6 +24,7 @@ export function OngletsProjet({
     | "budget"
     | "documents"
     | "storyboard"
+    | "materiel"
     | "planning"
     | "financements"
     | "dossier";

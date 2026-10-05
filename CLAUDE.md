@@ -486,6 +486,22 @@ recommandations (« à améliorer ») sont configurables et traçables.
 - Alertes internes et e-mail, non livrées : opportunité, deadline, dossier
   incomplet, matching.
 
+### Découpage technique et matériel
+
+- Cahier des charges : `docs/product/CDC_FRAME_GEAR.md` (lot J3c).
+- Saisie manuelle écrite (lot J3c-1), sans IA : plans d’une scène du storyboard
+  (`scene_shots`, sous chaque scène de l’onglet Storyboard) ; matériel du projet
+  (`project_gear`) et réglages électriques (`project_power_settings`), dans
+  l’onglet « Matériel ». Mêmes droits que le storyboard. Le cadrage que porte la
+  scène reste son cadrage principal.
+- **Le besoin électrique est calculé par la plateforme, jamais par un modèle**,
+  dans `src/lib/materiel-calculs.ts`, et n’est jamais stocké. 230 V et 30 % par
+  défaut sont un choix du lot, pas une norme : l’écran le dit. Ne pas créer un
+  second calcul : étendre celui-ci.
+- Prévus : FRAME propose les plans d’une scène (J3c-2), GEAR une liste de
+  matériel (J3c-3), sur le modèle des propositions structurées ; sections du
+  dossier (J3c-4). GEAR ne propose ni marque, ni loueur, ni prix.
+
 ### Exports et stockage
 
 - Export du dossier en PDF (lots M1 et M2) et en Word (lot M3) : livré. Sections à
