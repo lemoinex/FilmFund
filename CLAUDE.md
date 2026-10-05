@@ -460,7 +460,9 @@ recommandations (« à améliorer ») sont configurables et traçables.
   propose un titre, une phase et une durée, **jamais de date** : l’équipe date le jalon
   en l’acceptant. Les jalons proposés suivent les droits du planning — lus de toute
   l’équipe, décidés par `peut_editer_contenu` —, et le contexte de l’agent ne porte pas
-  le budget. Base et worker écrits ; l’écran de l’onglet Planning reste à faire (J3b-3b).
+  le budget. Écran dans l’onglet Planning (J3b-3b, actions dans `planning/actions-ia.ts`) :
+  les lecteurs y lisent les jalons proposés sans en décider ; l’échéance est proposée
+  d’après la durée dès qu’un début est saisi ; « Tout accepter » ajoute des jalons non datés.
 - Budget audiovisuel, lignes prévues :
   - développement : recherche, écriture, repérages ;
   - préproduction : casting, préparation, autorisations ;

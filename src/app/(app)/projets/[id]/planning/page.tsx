@@ -17,12 +17,20 @@ import {
   STATUTS_ETAPE,
 } from "@/lib/planning";
 import { ETAPES } from "@/lib/projets";
+import {
+  etapeProposition,
+  LIVRABLES_STRUCTURES,
+  type EtapeProposition,
+  type JalonPropose,
+} from "@/lib/propositions";
 import { createClient } from "@/lib/supabase/server";
 import type { MilestoneStatus } from "@/lib/supabase/types";
 
 import { OngletsProjet } from "../onglets";
+import { RafraichissementPropositions } from "../proposition";
 import { changerStatutEtape, supprimerEtape } from "./actions";
 import { FormulaireEtape, type EtapeEditable } from "./formulaire";
+import { JalonsProposes } from "./jalons-proposes";
 
 export const metadata: Metadata = {
   title: "Planning — filmfundAfrica",
@@ -60,6 +68,12 @@ export default async function PlanningPage({
   if (!projet) {
     notFound();
   }
+
+  const peutDecider = peutEditer === true;
+  const assistant = await lireAssistant(supabase, projet.id, peutDecider);
+  // Qui écrit le planning voit toujours l'encart ; un lecteur, seulement
+  // quand des jalons proposés attendent — il les lit, sans en décider.
+  const montrerAssistant = peutDecider || assistant.etape.etape === "proposition";
 
   const liste = [...(etapes ?? [])].sort(comparerEtapes);
   const avancement = calculerAvancement(liste);
@@ -150,6 +164,20 @@ export default async function PlanningPage({
         </div>
       )}
 
+      {montrerAssistant ? (
+        <>
+          <RafraichissementPropositions
+            actif={assistant.etape.etape === "en_attente" || assistant.etape.etape === "en_cours"}
+          />
+          <JalonsProposes
+            projetId={projet.id}
+            etape={assistant.etape}
+            jalons={assistant.jalons}
+            peutDecider={peutDecider}
+          />
+        </>
+      ) : null}
+
       {peutEditer ? (
         <section aria-labelledby="ajout-etape" className="border-app-line mt-12 border-t pt-10">
           <h2 id="ajout-etape" className="font-serif text-2xl leading-tight">
@@ -166,6 +194,71 @@ export default async function PlanningPage({
       ) : null}
     </div>
   );
+}
+
+type Assistant = { etape: EtapeProposition; jalons: JalonPropose[] };
+
+/**
+ * Où en est la dernière demande de jalons sur ce projet, et les jalons de sa
+ * proposition si elle attend encore une décision.
+ *
+ * Trois lectures bornées, sous la RLS de l'appelant. Qui écrit le planning
+ * suit la demande depuis sa tâche ; un lecteur ne lit que la dernière
+ * proposition — il n'a pas à voir une demande en cours, seulement ce qui
+ * est proposé à l'équipe.
+ */
+async function lireAssistant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+  peutDecider: boolean,
+): Promise<Assistant> {
+  let etape: EtapeProposition = { etape: "repos" };
+
+  if (peutDecider) {
+    const { data: tache } = await supabase
+      .from("jobs")
+      .select("id, state")
+      .eq("project_id", projetId)
+      .eq("action", "schedule_plan")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: proposition } = tache
+      ? await supabase
+          .from("ai_suggestions")
+          .select("id, content, state")
+          .eq("job_id", tache.id)
+          .maybeSingle()
+      : { data: null };
+    etape = etapeProposition(tache, proposition);
+  } else {
+    const { data: proposition } = await supabase
+      .from("ai_suggestions")
+      .select("id, content, state")
+      .eq("project_id", projetId)
+      .eq("action", "schedule_plan")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (proposition?.state === "proposed") {
+      etape = { etape: "proposition", propositionId: proposition.id, texte: proposition.content };
+    }
+  }
+
+  if (etape.etape !== "proposition") {
+    return { etape, jalons: [] };
+  }
+
+  const { data: jalons } = await supabase
+    .from("ai_suggestion_milestones")
+    .select("id, position, title, phase, duration_days, state")
+    .eq("suggestion_id", etape.propositionId)
+    .order("position")
+    // Bornée comme la base borne le dépôt.
+    .limit(LIVRABLES_STRUCTURES.schedule_plan.lignesMax);
+
+  return { etape, jalons: jalons ?? [] };
 }
 
 function LigneEtape({
