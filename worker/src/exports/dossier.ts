@@ -7,9 +7,15 @@
  * teste, ce qu'un dossier contient.
  */
 import {
+  ANGLES,
+  CADRAGES,
+  CATEGORIES_MATERIEL,
+  DECORS,
   ETAPES,
   FORMATS,
   GENRES,
+  MOMENTS,
+  MOUVEMENTS,
   POSTES,
   ROLES_PERSONNAGE,
   STATUTS_ETAPE,
@@ -70,6 +76,29 @@ export type ContenuDossier = {
     fin: string | null;
     statut: string;
   }[];
+  /** Les seules scènes qui ont des plans, dans l'ordre du film. */
+  decoupage?: {
+    titre: string;
+    decor: string;
+    lieu: string;
+    moment: string;
+    plans: {
+      cadrage: string;
+      focale: number | null;
+      angle: string;
+      mouvement: string;
+      duree: number | null;
+      description: string;
+    }[];
+  }[];
+  /** La liste des équipements, sans aucun calcul électrique. */
+  materiel?: {
+    categorie: string;
+    designation: string;
+    quantite: number;
+    /** En watts ; nulle quand elle n'est pas renseignée. */
+    puissance: number | null;
+  }[];
 };
 
 export type Colonne = {
@@ -92,7 +121,14 @@ export type Bloc =
 
 /** Ce dont une section est tirée : une rubrique de la demande, ou un document. */
 export type OrigineSection =
-  "synthese" | "fiche_projet" | "document" | "budget" | "financements" | "planning";
+  | "synthese"
+  | "fiche_projet"
+  | "document"
+  | "budget"
+  | "financements"
+  | "planning"
+  | "decoupage"
+  | "materiel";
 
 export type Section = {
   /** De quoi ranger la section dans son fichier, quand le dossier sort en archive. */
@@ -377,6 +413,104 @@ function sectionPlanning(planning: NonNullable<ContenuDossier["planning"]>): Con
   };
 }
 
+/** « Extérieur · Berge · Aube » ; sans lieu renseigné, le décor et le moment. */
+export function enteteScene(scene: { decor: string; lieu: string; moment: string }): string {
+  return [libelle(DECORS, scene.decor), scene.lieu.trim(), libelle(MOMENTS, scene.moment)]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** « 45 s », « 1 min 05 s » : comme l'écran du découpage. */
+function dureePlan(secondes: number | null): string {
+  if (secondes === null) {
+    return ABSENT;
+  }
+  if (secondes < 60) {
+    return `${secondes} s`;
+  }
+  const reste = secondes % 60;
+  const minutes = Math.floor(secondes / 60);
+  return reste ? `${minutes} min ${String(reste).padStart(2, "0")} s` : `${minutes} min`;
+}
+
+/**
+ * Le découpage, scène par scène : son en-tête, puis le tableau de ses plans.
+ * Une scène sans plan n'arrive pas jusqu'ici : la base ne la rend pas.
+ */
+function sectionDecoupage(decoupage: NonNullable<ContenuDossier["decoupage"]>): Contenu | null {
+  const blocs: Bloc[] = [];
+  decoupage.forEach((scene, rang) => {
+    if (!scene.plans?.length) {
+      return;
+    }
+    blocs.push(
+      { type: "intertitre", texte: `Scène ${rang + 1} — ${scene.titre}` },
+      { type: "texte", texte: enteteScene(scene) },
+      {
+        type: "tableau",
+        colonnes: [
+          { titre: "Plan", largeur: 0.07, alignement: "droite" },
+          { titre: "Cadrage", largeur: 0.17 },
+          { titre: "Focale", largeur: 0.1, alignement: "droite" },
+          { titre: "Angle et mouvement", largeur: 0.2 },
+          { titre: "Durée", largeur: 0.1, alignement: "droite" },
+          { titre: "Ce que montre le plan", largeur: 0.36 },
+        ],
+        lignes: scene.plans.map((plan, numero) => ({
+          cellules: [
+            String(numero + 1),
+            libelle(CADRAGES, plan.cadrage),
+            plan.focale === null ? ABSENT : `${plan.focale} mm`,
+            `${libelle(ANGLES, plan.angle)}, ${libelle(MOUVEMENTS, plan.mouvement).toLowerCase()}`,
+            dureePlan(plan.duree),
+            plan.description.trim() || ABSENT,
+          ],
+        })),
+      },
+    );
+  });
+  return blocs.length ? { titre: "Découpage technique", blocs } : null;
+}
+
+/**
+ * Le matériel, rangé par catégorie. Aucune somme : ni charge, ni intensité,
+ * ni groupe conseillé — un chiffrage électrique non certifié n'a pas sa place
+ * dans un dossier, et le calcul est celui de l'application, pas du worker.
+ */
+function sectionMateriel(materiel: NonNullable<ContenuDossier["materiel"]>): Contenu | null {
+  if (materiel.length === 0) {
+    return null;
+  }
+  // Les lignes arrivent triées par catégorie : chacune ouvre un groupe.
+  const lignes: Ligne[] = [];
+  for (const categorie of new Set(materiel.map((ligne) => ligne.categorie))) {
+    lignes.push({ cellules: [libelle(CATEGORIES_MATERIEL, categorie), "", ""], style: "groupe" });
+    for (const ligne of materiel.filter((l) => l.categorie === categorie)) {
+      lignes.push({
+        cellules: [
+          ligne.designation,
+          nombre(ligne.quantite),
+          ligne.puissance === null ? ABSENT : `${nombre(ligne.puissance)} W`,
+        ],
+      });
+    }
+  }
+  return {
+    titre: "Matériel",
+    blocs: [
+      {
+        type: "tableau",
+        colonnes: [
+          { titre: "Catégorie et équipement", largeur: 0.6 },
+          { titre: "Quantité", largeur: 0.15, alignement: "droite" },
+          { titre: "Puissance unitaire", largeur: 0.25, alignement: "droite" },
+        ],
+        lignes,
+      },
+    ],
+  };
+}
+
 /**
  * Plan du dossier. Une section demandée mais vide est omise, sans mention :
  * un dossier envoyé à un fonds n'a pas à dire ce qui lui manque. C'est à
@@ -413,6 +547,12 @@ export function composerDossier(contenu: ContenuDossier, etabliLe: Date): Dossie
   }
   if (contenu.planning) {
     ajouter("planning", sectionPlanning(contenu.planning));
+  }
+  if (contenu.decoupage) {
+    ajouter("decoupage", sectionDecoupage(contenu.decoupage));
+  }
+  if (contenu.materiel) {
+    ajouter("materiel", sectionMateriel(contenu.materiel));
   }
 
   return {

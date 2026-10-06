@@ -103,3 +103,52 @@ export const STATUTS_ETAPE: Readonly<Record<string, string>> = {
   en_cours: "En cours",
   termine: "Terminé",
 };
+
+/** Décor d'une scène, en toutes lettres : l'abréviation reste à l'écran. */
+export const DECORS: Readonly<Record<string, string>> = {
+  int: "Intérieur",
+  ext: "Extérieur",
+  int_ext: "Intérieur / extérieur",
+};
+
+export const MOMENTS: Readonly<Record<string, string>> = {
+  jour: "Jour",
+  nuit: "Nuit",
+  aube: "Aube",
+  crepuscule: "Crépuscule",
+};
+
+export const CADRAGES: Readonly<Record<string, string>> = {
+  plan_ensemble: "Plan d'ensemble",
+  plan_large: "Plan large",
+  plan_moyen: "Plan moyen",
+  plan_americain: "Plan américain",
+  plan_rapproche: "Plan rapproché",
+  gros_plan: "Gros plan",
+  tres_gros_plan: "Très gros plan",
+  insert: "Insert",
+  plan_sequence: "Plan-séquence",
+};
+
+export const ANGLES: Readonly<Record<string, string>> = {
+  normal: "Normal",
+  plongee: "Plongée",
+  contre_plongee: "Contre-plongée",
+};
+
+export const MOUVEMENTS: Readonly<Record<string, string>> = {
+  fixe: "Fixe",
+  panoramique: "Panoramique",
+  travelling: "Travelling",
+  epaule: "À l'épaule",
+  autre: "Autre",
+};
+
+export const CATEGORIES_MATERIEL: Readonly<Record<string, string>> = {
+  image: "Image",
+  lumiere: "Lumière",
+  son: "Son",
+  machinerie: "Machinerie",
+  energie: "Énergie",
+  regie: "Régie",
+};

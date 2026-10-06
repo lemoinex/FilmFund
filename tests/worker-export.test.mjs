@@ -792,6 +792,232 @@ describe("Dossier : archive ZIP", () => {
   });
 });
 
+/** Découpage et matériel d'essai, tels que la base les remettrait. */
+function contenuTechnique() {
+  return {
+    demande: { sections: ["decoupage", "materiel"], documents: [] },
+    fiche: { titre: "Mɔ́ŋ ma Ɛyɔ", format: "long_metrage", etape: "preproduction" },
+    decoupage: [
+      {
+        titre: "Le départ",
+        decor: "ext",
+        lieu: "Berge",
+        moment: "aube",
+        plans: [
+          {
+            cadrage: "plan_large",
+            focale: 24,
+            angle: "normal",
+            mouvement: "travelling",
+            duree: 65,
+            description: "La berge au matin.",
+          },
+          {
+            cadrage: "gros_plan",
+            focale: null,
+            angle: "contre_plongee",
+            mouvement: "fixe",
+            duree: null,
+            description: "",
+          },
+        ],
+      },
+      {
+        titre: "La veille",
+        decor: "int",
+        lieu: "",
+        moment: "nuit",
+        plans: [
+          {
+            cadrage: "insert",
+            focale: 85,
+            angle: "plongee",
+            mouvement: "epaule",
+            duree: 3,
+            description: "La lampe.",
+          },
+        ],
+      },
+    ],
+    materiel: [
+      { categorie: "image", designation: "Caméra", quantite: 1, puissance: null },
+      { categorie: "lumiere", designation: "Projecteur LED", quantite: 2, puissance: 650 },
+      { categorie: "lumiere", designation: "Réflecteur", quantite: 3, puissance: 0 },
+    ],
+  };
+}
+
+describe("Dossier : découpage et matériel", () => {
+  const JOUR = new Date("2026-10-06T12:00:00Z");
+
+  it("place le découpage et le matériel après le planning, en dernier", () => {
+    const contenu = { ...contenuComplet(), ...contenuTechnique() };
+    contenu.demande = {
+      sections: ["synthese", "planning", "decoupage", "materiel"],
+      documents: [],
+    };
+    const titres = composerDossier(contenu, JOUR).sections.map((section) => section.titre);
+    assert.deepEqual(titres.slice(-3), ["Planning", "Découpage technique", "Matériel"]);
+  });
+
+  it("présente le découpage scène par scène : en-tête, puis le tableau de ses plans", () => {
+    const section = composerDossier(contenuTechnique(), JOUR).sections.find(
+      (s) => s.origine === "decoupage",
+    );
+    assert.deepEqual(
+      section.blocs.map((bloc) => (bloc.type === "tableau" ? "tableau" : bloc.texte)),
+      [
+        "Scène 1 — Le départ",
+        "Extérieur · Berge · Aube",
+        "tableau",
+        "Scène 2 — La veille",
+        // Sans lieu renseigné : le décor et le moment, sans trou.
+        "Intérieur · Nuit",
+        "tableau",
+      ],
+    );
+    const [depart, veille] = tableaux(section);
+    assert.deepEqual(depart, [
+      ["1", "Plan large", "24 mm", "Normal, travelling", "1 min 05 s", "La berge au matin."],
+      ["2", "Gros plan", "—", "Contre-plongée, fixe", "—", "—"],
+    ]);
+    assert.deepEqual(veille, [["1", "Insert", "85 mm", "Plongée, à l'épaule", "3 s", "La lampe."]]);
+  });
+
+  it("range le matériel par catégorie, sans aucune somme ni calcul électrique", () => {
+    const section = composerDossier(contenuTechnique(), JOUR).sections.find(
+      (s) => s.origine === "materiel",
+    );
+    assert.deepEqual(cellules(section), [
+      ["Image", "", ""],
+      ["Caméra", "1", "—"],
+      ["Lumière", "", ""],
+      ["Projecteur LED", "2", "650 W"],
+      ["Réflecteur", "3", "0 W"],
+    ]);
+    const tableau = section.blocs.find((bloc) => bloc.type === "tableau");
+    assert.deepEqual(
+      tableau.lignes.map((ligne) => ligne.style ?? null),
+      ["groupe", null, "groupe", null, null],
+    );
+    // Ni total, ni charge, ni intensité, ni groupe conseillé : nulle part.
+    const texte = JSON.stringify(section);
+    for (const interdit of ["Total", "1 300", "Charge", "Intensité", "Groupe", ' A"', "kW"]) {
+      assert.equal(texte.includes(interdit), false, interdit);
+    }
+  });
+
+  it("omet sans mention un découpage ou un matériel demandé mais vide", () => {
+    const contenu = { ...contenuTechnique(), decoupage: [], materiel: [] };
+    assert.deepEqual(composerDossier(contenu, JOUR).sections, []);
+    // Une scène arrivée sans plan ne laisse pas un en-tête orphelin.
+    const sansPlan = contenuTechnique();
+    sansPlan.decoupage = [{ ...sansPlan.decoupage[0], plans: [] }];
+    sansPlan.materiel = [];
+    assert.deepEqual(composerDossier(sansPlan, JOUR).sections, []);
+  });
+
+  it("garde lisible un code que le worker ne connaît pas", () => {
+    const contenu = contenuTechnique();
+    contenu.decoupage[0].plans[0].cadrage = "plan_a_venir";
+    contenu.materiel[0].categorie = "categorie_a_venir";
+    const texte = JSON.stringify(composerDossier(contenu, JOUR).sections);
+    assert.ok(texte.includes("plan a venir"));
+    assert.ok(texte.includes("categorie a venir"));
+  });
+
+  it("sort en PDF et en Word : les deux sections y figurent", async () => {
+    const dossier = composerDossier(contenuTechnique(), JOUR);
+    const pdf = await rendrePdf(dossier);
+    assert.equal(pdf.fichier.subarray(0, 5).toString(), "%PDF-");
+    assert.ok(pdf.pages >= 3, "une page de garde, puis une par section au moins");
+
+    const document = lireArchive(await rendreDocx(dossier)).get("word/document.xml");
+    for (const attendu of [
+      "Découpage technique",
+      "Scène 1 — Le départ",
+      "Extérieur · Berge · Aube",
+      "Plan large",
+      "1 min 05 s",
+      "Matériel",
+      "Projecteur LED",
+      "650 W",
+    ]) {
+      assert.ok(document.includes(attendu), attendu);
+    }
+  });
+
+  it("en archive : un classeur par tableau, où focales, durées, quantités et puissances restent des nombres", async () => {
+    const contenu = contenuTechnique();
+    const entrees = lireEntrees(await rendreArchive(composerDossier(contenu, JOUR), contenu));
+    assert.deepEqual(
+      [...entrees.keys()].filter((nom) => !nom.endsWith("/")),
+      ["decoupage.xlsx", "materiel.xlsx"],
+    );
+
+    const decoupage = lireFeuille(entrees.get("decoupage.xlsx")).cellules;
+    const colonnes = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+    assert.deepEqual(
+      colonnes.map((colonne) => decoupage[`${colonne}1`]),
+      [
+        "Scène",
+        "Intitulé",
+        "Décor",
+        "Lieu",
+        "Moment",
+        "Plan",
+        "Cadrage",
+        "Focale (mm)",
+        "Angle",
+        "Mouvement",
+        "Durée (s)",
+        "Ce que montre le plan",
+      ],
+    );
+    assert.deepEqual(
+      colonnes.map((colonne) => decoupage[`${colonne}2`]),
+      [
+        1,
+        "Le départ",
+        "Extérieur",
+        "Berge",
+        "Aube",
+        1,
+        "Plan large",
+        24,
+        "Normal",
+        "Travelling",
+        65,
+        "La berge au matin.",
+      ],
+    );
+    // Focale et durée absentes : des cellules vides, pas des zéros.
+    assert.deepEqual([decoupage.F3, decoupage.H3, decoupage.K3], [2, undefined, undefined]);
+    // La seconde scène redit son numéro sur sa ligne.
+    assert.deepEqual(
+      [decoupage.A4, decoupage.B4, decoupage.F4, decoupage.H4],
+      [2, "La veille", 1, 85],
+    );
+
+    const materiel = lireFeuille(entrees.get("materiel.xlsx")).cellules;
+    assert.deepEqual(
+      ["A", "B", "C", "D"].map((colonne) => materiel[`${colonne}1`]),
+      ["Catégorie", "Équipement", "Quantité", "Puissance unitaire (W)"],
+    );
+    assert.deepEqual(
+      [materiel.A2, materiel.B2, materiel.C2, materiel.D2],
+      ["Image", "Caméra", 1, undefined],
+    );
+    assert.deepEqual(
+      [materiel.A3, materiel.B3, materiel.C3, materiel.D3],
+      ["Lumière", "Projecteur LED", 2, 650],
+    );
+    assert.deepEqual([materiel.C4, materiel.D4], [3, 0]);
+    // Aucune ligne de total après la dernière.
+    assert.equal(materiel.A5, undefined);
+  });
+});
+
 describe("Export PDF : worker", () => {
   let base;
   const journal = [];
@@ -1110,6 +1336,161 @@ describe("Export PDF : worker", () => {
     for (const absent of ["Personnage d", "Un pitch."]) {
       assert.equal(document.includes(absent), false, absent);
     }
+  });
+
+  it("avec le découpage et le matériel : les seules scènes qui ont des plans, dans l'ordre, jusque dans le fichier", async () => {
+    const { porteur, projet, tache } = await preparer(
+      "export-technique",
+      { sections: ["decoupage", "materiel"] },
+      { budget: false, action: "docx_export" },
+    );
+    const autre = await creerProjet(porteur, "Un autre film");
+    const scene = async (projetId, position, title) => {
+      const { data, error } = await porteur.client
+        .from("storyboard_scenes")
+        .insert({
+          project_id: projetId,
+          position,
+          title,
+          setting: "ext",
+          location: "Berge",
+          time_of_day: "aube",
+          created_by: porteur.id,
+        })
+        .select("id")
+        .single();
+      assert.ifError(error);
+      return data.id;
+    };
+    // Créées dans le désordre : c'est le rang qui ordonne, pas la date.
+    const seconde = await scene(projet.id, 2, "La seconde");
+    const premiere = await scene(projet.id, 1, "La première");
+    await scene(projet.id, 3, "Scène sans plan");
+    const ailleurs = await scene(autre.id, 1, "Scène d'ailleurs");
+
+    const plan = (projetId, sceneId, position, description, champs = {}) => ({
+      project_id: projetId,
+      scene_id: sceneId,
+      position,
+      shot: "plan_large",
+      focal_mm: null,
+      duration_seconds: null,
+      description,
+      created_by: porteur.id,
+      ...champs,
+    });
+    const { error: plans } = await porteur.client
+      .from("scene_shots")
+      .insert([
+        plan(projet.id, seconde, 1, "Plan de la seconde"),
+        plan(projet.id, premiere, 2, "Second plan", { focal_mm: 85, duration_seconds: 4 }),
+        plan(projet.id, premiere, 1, "Premier plan", { focal_mm: 24 }),
+        plan(autre.id, ailleurs, 1, "Plan d'ailleurs"),
+      ]);
+    assert.ifError(plans);
+
+    const equipement = (projetId, category, label, quantity, unit_power_watts) => ({
+      project_id: projetId,
+      category,
+      label,
+      quantity,
+      unit_power_watts,
+      created_by: porteur.id,
+    });
+    const { error: materiel } = await porteur.client
+      .from("project_gear")
+      .insert([
+        equipement(projet.id, "son", "Perche", 1, 0),
+        equipement(projet.id, "image", "Moniteur", 2, 45),
+        equipement(autre.id, "image", "Matériel d'ailleurs", 1, 9000),
+      ]);
+    assert.ifError(materiel);
+
+    let remis;
+    const export_ = executeursExport(base).docx_export;
+    const executeurs = {
+      docx_export: async (travail, signal) => {
+        remis = await lireContexteExport(base, travail.attemptId);
+        return export_(travail, signal);
+      },
+    };
+    assert.equal(await traiterUnTravail(options(executeurs)), true);
+
+    // Les scènes qui ont des plans, dans l'ordre du film ; leurs plans dans le leur.
+    assert.deepEqual(
+      remis.contenu.decoupage.map((s) => [s.titre, s.plans.map((p) => p.description)]),
+      [
+        ["La première", ["Premier plan", "Second plan"]],
+        ["La seconde", ["Plan de la seconde"]],
+      ],
+    );
+    assert.deepEqual(remis.contenu.decoupage[0].plans[1], {
+      cadrage: "plan_large",
+      focale: 85,
+      angle: "normal",
+      mouvement: "fixe",
+      duree: 4,
+      description: "Second plan",
+    });
+    // Le matériel dans l'ordre des catégories, sans rien d'un calcul.
+    assert.deepEqual(remis.contenu.materiel, [
+      { categorie: "image", designation: "Moniteur", quantite: 2, puissance: 45 },
+      { categorie: "son", designation: "Perche", quantite: 1, puissance: 0 },
+    ]);
+    assert.equal("synthese" in remis.contenu, false, "la synthèse n'a pas été demandée");
+    assert.equal("budget" in remis.contenu, false, "ni le budget");
+
+    const { travail, reglement, exports } = await etat(porteur, tache);
+    assert.deepEqual([travail.state, travail.attempts], ["succeeded", 1]);
+    assert.deepEqual(reglement, { consumed: 1, released: 0 });
+    assert.deepEqual(exports[0].params, { sections: ["decoupage", "materiel"], documents: [] });
+
+    const document = lireArchive(Buffer.from(exports[0].file.slice(2), "hex")).get(
+      "word/document.xml",
+    );
+    for (const attendu of [
+      "Découpage technique",
+      "Scène 1 — La première",
+      "Scène 2 — La seconde",
+      "Premier plan",
+      "85 mm",
+      "Matériel",
+      "Moniteur",
+      "45 W",
+    ]) {
+      assert.ok(document.includes(attendu), attendu);
+    }
+    assert.ok(
+      document.indexOf("Premier plan") < document.indexOf("Second plan"),
+      "les plans suivent leur rang",
+    );
+    for (const absent of ["Scène sans plan", "ailleurs", "9000", "Un pitch."]) {
+      assert.equal(document.includes(absent), false, absent);
+    }
+  });
+
+  it("une demande sans les nouvelles sections garde son empreinte : un dossier déjà fabriqué reste retrouvé", async () => {
+    const porteur = await creerCompte("export-empreinte");
+    const projet = await creerProjet(porteur, "Empreinte");
+    const empreinte = async (params) => {
+      const { data, error } = await porteur.client.rpc("parametres_export", { p_params: params });
+      assert.ifError(error);
+      return JSON.stringify(data);
+    };
+    // La forme normalisée d'une ancienne demande n'a pas changé d'un caractère.
+    assert.equal(
+      await empreinte({ sections: ["planning", "budget"], documents: [] }),
+      '{"sections":["budget","planning"],"documents":[]}',
+    );
+    assert.equal(
+      await empreinte({ sections: ["materiel", "decoupage", "budget"] }),
+      '{"sections":["budget","decoupage","materiel"],"documents":[]}',
+    );
+    const { error } = await porteur.client.rpc("parametres_export", {
+      p_params: { sections: ["electricite"] },
+    });
+    assert.equal(error?.code, "22023");
+    assert.ok(projet.id);
   });
 
   it("rien à exporter : échec connu, deux essais, l'unité est rendue", async () => {

@@ -230,6 +230,11 @@ describe("Libellés du worker", () => {
       STATUTS_ETAPE: tableDe("src/lib/planning.ts", "STATUTS_ETAPE"),
       GENRES: tableDe("src/lib/fiche.ts", "GENRES"),
       ROLES_PERSONNAGE: tableDe("src/lib/fiche.ts", "ROLES_PERSONNAGE"),
+      CADRAGES: tableDe("src/lib/storyboard.ts", "CADRAGES"),
+      MOMENTS: tableDe("src/lib/storyboard.ts", "MOMENTS"),
+      ANGLES: tableDe("src/lib/decoupage.ts", "ANGLES"),
+      MOUVEMENTS: tableDe("src/lib/decoupage.ts", "MOUVEMENTS"),
+      CATEGORIES_MATERIEL: tableDe("src/lib/materiel.ts", "CATEGORIES_MATERIEL"),
     };
     // Un personnage n'a que deux rôles : son seuil de lecture est le sien.
     const minimum = { ROLES_PERSONNAGE: 2 };
@@ -243,6 +248,23 @@ describe("Libellés du worker", () => {
       );
       assert.deepEqual({ ...worker[nom] }, attendu, nom);
     }
+  });
+
+  it("le dossier écrit le décor d'une scène en toutes lettres, comme l'écran le nomme", async () => {
+    const { DECORS } = await import("../worker/src/exports/libelles.ts");
+    // À l'écran, chaque décor porte une abréviation et un libellé : le
+    // dossier reprend le libellé.
+    const source = lire("src/lib/storyboard.ts");
+    const debut = source.indexOf("export const DECORS");
+    const corps = source.slice(debut, source.indexOf("\n}", debut));
+    const enApplication = Object.fromEntries(
+      [...corps.matchAll(/^ {2}(\w+): \{ abrege: "[^"]*", libelle: "([^"]*)" \},?$/gm)].map((m) => [
+        m[1],
+        m[2],
+      ]),
+    );
+    assert.equal(Object.keys(enApplication).length, 3, "lecture de l'application");
+    assert.deepEqual({ ...DECORS }, enApplication);
   });
 });
 
@@ -1782,5 +1804,82 @@ describe("Matériel proposé par GEAR", () => {
     assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursGear\(base, fournisseur\)/);
     assert.match(lire("src/lib/plans.ts"), /cle: "gear_list"/);
     assert.match(lire("src/lib/offre.ts"), /bareme\.gear_list/);
+  });
+});
+
+/*
+ * Découpage et matériel dans les exports (lot J3c-4). Deux sections de plus,
+ * sans rien retirer aux autres ; et, dans un dossier, aucun calcul électrique.
+ */
+describe("Découpage et matériel dans les exports", () => {
+  const MIGRATION = "supabase/migrations/20261006140000_exports_decoupage_materiel.sql";
+  const AVANT = "supabase/migrations/20261003031944_exports_fiche.sql";
+  const corps = (fichier, fonction) => {
+    const migration = lire(fichier);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable dans ${fichier}`);
+    return migration.slice(debut, migration.indexOf("$$;", debut));
+  };
+
+  it("la reprise des deux fonctions ne retire rien : seuls deux blocs s'ajoutent", () => {
+    // parametres_export : la même, à la liste des sections près.
+    const sansListe = (texte) => texte.replace(/array\[[^\]]+\]/, "array[…]");
+    assert.equal(
+      sansListe(corps(MIGRATION, "parametres_export")),
+      sansListe(corps(AVANT, "parametres_export")),
+    );
+
+    // contenu_dossier : tout l'ancien corps, puis les deux blocs, puis le retour.
+    const avant = corps(AVANT, "contenu_dossier");
+    const apres = corps(MIGRATION, "contenu_dossier");
+    const tronc = avant.slice(0, avant.lastIndexOf("  return v_contenu;"));
+    assert.ok(tronc.length > 3000, "lecture de l'ancienne définition");
+    assert.ok(apres.startsWith(tronc), "l'ancien corps est repris tel quel");
+    const ajout = apres.slice(tronc.length);
+    assert.match(ajout, /if 'decoupage' = any \(v_sections\) then/);
+    assert.match(ajout, /if 'materiel' = any \(v_sections\) then/);
+    assert.ok(ajout.trimEnd().endsWith("return v_contenu;\nend;"));
+  });
+
+  it("la fonction reste sous la RLS de l'appelant, et aucun droit n'est touché", () => {
+    const migration = lire(MIGRATION);
+    assert.doesNotMatch(migration, /^security definer/m);
+    assert.doesNotMatch(migration, /^(grant|revoke|create policy|alter table|create table)/m);
+  });
+
+  it("le dossier ne porte aucun calcul électrique : ni la base, ni le worker n'en font", () => {
+    const contenu = corps(MIGRATION, "contenu_dossier");
+    const materiel = contenu.slice(contenu.indexOf("if 'materiel' = any"));
+    // La liste, et rien d'autre : pas de somme, pas de réglages, pas de simultanéité.
+    assert.doesNotMatch(materiel, /sum\(|project_power_settings|voltage|margin|simultaneous/);
+    assert.match(materiel, /'puissance', g\.unit_power_watts/);
+
+    for (const fichier of ["worker/src/exports/dossier.ts", "worker/src/exports/archive.ts"]) {
+      const source = lire(fichier);
+      const debut = source.search(/function (section|feuille)Materiel/);
+      assert.ok(debut >= 0, fichier);
+      const fonction = source.slice(debut, source.indexOf("\n}\n", debut));
+      // Aucune addition ni multiplication sur une puissance ou une quantité.
+      assert.doesNotMatch(fonction, /\.reduce\(/, fichier);
+      assert.doesNotMatch(fonction, /puissance[^\n]*[*+] |quantite[^\n]*\* /, fichier);
+      assert.doesNotMatch(fonction, /Total|intensit|tension|marge/i, fichier);
+    }
+  });
+
+  it("l'archive range chaque nouvelle section dans son classeur", () => {
+    const archive = lire("worker/src/exports/archive.ts");
+    assert.match(archive, /chemin: "decoupage\.xlsx"/);
+    assert.match(archive, /chemin: "materiel\.xlsx"/);
+    assert.match(archive, /if \(decoupage && retenues\("decoupage"\)\.length\) \{/);
+    assert.match(archive, /if \(materiel && retenues\("materiel"\)\.length\) \{/);
+  });
+
+  it("la page du dossier dit ce que chaque case apporterait, et ce qui n'y entre pas", () => {
+    const page = lire("src/app/(app)/projets/[id]/dossier/page.tsx");
+    assert.match(page, /sans le besoin électrique/);
+    assert.match(page, /sans les images/);
+    // Des comptes seulement : la page ne lit ni les plans ni le matériel.
+    assert.match(page, /from\("scene_shots"\)\.select\("id", \{ count: "exact", head: true \}\)/);
+    assert.match(page, /from\("project_gear"\)\.select\("id", \{ count: "exact", head: true \}\)/);
   });
 });

@@ -5,9 +5,9 @@
  * Même plan que le PDF et le Word (dossier.ts), découpé autrement : chaque
  * pièce sort dans le format où elle se retravaille. La présentation — synthèse
  * et fiche du projet — et chaque document sont rendus par le même dessin que
- * le Word (docx.ts) ; le budget, le plan de financement et le planning
- * repartent des données de la base, pour que leurs nombres et leurs dates
- * restent des nombres et des dates.
+ * le Word (docx.ts) ; le budget, le plan de financement, le planning, le
+ * découpage et le matériel repartent des données de la base, pour que leurs
+ * nombres et leurs dates restent des nombres et des dates.
  *
  * Une pièce demandée mais vide est omise, comme dans un dossier : c'est le
  * plan qui en décide, et l'archive ne contient que ce qu'il a retenu.
@@ -17,7 +17,13 @@ import JSZip from "jszip";
 import { rendreDocx } from "./docx.ts";
 import { libelle, type ContenuDossier, type Dossier, type Section } from "./dossier.ts";
 import {
+  ANGLES,
+  CADRAGES,
+  CATEGORIES_MATERIEL,
+  DECORS,
   ETAPES,
+  MOMENTS,
+  MOUVEMENTS,
   POSTES,
   STATUTS_ETAPE,
   STATUTS_FINANCEMENT,
@@ -144,6 +150,62 @@ function feuillePlanning(planning: NonNullable<ContenuDossier["planning"]>): Feu
   };
 }
 
+/** Une ligne par plan : la scène est redite sur chacune, pour trier et filtrer. */
+function feuilleDecoupage(decoupage: NonNullable<ContenuDossier["decoupage"]>): FeuilleXlsx {
+  return {
+    nom: "Découpage",
+    colonnes: [
+      { titre: "Scène", largeur: 8 },
+      { titre: "Intitulé", largeur: 30 },
+      { titre: "Décor", largeur: 20 },
+      { titre: "Lieu", largeur: 24 },
+      { titre: "Moment", largeur: 12 },
+      { titre: "Plan", largeur: 8 },
+      { titre: "Cadrage", largeur: 18 },
+      { titre: "Focale (mm)", largeur: 12 },
+      { titre: "Angle", largeur: 16 },
+      { titre: "Mouvement", largeur: 16 },
+      { titre: "Durée (s)", largeur: 10 },
+      { titre: "Ce que montre le plan", largeur: 60 },
+    ],
+    lignes: decoupage.flatMap((scene, rang) =>
+      (scene.plans ?? []).map((plan, numero) => [
+        nombre(rang + 1),
+        texte(scene.titre),
+        texte(libelle(DECORS, scene.decor)),
+        texte(scene.lieu),
+        texte(libelle(MOMENTS, scene.moment)),
+        nombre(numero + 1),
+        texte(libelle(CADRAGES, plan.cadrage)),
+        plan.focale === null ? null : nombre(Number(plan.focale)),
+        texte(libelle(ANGLES, plan.angle)),
+        texte(libelle(MOUVEMENTS, plan.mouvement)),
+        plan.duree === null ? null : nombre(Number(plan.duree)),
+        texte(plan.description),
+      ]),
+    ),
+  };
+}
+
+/** La liste, sans somme : aucun calcul électrique n'entre dans un dossier. */
+function feuilleMateriel(materiel: NonNullable<ContenuDossier["materiel"]>): FeuilleXlsx {
+  return {
+    nom: "Matériel",
+    colonnes: [
+      { titre: "Catégorie", largeur: 16 },
+      { titre: "Équipement", largeur: 60 },
+      { titre: "Quantité", largeur: 10 },
+      { titre: "Puissance unitaire (W)", largeur: 22 },
+    ],
+    lignes: materiel.map((ligne) => [
+      texte(libelle(CATEGORIES_MATERIEL, ligne.categorie)),
+      texte(ligne.designation),
+      nombre(Number(ligne.quantite)),
+      ligne.puissance === null ? null : nombre(Number(ligne.puissance)),
+    ]),
+  };
+}
+
 /** Fichier d'une archive : son chemin, et de quoi le fabriquer. */
 type Piece = { chemin: string; fabriquer: () => Promise<Buffer> };
 
@@ -173,7 +235,7 @@ function pieces(dossier: Dossier, contenu: ContenuDossier): Piece[] {
     liste.push({ chemin: `documents/${nom}.docx`, fabriquer: word([section]) });
   });
 
-  const { budget, financements, planning } = contenu;
+  const { budget, financements, planning, decoupage, materiel } = contenu;
   if (budget && retenues("budget").length) {
     liste.push({ chemin: "budget.xlsx", fabriquer: () => rendreXlsx(feuilleBudget(budget)) });
   }
@@ -185,6 +247,15 @@ function pieces(dossier: Dossier, contenu: ContenuDossier): Piece[] {
   }
   if (planning && retenues("planning").length) {
     liste.push({ chemin: "planning.xlsx", fabriquer: () => rendreXlsx(feuillePlanning(planning)) });
+  }
+  if (decoupage && retenues("decoupage").length) {
+    liste.push({
+      chemin: "decoupage.xlsx",
+      fabriquer: () => rendreXlsx(feuilleDecoupage(decoupage)),
+    });
+  }
+  if (materiel && retenues("materiel").length) {
+    liste.push({ chemin: "materiel.xlsx", fabriquer: () => rendreXlsx(feuilleMateriel(materiel)) });
   }
 
   return liste;

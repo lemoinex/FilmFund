@@ -512,7 +512,6 @@ recommandations (« à améliorer ») sont configurables et traçables.
   saisi ; ni scénario, ni budget. Il ne propose ni marque, ni loueur, ni prix,
   ni groupe électrogène, et **ne rend aucun calcul** : une puissance proposée
   est une estimation, facultative, que l’écran présente comme telle.
-- Prévu : sections « Découpage » et « Matériel » du dossier (J3c-4).
 
 ### Exports et stockage
 
@@ -523,6 +522,10 @@ recommandations (« à améliorer ») sont configurables et traçables.
   (`project_exports`, 5 Mo, 30 jours), lisible du porteur, des éditeurs et des
   administrateurs ; un seul quota d’exports pour tous les formats. Ne pas créer un
   second chemin d’export : étendre celui-ci.
+- Découpage et matériel dans le dossier (lot J3c-4, sections `decoupage` et
+  `materiel`) : les plans de chaque scène, et le matériel par catégorie, dans les
+  trois formats ; deux classeurs de plus dans le ZIP. **Aucun calcul électrique
+  n’entre dans un dossier** : ni charge, ni intensité, ni groupe conseillé.
 - ZIP du projet (lot M5, action `zip_export`) : livré. Un fichier Word par texte
   (présentation, puis un par document finalisé), un classeur Excel par tableau
   (budget, plan de financement, planning), où nombres et dates restent des nombres
