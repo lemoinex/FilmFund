@@ -479,7 +479,15 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 
 ### Financement et opportunités
 
-- Suivi des financements d’un projet : livré. Base d’opportunités : non livrée.
+- Suivi des financements d’un projet : livré.
+- Catalogue des opportunités (lot L4, sans IA) : livré côté administration
+  (`funding_opportunities`, `/administration/opportunites`, `src/lib/opportunites.ts`).
+  Une opportunité ne se dit `verifie` qu’avec sa source, sa date de collecte et
+  son extrait ; les comptes ne lisent que le vérifié et l’expiré, jamais une
+  démonstration ; chaque écriture est journalisée. Une date limite passée ne
+  réécrit rien : l’écran présente l’opportunité comme expirée. Ne pas créer un
+  second catalogue. Consultation et compatibilité : lot L5, non livré — un score
+  calculé par des règles lisibles, sans IA. Agent de veille : lot L6, non livré.
 - Données : nom, organisme, description, site, pays, pays éligibles, types de
   projet, genres, budgets min/max, devise, ouverture, date limite, candidature,
   exigences, statut, source, dates.

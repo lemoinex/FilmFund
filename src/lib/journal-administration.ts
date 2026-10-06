@@ -188,6 +188,33 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       return `a changé le plafond mensuel des dépenses d'IA : ${montant(champ(details, "ancien"))} → ${montant(champ(details, "nouveau"))}`;
     }
 
+    case "opportunite": {
+      const operations: Record<string, string> = {
+        ajout: "a ajouté au catalogue",
+        modification: "a modifié",
+        retrait: "a retiré du catalogue",
+      };
+      const statuts: Record<string, string> = {
+        non_verifie: "non vérifiée",
+        verifie: "vérifiée",
+        expire: "expirée",
+        introuvable: "introuvable",
+        demo: "démonstration",
+      };
+      const verbe = operations[texte(details, "operation") ?? ""] ?? "a changé";
+      const nom = texte(details, "nom") ?? "sans nom";
+      const organisme = texte(details, "organisme");
+      const statut = statuts[texte(details, "statut") ?? ""];
+      const ancien = statuts[texte(details, "ancien_statut") ?? ""];
+      const etat =
+        statut && ancien && ancien !== statut
+          ? ` : ${ancien} → ${statut}`
+          : statut
+            ? ` (${statut})`
+            : "";
+      return `${verbe} l'opportunité « ${nom} »${organisme ? ` de ${organisme}` : ""}${etat}`;
+    }
+
     case "cle_fournisseur": {
       const operations: Record<string, string> = {
         ajout: "a enregistré",

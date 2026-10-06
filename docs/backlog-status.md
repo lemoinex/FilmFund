@@ -40,7 +40,9 @@ réels).
 | L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | validé en recette | —             |
 | L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
 | L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
-| L      | MATCH (financements, sources et provenance)                                                                                    | bloqué            | L3            |
+| L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | validé localement | —             |
+| L5     | MATCH : consultation du catalogue et compatibilité calculée (sans IA)                                                          | à faire           | L4            |
+| L6     | MATCH : agent de veille, qui propose des opportunités à vérifier                                                               | à faire           | L5            |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
 | M3     | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —             |
@@ -1333,6 +1335,38 @@ Réserves :
 
 Dépense d'IA du mois au 6 octobre au soir : 4,04 $ sur 5 $, dont les 2,43 $ de provisions du
 6 octobre restées au registre.
+
+MATCH, cadré le 6 octobre 2026 avec l'utilisateur, en trois lots : **le catalogue d'abord**
+(L4, sans IA), **la consultation et la compatibilité ensuite** (L5, sans IA : un score calculé
+par des règles lisibles, comme le score de maturité), **l'agent en dernier** (L6 : une veille
+qui propose des opportunités à l'administration, en « non vérifié »). Un score calculé sur des
+opportunités non vérifiées enverrait une équipe vers un fonds fermé ou un montant inventé.
+
+L4, écrit le même jour. La table `funding_opportunities` porte ce qu'une opportunité annonce —
+nom, organisme, catégorie, pays éligibles, types de projet, genres, montants, devise, dates,
+exigences — et **d'où on le tient** : adresse de la source, date de collecte, extrait, statut.
+Le catalogue n'appartient à aucun projet ni à aucun studio.
+
+Ce que la base garantit, quel que soit le chemin :
+
+- **« Vérifiée » engage** : une opportunité ne porte ce statut qu'avec sa source, la date de
+  sa collecte et l'extrait qui la fonde. Une collecte ne peut pas être datée de l'avenir.
+- **Une démonstration ne passe pas pour réelle** : les comptes ne lisent que le vérifié et
+  l'expiré ; ni ce qui attend une vérification, ni ce qui n'a pas été retrouvé, ni une
+  démonstration.
+- **Seule l'administration écrit**, et ni l'auteur ni les dates d'écriture ne se fournissent.
+- **Tout est journalisé** dans la transaction de l'écriture — ajout, changement avec l'ancien
+  statut, retrait —, sans autre donnée que le nom, l'organisme et les statuts.
+
+L'écran « Opportunités » de l'administration liste le catalogue, dit combien de lignes les
+comptes voient, et permet d'ajouter, de modifier et de retirer. Le formulaire explique ce que
+chaque statut engage. Ce que la source ne dit pas reste vide et s'affiche « Information non
+fournie. » ; un catalogue vide n'affiche aucune opportunité fictive. **Une date limite passée
+ne réécrit rien en base** : c'est l'écran qui présente alors l'opportunité comme expirée, et
+le dit.
+
+Ce que ce lot ne fait pas : aucun écran pour les équipes, aucun score, aucune recherche —
+c'est L5. Le catalogue naît vide : sa valeur dépendra de ce que l'administration y saisira.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

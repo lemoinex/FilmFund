@@ -711,6 +711,87 @@ export type Database = {
           },
         ];
       };
+      funding_opportunities: {
+        Row: {
+          application_url: string | null;
+          budget_max: number | null;
+          budget_min: number | null;
+          category: string;
+          collected_on: string | null;
+          countries: string[];
+          created_at: string;
+          created_by: string | null;
+          currency: string | null;
+          deadline: string | null;
+          description: string;
+          formats: Database["public"]["Enums"]["project_format"][];
+          genres: string[];
+          id: string;
+          name: string;
+          opens_on: string | null;
+          organization: string;
+          requirements: string;
+          source_excerpt: string;
+          source_url: string | null;
+          status: string;
+          updated_at: string;
+          updated_by: string | null;
+          website: string | null;
+        };
+        Insert: {
+          application_url?: string | null;
+          budget_max?: number | null;
+          budget_min?: number | null;
+          category: string;
+          collected_on?: string | null;
+          countries?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string | null;
+          deadline?: string | null;
+          description?: string;
+          formats?: Database["public"]["Enums"]["project_format"][];
+          genres?: string[];
+          id?: string;
+          name: string;
+          opens_on?: string | null;
+          organization: string;
+          requirements?: string;
+          source_excerpt?: string;
+          source_url?: string | null;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          website?: string | null;
+        };
+        Update: {
+          application_url?: string | null;
+          budget_max?: number | null;
+          budget_min?: number | null;
+          category?: string;
+          collected_on?: string | null;
+          countries?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string | null;
+          deadline?: string | null;
+          description?: string;
+          formats?: Database["public"]["Enums"]["project_format"][];
+          genres?: string[];
+          id?: string;
+          name?: string;
+          opens_on?: string | null;
+          organization?: string;
+          requirements?: string;
+          source_excerpt?: string;
+          source_url?: string | null;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          website?: string | null;
+        };
+        Relationships: [];
+      };
       job_attempts: {
         Row: {
           created_at: string;
