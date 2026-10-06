@@ -8,16 +8,24 @@ import { StoryboardIcon } from "@/components/icons";
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { EnvoiImage } from "@/components/ui/envoi-image";
 import { PLANS_PAR_SCENE_MAX } from "@/lib/decoupage";
+import {
+  etapeProposition,
+  LIVRABLE_DECOUPAGE,
+  type EtapeProposition,
+  type PlanPropose,
+} from "@/lib/propositions";
 import { CADRAGES, enteteScene, numeroScene } from "@/lib/storyboard";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
 
 import { definirImageScene, retirerImageScene } from "../images/actions";
 import { OngletsProjet } from "../onglets";
+import { RafraichissementPropositions } from "../proposition";
 import { deplacerScene, supprimerScene } from "./actions";
 import { FormulaireScene, type SceneEditable } from "./formulaire";
 import type { PlanEditable } from "./formulaire-plan";
 import { PlansScene } from "./plans";
+import { DecoupagePropose } from "./plans-proposes";
 
 export const metadata: Metadata = {
   title: "Storyboard — filmfundAfrica",
@@ -66,6 +74,11 @@ export default async function StoryboardPage({
   }
 
   const liste = scenes ?? [];
+  const peutDecider = peutEditer === true;
+  const assistant = await lireAssistant(supabase, projet.id, peutDecider);
+  const enPreparation = [...assistant.parScene.values()].some(
+    ({ etape }) => etape.etape === "en_attente" || etape.etape === "en_cours",
+  );
 
   // Les plans de chaque scène, dans leur ordre ; bornés comme l'ajout l'est.
   const plansParScene = new Map<string, PlanEditable[]>();
@@ -100,6 +113,7 @@ export default async function StoryboardPage({
       </p>
 
       <OngletsProjet projetId={projet.id} actif="storyboard" budget={budget === true} />
+      <RafraichissementPropositions actif={enPreparation} />
 
       {liste.length ? (
         <ol className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -126,6 +140,8 @@ export default async function StoryboardPage({
                   plans={plansParScene.get(scene.id) ?? []}
                   planEnModification={planEnModification}
                   decoupageOuvert={decoupageOuvert === scene.id}
+                  assistant={assistant.parScene.get(scene.id) ?? REPOS}
+                  scenarioPresent={assistant.scenarioPresent}
                 />
               )}
             </li>
@@ -163,6 +179,132 @@ export default async function StoryboardPage({
   );
 }
 
+type AssistantScene = { etape: EtapeProposition; plans: PlanPropose[] };
+
+const REPOS: AssistantScene = { etape: { etape: "repos" }, plans: [] };
+
+/** Tâches de découpage relues pour retrouver la dernière de chaque scène. */
+const TACHES_LUES = 200;
+
+/**
+ * Où en est, scène par scène, la dernière demande de découpage, et les plans
+ * de sa proposition si elle attend encore une décision.
+ *
+ * Lectures bornées, sous la RLS de l'appelant. Qui écrit le storyboard suit
+ * chaque demande depuis sa tâche ; un lecteur ne lit que les propositions en
+ * attente — il n'a pas à voir une demande en cours, seulement ce qui est
+ * proposé à l'équipe.
+ */
+async function lireAssistant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+  peutDecider: boolean,
+): Promise<{ parScene: Map<string, AssistantScene>; scenarioPresent: boolean }> {
+  const parScene = new Map<string, AssistantScene>();
+  /** Proposition en attente → scène, pour y ranger ses plans. */
+  const scenes = new Map<string, string | null>();
+
+  const { data: scenario } = await supabase
+    .from("project_documents")
+    .select("id")
+    .eq("project_id", projetId)
+    .eq("type", "scenario")
+    .limit(1)
+    .maybeSingle();
+
+  if (peutDecider) {
+    const { data: taches } = await supabase
+      .from("jobs")
+      .select("id, state, params")
+      .eq("project_id", projetId)
+      .eq("action", LIVRABLE_DECOUPAGE.action)
+      .order("created_at", { ascending: false })
+      .limit(TACHES_LUES);
+
+    // La plus récente de chaque scène : la liste est déjà dans cet ordre.
+    const dernieres = new Map<string, { id: string; state: string }>();
+    for (const tache of taches ?? []) {
+      const scene =
+        tache.params && typeof tache.params === "object" && !Array.isArray(tache.params)
+          ? tache.params.scene
+          : null;
+      if (typeof scene === "string" && !dernieres.has(scene)) {
+        dernieres.set(scene, { id: tache.id, state: tache.state });
+      }
+    }
+
+    const { data: propositions } = dernieres.size
+      ? await supabase
+          .from("ai_suggestions")
+          .select("id, content, state, job_id")
+          .in(
+            "job_id",
+            [...dernieres.values()].map((tache) => tache.id),
+          )
+      : { data: [] };
+
+    for (const [scene, tache] of dernieres) {
+      const proposition = (propositions ?? []).find((p) => p.job_id === tache.id) ?? null;
+      const etape = etapeProposition(tache, proposition);
+      parScene.set(scene, { etape, plans: [] });
+      if (etape.etape === "proposition") {
+        scenes.set(etape.propositionId, scene);
+      }
+    }
+  } else {
+    const { data: propositions } = await supabase
+      .from("ai_suggestions")
+      .select("id, content")
+      .eq("project_id", projetId)
+      .eq("action", LIVRABLE_DECOUPAGE.action)
+      .eq("state", "proposed")
+      .order("created_at", { ascending: false })
+      .limit(TACHES_LUES);
+    for (const proposition of propositions ?? []) {
+      // La scène d'une proposition se lit sur ses plans.
+      scenes.set(proposition.id, null);
+    }
+  }
+
+  if (!scenes.size) {
+    return { parScene, scenarioPresent: Boolean(scenario) };
+  }
+
+  const { data: plans } = await supabase
+    .from("ai_suggestion_shots")
+    .select(
+      "id, suggestion_id, scene_id, position, shot, focal_mm, angle, movement, description, duration_seconds, state",
+    )
+    .in("suggestion_id", [...scenes.keys()])
+    .order("position")
+    // Bornée comme la base borne chaque dépôt.
+    .limit(scenes.size * LIVRABLE_DECOUPAGE.lignesMax);
+
+  for (const { suggestion_id, scene_id, ...plan } of plans ?? []) {
+    let deLaScene = parScene.get(scene_id);
+    if (!deLaScene || deLaScene.etape.etape !== "proposition") {
+      // Lecteur : la première proposition rencontrée pour la scène est la
+      // plus récente, les autres sont ignorées.
+      if (peutDecider || deLaScene) {
+        continue;
+      }
+      deLaScene = {
+        etape: { etape: "proposition", propositionId: suggestion_id, texte: "" },
+        plans: [],
+      };
+      parScene.set(scene_id, deLaScene);
+    }
+    if (
+      deLaScene.etape.etape === "proposition" &&
+      deLaScene.etape.propositionId === suggestion_id
+    ) {
+      deLaScene.plans.push(plan);
+    }
+  }
+
+  return { parScene, scenarioPresent: Boolean(scenario) };
+}
+
 function Planche({
   projetId,
   scene,
@@ -174,6 +316,8 @@ function Planche({
   plans,
   planEnModification,
   decoupageOuvert,
+  assistant,
+  scenarioPresent,
 }: {
   projetId: string;
   scene: SceneEditable;
@@ -185,9 +329,15 @@ function Planche({
   plans: PlanEditable[];
   planEnModification?: string;
   decoupageOuvert: boolean;
+  assistant: AssistantScene;
+  scenarioPresent: boolean;
 }) {
   const numero = numeroScene(index);
   const planDeLaScene = plans.some((plan) => plan.id === planEnModification);
+  // Qui écrit le storyboard voit toujours l'encart ; un lecteur, seulement
+  // quand des plans proposés attendent — il les lit, sans en décider.
+  const montrerAssistant = peutEditer || assistant.etape.etape === "proposition";
+  const assistantActif = assistant.etape.etape !== "repos";
 
   return (
     <>
@@ -252,8 +402,21 @@ function Planche({
           cadragePrincipal={scene.shot}
           plans={plans}
           planEnModification={planDeLaScene ? planEnModification : undefined}
-          ouvert={decoupageOuvert || planDeLaScene}
+          ouvert={decoupageOuvert || planDeLaScene || (montrerAssistant && assistantActif)}
           peutEditer={peutEditer}
+          assistant={
+            montrerAssistant ? (
+              <DecoupagePropose
+                projetId={projetId}
+                sceneId={scene.id}
+                numeroScene={numero}
+                etape={assistant.etape}
+                plans={assistant.plans}
+                peutDecider={peutEditer}
+                scenarioPresent={scenarioPresent}
+              />
+            ) : null
+          }
         />
 
         {peutEditer ? (

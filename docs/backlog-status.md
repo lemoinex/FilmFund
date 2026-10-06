@@ -32,7 +32,7 @@ réels).
 | J3b-3b | FIELD : écran des jalons proposés dans l'onglet Planning                                                                       | validé en recette | —              |
 | J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | validé localement | —              |
 | J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé localement | —              |
-| J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | à faire           | J3c-2a         |
+| J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé localement | —              |
 | J3c-3  | GEAR : propositions de matériel                                                                                                | à faire           | J3c-1          |
 | J3c-4  | Exports : sections « Découpage » et « Matériel »                                                                               | à faire           | J3c-1          |
 | K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
@@ -914,6 +914,18 @@ acceptés ou écartés un à un, un plan accepté s'ajoutant à la fin de sa sc�
 non. Profil `frame.decoupage@1`, vingt plans au plus, focale et durée facultatives. Ce que
 ce choix coûte : le scénario entier entre dans chaque appel, et son prix réel n'est pas
 mesuré — il le sera en recette. Sans écran tant que J3c-2b n'est pas livré.
+
+J3c-2b, écrit le 6 octobre 2026 : l'encart de l'assistant se tient dans le volet « Découpage »
+de chaque scène du storyboard. Qui écrit le storyboard y demande un découpage, suit la
+demande, puis accepte chaque plan — tel quel ou corrigé — ou l'écarte ; un lecteur lit les
+plans proposés sans en décider. Le volet s'ouvre de lui-même dès que l'assistant a quelque
+chose à montrer, et l'écran dit quand le projet n'a pas de scénario enregistré. L'écran
+refuse un plan de plus dans une scène qui en compte déjà cinquante. Sans migration.
+
+Le rendu a été contrôlé en local avec une vraie session, pour le porteur et pour un lecteur,
+sur le storyboard et sur l'onglet Matériel — premier contrôle de ces écrans ailleurs que dans
+des tests qui lisent le code. Il ne remplace pas la recette : ni les gestes au clic, ni les
+largeurs mobiles, ni le vrai fournisseur n'y sont exercés.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

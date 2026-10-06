@@ -487,7 +487,9 @@ describe("FRAME : proposition de découpage", () => {
 
     // Le découpage : le plan saisi, puis les deux acceptés, à la suite.
     assert.deepEqual(
-      (await decoupage(lecteur, scene)).map(({ id: _id, ...plan }) => plan),
+      (await decoupage(lecteur, scene)).map((plan) =>
+        Object.fromEntries(Object.entries(plan).filter(([cle]) => cle !== "id")),
+      ),
       [
         {
           position: 1,
