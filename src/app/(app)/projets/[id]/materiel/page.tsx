@@ -7,6 +7,7 @@ import { BoutonConfirme } from "@/components/ui/confirmation";
 import { CATEGORIES_MATERIEL, EQUIPEMENTS_MAX, REGLAGES_PAR_DEFAUT } from "@/lib/materiel";
 import {
   besoinElectrique,
+  energieDansLaCharge,
   formaterIntensite,
   formaterPuissance,
   puissanceLigne,
@@ -68,6 +69,7 @@ export default async function MaterielPage({
     marge: reglagesDuProjet?.generator_margin_percent ?? REGLAGES_PAR_DEFAUT.marge,
   };
   const besoin = besoinElectrique(liste, reglages);
+  const sourcesComptees = liste.filter(energieDansLaCharge).length;
 
   const groupes = (Object.keys(CATEGORIES_MATERIEL) as GearCategory[])
     .map((categorie) => ({
@@ -142,6 +144,14 @@ export default async function MaterielPage({
                 {besoin.sansPuissance} ligne{besoin.sansPuissance > 1 ? "s" : ""} sans puissance
                 renseignée {besoin.sansPuissance > 1 ? "ne sont pas comptées" : "n'est pas comptée"}
                 .
+              </li>
+            ) : null}
+            {sourcesComptees ? (
+              <li className="text-light">
+                {sourcesComptees} ligne{sourcesComptees > 1 ? "s" : ""} de la catégorie Énergie{" "}
+                {sourcesComptees > 1 ? "pèsent" : "pèse"} dans la charge. Un groupe électrogène
+                fournit le courant : videz sa puissance, ou décochez « en même temps que les autres
+                ».
               </li>
             ) : null}
           </ul>
@@ -267,6 +277,12 @@ function LigneEquipement({
           {/* Écrit en toutes lettres : la présentation seule ne le dirait pas. */}
           {puissance && !equipement.simultaneous ? " · hors charge simultanée" : null}
         </p>
+        {energieDansLaCharge(equipement) ? (
+          <p className="text-light mt-1 text-xs leading-relaxed">
+            Compté comme une consommation. Si c&apos;est un groupe électrogène, il fournit le
+            courant : videz sa puissance, ou décochez « en même temps que les autres ».
+          </p>
+        ) : null}
       </div>
 
       {peutEditer ? (

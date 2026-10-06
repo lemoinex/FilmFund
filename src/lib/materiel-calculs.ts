@@ -82,6 +82,22 @@ export function besoinElectrique(
   };
 }
 
+/**
+ * Une ligne de la catégorie « Énergie » qui pèse dans la charge simultanée.
+ *
+ * C'est le plus souvent un groupe électrogène saisi avec la puissance qu'il
+ * fournit : elle s'ajouterait à ce que le tournage consomme, et gonflerait le
+ * besoin. Le calcul ne tranche pas à la place de l'équipe — un chargeur de
+ * batteries, lui, consomme bien — : l'écran le signale, ligne par ligne.
+ */
+export function energieDansLaCharge(equipement: EquipementCalcule & { category: string }): boolean {
+  return (
+    equipement.category === "energie" &&
+    equipement.simultaneous &&
+    (equipement.unit_power_watts ?? 0) > 0
+  );
+}
+
 const ENTIER = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 const DECIMAL = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
