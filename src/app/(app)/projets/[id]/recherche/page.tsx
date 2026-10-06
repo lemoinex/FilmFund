@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import {
+  ACTIONS_RECHERCHE,
   bilanSources,
   etapeProposition,
+  libelleRecherche,
   LIVRABLE_RECHERCHE,
   nombreSources,
   segmentsSynthese,
@@ -105,6 +107,7 @@ export default async function RecherchePage({ params }: { params: Promise<{ id: 
           <h2 id="derniere-recherche" className="font-serif text-2xl leading-tight">
             Dernière recherche
           </h2>
+          <p className="text-gold mt-2 text-xs font-medium">{libelleRecherche(recherche.mode)}</p>
           {recherche.question ? (
             <p className="text-secondary mt-2 text-sm leading-relaxed">
               <span className="sr-only">Question posée : </span>« {recherche.question} »
@@ -257,6 +260,8 @@ type Recherche = {
   propositionId: string | null;
   /** La synthèse de la dernière recherche aboutie ; null s'il n'y en a pas. */
   synthese: string | null;
+  /** Laquelle des deux recherches l'a produite. */
+  mode: string;
   /** La question posée, pour qui peut lire la demande. */
   question: string | null;
   /** La dernière demande a échoué faute de page exploitable. */
@@ -286,7 +291,7 @@ async function lireRecherche(
       .from("jobs")
       .select("id, state, reason")
       .eq("project_id", projetId)
-      .eq("action", LIVRABLE_RECHERCHE.action)
+      .in("action", ACTIONS_RECHERCHE)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -306,9 +311,9 @@ async function lireRecherche(
 
   const { data: proposition } = await supabase
     .from("ai_suggestions")
-    .select("id, content, job_id")
+    .select("id, content, job_id, action")
     .eq("project_id", projetId)
-    .eq("action", LIVRABLE_RECHERCHE.action)
+    .in("action", ACTIONS_RECHERCHE)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -319,6 +324,7 @@ async function lireRecherche(
       sansSource,
       propositionId: null,
       synthese: null,
+      mode: LIVRABLE_RECHERCHE.action,
       question: null,
       sources: [],
     };
@@ -344,6 +350,7 @@ async function lireRecherche(
     sansSource,
     propositionId: proposition.id,
     synthese: proposition.content,
+    mode: proposition.action,
     question: typeof parametres?.question === "string" ? parametres.question : null,
     sources: sources ?? [],
   };

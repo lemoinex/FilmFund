@@ -8,9 +8,9 @@
  *
  * Trois fournisseurs, trois clés, indépendantes : celle d'Anthropic sert les
  * agents de texte, celle d'OpenAI le seul agent d'image, celle de Perplexity
- * la collecte de SCOUT. Retirer l'une ne sort pas les agents des autres —
- * sauf SCOUT, qui collecte chez l'un et synthétise chez l'autre : il lui
- * faut les deux clés, et il sort dès qu'une manque.
+ * la collecte de SCOUT et de GRIOT. Retirer l'une ne sort pas les agents des
+ * autres — sauf ces deux-là, qui collectent chez l'un et synthétisent chez
+ * l'autre : il leur faut les deux clés, et ils sortent dès qu'une manque.
  *
  * Aucune clé ne quitte cette fermeture : ni journal, ni valeur de retour.
  * Seule sa présence est observable du dehors.
@@ -20,7 +20,7 @@ import { executeursBoard } from "./agents/board.ts";
 import { executeursField } from "./agents/field.ts";
 import { executeursFrame } from "./agents/frame.ts";
 import { executeursGear } from "./agents/gear.ts";
-import { executeursScout } from "./agents/scout.ts";
+import { executeursGriot, executeursScout } from "./agents/scout.ts";
 import { executeursScript } from "./agents/script.ts";
 import { executeursVoice } from "./agents/voice.ts";
 import { executeursWeaver } from "./agents/weaver.ts";
@@ -107,10 +107,16 @@ export function registreDesAgents({
     if (scoutChange) {
       const cleChangee = cleRecherche !== clePerplexity;
       clePerplexity = cleRecherche;
-      recherche =
-        cle && cleRecherche
-          ? { ...executeursScout(base, creer(cle), creerRecherche(cleRecherche)) }
-          : {};
+      if (cle && cleRecherche) {
+        const texteDeRecherche = creer(cle);
+        const moteur = creerRecherche(cleRecherche);
+        recherche = {
+          ...executeursScout(base, texteDeRecherche, moteur),
+          ...executeursGriot(base, texteDeRecherche, moteur),
+        };
+      } else {
+        recherche = {};
+      }
       if (cleChangee) {
         journal({
           niveau: "info",

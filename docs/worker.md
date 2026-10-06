@@ -164,6 +164,19 @@ il sort du service dès qu'une manque.
   `ai_suggestion_sources`. Rien n'entre aux sources du projet avant qu'une source soit
   retenue par `accepter_source_proposee`, « non vérifiée ».
 
+GRIOT situe un sujet dans son contexte historique et culturel (lot L3, action
+`cultural_context`, profil `griot.contexte@1`). Il n'a pas d'exécuteur à lui : celui de
+SCOUT, avec un autre profil. Deux différences :
+
+- **Sites admis** : le profil porte une liste fermée (`DOMAINES_CONTEXTE`), transmise au
+  moteur par `search_domain_filter`. Le worker ne s'y fie pas : `retenirSources` écarte toute
+  page dont l'hôte n'est ni un site de la liste, ni l'un de ses sous-domaines.
+- **Consignes** : celles d'un historien — d'où parle la source, de quand, ce qui est
+  contesté, à qui l'affirmation s'applique.
+
+Changer la liste ou les consignes, c'est publier une nouvelle version du profil. Si rien ne
+revient des sites admis : « Aucune source exploitable n'a été trouvée pour cette question. »
+
 - **Aucune date** : un jalon proposé porte un titre, une phase et une durée en jours. FIELD
   ne connaît ni le jour ni le calendrier de l'équipe ; elle date le jalon en l'acceptant.
   Sans date, la durée estimée est gardée dans les notes du jalon.

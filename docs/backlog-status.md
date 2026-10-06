@@ -39,7 +39,8 @@ réels).
 | K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | en production     | —             |
 | L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | validé en recette | —             |
 | L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
-| L      | GRIOT, MATCH (sources et provenance)                                                                                           | bloqué            | L2            |
+| L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé localement | —             |
+| L      | MATCH (financements, sources et provenance)                                                                                    | bloqué            | L3            |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
 | M3     | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —             |
@@ -1264,6 +1265,37 @@ sur la tâche « Le compte du fournisseur n'a plus de crédits : rien n'a été 
 facturé. ». Le compte OpenAI reste sans crédits : la recette de BOARD attend toujours. La
 dépense du mois est à 3,97 $ sur 5 $, dont les 2,43 $ de provisions du 6 octobre, antérieures
 au correctif.
+
+GRIOT, lot L3, écrit le 6 octobre 2026 en un seul lot — base, worker, écran — puisque le
+socle de SCOUT existe. **Aucune mécanique nouvelle** : même exécuteur, mêmes tables, même
+registre des coûts ; la migration n'ouvre qu'une action (`cultural_context`), son prix au
+barème (3 unités) et les trois fonctions du worker aux deux actions. Ni table, ni droit, ni
+politique de plus.
+
+Ce qui distingue GRIOT tient à son profil (`griot.contexte@1`) :
+
+- **Une collecte restreinte à une liste fermée de sites**, validée par l'utilisateur comme
+  point de départ : `persee.fr`, `openedition.org`, `cairn.info`, `hal.science`, `erudit.org`,
+  `jstor.org`, `unesco.org`, `africamuseum.be`, `horizon.documentation.ird.fr`. La liste part
+  chez le moteur, et le worker **recontrôle ce qui revient** : une page d'un autre site est
+  écartée, même si le moteur la rend ; un nom qui en imite un autre ne passe pas.
+- **Des consignes d'historien** : dire d'où parle chaque source — administration coloniale,
+  mission, voyageur, chercheur, tradition orale rapportée — et sa date ; exposer les
+  désaccords sans trancher ; ne pas étendre à un peuple, une région ou une époque ce qu'un
+  extrait dit d'un lieu ; rapporter entre guillemets tout terme dépréciatif.
+
+L'onglet « Recherche » propose désormais le choix « Où chercher » : recherche documentaire,
+sur tout le web public, ou contexte historique et culturel, sur la liste fermée. L'écran
+nomme chaque site, et dit ce que la liste ne garantit pas : elle ne vérifie rien, une bonne
+part de l'écrit sur l'Afrique centrale est d'époque coloniale ou vient des missions, et ces
+sites peuvent ne rien rendre. Une source de GRIOT naît elle aussi « non vérifiée ».
+
+Ce que les fournisseurs factices ne prouvent pas, et que la recette dira : que le moteur
+accepte le filtre de sites tel qu'il est écrit — son nom et sa forme viennent d'un résumé
+automatique de sa documentation ; un refus ne coûterait rien —, ce que ces sites rendent
+réellement, et si le modèle tient ses consignes. La passerelle vers le moteur reçoit par
+ailleurs ses premiers tests directs, `fetch` remplacé : adresse, corps de la requête, refus
+sans frais, coupure sans réessai.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

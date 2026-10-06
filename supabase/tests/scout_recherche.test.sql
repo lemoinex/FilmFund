@@ -23,9 +23,9 @@ select ok(
 select throws_ok(
   $$ insert into public.text_unit_rate_versions
        (logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note,
-        dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, treatment,
-        bible, screenplay_per_sequence, dialogue_per_scene)
-     values (1, 1, 2, 3, 3, 4, 6, 3, 4, 5, -1, 8, 10, 2, 1) $$,
+        dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context,
+        treatment, bible, screenplay_per_sequence, dialogue_per_scene)
+     values (1, 1, 2, 3, 3, 4, 6, 3, 4, 5, -1, 3, 8, 10, 2, 1) $$,
   '23514', null, 'Un prix négatif pour la recherche est refusé'
 );
 
