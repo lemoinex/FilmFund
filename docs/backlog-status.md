@@ -34,7 +34,7 @@ réels).
 | J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé en recette | —              |
 | J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé en recette | —              |
 | J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé en recette | —              |
-| J3c-4  | Exports : sections « Découpage technique » et « Matériel »                                                                     | validé localement | —              |
+| J3c-4  | Exports : sections « Découpage technique » et « Matériel »                                                                     | validé en recette | —              |
 | K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L      | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
@@ -662,6 +662,33 @@ disait que « rien ». À consulter en premier quand un écran semble muet.
 Non couvert par cette recette : écarter une ligne, « Écarter le reste » ; un lecteur réel,
 faute de second compte tant que le mode privé est actif ; la largeur mobile ; une liste
 proche de sa borne de trois cents lignes.
+
+## Recette du lot J3c-4 : découpage et matériel dans les exports
+
+Le 6 octobre 2026, un dossier portant les deux nouvelles sections a été fabriqué en
+production par un administrateur (mode privé actif), sur le projet « une maison hantée ».
+
+Livraison dans l'ordre retenu : migration poussée par l'utilisateur et constatée en base
+avant la fusion — 49 migrations —, puis PR 114 (`1faf059`) à 13h37 UTC, le worker redémarrant
+à 13h42 après un arrêt propre du précédent. Avant la fusion, la base rendait déjà pour ce
+projet deux scènes — neuf et trois plans — et vingt-deux équipements, chacun avec sa
+catégorie, sa désignation, sa quantité et sa puissance, et rien d'autre.
+
+| Format | Sections                | Durée | Pages | Taille        | Unités |
+| ------ | ----------------------- | ----- | ----- | ------------- | ------ |
+| PDF    | `decoupage`, `materiel` | 1,5 s | 5     | 21 377 octets | 1/1    |
+
+- Tâche réussie au premier essai ; le fichier porte la signature d'un PDF et reste
+  disponible trente jours. Aucune tâche à rapprocher.
+- La chaîne tient en conditions réelles : les deux cases cochées à l'écran, le devis, la
+  tâche, le worker redéployé, le fichier déposé — très loin du plafond de 5 Mo.
+
+Non couvert par cette recette : l'intérieur du fichier, que la base ne permet pas de relire
+— la lisibilité du tableau des plans, à six colonnes, reste à juger à l'œil — ; le Word et
+l'archive ZIP avec ses deux classeurs, couverts par les tests seulement ; un long découpage.
+
+Le lot J3c est livré en entier. Reste ouverte la réserve de J3c-2 : FRAME n'a pas encore
+découpé une scène qui figure au scénario.
 
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
