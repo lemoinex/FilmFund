@@ -406,6 +406,8 @@ Concerne SCOUT, GRIOT et MATCH.
 - Ses consignes sont celles d'un historien : d'où parle la source, de quand, ce
   qui est contesté, à qui l'affirmation s'applique. Ne pas les affaiblir.
 - Écran : le choix « Où chercher » de l'onglet « Recherche ».
+- Validé en recette le 6 octobre 2026. Vu une fois : un conseil au projet en
+  fin de synthèse, sans renvoi. S'il revient, l'interdire dans une version 2.
 
 ## 10. Fonctionnalités produit à préserver
 

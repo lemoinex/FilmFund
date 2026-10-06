@@ -39,7 +39,7 @@ réels).
 | K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | en production     | —             |
 | L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | validé en recette | —             |
 | L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
-| L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé localement | —             |
+| L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
 | L      | MATCH (financements, sources et provenance)                                                                                    | bloqué            | L3            |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
@@ -1296,6 +1296,43 @@ automatique de sa documentation ; un refus ne coûterait rien —, ce que ces si
 réellement, et si le modèle tient ses consignes. La passerelle vers le moteur reçoit par
 ailleurs ses premiers tests directs, `fetch` remplacé : adresse, corps de la requête, refus
 sans frais, coupure sans réessai.
+
+L3 est en production depuis le 6 octobre 2026 (PR 122, `f837f36`, 52 migrations ; migration
+poussée avant la fusion, à 21h46 UTC, et vérifiée en base).
+
+**Recette de GRIOT, le 6 octobre 2026.** L'utilisateur a demandé, sur le projet « une maison
+hantée », en mode « Contexte historique et culturel » : « quels sont les atouts du cinéma
+camerounais par rapport à l'occident? ». Posée pendant le redémarrage du worker, la demande a
+attendu en file une minute et demie, puis a été prise par la nouvelle version : un seul essai,
+21,2 secondes, sans repli. **Perplexity a accepté le filtre de sites tel qu'il est écrit**, et
+les dix sources rendues viennent toutes de la liste — Cairn, HAL, OpenEdition, Érudit. Le
+doute sur ce paramètre est levé. Synthèse de 3 849 caractères, sans adresse, tous ses renvois
+dans la collecte. Coût confirmé : **0,0661 $** — 0,005 $ pour la requête, 0,0611 $ pour la
+synthèse (4 335 jetons en entrée, 2 188 en sortie) —, 3 unités texte.
+
+À la lecture, les consignes d'historien sont tenues sur l'essentiel : la synthèse dit d'entrée
+que les extraits ne comparent pas le cinéma camerounais à celui de l'Occident, situe chaque
+source (thèse, article, compte rendu) avec sa date ou « non daté », borne une observation aux
+cinéastes anglophones plutôt qu'à tout le cinéma camerounais, rapporte entre guillemets les
+termes chargés en les attribuant, et donne les fragilités à côté des atouts. L'utilisateur a
+jugé la réponse juste et utile, retenu six sources et écarté quatre ; la proposition s'est
+close « appliquée ». Deux sources sur dix n'étaient pas citées, et l'écran le disait.
+
+Réserves :
+
+- **Une phrase sort du cadre** : la synthèse se termine par un conseil au projet — « Pour
+  votre long métrage dramatique, ces sources suggèrent quelques pistes… » —, sans renvoi, tiré
+  du format et du genre transmis. Si cela se reproduit, une version 2 du profil devra
+  l'interdire.
+- **Non comparé aux extraits** : la synthèse n'a pas été relue ligne à ligne contre les
+  extraits, et aucune page n'a été ouverte. Aucun chiffre n'est certifié.
+- **Une seule question**, et de cinéma plutôt que d'histoire ou d'anthropologie : la tenue de
+  GRIOT sur un sujet de société ancien, où l'écrit colonial domine, reste à éprouver.
+- **Non éprouvés** : le cas où la liste fermée ne rend rien ; l'aspect de la page et le
+  téléphone ; un éditeur et un lecteur réels.
+
+Dépense d'IA du mois au 6 octobre au soir : 4,04 $ sur 5 $, dont les 2,43 $ de provisions du
+6 octobre restées au registre.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
