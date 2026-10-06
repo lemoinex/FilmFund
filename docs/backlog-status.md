@@ -37,8 +37,8 @@ réels).
 | J3c-4  | Exports : sections « Découpage technique » et « Matériel »                                                                     | validé en recette | —             |
 | K1     | BOARD : vignette d'une scène — base, passerelle d'images, profil, agent                                                        | en production     | —             |
 | K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | en production     | —             |
-| L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | en production     | —             |
-| L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé localement | —             |
+| L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | validé en recette | —             |
+| L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
 | L      | GRIOT, MATCH (sources et provenance)                                                                                           | bloqué            | L2            |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
@@ -1220,6 +1220,50 @@ dans ce cas, pas pour une panne.
 Ce que l'écran ne fait pas : il ne montre que la dernière recherche — les synthèses
 précédentes restent en base, sans écran pour les relire — et ne propose pas de retenir
 toutes les sources d'un geste : chacune se juge.
+
+L2 est en production depuis le 6 octobre 2026 (PR 120, `4035088`, sans migration).
+
+**Recette de SCOUT, le 6 octobre 2026, lots L1 et L2.** L'utilisateur a posé la clé de
+Perplexity depuis Intégrations IA à 20h40 UTC — l'ajout est au journal d'administration —,
+puis demandé, sur le projet « une maison hantée » : « c'est quoi un dossier de film? ». Un
+seul essai, 16,5 secondes, sans repli. **Perplexity a accepté la requête telle qu'elle est
+écrite** et rendu 9 pages : le doute sur ses paramètres, relevés par un résumé automatique de
+sa documentation, est levé. Synthèse de 3 112 caractères, sans adresse écrite par le modèle,
+tous ses renvois dans la collecte. Coût confirmé : **0,060928 $** — 0,005 $ pour la requête,
+0,055928 $ pour la synthèse (5 342 jetons en entrée, 1 728 en sortie) —, 3 unités texte.
+
+À la lecture, le modèle s'en tient à ce que les sources avancent, signale les extraits
+tronqués, les sources sans date et celles qui se contredisent, écarte de lui-même deux pages
+hors sujet, et dit ce qui manque par la formule prévue : aucune source ne traite d'un long
+métrage produit au Cameroun ni des fonds africains. La synthèse n'a pas été comparée aux
+extraits ligne à ligne, et aucune page n'a été ouverte.
+
+L'utilisateur a ensuite retenu une source, en a écarté six une à une et deux d'un geste,
+entre 21h01 et 21h02 UTC. La source retenue est aux sources du projet, « non vérifiée »,
+avec la question posée et l'instant de sa collecte.
+
+Réserves :
+
+- **Couverture** : une seule question, généraliste, et neuf sources françaises ou
+  généralistes — un site de scénario, Eduscol, un blog de location de matériel, des fiches
+  de révision. Aucune n'est africaine. Ce que le moteur rend sur l'Afrique centrale reste à
+  mesurer, sur des questions ciblées.
+- **« Citée » ne veut pas dire « utile »** : les neuf sources sont marquées citées, dont les
+  deux que la synthèse ne nomme que pour les écarter.
+- **Titres** : celui d'une source est arrivé mal formé du moteur, et s'affiche tel quel.
+- **Proposition « écartée »** : écarter d'un geste les sources restantes ferme la proposition
+  sous cet état, même si une source a été retenue — comme pour les autres livrables
+  structurés. Sans effet à l'écran, où la synthèse et la source retenue restent lisibles.
+- **Non éprouvés** : l'aspect de la page, que l'utilisateur n'a pas commenté et qui n'a pas
+  été vu ; le téléphone ; le retrait d'une source retenue ; le parcours d'un éditeur et d'un
+  lecteur réels, le mode privé ne laissant entrer que les administrateurs.
+
+Le correctif du refus faute de crédits (PR 119) est prouvé en production le même soir : une
+demande de vignette de 20h41 UTC, refusée par OpenAI, a ses deux essais soldés à 0 $ et porte
+sur la tâche « Le compte du fournisseur n'a plus de crédits : rien n'a été produit ni
+facturé. ». Le compte OpenAI reste sans crédits : la recette de BOARD attend toujours. La
+dépense du mois est à 3,97 $ sur 5 $, dont les 2,43 $ de provisions du 6 octobre, antérieures
+au correctif.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

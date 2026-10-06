@@ -389,6 +389,8 @@ Concerne SCOUT, GRIOT et MATCH.
   jamais dans un document ; ses renvois mènent aux sources de la page. Titres et
   extraits viennent du web : affichés comme du texte. « Information non trouvée
   dans la source consultée. » ne se dit que si le moteur n'a rien rendu.
+- Validé en recette le 6 octobre 2026. Non mesuré : ce que le moteur rend sur
+  l'Afrique centrale — ne pas le présenter comme acquis.
 
 ## 10. Fonctionnalités produit à préserver
 
