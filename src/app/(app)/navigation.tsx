@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ComponentType } from "react";
 
 import {
+  AfricaIcon,
   CheckIcon,
   ClapperIcon,
   DocumentIcon,
@@ -44,6 +45,7 @@ const RUBRIQUES_ADMINISTRATION: Rubrique[] = [
   { libelle: "Journal d'administration", icone: ShieldIcon, href: "/administration/journal" },
   { libelle: "Plans et quotas", icone: TagIcon, href: "/administration/plans" },
   { libelle: "Score de maturité", icone: CheckIcon, href: "/administration/ponderations" },
+  { libelle: "Opportunités", icone: AfricaIcon, href: "/administration/opportunites" },
   { libelle: "Intégrations IA", icone: SparkIcon, href: "/administration/integrations" },
 ];
 
