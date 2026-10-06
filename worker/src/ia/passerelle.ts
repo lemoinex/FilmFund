@@ -179,6 +179,25 @@ const ADRESSE_IMAGES_OPENAI = "https://api.openai.com/v1/images/generations";
  */
 const REPONSE_IMAGE_MAX = 12 * 1024 * 1024;
 
+/**
+ * Vrai si le corps d'une erreur d'OpenAI dit que le compte n'a plus de
+ * crédits. Seuls le type et le code de l'erreur sont lus — jamais son
+ * message, qui peut changer. Un corps illisible ne dit rien : le doute reste.
+ */
+function estRefusFauteDeCredits(corps: string): boolean {
+  let erreur: { type?: unknown; code?: unknown } | undefined;
+  try {
+    erreur = (JSON.parse(corps) as { error?: { type?: unknown; code?: unknown } } | null)?.error;
+  } catch {
+    return false;
+  }
+  return (
+    erreur?.type === "insufficient_quota" ||
+    erreur?.code === "insufficient_quota" ||
+    erreur?.code === "credit_balance_exhausted"
+  );
+}
+
 export function creerFournisseurImagesOpenAI(cleApi: string): FournisseurImages {
   return async ({ profil, consigne }, signal) => {
     /*
@@ -206,12 +225,21 @@ export function creerFournisseurImagesOpenAI(cleApi: string): FournisseurImages 
       // Le fournisseur a répondu par une erreur : rien n'a été produit. Son
       // texte part au journal du worker, jamais sur la tâche.
       const detail = (await reponse.text().catch(() => "")).slice(0, 2000);
-      throw new EchecConnu(`Le fournisseur a répondu par une erreur (${reponse.status}).`, {
-        detail,
-        // 4xx : la requête est refusée, donc ni traitée ni facturée. Un 429
-        // ou un 5xx peut survenir après un début de traitement.
-        sansFrais: reponse.status >= 400 && reponse.status < 429,
-      });
+      // Compte sans crédits : OpenAI le dit par un 429, comme une limite de
+      // débit, mais n'a rien traité. Sans cette distinction, la provision de
+      // chaque refus pèserait sur le plafond du mois sans avoir rien coûté.
+      const sansCredits = reponse.status === 429 && estRefusFauteDeCredits(detail);
+      throw new EchecConnu(
+        sansCredits
+          ? "Le compte du fournisseur n'a plus de crédits : rien n'a été produit ni facturé."
+          : `Le fournisseur a répondu par une erreur (${reponse.status}).`,
+        {
+          detail,
+          // 4xx : la requête est refusée, donc ni traitée ni facturée. Un
+          // autre 429 ou un 5xx peut survenir après un début de traitement.
+          sansFrais: sansCredits || (reponse.status >= 400 && reponse.status < 429),
+        },
+      );
     }
 
     const annonce = Number(reponse.headers.get("content-length") ?? 0);

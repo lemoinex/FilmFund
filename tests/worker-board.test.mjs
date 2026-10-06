@@ -263,6 +263,54 @@ describe("BOARD : la passerelle vers le fournisseur d'images", () => {
     }
   });
 
+  it("compte sans crédits : un 429 sans frais, dit en clair ; une limite de débit reste douteuse", async () => {
+    // Le corps relevé en production le 6 octobre 2026, tel qu'OpenAI l'a rendu.
+    const sansCredits = {
+      error: {
+        message: "You have no credits remaining. Add credits to continue using the API.",
+        type: "insufficient_quota",
+        param: null,
+        code: "credit_balance_exhausted",
+      },
+    };
+    for (const [raison, corps, sansFrais] of [
+      ["type et code", sansCredits, true],
+      ["type seul", { error: { type: "insufficient_quota" } }, true],
+      ["code seul", { error: { code: "credit_balance_exhausted" } }, true],
+      ["code historique", { error: { code: "insufficient_quota" } }, true],
+      [
+        "limite de débit",
+        { error: { type: "rate_limit_error", code: "rate_limit_exceeded" } },
+        false,
+      ],
+      // Le message ne décide de rien : seuls le type et le code sont lus.
+      ["message seul", { error: { message: "insufficient_quota : no credits remaining" } }, false],
+      ["corps sans erreur", { message: "insufficient_quota" }, false],
+    ]) {
+      simuler(new Response(JSON.stringify(corps), { status: 429 }));
+      await assert.rejects(demander(), (erreur) => {
+        assert.ok(erreur instanceof EchecConnu, raison);
+        assert.equal(erreur.sansFrais, sansFrais, raison);
+        if (sansFrais) {
+          assert.match(erreur.message, /n'a plus de crédits : rien n'a été produit ni facturé/);
+        } else {
+          assert.equal(erreur.message, "Le fournisseur a répondu par une erreur (429).");
+        }
+        // Le texte du fournisseur ne passe jamais sur la tâche.
+        assert.doesNotMatch(erreur.message, /credits remaining|insufficient_quota/);
+        return true;
+      });
+    }
+
+    // Un corps illisible ne dit rien : le doute reste, la provision aussi.
+    simuler(new Response("insufficient_quota", { status: 429 }));
+    await assert.rejects(demander(), (erreur) => erreur.sansFrais === false);
+
+    // Le même corps sous un autre statut ne change pas la règle des 5xx.
+    simuler(new Response(JSON.stringify(sansCredits), { status: 500 }));
+    await assert.rejects(demander(), (erreur) => erreur.sansFrais === false);
+  });
+
   it("une réponse illisible ou sans image est un échec connu ; la clé n'apparaît dans aucun message", async () => {
     for (const corps of [
       "pas du JSON",
