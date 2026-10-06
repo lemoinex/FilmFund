@@ -30,6 +30,7 @@ export function ongletsDuProjet(
     { cle: "projet", libelle: "Synthèse", href: synthese ?? base },
     { cle: "fiche", libelle: "Fiche", href: `${base}/fiche` },
     { cle: "documents", libelle: "Documents", href: `${base}/documents` },
+    { cle: "recherche", libelle: "Recherche", href: `${base}/recherche` },
     { cle: "storyboard", libelle: "Storyboard", href: `${base}/storyboard` },
     { cle: "materiel", libelle: "Matériel", href: `${base}/materiel` },
     { cle: "planning", libelle: "Planning", href: `${base}/planning` },

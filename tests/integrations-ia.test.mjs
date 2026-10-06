@@ -44,11 +44,11 @@ describe("Intégrations IA : module d'affichage", () => {
     const openai = FOURNISSEURS.find((f) => f.code === "openai");
     assert.match(openai.usage, /storyboard/i);
     assert.doesNotMatch(openai.usage, /aucun agent/i);
-    // Perplexity ne suffit pas seul, et aucun écran ne propose encore la
-    // recherche : l'écran le dit plutôt que de laisser croire au contraire.
+    // Perplexity ne suffit pas seul : l'écran le dit plutôt que de laisser
+    // croire au contraire. La recherche a son écran depuis le lot L2.
     const perplexity = FOURNISSEURS.find((f) => f.code === "perplexity");
     assert.match(perplexity.usage, /clé d'Anthropic/);
-    assert.match(perplexity.usage, /Aucun écran ne la propose encore/);
+    assert.doesNotMatch(perplexity.usage, /Aucun écran/);
   });
 
   it("applique les mêmes bornes que la base", () => {

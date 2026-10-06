@@ -36,9 +36,10 @@ réels).
 | J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé en recette | —             |
 | J3c-4  | Exports : sections « Découpage technique » et « Matériel »                                                                     | validé en recette | —             |
 | K1     | BOARD : vignette d'une scène — base, passerelle d'images, profil, agent                                                        | en production     | —             |
-| K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | validé localement | —             |
-| L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | validé localement | —             |
-| L      | SCOUT (écran), GRIOT, MATCH (sources et provenance)                                                                            | bloqué            | L1            |
+| K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | en production     | —             |
+| L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | en production     | —             |
+| L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé localement | —             |
+| L      | GRIOT, MATCH (sources et provenance)                                                                                           | bloqué            | L2            |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
 | M3     | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —             |
@@ -1188,6 +1189,37 @@ Perplexity accepte la requête telle qu'elle est écrite — ses paramètres ont
 sa documentation par un résumé automatique —, ce que valent les pages qu'il rend sur des
 sujets d'Afrique centrale, et que le modèle s'en tient aux extraits. Aucun écran ne propose
 encore la recherche (lot L2) ; GRIOT et MATCH restent à cadrer.
+
+L1 est en production depuis le 6 octobre 2026 (PR 118, `2c7f6a8`, 51 migrations, migration
+poussée avant la fusion et vérifiée en base). SCOUT y reste hors service tant qu'aucune clé
+Perplexity n'est posée.
+
+Correctif du même jour (PR 119, `33785d0`, sans migration) : un compte OpenAI sans crédits
+répond par un 429, que le worker tenait pour douteux ; la provision de chaque refus restait
+au registre. La passerelle reconnaît désormais ce refus au type ou au code de l'erreur, solde
+le coût à zéro et l'inscrit en clair sur la tâche. **Les quatre provisions du 6 octobre
+(2,43 $) restent au registre de production** : ce correctif ne vaut que pour la suite.
+
+L2, écrit le même jour, sans migration : l'onglet « Recherche » du projet, lisible de toute
+l'équipe. Qui écrit le projet y pose une question, lit le devis, confirme, suit la demande,
+puis retient ou écarte chaque source ; un lecteur lit la synthèse et les sources sans en
+décider, et ne lit pas la question, qui vit sur la tâche. **Avant tout envoi, l'écran dit que
+la question, et elle seule, part chez un moteur de recherche externe**, et la remontre telle
+qu'elle partira.
+
+La synthèse reste dans la proposition, lisible sur l'onglet — décidé avec l'utilisateur : elle
+n'est versée dans aucun document. Ses renvois « [n] » mènent à la source de la page, jamais à
+une adresse qu'un modèle aurait écrite ; titres et extraits, venus du web, sont affichés
+comme du texte. Chaque source porte son site, sa date si elle est connue, et dit si la
+synthèse la cite. Les sources retenues se rangent sous « Sources du projet », marquées
+« Non vérifiée », avec leur date de collecte et la question posée ; qui écrit le projet peut
+en retirer une, personne ne peut en corriger une. Une recherche qui n'a rendu aucune page
+exploitable le dit par « Information non trouvée dans la source consultée. » — et seulement
+dans ce cas, pas pour une panne.
+
+Ce que l'écran ne fait pas : il ne montre que la dernière recherche — les synthèses
+précédentes restent en base, sans écran pour les relire — et ne propose pas de retenir
+toutes les sources d'un geste : chacune se juge.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

@@ -23,6 +23,7 @@ export function OngletsProjet({
     | "fiche"
     | "budget"
     | "documents"
+    | "recherche"
     | "storyboard"
     | "materiel"
     | "planning"
