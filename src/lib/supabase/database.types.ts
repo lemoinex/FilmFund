@@ -235,6 +235,70 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_images: {
+        Row: {
+          accepted_path: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          file: string;
+          id: string;
+          project_id: string;
+          scene_id: string;
+          size_bytes: number | null;
+          state: string;
+          suggestion_id: string;
+        };
+        Insert: {
+          accepted_path?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          file: string;
+          id?: string;
+          project_id: string;
+          scene_id: string;
+          size_bytes?: never;
+          state?: string;
+          suggestion_id: string;
+        };
+        Update: {
+          accepted_path?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          file?: string;
+          id?: string;
+          project_id?: string;
+          scene_id?: string;
+          size_bytes?: never;
+          state?: string;
+          suggestion_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_images_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_images_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: true;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "image_proposee_de_sa_scene";
+            columns: ["scene_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "storyboard_scenes";
+            referencedColumns: ["id", "project_id"];
+          },
+        ];
+      };
       ai_suggestion_milestones: {
         Row: {
           created_at: string;
@@ -2057,6 +2121,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      accepter_image_proposee: { Args: { p_image_id: string; p_path: string }; Returns: string };
       accepter_invitation: { Args: { p_invitation_id: string }; Returns: string };
       accepter_jalon_propose: {
         Args: {
@@ -2321,6 +2386,7 @@ export type Database = {
       contexte_decoupage: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_dialogue: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_image: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_materiel: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
@@ -2375,6 +2441,7 @@ export type Database = {
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       duree_bail_travail: { Args: Record<PropertyKey, never>; Returns: string };
       duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
+      ecarter_image_proposee: { Args: { p_image_id: string }; Returns: undefined };
       ecarter_jalon_propose: {
         Args: { p_line_id: string };
         Returns: {
@@ -2549,6 +2616,28 @@ export type Database = {
           project_id: string;
         }[];
       };
+      image_a_decider: {
+        Args: { p_image_id: string };
+        Returns: {
+          accepted_path: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          file: string;
+          id: string;
+          project_id: string;
+          scene_id: string;
+          size_bytes: number | null;
+          state: string;
+          suggestion_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_images";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       images_orphelines: { Args: { p_project_id: string }; Returns: string[] };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       jalon_a_decider: {
@@ -2612,6 +2701,7 @@ export type Database = {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;
       };
+      livrer_proposition_image: { Args: { p_attempt_id: string; p_file: string }; Returns: string };
       livrer_proposition_materiel: {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;

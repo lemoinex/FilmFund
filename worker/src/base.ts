@@ -618,6 +618,57 @@ export async function livrerPropositionMateriel(
 }
 
 /**
+ * Ce que BOARD lit pour dessiner une scène : la scène, ses premiers plans et
+ * le genre du projet. Ni scénario, ni budget, ni équipe.
+ */
+export type ContexteImage = {
+  action: string;
+  projet: { format: string; genre: string | null; vision: string };
+  scene: {
+    titre: string;
+    decor: string;
+    lieu: string;
+    moment: string;
+    cadrage: string | null;
+    description: string;
+  };
+  plans: { cadrage: string; angle: string; description: string }[];
+};
+
+/**
+ * Contexte de la tâche de vignette en cours ; null si l'essai ne nous
+ * appartient plus, si le projet n'existe plus, ou si la scène désignée a été
+ * supprimée — rien ne doit alors être envoyé.
+ */
+export async function lireContexteImage(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteImage | null> {
+  const { rows } = await base.query("select public.contexte_image($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose la vignette et conclut l'essai. Faux : l'essai ne nous appartenait
+ * plus, rien n'a été déposé.
+ */
+export async function livrerPropositionImage(
+  base: Base,
+  attemptId: string,
+  image: Buffer,
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_image($1, $2)", [attemptId, image]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}
+
+/**
  * Ce que VOICE lit pour réécrire les répliques d'une scène : le projet, ses
  * personnages, la scène désignée par la demande, et ce qui la précède.
  */

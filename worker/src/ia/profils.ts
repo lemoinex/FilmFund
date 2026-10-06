@@ -73,11 +73,16 @@ export type UsageModele = { modele: string; jetonsEntree: number; jetonsSortie: 
  * micro-dollars par jeton : les montants se calculent en entiers, sans
  * flottants. Relevés le 25 septembre 2026 ; à revoir à chaque changement de
  * modèle. Opus 5 et Opus 4.8 sont les modèles de repli d'Anthropic.
+ *
+ * Le modèle d'image d'OpenAI est facturé de la même façon : le texte de la
+ * consigne en entrée, l'image en sortie. Tarif relevé le 6 octobre 2026 sur
+ * la page de prix d'OpenAI.
  */
 const TARIFS: Readonly<Record<string, { entree: number; sortie: number }>> = {
   "claude-opus-5-5": { entree: 4, sortie: 20 },
   "claude-opus-5": { entree: 5, sortie: 25 },
   "claude-opus-4-8": { entree: 5, sortie: 25 },
+  "gpt-image-2.5-flare": { entree: 5, sortie: 30 },
 };
 
 /**
@@ -668,4 +673,64 @@ export const PROFIL_MATERIEL: ProfilStructure = {
 /** Ce que GEAR sait proposer. Tenu à part de FIELD et de FRAME. */
 export const PROFILS_GEAR: Readonly<Record<string, ProfilStructure>> = {
   gear_list: PROFIL_MATERIEL,
+};
+
+/**
+ * Profil d'une image : ce que BOARD a le droit de demander au fournisseur
+ * d'images. Rien n'en vient du navigateur ni d'une tâche.
+ */
+export type ProfilImage = {
+  /** Agent, action et version : « board.vignette@1 ». */
+  id: string;
+  fournisseur: "openai";
+  modele: string;
+  /** Format de la planche : paysage, comme le cadre du storyboard. */
+  taille: string;
+  qualite: "low" | "medium" | "high";
+  /**
+   * Plafond de jetons d'image provisionné avant l'appel. Un plafond choisi
+   * par le lot, pas une mesure : OpenAI ne publie pas, sur les pages
+   * consultées, le poids d'une image. À ajuster après la première vignette
+   * réelle — le coût confirmé, lui, vient de l'usage que le fournisseur
+   * rapporte.
+   */
+  jetonsImageMax: number;
+  /** Ouvre la demande : le style imposé. */
+  style: string;
+  /** Ferme la demande : ce que l'image ne doit pas contenir. */
+  interdits: string;
+};
+
+/**
+ * BOARD dessine une vignette de storyboard : un croquis à l'encre noire sur
+ * fond blanc, et rien d'autre.
+ *
+ * La contrainte est écrite ici, à un seul endroit, et des tests la tiennent :
+ * ni couleur, ni photoréalisme, ni 3D, ni peinture numérique. Plans, focales
+ * et annotations restent des données du découpage : aucun texte n'entre dans
+ * l'image. Modifier ces deux consignes, c'est publier une nouvelle version.
+ */
+export const PROFIL_VIGNETTE: ProfilImage = {
+  id: "board.vignette@1",
+  fournisseur: "openai",
+  modele: "gpt-image-2.5-flare",
+  taille: "1536x1024",
+  qualite: "medium",
+  jetonsImageMax: 20_000,
+  style: [
+    "Vignette de storyboard de cinéma : un croquis dessiné à la main, à l'encre noire sur fond blanc.",
+    "Trait noir uniquement, hachures et aplats noirs pour les ombres ; fond blanc uni ; cadre horizontal, composition lisible d'un seul coup d'œil.",
+    "Dessine la scène décrite ci-dessous telle qu'une caméra la verrait, dans son cadrage principal.",
+  ].join(" "),
+  interdits: [
+    "Contraintes strictes : noir et blanc uniquement, aucune couleur, aucun dégradé de gris photographique.",
+    "Aucun photoréalisme, aucun rendu 3D, aucune peinture numérique.",
+    "Aucun texte, aucune lettre, aucun chiffre, aucune légende, aucune flèche ni annotation, aucune bordure ni numéro de case dans l'image.",
+    "Ne représente aucune personne réelle ni aucune marque.",
+  ].join(" "),
+};
+
+/** Ce que BOARD sait produire. Tenu à part : son fournisseur n'est pas celui des textes. */
+export const PROFILS_BOARD: Readonly<Record<string, ProfilImage>> = {
+  storyboard_image: PROFIL_VIGNETTE,
 };

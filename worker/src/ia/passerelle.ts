@@ -1,8 +1,12 @@
 /**
  * Passerelle IA : le seul fichier du dépôt qui importe le SDK d'un
- * fournisseur d'IA. Une règle de lint et un test d'architecture refusent
- * tout autre import : aucun agent, aucune route, aucun composant n'appelle
- * un fournisseur sans passer par ici.
+ * fournisseur d'IA, et le seul qui en nomme l'adresse. Une règle de lint et
+ * un test d'architecture refusent tout autre import : aucun agent, aucune
+ * route, aucun composant n'appelle un fournisseur sans passer par ici.
+ *
+ * Deux fournisseurs : Anthropic pour le texte, par son SDK ; OpenAI pour
+ * l'image, par une requête HTTPS écrite ici — une seule adresse, fixe, sans
+ * dépendance de plus.
  *
  * La clé d'API vient du coffre de la base, lue par le registre des agents,
  * jamais du dépôt ni de l'environnement ; elle n'est ni journalisée ni
@@ -11,7 +15,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 import { EchecConnu } from "../executeurs.ts";
-import type { ProfilAppel, UsageModele } from "./profils.ts";
+import type { ProfilAppel, ProfilImage, UsageModele } from "./profils.ts";
 
 export type DemandeIA = {
   profil: ProfilAppel;
@@ -142,6 +146,106 @@ export function creerFournisseurAnthropic(cleApi: string): Fournisseur {
       modeleServi: reponse.model,
       repli: iterations.some((entree) => entree.type === "fallback_message"),
       usages,
+    };
+  };
+}
+
+export type DemandeImage = {
+  profil: ProfilImage;
+  /** Ce qu'il faut dessiner : le style du profil, puis la scène, mis en forme par l'agent. */
+  consigne: string;
+};
+
+export type ReponseImage = {
+  /** Le fichier, tel que le fournisseur l'a rendu : contrôlé par l'agent, puis par la base. */
+  image: Buffer;
+  modeleServi: string;
+  /** Ce que le fournisseur facture ; null s'il ne l'a pas rapporté : coût à rapprocher. */
+  usages: UsageModele[] | null;
+};
+
+/** Mêmes deux façons d'échouer que `Fournisseur`. */
+export type FournisseurImages = (
+  demande: DemandeImage,
+  signal: AbortSignal,
+) => Promise<ReponseImage>;
+
+/** La seule adresse d'OpenAI que le worker connaisse. */
+const ADRESSE_IMAGES_OPENAI = "https://api.openai.com/v1/images/generations";
+
+/**
+ * Taille maximale de la réponse : une image de 5 Mo encodée en base64, et
+ * de la marge. Au-delà, la réponse n'est pas lue.
+ */
+const REPONSE_IMAGE_MAX = 12 * 1024 * 1024;
+
+export function creerFournisseurImagesOpenAI(cleApi: string): FournisseurImages {
+  return async ({ profil, consigne }, signal) => {
+    /*
+     * Aucun réessai, aucune redirection suivie : une seule requête, vers une
+     * seule adresse. Une coupure ou un délai dépassé laisse l'issue inconnue,
+     * et remonte tel quel — la reprise est décidée par la base.
+     */
+    const reponse = await fetch(ADRESSE_IMAGES_OPENAI, {
+      method: "POST",
+      redirect: "error",
+      signal: AbortSignal.any([signal, AbortSignal.timeout(DELAI_MS)]),
+      headers: { authorization: `Bearer ${cleApi}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        model: profil.modele,
+        prompt: consigne,
+        n: 1,
+        size: profil.taille,
+        quality: profil.qualite,
+        output_format: "png",
+        background: "opaque",
+      }),
+    });
+
+    if (!reponse.ok) {
+      // Le fournisseur a répondu par une erreur : rien n'a été produit. Son
+      // texte part au journal du worker, jamais sur la tâche.
+      const detail = (await reponse.text().catch(() => "")).slice(0, 2000);
+      throw new EchecConnu(`Le fournisseur a répondu par une erreur (${reponse.status}).`, {
+        detail,
+        // 4xx : la requête est refusée, donc ni traitée ni facturée. Un 429
+        // ou un 5xx peut survenir après un début de traitement.
+        sansFrais: reponse.status >= 400 && reponse.status < 429,
+      });
+    }
+
+    const annonce = Number(reponse.headers.get("content-length") ?? 0);
+    if (annonce > REPONSE_IMAGE_MAX) {
+      throw new EchecConnu("La réponse du fournisseur dépasse la taille admise.");
+    }
+    const brut = Buffer.from(await reponse.arrayBuffer());
+    if (brut.length > REPONSE_IMAGE_MAX) {
+      throw new EchecConnu("La réponse du fournisseur dépasse la taille admise.");
+    }
+
+    let corps: {
+      data?: { b64_json?: unknown }[];
+      usage?: { input_tokens?: unknown; output_tokens?: unknown };
+    };
+    try {
+      corps = JSON.parse(brut.toString("utf8"));
+    } catch {
+      throw new EchecConnu("La réponse du fournisseur est illisible.");
+    }
+    const encodee = corps.data?.[0]?.b64_json;
+    if (typeof encodee !== "string" || !encodee) {
+      throw new EchecConnu("La réponse du fournisseur ne contient aucune image.");
+    }
+
+    const entree = corps.usage?.input_tokens;
+    const sortie = corps.usage?.output_tokens;
+    return {
+      image: Buffer.from(encodee, "base64"),
+      modeleServi: profil.modele,
+      usages:
+        typeof entree === "number" && typeof sortie === "number"
+          ? [{ modele: profil.modele, jetonsEntree: entree, jetonsSortie: sortie }]
+          : null,
     };
   };
 }
