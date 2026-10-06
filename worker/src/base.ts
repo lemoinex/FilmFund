@@ -695,3 +695,101 @@ export async function lireContexteDialogue(
   const { rows } = await base.query("select public.contexte_dialogue($1) as contexte", [attemptId]);
   return rows[0]?.contexte ?? null;
 }
+
+/**
+ * Ce que SCOUT lit pour une recherche : la question, et de quoi situer la
+ * synthèse. Ni titre, ni texte du projet, ni budget, ni équipe.
+ */
+export type ContexteRecherche = {
+  action: string;
+  question: string;
+  projet: { format: string; genre: string | null; pays: string[] | null };
+};
+
+/**
+ * Contexte de la tâche de recherche en cours ; null si l'essai ne nous
+ * appartient plus ou si le projet n'existe plus — rien ne doit alors être
+ * envoyé.
+ */
+export async function lireContexteRecherche(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteRecherche | null> {
+  const { rows } = await base.query("select public.contexte_recherche($1) as contexte", [
+    attemptId,
+  ]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Provisionne la requête de recherche d'un essai. `reserve` est ce que
+ * coûterait au pire la synthèse qui suit : le plafond du mois est comparé à
+ * l'ensemble, avant le premier appel.
+ */
+export async function provisionnerRecherche(
+  base: Base,
+  attemptId: string,
+  provision: {
+    fournisseur: string;
+    profil: string;
+    requetes: number;
+    dollars: string;
+    reserve: string;
+  },
+): Promise<void> {
+  await base.query("select public.provisionner_recherche($1, $2, $3, $4, $5, $6)", [
+    attemptId,
+    provision.fournisseur,
+    provision.profil,
+    provision.requetes,
+    provision.dollars,
+    provision.reserve,
+  ]);
+}
+
+/** Inscrit ce que la recherche a réellement coûté : zéro requête si elle a été refusée. */
+export async function confirmerRecherche(
+  base: Base,
+  attemptId: string,
+  reglement: { requetes: number; dollars: string | null },
+): Promise<void> {
+  await base.query("select public.confirmer_recherche($1, $2, $3)", [
+    attemptId,
+    reglement.requetes,
+    reglement.dollars,
+  ]);
+}
+
+/** Source collectée, telle que le worker la dépose : contrôlée de nouveau par la base. */
+export type SourceCollectee = {
+  url: string;
+  title: string;
+  excerpt: string;
+  /** AAAA-MM-JJ, ou null quand le moteur n'en donne pas de lisible. */
+  published_on: string | null;
+};
+
+/**
+ * Dépose la synthèse et ses sources, et conclut l'essai. Faux : l'essai ne
+ * nous appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionRecherche(
+  base: Base,
+  attemptId: string,
+  synthese: string,
+  sources: readonly SourceCollectee[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_recherche($1, $2, $3::jsonb)", [
+      attemptId,
+      synthese,
+      JSON.stringify(sources),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}

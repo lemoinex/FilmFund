@@ -1616,7 +1616,10 @@ describe("Découpage proposé par FRAME", () => {
     // et la vitrine tairait le prix.
     assert.match(lire("src/lib/plans.ts"), /cle: "shot_list"/);
     assert.match(lire("src/lib/offre.ts"), /bareme\.shot_list/);
-    assert.match(lire("src/lib/offre.ts"), /schedule_plan, shot_list, gear_list, treatment/);
+    assert.match(
+      lire("src/lib/offre.ts"),
+      /schedule_plan, shot_list, gear_list, research, treatment/,
+    );
   });
 });
 
@@ -1907,7 +1910,8 @@ describe("Vignettes de BOARD", () => {
     assert.deepEqual(adresses, [PASSERELLE]);
 
     const passerelle = lire(PASSERELLE);
-    assert.equal(passerelle.match(/https?:\/\/[^\s"'`]+/g)?.length, 1, "une seule adresse");
+    // Deux adresses en tout : celle-ci, et celle du moteur de recherche (lot L1).
+    assert.equal(passerelle.match(/https?:\/\/[^\s"'`]+/g)?.length, 2, "deux adresses, pas plus");
     assert.match(
       passerelle,
       /const ADRESSE_IMAGES_OPENAI = "https:\/\/api\.openai\.com\/v1\/images\/generations";/,
@@ -2027,5 +2031,198 @@ describe("Vignettes de BOARD", () => {
     const migration = lire(MIGRATION);
     assert.equal(migration.split(`between 8 and ${TAILLE_MAX_IMAGE}`).length - 1, 2);
     assert.equal(migration.split("'\\x89504e470d0a1a0a'::bytea").length - 1, 2);
+  });
+});
+
+/*
+ * SCOUT (lot L1) : la recherche sourcée. Un troisième fournisseur entre dans
+ * la passerelle, et lui seul ; seule la question lui parvient ; le worker ne
+ * visite aucune page ; la base ne se fie ni au site ni aux renvois annoncés,
+ * et aucune source ne naît vérifiée.
+ */
+describe("Recherche de SCOUT", () => {
+  const MIGRATION = "supabase/migrations/20261006180000_scout_recherche.sql";
+  const corpsDans = (fichier, fonction) => {
+    const migration = lire(fichier);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable dans ${fichier}`);
+    return migration.slice(debut, migration.indexOf("\n$$;", debut));
+  };
+  const corps = (fonction) => corpsDans(MIGRATION, fonction);
+
+  it("seule la passerelle nomme Perplexity, à une adresse fixe, et ne lui envoie que la question", () => {
+    const fichiers = [...fichiersDe("worker/src"), ...fichiersDe("src")];
+    const adresses = fichiers.filter((fichier) => /api\.perplexity\.ai/.test(lire(fichier)));
+    assert.deepEqual(adresses, [PASSERELLE]);
+
+    const passerelle = lire(PASSERELLE);
+    assert.match(
+      passerelle,
+      /const ADRESSE_RECHERCHE_PERPLEXITY = "https:\/\/api\.perplexity\.ai\/search";/,
+    );
+    // Le corps de la requête : la question et deux bornes du profil, rien d'autre.
+    assert.match(
+      passerelle,
+      /body: JSON\.stringify\(\{\s+query: question,\s+max_results: profil\.collecte\.resultatsMax,\s+max_tokens_per_page: profil\.collecte\.jetonsParPage,\s+\}\),/,
+    );
+    assert.equal(passerelle.match(/redirect: "error"/g)?.length, 2, "aucune redirection suivie");
+    // Aucune dépendance de plus : Perplexity est appelé sans SDK.
+    for (const paquet of ["worker/package.json", "package.json"]) {
+      const dependances = JSON.parse(lire(paquet)).dependencies ?? {};
+      assert.ok(!Object.keys(dependances).some((nom) => /perplexity/i.test(nom)), paquet);
+    }
+  });
+
+  it("l'agent ne transmet au moteur que la question, et ne visite aucune page", () => {
+    const agent = lire("worker/src/agents/scout.ts");
+    assert.match(agent, /await moteur\(\{ profil, question: contexte\.question \}, signal\)/);
+    assert.doesNotMatch(agent, /\bfetch\(|node:https?|node:net|node:dns|undici/);
+    // La requête est inscrite avant tout tri des pages, et le modèle n'est
+    // appelé qu'avec des sources.
+    assert.ok(
+      agent.indexOf("await confirmerRecherche(base, travail.attemptId, { requetes: 1") <
+        agent.indexOf("const sources = retenirSources("),
+    );
+    assert.match(agent, /if \(sources\.length === 0\) \{\s+throw new EchecConnu\(/);
+    // Le coût de la synthèse passe par la mécanique commune, pas par une copie.
+    assert.match(agent, /return creerExecuteur<string>\(base, fournisseur, \{/);
+    assert.doesNotMatch(agent, /provisionnerCout|confirmerCout/);
+  });
+
+  it("SCOUT demande les deux clés ; le registre ne le sert pas avec une seule", () => {
+    const registre = lire("worker/src/registre.ts");
+    assert.match(registre, /lireCleFournisseur\(base, "perplexity"\)/);
+    assert.match(
+      registre,
+      /cle && cleRecherche\s+\? \{ \.\.\.executeursScout\(base, creer\(cle\), creerRecherche\(cleRecherche\)\) \}\s+: \{\}/,
+    );
+  });
+
+  it("les fonctions reprises le sont à l'identique, à leur seul ajout près", () => {
+    const BOARD = "supabase/migrations/20261006160000_board_images.sql";
+    const devis = corps("creer_devis");
+    const ajout = devis.slice(
+      devis.indexOf("    when 'research' then"),
+      devis.indexOf("    when 'treatment' then"),
+    );
+    assert.match(ajout, /v_quantite := v_bareme\.research;/);
+    assert.match(ajout, /char_length\(btrim\(v_question\)\) not between 10 and 500/);
+    assert.match(ajout, /v_question ~ '\[\[:cntrl:\]\]'/);
+    assert.equal(
+      devis.replace(ajout, "").replace("  v_question text;\n", ""),
+      corpsDans(BOARD, "creer_devis"),
+    );
+
+    const ecarter = corps("ecarter_lignes_restantes");
+    const sixieme = ecarter.slice(
+      ecarter.indexOf("\n  update public.ai_suggestion_sources"),
+      ecarter.indexOf("  return null;"),
+    );
+    assert.equal(ecarter.replace(sixieme, ""), corpsDans(BOARD, "ecarter_lignes_restantes"));
+
+    assert.equal(
+      corps("definir_cle_fournisseur").replace(", 'perplexity')", ")"),
+      corpsDans(
+        "supabase/migrations/20261001124014_integrations_ia.sql",
+        "definir_cle_fournisseur",
+      ),
+    );
+  });
+
+  it("la base admet l'action sans rien retirer aux autres, et le barème en connaît le prix", async () => {
+    const profils = await import("../worker/src/ia/profils.ts");
+    const migration = lire(MIGRATION);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    for (const action of [
+      ...Object.keys(profils.PROFILS_IA),
+      ...Object.keys(profils.PROFILS_FIELD),
+      ...Object.keys(profils.PROFILS_VOICE),
+      ...Object.keys(profils.PROFILS_FRAME),
+      ...Object.keys(profils.PROFILS_GEAR),
+      ...Object.keys(profils.PROFILS_BOARD),
+      ...Object.keys(profils.PROFILS_SCOUT),
+    ]) {
+      assert.ok(enBase.includes(action), action);
+    }
+    assert.match(migration, /add column research integer not null default 3;/);
+    assert.match(lire("src/lib/plans.ts"), /cle: "research"/);
+    assert.match(lire("src/lib/offre.ts"), /bareme\.research/);
+
+    // Le profil ne demande pas plus de sources que la base n'en accepte, et
+    // la synthèse tient dans une proposition.
+    const depot = corps("livrer_proposition_recherche");
+    const max = Number(/v_nombre not between 1 and (\d+)/.exec(depot)?.[1]);
+    assert.equal(max, 20);
+    assert.ok(profils.PROFIL_RECHERCHE.collecte.resultatsMax <= max);
+    assert.equal(profils.PROFIL_RECHERCHE.longueurMax, 20000);
+    assert.match(depot, /char_length\(v_texte\) not between 1 and 20000/);
+  });
+
+  it("le worker ne reçoit que quatre fonctions, et ne lit du projet que de quoi situer la réponse", () => {
+    const migration = lire(MIGRATION);
+    const accordes = [...migration.matchAll(/^grant [^;]+\s+to filmfund_worker;/gm)].map((m) =>
+      m[0].replace(/\s+/g, " "),
+    );
+    assert.deepEqual(accordes, [
+      "grant execute on function public.provisionner_recherche(uuid, text, text, integer, numeric, numeric) to filmfund_worker;",
+      "grant execute on function public.confirmer_recherche(uuid, integer, numeric) to filmfund_worker;",
+      "grant execute on function public.contexte_recherche(uuid) to filmfund_worker;",
+      "grant execute on function public.livrer_proposition_recherche(uuid, text, jsonb) to filmfund_worker;",
+    ]);
+    const contexte = corps("contexte_recherche");
+    assert.match(contexte, /'question', btrim\(v_job\.params ->> 'question'\)/);
+    assert.doesNotMatch(
+      contexte,
+      /v_projet\.(title|logline|synopsis|short_synopsis|theme|stakes|artistic_vision)|project_budgets|project_documents|project_characters|profiles|project_members/,
+    );
+  });
+
+  it("la base tire le site de l'adresse et relit chaque renvoi : rien n'est pris sur parole", () => {
+    const depot = corps("livrer_proposition_recherche");
+    assert.match(
+      depot,
+      /lower\(substring\(t\.source ->> 'url' from '\^https:\/\/\(\[\^\/\?#:\]\+\)'\)\)/,
+    );
+    assert.match(depot, /position\('\[' \|\| t\.rang \|\| '\]' in v_texte\) > 0/);
+    assert.match(depot, /v_collecte\.settled_at,/);
+    assert.doesNotMatch(depot, /->> 'site'|->> 'cited'|->> 'collected_at'|->> 'state'/);
+    // Pas de source sans collecte servie, pas d'adresse écrite par le modèle,
+    // pas de renvoi hors de la collecte.
+    assert.match(depot, /where s\.attempt_id = p_attempt_id and s\.requests >= 1;/);
+    assert.match(depot, /v_texte ~\* '\(https\?:\/\/\|www\\\.\)'/);
+    assert.match(depot, /v_renvois = 0 or v_renvoi_min < 1 or v_renvoi_max > v_nombre/);
+  });
+
+  it("aucune source ne naît vérifiée, et rien dans ce lot n'en vérifie une", () => {
+    const migration = lire(MIGRATION);
+    assert.match(migration, /status text not null default 'non_verifie',/);
+    assert.match(
+      corps("accepter_source_proposee"),
+      /v_ligne\.collected_at, 'non_verifie', v_question,/,
+    );
+    // « verifie » n'apparaît qu'une fois hors des commentaires : dans la
+    // liste des statuts admis. Aucune fonction ne l'écrit.
+    const code = migration.replace(/^\s*--.*$/gm, "");
+    assert.equal(code.match(/'verifie'/g)?.length, 1);
+    assert.match(
+      migration,
+      /grant select, delete on table public\.project_sources to authenticated;/,
+    );
+    // L'organisme n'est pas connu : aucune colonne ne prétend le porter.
+    assert.doesNotMatch(code, /organi[sz]/i);
+  });
+
+  it("le plafond du mois refuse la requête et la synthèse ensemble, et compte les deux", () => {
+    assert.match(
+      corps("provisionner_recherche"),
+      /public\.depense_ia_du_mois\(\) \+ p_usd \+ p_reserve_usd > v_plafond/,
+    );
+    const depense = corps("depense_ia_du_mois");
+    assert.match(depense, /from public\.provider_charges c/);
+    assert.match(depense, /from public\.provider_search_charges c/);
+    const agent = lire("worker/src/agents/scout.ts");
+    assert.match(agent, /reserve: enDollars\(reserve\),/);
+    assert.match(agent, /jetonsSortie: profil\.jetonsMax,/);
   });
 });

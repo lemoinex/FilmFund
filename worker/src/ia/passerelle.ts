@@ -4,9 +4,9 @@
  * un test d'architecture refusent tout autre import : aucun agent, aucune
  * route, aucun composant n'appelle un fournisseur sans passer par ici.
  *
- * Deux fournisseurs : Anthropic pour le texte, par son SDK ; OpenAI pour
- * l'image, par une requête HTTPS écrite ici — une seule adresse, fixe, sans
- * dépendance de plus.
+ * Trois fournisseurs : Anthropic pour le texte, par son SDK ; OpenAI pour
+ * l'image et Perplexity pour la recherche, chacun par une requête HTTPS
+ * écrite ici — une seule adresse, fixe, sans dépendance de plus.
  *
  * La clé d'API vient du coffre de la base, lue par le registre des agents,
  * jamais du dépôt ni de l'environnement ; elle n'est ni journalisée ni
@@ -15,7 +15,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 import { EchecConnu } from "../executeurs.ts";
-import type { ProfilAppel, ProfilImage, UsageModele } from "./profils.ts";
+import type { ProfilAppel, ProfilImage, ProfilRecherche, UsageModele } from "./profils.ts";
 
 export type DemandeIA = {
   profil: ProfilAppel;
@@ -247,5 +247,106 @@ export function creerFournisseurImagesOpenAI(cleApi: string): FournisseurImages 
           ? [{ modele: profil.modele, jetonsEntree: entree, jetonsSortie: sortie }]
           : null,
     };
+  };
+}
+
+export type DemandeRecherche = {
+  profil: ProfilRecherche;
+  /** La question, et elle seule : rien d'autre du projet ne part chez le moteur. */
+  question: string;
+};
+
+/** Une page rendue par le moteur, telle quelle : contrôlée par l'agent, puis par la base. */
+export type ResultatRecherche = {
+  titre: string;
+  adresse: string;
+  extrait: string;
+  date: string | null;
+};
+
+export type ReponseRecherche = { resultats: ResultatRecherche[] };
+
+/** Mêmes deux façons d'échouer que `Fournisseur`. */
+export type FournisseurRecherche = (
+  demande: DemandeRecherche,
+  signal: AbortSignal,
+) => Promise<ReponseRecherche>;
+
+/** La seule adresse de Perplexity que le worker connaisse. */
+const ADRESSE_RECHERCHE_PERPLEXITY = "https://api.perplexity.ai/search";
+
+/** Une minute : une recherche ne rédige rien, elle n'a pas à durer. */
+const DELAI_RECHERCHE_MS = 60_000;
+
+/** Taille maximale de la réponse : au-delà, elle n'est pas lue. */
+const REPONSE_RECHERCHE_MAX = 2 * 1024 * 1024;
+
+export function creerFournisseurRecherchePerplexity(cleApi: string): FournisseurRecherche {
+  return async ({ profil, question }, signal) => {
+    /*
+     * Aucun réessai, aucune redirection suivie : une seule requête, vers une
+     * seule adresse. Le worker ne visite aucune des pages rendues. Une
+     * coupure ou un délai dépassé laisse l'issue inconnue, et remonte tel
+     * quel — la reprise est décidée par la base.
+     */
+    const reponse = await fetch(ADRESSE_RECHERCHE_PERPLEXITY, {
+      method: "POST",
+      redirect: "error",
+      signal: AbortSignal.any([signal, AbortSignal.timeout(DELAI_RECHERCHE_MS)]),
+      headers: { authorization: `Bearer ${cleApi}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        query: question,
+        max_results: profil.collecte.resultatsMax,
+        max_tokens_per_page: profil.collecte.jetonsParPage,
+      }),
+    });
+
+    if (!reponse.ok) {
+      // Le moteur a répondu par une erreur : rien n'a été collecté. Son texte
+      // part au journal du worker, jamais sur la tâche.
+      const detail = (await reponse.text().catch(() => "")).slice(0, 2000);
+      throw new EchecConnu(`Le fournisseur a répondu par une erreur (${reponse.status}).`, {
+        detail,
+        // Perplexity facture les requêtes servies, et dit ne pas facturer un
+        // 429 : tout refus 4xx est sans frais. Un 5xx reste douteux.
+        sansFrais: reponse.status >= 400 && reponse.status < 500,
+      });
+    }
+
+    const annonce = Number(reponse.headers.get("content-length") ?? 0);
+    if (annonce > REPONSE_RECHERCHE_MAX) {
+      throw new EchecConnu("La réponse du fournisseur dépasse la taille admise.");
+    }
+    const brut = Buffer.from(await reponse.arrayBuffer());
+    if (brut.length > REPONSE_RECHERCHE_MAX) {
+      throw new EchecConnu("La réponse du fournisseur dépasse la taille admise.");
+    }
+
+    let corps: { results?: unknown } | null;
+    try {
+      corps = JSON.parse(brut.toString("utf8"));
+    } catch {
+      throw new EchecConnu("La réponse du fournisseur est illisible.");
+    }
+    if (!Array.isArray(corps?.results)) {
+      throw new EchecConnu("La réponse du fournisseur ne contient aucune liste de résultats.");
+    }
+
+    // Seules les entrées bien formées passent ; leur contenu, lui, reste à
+    // contrôler.
+    const resultats = (corps.results as unknown[]).flatMap((entree): ResultatRecherche[] => {
+      const { title, url, snippet, date } = (entree ?? {}) as Record<string, unknown>;
+      return typeof title === "string" && typeof url === "string" && typeof snippet === "string"
+        ? [
+            {
+              titre: title,
+              adresse: url,
+              extrait: snippet,
+              date: typeof date === "string" ? date : null,
+            },
+          ]
+        : [];
+    });
+    return { resultats };
   };
 }

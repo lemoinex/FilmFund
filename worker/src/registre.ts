@@ -6,9 +6,11 @@
  * pendant que le worker tourne — poser une clé met l'agent en service, la
  * retirer l'en sort, sans redéploiement.
  *
- * Deux fournisseurs, deux clés, indépendantes : celle d'Anthropic sert les
- * agents de texte, celle d'OpenAI le seul agent d'image. Retirer l'une ne
- * sort pas les agents de l'autre.
+ * Trois fournisseurs, trois clés, indépendantes : celle d'Anthropic sert les
+ * agents de texte, celle d'OpenAI le seul agent d'image, celle de Perplexity
+ * la collecte de SCOUT. Retirer l'une ne sort pas les agents des autres —
+ * sauf SCOUT, qui collecte chez l'un et synthétise chez l'autre : il lui
+ * faut les deux clés, et il sort dès qu'une manque.
  *
  * Aucune clé ne quitte cette fermeture : ni journal, ni valeur de retour.
  * Seule sa présence est observable du dehors.
@@ -18,6 +20,7 @@ import { executeursBoard } from "./agents/board.ts";
 import { executeursField } from "./agents/field.ts";
 import { executeursFrame } from "./agents/frame.ts";
 import { executeursGear } from "./agents/gear.ts";
+import { executeursScout } from "./agents/scout.ts";
 import { executeursScript } from "./agents/script.ts";
 import { executeursVoice } from "./agents/voice.ts";
 import { executeursWeaver } from "./agents/weaver.ts";
@@ -26,8 +29,10 @@ import type { Evenement, Registre } from "./boucle.ts";
 import {
   creerFournisseurAnthropic,
   creerFournisseurImagesOpenAI,
+  creerFournisseurRecherchePerplexity,
   type Fournisseur,
   type FournisseurImages,
+  type FournisseurRecherche,
 } from "./ia/passerelle.ts";
 
 export type OptionsRegistre = {
@@ -37,6 +42,8 @@ export type OptionsRegistre = {
   creerFournisseur?: (cleApi: string) => Fournisseur;
   /** Doublure des tests : à défaut, le vrai fournisseur d'images d'OpenAI. */
   creerFournisseurImages?: (cleApi: string) => FournisseurImages;
+  /** Doublure des tests : à défaut, le vrai moteur de recherche de Perplexity. */
+  creerFournisseurRecherche?: (cleApi: string) => FournisseurRecherche;
 };
 
 export function registreDesAgents({
@@ -44,16 +51,23 @@ export function registreDesAgents({
   journal,
   creerFournisseur,
   creerFournisseurImages,
+  creerFournisseurRecherche,
 }: OptionsRegistre) {
   const creer = creerFournisseur ?? creerFournisseurAnthropic;
   const creerImages = creerFournisseurImages ?? creerFournisseurImagesOpenAI;
+  const creerRecherche = creerFournisseurRecherche ?? creerFournisseurRecherchePerplexity;
   let cleAnthropic: string | null = null;
   let cleOpenAI: string | null = null;
+  let clePerplexity: string | null = null;
   let texte: Registre = {};
   let image: Registre = {};
+  let recherche: Registre = {};
 
   async function relire(): Promise<void> {
     const cle = await lireCleFournisseur(base, "anthropic");
+    const cleRecherche = await lireCleFournisseur(base, "perplexity");
+    // SCOUT dépend des deux clés : il est refait dès que l'une change.
+    const scoutChange = cle !== cleAnthropic || cleRecherche !== clePerplexity;
     if (cle !== cleAnthropic) {
       cleAnthropic = cle;
       if (cle) {
@@ -89,7 +103,24 @@ export function registreDesAgents({
         actions: Object.keys(image),
       });
     }
+
+    if (scoutChange) {
+      const cleChangee = cleRecherche !== clePerplexity;
+      clePerplexity = cleRecherche;
+      recherche =
+        cle && cleRecherche
+          ? { ...executeursScout(base, creer(cle), creerRecherche(cleRecherche)) }
+          : {};
+      if (cleChangee) {
+        journal({
+          niveau: "info",
+          evenement: cleRecherche ? "cle_fournisseur_chargee" : "cle_fournisseur_retiree",
+          fournisseur: "perplexity",
+          actions: Object.keys(recherche),
+        });
+      }
+    }
   }
 
-  return { relire, lire: (): Registre => ({ ...texte, ...image }) };
+  return { relire, lire: (): Registre => ({ ...texte, ...image, ...recherche }) };
 }

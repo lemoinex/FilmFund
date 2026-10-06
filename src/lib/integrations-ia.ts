@@ -13,7 +13,7 @@ export const CLE_MIN = 20;
 export const CLE_MAX = 500;
 
 export type Fournisseur = {
-  code: "anthropic" | "openai";
+  code: "anthropic" | "openai" | "perplexity";
   nom: string;
   /** Ce que la clé met réellement en service aujourd'hui. */
   usage: string;
@@ -31,8 +31,15 @@ export const FOURNISSEURS: readonly Fournisseur[] = [
   {
     code: "openai",
     nom: "OpenAI",
-    usage: "Prévu pour le storyboard. Aucun agent ne l'appelle pour l'instant.",
-    employe: false,
+    usage: "Storyboard : la vignette d'une scène, dessinée à l'encre.",
+    employe: true,
+  },
+  {
+    code: "perplexity",
+    nom: "Perplexity",
+    usage:
+      "Recherche documentaire : collecte des sources, que l'assistant de texte synthétise ensuite. Demande aussi la clé d'Anthropic. Aucun écran ne la propose encore.",
+    employe: true,
   },
 ];
 

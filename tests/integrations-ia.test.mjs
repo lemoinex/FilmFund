@@ -29,7 +29,7 @@ const FACTICE_BIS = "sk-ant-factice-integrations-bbbbbbbb";
 
 describe("Intégrations IA : module d'affichage", () => {
   it("ne propose que des fournisseurs connus de la base", () => {
-    assert.deepEqual(CODES_FOURNISSEURS, ["anthropic", "openai"]);
+    assert.deepEqual(CODES_FOURNISSEURS, ["anthropic", "openai", "perplexity"]);
     for (const code of CODES_FOURNISSEURS) {
       assert.ok(estFournisseurConnu(code));
     }
@@ -38,9 +38,17 @@ describe("Intégrations IA : module d'affichage", () => {
 
   it("dit lesquels sont réellement employés, sans laisser croire au reste", () => {
     const employes = FOURNISSEURS.filter((f) => f.employe).map((f) => f.code);
-    assert.deepEqual(employes, ["anthropic"]);
+    // Les trois ont un agent : BOARD appelle OpenAI depuis le lot K1, SCOUT
+    // Perplexity depuis le lot L1.
+    assert.deepEqual(employes, ["anthropic", "openai", "perplexity"]);
     const openai = FOURNISSEURS.find((f) => f.code === "openai");
-    assert.match(openai.usage, /aucun agent/i);
+    assert.match(openai.usage, /storyboard/i);
+    assert.doesNotMatch(openai.usage, /aucun agent/i);
+    // Perplexity ne suffit pas seul, et aucun écran ne propose encore la
+    // recherche : l'écran le dit plutôt que de laisser croire au contraire.
+    const perplexity = FOURNISSEURS.find((f) => f.code === "perplexity");
+    assert.match(perplexity.usage, /clé d'Anthropic/);
+    assert.match(perplexity.usage, /Aucun écran ne la propose encore/);
   });
 
   it("applique les mêmes bornes que la base", () => {
