@@ -63,6 +63,8 @@ select is_empty(
         'ecarter_materiel_propose',
         'accepter_image_proposee',
         'ecarter_image_proposee',
+        'accepter_source_proposee',
+        'ecarter_source_proposee',
         'definir_cle_fournisseur',
         'retirer_cle_fournisseur'
       )

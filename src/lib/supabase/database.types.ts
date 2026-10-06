@@ -452,6 +452,85 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_sources: {
+        Row: {
+          cited: boolean;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          excerpt: string;
+          id: string;
+          position: number;
+          project_id: string;
+          published_on: string | null;
+          site: string;
+          source_id: string | null;
+          state: string;
+          suggestion_id: string;
+          title: string;
+          url: string;
+        };
+        Insert: {
+          cited: boolean;
+          collected_at: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          excerpt: string;
+          id?: string;
+          position: number;
+          project_id: string;
+          published_on?: string | null;
+          site: string;
+          source_id?: string | null;
+          state?: string;
+          suggestion_id: string;
+          title: string;
+          url: string;
+        };
+        Update: {
+          cited?: boolean;
+          collected_at?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          excerpt?: string;
+          id?: string;
+          position?: number;
+          project_id?: string;
+          published_on?: string | null;
+          site?: string;
+          source_id?: string | null;
+          state?: string;
+          suggestion_id?: string;
+          title?: string;
+          url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_sources_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_sources_source_id_fkey";
+            columns: ["source_id"];
+            isOneToOne: false;
+            referencedRelation: "project_sources";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_sources_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_suggestions: {
         Row: {
           action: string;
@@ -1416,6 +1495,66 @@ export type Database = {
           },
         ];
       };
+      project_sources: {
+        Row: {
+          collected_at: string;
+          created_at: string;
+          created_by: string | null;
+          excerpt: string;
+          id: string;
+          project_id: string;
+          published_on: string | null;
+          question: string;
+          site: string;
+          status: string;
+          title: string;
+          url: string;
+        };
+        Insert: {
+          collected_at: string;
+          created_at?: string;
+          created_by?: string | null;
+          excerpt: string;
+          id?: string;
+          project_id: string;
+          published_on?: string | null;
+          question: string;
+          site: string;
+          status?: string;
+          title: string;
+          url: string;
+        };
+        Update: {
+          collected_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+          excerpt?: string;
+          id?: string;
+          project_id?: string;
+          published_on?: string | null;
+          question?: string;
+          site?: string;
+          status?: string;
+          title?: string;
+          url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_sources_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_sources_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       projects: {
         Row: {
           artistic_vision: string;
@@ -1582,6 +1721,71 @@ export type Database = {
           studio_id?: string;
         };
         Relationships: [];
+      };
+      provider_search_charges: {
+        Row: {
+          attempt_id: string;
+          created_at: string;
+          estimated_requests: number;
+          estimated_usd: number;
+          job_id: string;
+          profile: string;
+          project_id: string;
+          provider: string;
+          studio_id: string;
+        };
+        Insert: {
+          attempt_id: string;
+          created_at?: string;
+          estimated_requests: number;
+          estimated_usd: number;
+          job_id: string;
+          profile: string;
+          project_id: string;
+          provider: string;
+          studio_id: string;
+        };
+        Update: {
+          attempt_id?: string;
+          created_at?: string;
+          estimated_requests?: number;
+          estimated_usd?: number;
+          job_id?: string;
+          profile?: string;
+          project_id?: string;
+          provider?: string;
+          studio_id?: string;
+        };
+        Relationships: [];
+      };
+      provider_search_settlements: {
+        Row: {
+          attempt_id: string;
+          requests: number;
+          settled_at: string;
+          usd: number | null;
+        };
+        Insert: {
+          attempt_id: string;
+          requests: number;
+          settled_at?: string;
+          usd?: number | null;
+        };
+        Update: {
+          attempt_id?: string;
+          requests?: number;
+          settled_at?: string;
+          usd?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "provider_search_settlements_attempt_id_fkey";
+            columns: ["attempt_id"];
+            isOneToOne: true;
+            referencedRelation: "provider_search_charges";
+            referencedColumns: ["attempt_id"];
+          },
+        ];
       };
       quotes: {
         Row: {
@@ -2042,6 +2246,7 @@ export type Database = {
           logline: number;
           published_at: string;
           published_by: string | null;
+          research: number;
           schedule_plan: number;
           screenplay_per_sequence: number;
           shot_list: number;
@@ -2062,6 +2267,7 @@ export type Database = {
           logline: number;
           published_at?: string;
           published_by?: string | null;
+          research: number;
           schedule_plan: number;
           screenplay_per_sequence: number;
           shot_list: number;
@@ -2082,6 +2288,7 @@ export type Database = {
           logline?: number;
           published_at?: string;
           published_by?: string | null;
+          research?: number;
           schedule_plan?: number;
           screenplay_per_sequence?: number;
           shot_list?: number;
@@ -2260,6 +2467,33 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      accepter_source_proposee: {
+        Args: { p_line_id: string };
+        Returns: {
+          cited: boolean;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          excerpt: string;
+          id: string;
+          position: number;
+          project_id: string;
+          published_on: string | null;
+          site: string;
+          source_id: string | null;
+          state: string;
+          suggestion_id: string;
+          title: string;
+          url: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_sources";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       acces_au_projet: { Args: { p_project_id: string }; Returns: string };
       allocation_du_plan: {
         Args: { p_plan: Database["public"]["Tables"]["plan_versions"]["Row"]; p_unit: string };
@@ -2304,6 +2538,7 @@ export type Database = {
           logline: number;
           published_at: string;
           published_by: string | null;
+          research: number;
           schedule_plan: number;
           screenplay_per_sequence: number;
           shot_list: number;
@@ -2325,6 +2560,7 @@ export type Database = {
       clore_proposition_decoupage: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_materiel: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_planning: { Args: { p_suggestion_id: string }; Returns: undefined };
+      clore_proposition_recherche: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_travail: {
         Args: {
           p_consumed: number;
@@ -2381,6 +2617,21 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      confirmer_recherche: {
+        Args: { p_attempt_id: string; p_requests: number; p_usd: number };
+        Returns: {
+          attempt_id: string;
+          requests: number;
+          settled_at: string;
+          usd: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "provider_search_settlements";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       contenu_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: Json };
       contexte_budget: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_decoupage: { Args: { p_attempt_id: string }; Returns: Json };
@@ -2389,6 +2640,7 @@ export type Database = {
       contexte_image: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_materiel: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_recherche: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_travail: {
         Args: { p_attempt_id: string };
@@ -2567,6 +2819,33 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      ecarter_source_proposee: {
+        Args: { p_line_id: string };
+        Returns: {
+          cited: boolean;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          excerpt: string;
+          id: string;
+          position: number;
+          project_id: string;
+          published_on: string | null;
+          site: string;
+          source_id: string | null;
+          state: string;
+          suggestion_id: string;
+          title: string;
+          url: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_sources";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       email_confirme_courant: { Args: Record<PropertyKey, never>; Returns: string };
       empreinte_contenu: { Args: { p_contenu: Json }; Returns: string };
       empreinte_demande: {
@@ -2708,6 +2987,10 @@ export type Database = {
       };
       livrer_proposition_planning: {
         Args: { p_attempt_id: string; p_lines: Json };
+        Returns: string;
+      };
+      livrer_proposition_recherche: {
+        Args: { p_attempt_id: string; p_content: string; p_sources: Json };
         Returns: string;
       };
       marquer_tentative_soumise: {
@@ -2864,6 +3147,33 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      provisionner_recherche: {
+        Args: {
+          p_attempt_id: string;
+          p_profile: string;
+          p_provider: string;
+          p_requests: number;
+          p_reserve_usd: number;
+          p_usd: number;
+        };
+        Returns: {
+          attempt_id: string;
+          created_at: string;
+          estimated_requests: number;
+          estimated_usd: number;
+          job_id: string;
+          profile: string;
+          project_id: string;
+          provider: string;
+          studio_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "provider_search_charges";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       purger_exports_expires: { Args: Record<PropertyKey, never>; Returns: number };
       rapprocher_travail: {
         Args: { p_consumed?: number; p_job_id: string; p_success: boolean };
@@ -2951,6 +3261,33 @@ export type Database = {
       restaurer_version_document: { Args: { p_version_id: string }; Returns: undefined };
       retirer_cle_fournisseur: { Args: { p_provider: string }; Returns: undefined };
       role_dans_studio: { Args: { p_studio_id: string }; Returns: string };
+      source_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          cited: boolean;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          excerpt: string;
+          id: string;
+          position: number;
+          project_id: string;
+          published_on: string | null;
+          site: string;
+          source_id: string | null;
+          state: string;
+          suggestion_id: string;
+          title: string;
+          url: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_sources";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       studio_personnel_courant: { Args: Record<PropertyKey, never>; Returns: string };
       terminer_tentative: {
         Args: { p_attempt_id: string; p_consumed?: number; p_error?: string; p_success: boolean };

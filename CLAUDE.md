@@ -248,9 +248,10 @@ Fournisseur
 - Garde-fous en place : règle de lint et `tests/architecture.test.mjs` contre tout
   import de SDK hors passerelle.
 - Répartition des fournisseurs : Anthropic pour le texte, OpenAI pour l’image
-  (BOARD). OpenAI est appelé sans SDK, par une requête écrite dans la
+  (BOARD), Perplexity pour la collecte de la recherche (SCOUT). OpenAI et
+  Perplexity sont appelés sans SDK, chacun par une requête écrite dans la
   passerelle, vers une seule adresse : ne pas en installer un, ne pas appeler
-  le réseau ailleurs.
+  le réseau ailleurs. Perplexity ne génère pas d’image.
 
 ### Exigences IA
 
@@ -363,6 +364,25 @@ Concerne SCOUT, GRIOT et MATCH.
 - Avant tout fetch externe : HTTPS uniquement, refus de localhost/plages privées/
   métadonnées cloud, redirections limitées et revalidées, timeout, taille maximale,
   validation de contenu, aucun cookie/token interne transmis.
+
+### SCOUT
+
+- Livré côté serveur (lot L1, action `research`, profil `scout.recherche@1`) :
+  **Perplexity collecte, Anthropic synthétise**. Le moteur rend des pages et ne
+  rédige rien ; le modèle ne reçoit que leurs extraits et ne cite qu’eux, par
+  renvois « [n] ». Ne pas laisser un moteur rédiger la réponse.
+- Seule la question part chez le moteur. Le worker ne visite aucune page : la
+  seule adresse de plus est celle de Perplexity, dans la passerelle.
+- Toute source naît `non_verifie` ; rien ne la vérifie encore. L’organisme n’est
+  pas connu : `site` porte l’hôte de l’adresse, ne pas en déduire un organisme.
+- Sources proposées dans `ai_suggestion_sources`, retenues une à une dans
+  `project_sources` (`accepter_source_proposee`). La base tire le site de
+  l’adresse et relit chaque renvoi : une synthèse qui cite hors de la collecte,
+  ou écrit une adresse, est refusée.
+- Le coût d’une requête de recherche a son registre
+  (`provider_search_charges`), compté dans la dépense du mois ; SCOUT demande
+  les deux clés. Ne pas créer un second modèle de source : GRIOT et MATCH
+  reprennent celui-ci. Écran prévu (lot L2).
 
 ## 10. Fonctionnalités produit à préserver
 

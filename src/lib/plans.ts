@@ -70,6 +70,7 @@ export const CHAMPS_BAREME = [
   { cle: "schedule_plan", libelle: "Planning prévisionnel", unite: "unités", min: 0, max: 1_000 },
   { cle: "shot_list", libelle: "Découpage d'une scène", unite: "unités", min: 0, max: 1_000 },
   { cle: "gear_list", libelle: "Liste de matériel", unite: "unités", min: 0, max: 1_000 },
+  { cle: "research", libelle: "Recherche documentaire", unite: "unités", min: 0, max: 1_000 },
   { cle: "treatment", libelle: "Traitement", unite: "unités", min: 0, max: 1_000 },
   { cle: "bible", libelle: "Bible", unite: "unités", min: 0, max: 1_000 },
   {

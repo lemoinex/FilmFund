@@ -141,6 +141,29 @@ comme celle d'Anthropic, et les deux sont indépendantes : retirer l'une ne sort
 agents de l'autre. La vignette est déposée en base ; le worker n'a aucun droit sur le
 stockage. Si la réponse ne rapporte pas sa consommation, le coût est laissé à rapprocher.
 
+SCOUT répond à une question par une synthèse sourcée (lot L1, action `research`, profil
+`scout.recherche@1`). Il lui faut **deux clés**, celle de Perplexity et celle d'Anthropic :
+il sort du service dès qu'une manque.
+
+- **Deux temps** : une requête à l'API de recherche de Perplexity, par HTTPS, sans SDK, vers
+  une seule adresse ; puis la synthèse par Anthropic, sur les seuls extraits rendus.
+- **Ce qui part chez Perplexity** : la question, et deux bornes du profil (nombre de pages,
+  longueur des extraits). Rien d'autre du projet.
+- **Ce qui part chez Anthropic** : la question, le format, le genre et les pays du projet,
+  et les extraits numérotés — sans leurs adresses.
+- **Aucune page n'est visitée** : le worker ne suit aucun lien. Les adresses rendues sont
+  triées (`adresseAdmise` : HTTPS, nom de domaine public, ni identifiant, ni port, ni
+  adresse IP), dédoublonnées, et les pages sans extrait écartées.
+- **Contrôles de la synthèse** : `lireSynthese`, puis la base au dépôt
+  (`livrer_proposition_recherche`) — chaque renvoi « [n] » désigne une source collectée, il
+  y en a au moins un, et le texte n'écrit aucune adresse. Sinon la tâche échoue : motif
+  « La réponse du fournisseur n'est pas une synthèse exploitable… », unités rendues.
+- **Sans page exploitable** : motif « Aucune source exploitable n'a été trouvée pour cette
+  question. » La requête, servie, reste due ; le modèle n'est pas appelé.
+- **Dépôt** : la synthèse dans la proposition, une ligne par source dans
+  `ai_suggestion_sources`. Rien n'entre aux sources du projet avant qu'une source soit
+  retenue par `accepter_source_proposee`, « non vérifiée ».
+
 - **Aucune date** : un jalon proposé porte un titre, une phase et une durée en jours. FIELD
   ne connaît ni le jour ni le calendrier de l'équipe ; elle date le jalon en l'acceptant.
   Sans date, la durée estimée est gardée dans les notes du jalon.
@@ -206,6 +229,14 @@ administrateurs :
   facture : de l'ordre de 0,01 à 0,02 $ pour un pitch. Il est inscrit dès que le fournisseur
   a répondu, que la proposition soit exploitable ou non. Un montant vide signale un modèle
   sans tarif connu dans `profils.ts` : à rapprocher de la facture.
+
+Une recherche de SCOUT ajoute une ligne à un second registre, de même forme :
+`provider_search_charges` (la requête provisionnée, 0,005 $) et
+`provider_search_settlements` (les requêtes servies : une, ou zéro si le moteur a refusé).
+Les deux registres comptent dans la dépense du mois. La requête est provisionnée avec, en
+réserve, le pire coût de la synthèse : le plafond refuse l'ensemble avant le premier appel.
+Si la synthèse échoue après une collecte servie, la tâche repart une fois, et une seconde
+requête est payée.
 
 **Requête refusée** (statut 4xx hors 429) : le fournisseur ne l'a ni traitée ni facturée. Le
 coût est alors confirmé à **zéro**, pour que la provision cesse de peser sur le plafond du
