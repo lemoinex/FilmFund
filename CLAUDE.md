@@ -502,7 +502,9 @@ recommandations (« à améliorer ») sont configurables et traçables.
   les plans d’une scène, sur le modèle des propositions structurées : acceptés
   ou écartés un à un, un plan accepté s’ajoutant à la fin de sa scène. Il lit
   le scénario enregistré en entier et le concept du projet ; la scène du
-  storyboard dit laquelle découper. Base et worker écrits ; écran prévu (J3c-2b).
+  storyboard dit laquelle découper. Écran (J3c-2b) dans le volet « Découpage »
+  de chaque scène (`storyboard/actions-ia.ts`, `plans-proposes.tsx`, catalogue
+  `LIVRABLE_DECOUPAGE`) : les lecteurs y lisent les plans proposés sans en décider.
 - Prévus : GEAR propose une liste de matériel (J3c-3), sur le même modèle ;
   sections du dossier (J3c-4). GEAR ne propose ni marque, ni loueur, ni prix.
 

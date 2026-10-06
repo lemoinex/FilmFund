@@ -345,6 +345,87 @@ export function messageLotJalons(acceptes: number, demandes: number): string {
 }
 
 /**
+ * Le découpage d'une scène (agent FRAME). Ce livrable se demande scène par
+ * scène, depuis le storyboard : il est tenu à part de `LIVRABLES_STRUCTURES`,
+ * que l'écran et les tests lient aux profils de FIELD. Sa borne est celle de
+ * la base et du profil ; un test d'architecture vérifie qu'elles s'accordent.
+ */
+export const LIVRABLE_DECOUPAGE = {
+  action: "shot_list",
+  titre: "Découpage proposé par l'assistant",
+  bouton: "Proposer un découpage",
+  description:
+    "L'assistant propose les plans de cette scène à partir du scénario enregistré, du concept du projet et de la scène, transmis pour cela à notre fournisseur d'IA.",
+  /** Dit quand le projet n'a pas de scénario : l'assistant a moins de matière. */
+  sansScenario:
+    "Ce projet n'a pas de scénario enregistré : l'assistant travaillera d'après la description de la scène et le concept.",
+  /**
+   * Dit à chaque affichage des plans : focales et durées ne sont pas des
+   * mesures, et un plan proposé n'engage pas la mise en scène.
+   */
+  avertissement:
+    "Plans proposés par l'assistant : focales et durées sont des ordres de grandeur. Vérifiez chaque plan avant de l'accepter.",
+  /** Plans qu'une proposition peut porter : la borne de la base et du profil. */
+  lignesMax: 20,
+} as const;
+
+/** Plan proposé, tel que l'écran le lit. */
+export type PlanPropose = {
+  id: string;
+  position: number;
+  shot: string;
+  focal_mm: number | null;
+  angle: string;
+  movement: string;
+  description: string;
+  duration_seconds: number | null;
+  state: string;
+};
+
+/** Où en est un découpage proposé : combien de plans attendent, sont entrés ou écartés. */
+export function bilanPlans(plans: readonly PlanPropose[]): {
+  enAttente: number;
+  acceptes: number;
+  ecartes: number;
+} {
+  let enAttente = 0;
+  let acceptes = 0;
+  let ecartes = 0;
+  for (const plan of plans) {
+    if (plan.state === "accepted") {
+      acceptes += 1;
+    } else if (plan.state === "dismissed") {
+      ecartes += 1;
+    } else {
+      enAttente += 1;
+    }
+  }
+  return { enAttente, acceptes, ecartes };
+}
+
+/** « 1 plan », « 12 plans ». */
+export function nombrePlans(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "plans" : "plan"}`;
+}
+
+/**
+ * Ce que l'écran dit après « tout accepter » des plans, qui n'est pas
+ * atomique : si un plan est refusé en chemin, les précédents sont déjà dans
+ * le découpage, et l'écran doit le dire plutôt que d'annoncer un échec.
+ */
+export function messageLotPlans(acceptes: number, demandes: number): string {
+  if (acceptes >= demandes) {
+    return `${nombrePlans(acceptes)} ${acceptes > 1 ? "ajoutés" : "ajouté"} au découpage.`;
+  }
+  if (acceptes === 0) {
+    return "Aucun plan n'a pu être ajouté. Réessayez dans un instant.";
+  }
+  return `${nombrePlans(acceptes)} sur ${NOMBRE.format(demandes)} ${
+    acceptes > 1 ? "ajoutés" : "ajouté"
+  } au découpage ; les autres attendent toujours votre décision.`;
+}
+
+/**
  * Les dialogues d'une scène (agent VOICE). Ce livrable ne se demande pas
  * depuis un encart de texte mais depuis une sélection dans le scénario : il
  * est tenu à part de `LIVRABLES_IA`. Ses bornes sont celles de la base ; un

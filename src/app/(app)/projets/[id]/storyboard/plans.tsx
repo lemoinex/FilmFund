@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { ANGLES, formaterDureePlan, MOUVEMENTS, resumeDecoupage } from "@/lib/decoupage";
@@ -24,6 +25,7 @@ export function PlansScene({
   planEnModification,
   ouvert,
   peutEditer,
+  assistant,
 }: {
   projetId: string;
   sceneId: string;
@@ -33,9 +35,11 @@ export function PlansScene({
   planEnModification?: string;
   ouvert: boolean;
   peutEditer: boolean;
+  /** Encart de l'assistant de découpage, quand la page en montre un. */
+  assistant?: ReactNode;
 }) {
-  // Un lecteur n'a rien à ouvrir tant qu'aucun plan n'est décrit.
-  if (!plans.length && !peutEditer) {
+  // Un lecteur n'a rien à ouvrir tant qu'aucun plan n'est décrit ni proposé.
+  if (!plans.length && !peutEditer && !assistant) {
     return null;
   }
 
@@ -69,6 +73,8 @@ export function PlansScene({
           ))}
         </ol>
       ) : null}
+
+      {assistant}
 
       {peutEditer && !planEnModification ? (
         <div className="mt-5">
