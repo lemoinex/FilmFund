@@ -1392,3 +1392,208 @@ describe("Découpage et matériel", () => {
     );
   });
 });
+
+/*
+ * FRAME (lot J3c-2a) : le découpage proposé d'une scène. Le profil, la base
+ * et le worker décrivent les mêmes plans ; un écart ferait refuser un dépôt
+ * après un appel payé.
+ */
+describe("Découpage proposé par FRAME", () => {
+  const MIGRATION = "supabase/migrations/20261006010000_frame_decoupage.sql";
+  const corps = (fonction) => {
+    const migration = lire(MIGRATION);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable`);
+    return migration.slice(debut, migration.indexOf("$$;", debut));
+  };
+
+  it("la base admet l'action de FRAME, la facture au barème et exige une scène du projet", async () => {
+    const { PROFILS_FIELD, PROFILS_FRAME, PROFILS_IA, PROFILS_VOICE } =
+      await import("../worker/src/ia/profils.ts");
+    const migration = lire(MIGRATION);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    const devis = corps("creer_devis");
+
+    for (const [action, profil] of Object.entries(PROFILS_FRAME)) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(devis.includes(`v_quantite := v_bareme.${action};`), `devis de ${action}`);
+      assert.match(profil.id, /^frame\.[a-z_]+@\d+$/, action);
+      assert.ok(!(action in PROFILS_IA) && !(action in PROFILS_FIELD), action);
+    }
+    assert.match(
+      devis,
+      /s\.id = \(v_parametres ->> 'scene'\)::uuid and s\.project_id = p_project_id/,
+    );
+
+    // Le devis repris garde chaque livrable déjà ouvert, et ses gardes.
+    for (const action of [
+      ...Object.keys(PROFILS_IA),
+      ...Object.keys(PROFILS_FIELD),
+      ...Object.keys(PROFILS_VOICE),
+    ]) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(devis.includes(`when '${action}' then`), action);
+    }
+    assert.match(devis, /parametre_entier\(v_parametres, 'sequences', 1\)/);
+    assert.match(devis, /public\.passage_du_scenario\(p_project_id, v_parametres\) is null/);
+    assert.match(devis, /Ouvrez d''abord le budget du projet/);
+  });
+
+  it("le schéma ne connaît que les cadrages, angles et mouvements de la base", async () => {
+    const { ANGLES_PLAN, CADRAGES_PLAN, MOUVEMENTS_PLAN, PROFIL_DECOUPAGE } =
+      await import("../worker/src/ia/profils.ts");
+    const valeurs = (fichier, type) => {
+      const liste =
+        new RegExp(`create type public\\.${type} as enum \\(([^)]+)\\)`).exec(lire(fichier))?.[1] ??
+        "";
+      return [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    };
+    const J3C1 = "supabase/migrations/20261005210000_decoupage_materiel.sql";
+
+    assert.deepEqual(
+      [...CADRAGES_PLAN],
+      valeurs("supabase/migrations/20260930003828_storyboard.sql", "shot_type"),
+    );
+    assert.deepEqual([...ANGLES_PLAN], valeurs(J3C1, "shot_angle"));
+    assert.deepEqual([...MOUVEMENTS_PLAN], valeurs(J3C1, "shot_movement"));
+
+    const plan = PROFIL_DECOUPAGE.schema.properties.lines.items;
+    assert.equal(PROFIL_DECOUPAGE.schema.additionalProperties, false);
+    assert.equal(plan.additionalProperties, false);
+    assert.deepEqual(plan.properties.shot.enum, [...CADRAGES_PLAN]);
+    assert.deepEqual(plan.properties.angle.enum, [...ANGLES_PLAN]);
+    assert.deepEqual(plan.properties.movement.enum, [...MOUVEMENTS_PLAN]);
+    assert.deepEqual(Object.keys(plan.properties), [
+      "shot",
+      "focal_mm",
+      "angle",
+      "movement",
+      "description",
+      "duration_seconds",
+    ]);
+    // Chaque valeur est expliquée au modèle par sa consigne.
+    for (const valeur of [...CADRAGES_PLAN, ...ANGLES_PLAN, ...MOUVEMENTS_PLAN]) {
+      assert.ok(PROFIL_DECOUPAGE.systeme.includes(valeur), valeur);
+    }
+
+    // Le dépôt et l'acceptation admettent exactement ces listes.
+    for (const fonction of ["livrer_proposition_decoupage", "accepter_plan_propose"]) {
+      const texte = corps(fonction);
+      for (const liste of [CADRAGES_PLAN, ANGLES_PLAN, MOUVEMENTS_PLAN]) {
+        const enBase = [
+          ...(new RegExp(`in \\(\\s*('${liste[0]}'[^)]+)\\)`).exec(texte)?.[1] ?? "").matchAll(
+            /'(\w+)'/g,
+          ),
+        ].map((m) => m[1]);
+        assert.deepEqual(enBase, [...liste], `${fonction} : ${liste[0]}`);
+      }
+    }
+  });
+
+  it("les bornes du profil, du worker et de la base sont les mêmes", async () => {
+    const { PROFIL_DECOUPAGE } = await import("../worker/src/ia/profils.ts");
+    const { DESCRIPTION_PLAN_MAX, DUREE_PLAN_SECONDES, FOCALE_MM } =
+      await import("../src/lib/decoupage.ts");
+    const migration = lire(MIGRATION);
+    const agent = lire("worker/src/agents/frame.ts");
+
+    assert.match(
+      migration,
+      new RegExp(`v_nombre not between 1 and ${PROFIL_DECOUPAGE.lignesMax} then`),
+    );
+    assert.ok(PROFIL_DECOUPAGE.systeme.includes(String(PROFIL_DECOUPAGE.lignesMax)));
+
+    // Table fille, dépôt, acceptation et agent : les bornes d'un plan saisi.
+    assert.ok(migration.includes(`check (focal_mm between ${FOCALE_MM.min} and ${FOCALE_MM.max})`));
+    assert.ok(
+      migration.includes(
+        `check (duration_seconds between ${DUREE_PLAN_SECONDES.min} and ${DUREE_PLAN_SECONDES.max})`,
+      ),
+    );
+    assert.equal(
+      migration.split(
+        `between 1 and (case v_cle when 'focal_mm' then ${FOCALE_MM.max} else ${DUREE_PLAN_SECONDES.max} end)`,
+      ).length - 1,
+      2,
+      "dépôt et acceptation",
+    );
+    assert.equal(
+      migration.split(`char_length(v_description) > ${DESCRIPTION_PLAN_MAX}`).length - 1,
+      1,
+    );
+    assert.ok(agent.includes(`const FOCALE_MAX = ${FOCALE_MM.max};`));
+    assert.ok(agent.includes(`const DUREE_MAX = ${DUREE_PLAN_SECONDES.max};`));
+    assert.ok(agent.includes(`const DESCRIPTION_MAX = ${DESCRIPTION_PLAN_MAX};`));
+  });
+
+  it("FRAME lit le scénario et le concept, jamais le budget ni un autre document", () => {
+    const contexte = corps("contexte_decoupage");
+    assert.match(contexte, /d\.project_id = v_projet\.id and d\.type = 'scenario'/);
+    assert.match(contexte, /left\(d\.content, 220000\)/);
+    assert.match(contexte, /'pitch', v_projet\.logline/);
+    assert.match(contexte, /'artistique', v_projet\.artistic_vision/);
+    assert.doesNotMatch(contexte, /budget|project_members|profiles|project_fundings/);
+    // Une seule lecture de document, bornée à un seul.
+    assert.equal(contexte.match(/public\.project_documents/g)?.length, 1);
+    assert.match(contexte, /limit 1/);
+    // Scène disparue : rien ne part.
+    assert.match(contexte, /if v_projet\.id is null or v_scene\.id is null then\s+return null;/);
+  });
+
+  it("les plans proposés suivent les droits du storyboard et ne s'écrivent que par fonctions", () => {
+    const migration = lire(MIGRATION);
+    assert.match(
+      migration,
+      /on public\.ai_suggestion_shots for select\s+to authenticated\s+using \(public\.acces_au_projet\(project_id\) is not null or \(select public\.is_admin\(\)\)\)/,
+    );
+    assert.match(migration, /on public\.ai_suggestion_shots\s+as restrictive/);
+    assert.match(
+      migration,
+      /revoke all on table public\.ai_suggestion_shots from anon, authenticated/,
+    );
+    assert.match(
+      corps("plan_a_decider"),
+      /\(public\.mode_prive\(\) and not public\.is_admin\(\)\)\s+or not coalesce\(public\.peut_editer_contenu\(v_plan\.project_id\), false\)/,
+    );
+    // Écarter la proposition d'un bloc écarte aussi les plans, sans oublier
+    // les lignes de budget ni les jalons.
+    const ecart = corps("ecarter_lignes_restantes");
+    for (const table of [
+      "ai_suggestion_budget_lines",
+      "ai_suggestion_milestones",
+      "ai_suggestion_shots",
+    ]) {
+      assert.ok(ecart.includes(`update public.${table}`), table);
+    }
+    // Chaque fonction security definer retire ses droits nommément.
+    for (const signature of [
+      "contexte_decoupage(uuid)",
+      "livrer_proposition_decoupage(uuid, jsonb)",
+      "accepter_plan_propose(uuid, jsonb)",
+      "ecarter_plan_propose(uuid)",
+    ]) {
+      assert.match(
+        migration,
+        new RegExp(
+          `revoke all on function public\\.${signature.replace(/[()]/g, "\\$&")}\\s+from public, anon, authenticated`,
+        ),
+        signature,
+      );
+    }
+  });
+
+  it("le registre sert FRAME, et le barème de l'écran connaît son prix", async () => {
+    const { executeursFrame } = await import("../worker/src/agents/frame.ts");
+    const { PROFILS_FRAME } = await import("../worker/src/ia/profils.ts");
+    const vide = async () => ({});
+    assert.deepEqual(Object.keys(executeursFrame({}, vide)), Object.keys(PROFILS_FRAME));
+    assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursFrame\(base, fournisseur\)/);
+
+    // Sans ces deux mentions, l'administration ne publierait plus de barème
+    // et la vitrine tairait le prix.
+    assert.match(lire("src/lib/plans.ts"), /cle: "shot_list"/);
+    assert.match(lire("src/lib/offre.ts"), /bareme\.shot_list/);
+    assert.match(lire("src/lib/offre.ts"), /schedule_plan, shot_list, treatment/);
+  });
+});

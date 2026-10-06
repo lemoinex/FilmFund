@@ -483,6 +483,81 @@ export async function livrerPropositionPlanning(
   }
 }
 
+/** Plan proposé, tel que le worker le dépose : contrôlé de nouveau par la base. */
+export type PlanPropose = {
+  shot: string;
+  focal_mm: number | null;
+  angle: string;
+  movement: string;
+  description: string;
+  duration_seconds: number | null;
+};
+
+/** En-tête d'une scène du storyboard. */
+type SceneStoryboard = { titre: string; decor: string; lieu: string; moment: string };
+
+/**
+ * Ce que FRAME lit pour découper une scène : le projet et son concept, la
+ * scène désignée par la demande, celles qui la précèdent, ses plans déjà
+ * saisis et le scénario enregistré. Ni budget, ni équipe, ni autre document.
+ */
+export type ContexteDecoupage = {
+  action: string;
+  projet: ContexteRedaction["projet"];
+  contexte: ContexteRedaction["contexte"];
+  vision: ContexteRedaction["vision"];
+  scene: SceneStoryboard & { cadrage: string | null; description: string };
+  avant: SceneStoryboard[];
+  plans: {
+    cadrage: string;
+    focale: number | null;
+    angle: string;
+    mouvement: string;
+    description: string;
+    duree: number | null;
+  }[];
+  /** Le scénario enregistré ; vide si le projet n'en a pas. */
+  scenario: string;
+};
+
+/**
+ * Contexte de la tâche de découpage en cours ; null si l'essai ne nous
+ * appartient plus, si le projet n'existe plus, ou si la scène désignée a été
+ * supprimée — rien ne doit alors être envoyé.
+ */
+export async function lireContexteDecoupage(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteDecoupage | null> {
+  const { rows } = await base.query("select public.contexte_decoupage($1) as contexte", [
+    attemptId,
+  ]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose les plans proposés et conclut l'essai. Faux : l'essai ne nous
+ * appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionDecoupage(
+  base: Base,
+  attemptId: string,
+  plans: readonly PlanPropose[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_decoupage($1, $2::jsonb)", [
+      attemptId,
+      JSON.stringify(plans),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}
+
 /**
  * Ce que VOICE lit pour réécrire les répliques d'une scène : le projet, ses
  * personnages, la scène désignée par la demande, et ce qui la précède.

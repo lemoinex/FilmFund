@@ -125,6 +125,11 @@ FIELD ne rend pas un texte mais des lignes de budget (action `budget_plan`, prof
 FIELD propose aussi des jalons de planning (lot J3b-3a, action `schedule_plan`, profil
 `field.planning@1`), sur le même chemin.
 
+FRAME propose le découpage technique d'une scène (lot J3c-2a, action `shot_list`, profil
+`frame.decoupage@1`), sur le même chemin. Sa demande désigne une scène du storyboard ; son
+contexte porte le scénario enregistré en entier, ce qui en fait l'appel dont l'entrée est la
+plus longue. Si la scène a été supprimée avant l'appel, rien n'est envoyé.
+
 - **Aucune date** : un jalon proposé porte un titre, une phase et une durée en jours. FIELD
   ne connaît ni le jour ni le calendrier de l'équipe ; elle date le jalon en l'acceptant.
   Sans date, la durée estimée est gardée dans les notes du jalon.
