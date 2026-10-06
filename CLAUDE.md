@@ -382,7 +382,13 @@ Concerne SCOUT, GRIOT et MATCH.
 - Le coût d’une requête de recherche a son registre
   (`provider_search_charges`), compté dans la dépense du mois ; SCOUT demande
   les deux clés. Ne pas créer un second modèle de source : GRIOT et MATCH
-  reprennent celui-ci. Écran prévu (lot L2).
+  reprennent celui-ci.
+- Écran (lot L2) : onglet « Recherche » (`projets/[id]/recherche/`, catalogue
+  `LIVRABLE_RECHERCHE`). Avant tout envoi, il dit que la question seule part
+  chez un moteur externe et la remontre. La synthèse reste dans la proposition,
+  jamais dans un document ; ses renvois mènent aux sources de la page. Titres et
+  extraits viennent du web : affichés comme du texte. « Information non trouvée
+  dans la source consultée. » ne se dit que si le moteur n'a rien rendu.
 
 ## 10. Fonctionnalités produit à préserver
 

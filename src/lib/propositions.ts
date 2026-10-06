@@ -502,6 +502,118 @@ export function messageLotEquipements(acceptes: number, demandes: number): strin
 }
 
 /**
+ * La recherche documentaire (agent SCOUT). Un moteur de recherche collecte
+ * des pages, l'assistant de texte en fait une synthèse : ses bornes sont
+ * celles de la base, un test vérifie qu'elles s'accordent.
+ */
+export const LIVRABLE_RECHERCHE = {
+  action: "research",
+  titre: "Recherche documentaire",
+  bouton: "Lancer la recherche",
+  description:
+    "Posez une question : un moteur de recherche collecte des pages publiques, puis l'assistant en rédige une synthèse qui renvoie à chacune.",
+  /** Dit avant tout envoi : ce qui quitte la plateforme, et ce qui n'en sort pas. */
+  transmission:
+    "Votre question, et elle seule, est transmise à un moteur de recherche externe : n'y écrivez rien de confidentiel. Rien d'autre du projet ne l'accompagne.",
+  /** Dit à chaque affichage d'une synthèse ou d'une source. */
+  avertissement:
+    "Aucune de ces sources n'a été vérifiée par la plateforme : une source citée n'est pas une source vérifiée. Ouvrez chaque page avant de vous y fier — un extrait peut être tronqué, daté, ou mal attribué.",
+  /** Dit quand la recherche n'a rien rendu d'exploitable. */
+  introuvable: "Information non trouvée dans la source consultée.",
+  questionMin: 10,
+  questionMax: 500,
+  /** Sources qu'une recherche peut porter : la borne de la base. */
+  sourcesMax: 20,
+} as const;
+
+/** Source proposée, telle que l'écran la lit. */
+export type SourceProposee = {
+  id: string;
+  position: number;
+  url: string;
+  title: string;
+  site: string;
+  excerpt: string;
+  published_on: string | null;
+  cited: boolean;
+  state: string;
+};
+
+/** Où en sont les sources d'une recherche : combien attendent, sont retenues ou écartées. */
+export function bilanSources(sources: readonly { state: string }[]): {
+  enAttente: number;
+  retenues: number;
+  ecartees: number;
+} {
+  let enAttente = 0;
+  let retenues = 0;
+  let ecartees = 0;
+  for (const source of sources) {
+    if (source.state === "accepted") {
+      retenues += 1;
+    } else if (source.state === "dismissed") {
+      ecartees += 1;
+    } else {
+      enAttente += 1;
+    }
+  }
+  return { enAttente, retenues, ecartees };
+}
+
+/** « 1 source », « 12 sources ». */
+export function nombreSources(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "sources" : "source"}`;
+}
+
+/**
+ * La question telle que la base l'acceptera : sur une ligne, dans ses bornes.
+ * Null sinon. Les mêmes contrôles des deux côtés : ici pour répondre tout de
+ * suite, en base parce que l'écran n'est pas le seul chemin possible.
+ */
+export function lireQuestion(valeur: unknown): string | null {
+  if (typeof valeur !== "string") {
+    return null;
+  }
+  const question = valeur.replace(/\s+/g, " ").trim();
+  if (
+    question.length < LIVRABLE_RECHERCHE.questionMin ||
+    question.length > LIVRABLE_RECHERCHE.questionMax ||
+    /[\u0000-\u001f\u007f]/.test(question)
+  ) {
+    return null;
+  }
+  return question;
+}
+
+/** Un morceau de synthèse : du texte, ou le renvoi à une source. */
+export type SegmentSynthese = { texte: string } | { renvoi: number };
+
+/**
+ * Découpe une synthèse en texte et en renvois « [n] », pour que l'écran lie
+ * chaque renvoi à sa source. Un numéro hors de la collecte reste du texte :
+ * l'écran ne fabrique pas un lien vers une source qui n'existe pas.
+ */
+export function segmentsSynthese(texte: string, sources: number): SegmentSynthese[] {
+  const segments: SegmentSynthese[] = [];
+  let reste = 0;
+  for (const trouve of texte.matchAll(/\[(\d{1,4})\]/g)) {
+    const numero = Number(trouve[1]);
+    if (numero < 1 || numero > sources) {
+      continue;
+    }
+    if (trouve.index > reste) {
+      segments.push({ texte: texte.slice(reste, trouve.index) });
+    }
+    segments.push({ renvoi: numero });
+    reste = trouve.index + trouve[0].length;
+  }
+  if (reste < texte.length) {
+    segments.push({ texte: texte.slice(reste) });
+  }
+  return segments;
+}
+
+/**
  * La vignette d'une scène (agent BOARD). Seul livrable qui soit une image :
  * il se compte sur le quota d'images, pas sur les unités texte, et se tient à
  * part de tous les autres catalogues.

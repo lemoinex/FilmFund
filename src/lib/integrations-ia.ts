@@ -38,7 +38,7 @@ export const FOURNISSEURS: readonly Fournisseur[] = [
     code: "perplexity",
     nom: "Perplexity",
     usage:
-      "Recherche documentaire : collecte des sources, que l'assistant de texte synthétise ensuite. Demande aussi la clé d'Anthropic. Aucun écran ne la propose encore.",
+      "Recherche documentaire : collecte des sources, que l'assistant de texte synthétise ensuite. Demande aussi la clé d'Anthropic.",
     employe: true,
   },
 ];
