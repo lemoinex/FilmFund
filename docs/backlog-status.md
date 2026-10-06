@@ -33,7 +33,7 @@ réels).
 | J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | validé en recette | —              |
 | J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé en recette | —              |
 | J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé en recette | —              |
-| J3c-3  | GEAR : propositions de matériel                                                                                                | à faire           | J3c-1          |
+| J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé localement | —              |
 | J3c-4  | Exports : sections « Découpage » et « Matériel »                                                                               | à faire           | J3c-1          |
 | K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L      | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
@@ -992,6 +992,26 @@ Le rendu a été contrôlé en local avec une vraie session, pour le porteur et 
 sur le storyboard et sur l'onglet Matériel — premier contrôle de ces écrans ailleurs que dans
 des tests qui lisent le code. Il ne remplace pas la recette : ni les gestes au clic, ni les
 largeurs mobiles, ni le vrai fournisseur n'y sont exercés.
+
+GEAR, écrit le 6 octobre 2026 (lot J3c-3, livré d'un seul tenant : base, worker et écran) :
+quatrième livrable structuré, sur le modèle du budget, du planning et du découpage. Action
+`gear_list` à 5 unités, sans paramètre : une demande vise le projet entier. Table
+`ai_suggestion_gear` ; équipements acceptés ou écartés un à un, tels quels ou corrigés.
+Profil `gear.materiel@1`, trente lignes au plus.
+
+GEAR lit le concept du projet, les scènes du storyboard, le découpage — résumé en
+mouvements, cadrages, angles et focales, sans ses descriptions — et le matériel déjà saisi.
+Ni scénario, ni budget, ni équipe. Il ne nomme ni marque, ni modèle commercial, ni loueur,
+ni prix ; cela ne tient qu'à sa consigne, la base ne sachant pas reconnaître une marque
+dans une désignation.
+
+**GEAR ne rend aucun calcul** : son schéma et sa table n'ont aucun champ où déposer un
+total ou une intensité, et l'encart n'en affiche aucun sur des lignes seulement proposées.
+Le besoin électrique reste celui de la plateforme, sur ce que l'équipe a accepté. Une
+puissance proposée est un ordre de grandeur, facultatif, que l'écran présente comme
+« estimée » ; il renvoie à la plaque de l'appareil. Décidé avec l'utilisateur : **GEAR ne
+propose pas de groupe électrogène** — sa puissance s'ajouterait à ce que le tournage
+consomme, défaut trouvé à la recette de J3c-1 —, l'écran calculant déjà le groupe conseillé.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

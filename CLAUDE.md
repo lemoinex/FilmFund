@@ -505,8 +505,14 @@ recommandations (« à améliorer ») sont configurables et traçables.
   storyboard dit laquelle découper. Écran (J3c-2b) dans le volet « Découpage »
   de chaque scène (`storyboard/actions-ia.ts`, `plans-proposes.tsx`, catalogue
   `LIVRABLE_DECOUPAGE`) : les lecteurs y lisent les plans proposés sans en décider.
-- Prévus : GEAR propose une liste de matériel (J3c-3), sur le même modèle ;
-  sections du dossier (J3c-4). GEAR ne propose ni marque, ni loueur, ni prix.
+- GEAR (lot J3c-3, action `gear_list`, table `ai_suggestion_gear`) propose des
+  équipements sur le même modèle, depuis l’onglet « Matériel »
+  (`materiel/actions-ia.ts`, `lignes-proposees.tsx`, catalogue
+  `LIVRABLE_MATERIEL`). Il lit le storyboard, le découpage et le matériel déjà
+  saisi ; ni scénario, ni budget. Il ne propose ni marque, ni loueur, ni prix,
+  ni groupe électrogène, et **ne rend aucun calcul** : une puissance proposée
+  est une estimation, facultative, que l’écran présente comme telle.
+- Prévu : sections « Découpage » et « Matériel » du dossier (J3c-4).
 
 ### Exports et stockage
 

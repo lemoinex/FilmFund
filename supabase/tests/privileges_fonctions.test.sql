@@ -59,6 +59,8 @@ select is_empty(
         'ecarter_jalon_propose',
         'accepter_plan_propose',
         'ecarter_plan_propose',
+        'accepter_materiel_propose',
+        'ecarter_materiel_propose',
         'definir_cle_fournisseur',
         'retirer_cle_fournisseur'
       )

@@ -12,6 +12,7 @@
 import { executeursArc } from "./agents/arc.ts";
 import { executeursField } from "./agents/field.ts";
 import { executeursFrame } from "./agents/frame.ts";
+import { executeursGear } from "./agents/gear.ts";
 import { executeursScript } from "./agents/script.ts";
 import { executeursVoice } from "./agents/voice.ts";
 import { executeursWeaver } from "./agents/weaver.ts";
@@ -46,6 +47,7 @@ export function registreDesAgents({ base, journal, creerFournisseur }: OptionsRe
         ...executeursVoice(base, fournisseur),
         ...executeursField(base, fournisseur),
         ...executeursFrame(base, fournisseur),
+        ...executeursGear(base, fournisseur),
       };
     } else {
       registre = {};

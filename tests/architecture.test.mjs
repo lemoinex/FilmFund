@@ -1594,6 +1594,193 @@ describe("Découpage proposé par FRAME", () => {
     // et la vitrine tairait le prix.
     assert.match(lire("src/lib/plans.ts"), /cle: "shot_list"/);
     assert.match(lire("src/lib/offre.ts"), /bareme\.shot_list/);
-    assert.match(lire("src/lib/offre.ts"), /schedule_plan, shot_list, treatment/);
+    assert.match(lire("src/lib/offre.ts"), /schedule_plan, shot_list, gear_list, treatment/);
+  });
+});
+
+/*
+ * GEAR (lot J3c-3) : la liste de matériel proposée. Le profil, la base et le
+ * worker décrivent les mêmes équipements ; un écart ferait refuser un dépôt
+ * après un appel payé. Et rien, nulle part, ne laisse le modèle rendre un
+ * calcul.
+ */
+describe("Matériel proposé par GEAR", () => {
+  const MIGRATION = "supabase/migrations/20261006120000_gear_materiel.sql";
+  const corps = (fonction) => {
+    const migration = lire(MIGRATION);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable`);
+    return migration.slice(debut, migration.indexOf("$$;", debut));
+  };
+
+  it("la base admet l'action de GEAR et la facture au barème, sans rien retirer aux autres", async () => {
+    const { PROFILS_FIELD, PROFILS_FRAME, PROFILS_GEAR, PROFILS_IA, PROFILS_VOICE } =
+      await import("../worker/src/ia/profils.ts");
+    const migration = lire(MIGRATION);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    const devis = corps("creer_devis");
+
+    for (const [action, profil] of Object.entries(PROFILS_GEAR)) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(devis.includes(`v_quantite := v_bareme.${action};`), `devis de ${action}`);
+      assert.match(profil.id, /^gear\.[a-z_]+@\d+$/, action);
+    }
+    for (const action of [
+      ...Object.keys(PROFILS_IA),
+      ...Object.keys(PROFILS_FIELD),
+      ...Object.keys(PROFILS_VOICE),
+      ...Object.keys(PROFILS_FRAME),
+    ]) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(devis.includes(`when '${action}' then`), action);
+      assert.ok(!(action in PROFILS_GEAR), action);
+    }
+    // Les gardes des devis déjà ouverts sont toujours là.
+    assert.match(devis, /parametre_entier\(v_parametres, 'sequences', 1\)/);
+    assert.match(devis, /public\.passage_du_scenario\(p_project_id, v_parametres\) is null/);
+    assert.match(devis, /Ouvrez d''abord le budget du projet/);
+    assert.match(devis, /Désignez la scène du storyboard à découper\./);
+  });
+
+  it("le schéma ne connaît que les catégories de la base, et aucun champ de calcul", async () => {
+    const { CATEGORIES_MATERIEL, PROFIL_MATERIEL } = await import("../worker/src/ia/profils.ts");
+    const { CATEGORIES_MATERIEL: ECRAN } = await import("../src/lib/materiel.ts");
+    const j3c1 = lire("supabase/migrations/20261005210000_decoupage_materiel.sql");
+    const enBase = [
+      .../create type public\.gear_category as enum \(([^)]+)\)/.exec(j3c1)[1].matchAll(/'(\w+)'/g),
+    ].map((m) => m[1]);
+
+    assert.deepEqual([...CATEGORIES_MATERIEL], enBase);
+    assert.deepEqual(Object.keys(ECRAN), enBase);
+
+    const ligne = PROFIL_MATERIEL.schema.properties.lines.items;
+    assert.equal(PROFIL_MATERIEL.schema.additionalProperties, false);
+    assert.equal(ligne.additionalProperties, false);
+    assert.deepEqual(ligne.properties.category.enum, enBase);
+    assert.deepEqual(Object.keys(ligne.properties), [
+      "category",
+      "label",
+      "quantity",
+      "unit_power_watts",
+      "simultaneous",
+    ]);
+    // La puissance est facultative : l'agent peut ne pas s'avancer.
+    assert.deepEqual(ligne.required, ["category", "label", "quantity", "simultaneous"]);
+    for (const categorie of enBase) {
+      assert.ok(PROFIL_MATERIEL.systeme.includes(categorie), categorie);
+    }
+
+    // Le dépôt et l'acceptation admettent exactement cette liste.
+    for (const fonction of ["livrer_proposition_materiel", "accepter_materiel_propose"]) {
+      const admises = [
+        ...(/in \(('image'[^)]+)\)/.exec(corps(fonction))?.[1] ?? "").matchAll(/'(\w+)'/g),
+      ].map((m) => m[1]);
+      assert.deepEqual(admises, enBase, fonction);
+    }
+  });
+
+  it("les bornes du profil, du worker, de l'écran et de la base sont les mêmes", async () => {
+    const { PROFIL_MATERIEL } = await import("../worker/src/ia/profils.ts");
+    const { DESIGNATION_MAX, PUISSANCE_WATTS, QUANTITE } = await import("../src/lib/materiel.ts");
+    const migration = lire(MIGRATION);
+    const agent = lire("worker/src/agents/gear.ts");
+
+    assert.match(
+      migration,
+      new RegExp(`v_nombre not between 1 and ${PROFIL_MATERIEL.lignesMax} then`),
+    );
+    assert.ok(PROFIL_MATERIEL.systeme.includes(String(PROFIL_MATERIEL.lignesMax)));
+
+    assert.ok(
+      migration.includes(`check (quantity between ${QUANTITE.min} and ${QUANTITE.max})`),
+      "quantité de la table",
+    );
+    assert.ok(
+      migration.includes(
+        `check (unit_power_watts between ${PUISSANCE_WATTS.min} and ${PUISSANCE_WATTS.max})`,
+      ),
+      "puissance de la table",
+    );
+    // Dépôt et acceptation : deux fois chaque borne.
+    assert.equal(
+      migration.split(`::numeric between ${QUANTITE.min} and ${QUANTITE.max}`).length - 1,
+      2,
+    );
+    assert.equal(
+      migration.split(`::numeric between ${PUISSANCE_WATTS.min} and ${PUISSANCE_WATTS.max}`)
+        .length - 1,
+      2,
+    );
+    assert.equal(migration.split(`between 1 and ${DESIGNATION_MAX}`).length - 1, 3);
+    assert.ok(agent.includes(`const DESIGNATION_MAX = ${DESIGNATION_MAX};`));
+    assert.ok(agent.includes(`const QUANTITE_MAX = ${QUANTITE.max};`));
+    assert.ok(
+      agent.includes(
+        `const PUISSANCE_MAX = ${PUISSANCE_WATTS.max.toLocaleString("en").replaceAll(",", "_")};`,
+      ),
+    );
+  });
+
+  it("GEAR lit le storyboard, le découpage et le matériel, jamais le scénario ni le budget", () => {
+    const contexte = corps("contexte_materiel");
+    assert.match(contexte, /from public\.storyboard_scenes s/);
+    assert.match(contexte, /from public\.scene_shots p/);
+    assert.match(contexte, /from public\.project_gear g/);
+    assert.doesNotMatch(contexte, /project_documents|budget|project_members|profiles|fundings/);
+    // Chaque lecture est bornée.
+    assert.equal(contexte.match(/limit \d+/g)?.length, 3);
+    // Le découpage part sans ses descriptions : seuls ses besoins techniques.
+    assert.doesNotMatch(contexte, /p\.description|t\.description/);
+  });
+
+  it("le matériel proposé suit les droits du matériel et ne s'écrit que par fonctions", () => {
+    const migration = lire(MIGRATION);
+    assert.match(
+      migration,
+      /on public\.ai_suggestion_gear for select\s+to authenticated\s+using \(public\.acces_au_projet\(project_id\) is not null or \(select public\.is_admin\(\)\)\)/,
+    );
+    assert.match(migration, /on public\.ai_suggestion_gear\s+as restrictive/);
+    assert.match(
+      migration,
+      /revoke all on table public\.ai_suggestion_gear from anon, authenticated/,
+    );
+    assert.match(
+      corps("materiel_a_decider"),
+      /\(public\.mode_prive\(\) and not public\.is_admin\(\)\)\s+or not coalesce\(public\.peut_editer_contenu\(v_ligne\.project_id\), false\)/,
+    );
+    const ecart = corps("ecarter_lignes_restantes");
+    for (const table of [
+      "ai_suggestion_budget_lines",
+      "ai_suggestion_milestones",
+      "ai_suggestion_shots",
+      "ai_suggestion_gear",
+    ]) {
+      assert.ok(ecart.includes(`update public.${table}`), table);
+    }
+    for (const signature of [
+      "contexte_materiel(uuid)",
+      "livrer_proposition_materiel(uuid, jsonb)",
+      "accepter_materiel_propose(uuid, jsonb)",
+      "ecarter_materiel_propose(uuid)",
+    ]) {
+      assert.match(
+        migration,
+        new RegExp(
+          `revoke all on function public\\.${signature.replace(/[()]/g, "\\$&")}\\s+from public, anon, authenticated`,
+        ),
+        signature,
+      );
+    }
+  });
+
+  it("le registre sert GEAR, et le barème de l'écran connaît son prix", async () => {
+    const { executeursGear } = await import("../worker/src/agents/gear.ts");
+    const { PROFILS_GEAR } = await import("../worker/src/ia/profils.ts");
+    const vide = async () => ({});
+    assert.deepEqual(Object.keys(executeursGear({}, vide)), Object.keys(PROFILS_GEAR));
+    assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursGear\(base, fournisseur\)/);
+    assert.match(lire("src/lib/plans.ts"), /cle: "gear_list"/);
+    assert.match(lire("src/lib/offre.ts"), /bareme\.gear_list/);
   });
 });

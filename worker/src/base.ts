@@ -558,6 +558,65 @@ export async function livrerPropositionDecoupage(
   }
 }
 
+/** Équipement proposé, tel que le worker le dépose : contrôlé de nouveau par la base. */
+export type EquipementPropose = {
+  category: string;
+  label: string;
+  quantity: number;
+  unit_power_watts: number | null;
+  simultaneous: boolean;
+};
+
+/**
+ * Ce que GEAR lit pour proposer du matériel : le projet et son concept, les
+ * scènes du storyboard, le découpage et le matériel déjà saisi. Ni scénario,
+ * ni budget, ni équipe.
+ */
+export type ContexteMateriel = {
+  action: string;
+  projet: ContexteRedaction["projet"];
+  contexte: ContexteRedaction["contexte"];
+  vision: ContexteRedaction["vision"];
+  scenes: { titre: string; decor: string; lieu: string; moment: string }[];
+  plans: { cadrage: string; mouvement: string; angle: string; focale: number | null }[];
+  materiel: { categorie: string; designation: string; quantite: number }[];
+};
+
+/**
+ * Contexte de la tâche de matériel en cours ; null si l'essai ne nous
+ * appartient plus ou si le projet n'existe plus.
+ */
+export async function lireContexteMateriel(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteMateriel | null> {
+  const { rows } = await base.query("select public.contexte_materiel($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose les équipements proposés et conclut l'essai. Faux : l'essai ne nous
+ * appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionMateriel(
+  base: Base,
+  attemptId: string,
+  equipements: readonly EquipementPropose[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_materiel($1, $2::jsonb)", [
+      attemptId,
+      JSON.stringify(equipements),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}
+
 /**
  * Ce que VOICE lit pour réécrire les répliques d'une scène : le projet, ses
  * personnages, la scène désignée par la demande, et ce qui la précède.
