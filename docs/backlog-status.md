@@ -35,8 +35,8 @@ réels).
 | J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé en recette | —              |
 | J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé en recette | —              |
 | J3c-4  | Exports : sections « Découpage technique » et « Matériel »                                                                     | validé en recette | —              |
-| K1     | BOARD : vignette d'une scène — base, passerelle d'images, profil, agent                                                        | validé localement | —              |
-| K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | à faire           | K1             |
+| K1     | BOARD : vignette d'une scène — base, passerelle d'images, profil, agent                                                        | en production     | —              |
+| K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | validé localement | —              |
 | L      | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
@@ -1129,6 +1129,23 @@ pages consultées. La provision d'avant l'appel emploie un plafond choisi par le
 rapporte, relevé dans le code du SDK d'OpenAI, au tarif lu le 6 octobre 2026 (5 $ et 30 $ le
 million). Et rien ne vérifie un dessin par programme : que l'image soit bien un croquis en
 noir et blanc ne se jugera qu'à l'œil, en recette.
+
+K1 est en production depuis le 6 octobre 2026 (PR 116, `cb81a30`, 50 migrations). **Une clé
+OpenAI était déjà posée dans le coffre** — ce que le rapport du lot avait d'abord nié, faute
+de l'avoir vérifié — : le worker l'a chargée à son redémarrage, à 14h47 UTC, et BOARD est en
+service, dix-huitième action. Aucune vignette n'a été demandée.
+
+K2, écrit le même jour, sans migration : l'encart de la vignette se tient dans la carte de
+chaque scène du storyboard. Qui écrit le storyboard demande une vignette, suit la demande,
+puis l'accepte ou l'écarte ; un lecteur la voit sans en décider. La vignette proposée se lit
+par sa propre route, sous la session — elle n'est pas dans le stockage, aucun lien signé n'y
+mène —, servie comme un PNG ou pas du tout, sans cache.
+
+**Accepter est le seul geste qui change l'image d'une scène.** L'action relit le fichier sous
+la session de qui décide, le dépose dans le compartiment privé à un chemin tiré au sort,
+puis laisse la base le rattacher ; l'ancienne image n'est supprimée qu'après son accord, et
+un refus retire le fichier tout juste déposé. Si la scène porte déjà une image, l'écran le
+dit en toutes lettres et demande un second clic.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

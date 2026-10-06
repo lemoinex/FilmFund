@@ -24,8 +24,10 @@ import { RafraichissementPropositions } from "../proposition";
 import { deplacerScene, supprimerScene } from "./actions";
 import { FormulaireScene, type SceneEditable } from "./formulaire";
 import type { PlanEditable } from "./formulaire-plan";
+import { lireVignettes, VIGNETTE_AU_REPOS, type VignetteScene } from "./lecture-vignettes";
 import { PlansScene } from "./plans";
 import { DecoupagePropose } from "./plans-proposes";
+import { VignetteProposee } from "./vignette-proposee";
 
 export const metadata: Metadata = {
   title: "Storyboard — filmfundAfrica",
@@ -76,7 +78,10 @@ export default async function StoryboardPage({
   const liste = scenes ?? [];
   const peutDecider = peutEditer === true;
   const assistant = await lireAssistant(supabase, projet.id, peutDecider);
-  const enPreparation = [...assistant.parScene.values()].some(
+  const vignettes = await lireVignettes(supabase, projet.id, peutDecider);
+  // Une seule boucle de rafraîchissement pour la page : un découpage ou une
+  // vignette qui se prépare suffit à la tenir.
+  const enPreparation = [...assistant.parScene.values(), ...vignettes.values()].some(
     ({ etape }) => etape.etape === "en_attente" || etape.etape === "en_cours",
   );
 
@@ -142,6 +147,7 @@ export default async function StoryboardPage({
                   decoupageOuvert={decoupageOuvert === scene.id}
                   assistant={assistant.parScene.get(scene.id) ?? REPOS}
                   scenarioPresent={assistant.scenarioPresent}
+                  vignette={vignettes.get(scene.id) ?? VIGNETTE_AU_REPOS}
                 />
               )}
             </li>
@@ -318,6 +324,7 @@ function Planche({
   decoupageOuvert,
   assistant,
   scenarioPresent,
+  vignette,
 }: {
   projetId: string;
   scene: SceneEditable;
@@ -331,6 +338,7 @@ function Planche({
   decoupageOuvert: boolean;
   assistant: AssistantScene;
   scenarioPresent: boolean;
+  vignette: VignetteScene;
 }) {
   const numero = numeroScene(index);
   const planDeLaScene = plans.some((plan) => plan.id === planEnModification);
@@ -394,6 +402,17 @@ function Planche({
         ) : (
           <div className="flex-1" />
         )}
+
+        <VignetteProposee
+          projetId={projetId}
+          sceneId={scene.id}
+          numeroScene={numero}
+          titreScene={scene.title}
+          etape={vignette.etape}
+          imageId={vignette.imageId}
+          aImage={aImage}
+          peutDecider={peutEditer}
+        />
 
         <PlansScene
           projetId={projetId}
