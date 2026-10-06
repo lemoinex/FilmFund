@@ -33,7 +33,7 @@ réels).
 | J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | validé en recette | —              |
 | J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé en recette | —              |
 | J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé en recette | —              |
-| J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé localement | —              |
+| J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé en recette | —              |
 | J3c-4  | Exports : sections « Découpage » et « Matériel »                                                                               | à faire           | J3c-1          |
 | K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L      | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
@@ -615,6 +615,53 @@ scène, quand la consigne demande ce que montre le plan ; la resserrer serait pu
 nouvelle version du profil. Et une proposition dont des plans ont été acceptés est notée
 « écartée » après « Écarter le reste », comme pour le budget et le planning : les plans
 acceptés ne sont pas touchés.
+
+## Recette du lot J3c-3 : GEAR
+
+Le 6 octobre 2026, une liste de matériel a été demandée à GEAR en production par un
+administrateur, de la demande aux équipements entrés au matériel (mode privé actif), sur le
+projet « une maison hantée ».
+
+Livraison dans l'ordre retenu : migration poussée par l'utilisateur et constatée en base
+avant la fusion — 48 migrations —, puis PR 112 (`8e9ec01`) à 12h25 UTC, le worker annonçant
+ses **dix-sept** actions à 12h29, dont `gear_list`, après un arrêt propre du précédent.
+
+| Livrable    | Durée  | Entrée / sortie | Lignes | Coût confirmé | Unités | Décision de l'équipe             |
+| ----------- | ------ | --------------- | ------ | ------------- | ------ | -------------------------------- |
+| `gear_list` | 21,6 s | 2 964 / 2 085   | 20     | 0,053556 $    | 5/5    | 1 corrigée, 19 acceptées en bloc |
+
+- Tâche réussie au premier essai sur `claude-opus-5-5`, sans repli, avec le profil
+  `gear.materiel@1`. Dépense du mois : 1,370748 $ sur un plafond de 5 $ ; aucune tâche à
+  rapprocher, aucune erreur chez Vercel.
+- **Ni marque, ni modèle commercial, ni prix, ni groupe électrogène, ni calcul** dans les
+  vingt désignations : la consigne tient en conditions réelles.
+- **GEAR a lu le découpage** : la série d'objectifs proposée couvre 28, 35, 40, 50 et 85 mm,
+  les focales des plans du projet ; rails de travelling et support d'épaule répondent à ses
+  mouvements. Il n'a pas redit la caméra déjà saisie.
+- **Il n'a rien inventé** : persiennes, orage, couloirs étroits et ampoules fatiguées, qui
+  motivent plusieurs lignes, figurent dans la vision artistique du projet.
+- **Une ligne corrigée avant d'être acceptée** — geste qu'aucune recette n'avait encore
+  exercé, tous agents confondus : la désignation retenue au matériel est celle de l'équipe,
+  et ce que l'agent avait proposé n'a pas changé.
+- « Tout accepter » a fait entrer les dix-neuf autres lignes en cinq secondes, chacune à
+  l'identique ; la proposition s'est close « appliquée » à l'instant de la dernière.
+- Puissances prudentes — 200 W pour un projecteur LED, 20 W pour un moniteur — et laissées
+  vides là où l'agent ne savait pas. Le besoin électrique recalculé à part sur les 22
+  équipements du projet : 1 982 W de charge simultanée, 8,6 A sous 230 V, 2,6 kW de groupe
+  conseillé, deux lignes sans puissance.
+
+Relevé, laissé en l'état : un chargeur de batteries proposé à 0 W, alors qu'il se branche ;
+une série d'objectifs portée en quantité 5 quand sa désignation décrit déjà la série ; et une
+liste qui suit la vision artistique — une maison — sans rien tirer des deux scènes du
+storyboard, qui parlent de pêcheurs. L'écran avertit que les puissances sont estimées.
+
+Avant la demande, l'utilisateur a annoncé la recette faite à cinq reprises sans qu'aucune
+requête n'arrive : les journaux de la passerelle Supabase l'ont montré, là où la base ne
+disait que « rien ». À consulter en premier quand un écran semble muet.
+
+Non couvert par cette recette : écarter une ligne, « Écarter le reste » ; un lecteur réel,
+faute de second compte tant que le mode privé est actif ; la largeur mobile ; une liste
+proche de sa borne de trois cents lignes.
 
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
