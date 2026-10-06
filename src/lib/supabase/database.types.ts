@@ -162,6 +162,79 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_gear: {
+        Row: {
+          category: Database["public"]["Enums"]["gear_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          gear_id: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          simultaneous: boolean;
+          state: string;
+          suggestion_id: string;
+          unit_power_watts: number | null;
+        };
+        Insert: {
+          category: Database["public"]["Enums"]["gear_category"];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          gear_id?: string | null;
+          id?: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          simultaneous: boolean;
+          state?: string;
+          suggestion_id: string;
+          unit_power_watts?: number | null;
+        };
+        Update: {
+          category?: Database["public"]["Enums"]["gear_category"];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          gear_id?: string | null;
+          id?: string;
+          label?: string;
+          position?: number;
+          project_id?: string;
+          quantity?: number;
+          simultaneous?: boolean;
+          state?: string;
+          suggestion_id?: string;
+          unit_power_watts?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_gear_gear_id_fkey";
+            columns: ["gear_id"];
+            isOneToOne: false;
+            referencedRelation: "project_gear";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_gear_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_gear_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_suggestion_milestones: {
         Row: {
           created_at: string;
@@ -1899,6 +1972,7 @@ export type Database = {
           budget_plan: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
+          gear_list: number;
           id: string;
           intention_note: number;
           logline: number;
@@ -1918,6 +1992,7 @@ export type Database = {
           budget_plan: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
+          gear_list: number;
           id?: string;
           intention_note: number;
           logline: number;
@@ -1937,6 +2012,7 @@ export type Database = {
           budget_plan?: number;
           dialogue_per_scene?: number;
           dramatic_analysis?: number;
+          gear_list?: number;
           id?: string;
           intention_note?: number;
           logline?: number;
@@ -2041,6 +2117,31 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      accepter_materiel_propose: {
+        Args: { p_corrige?: Json; p_line_id: string };
+        Returns: {
+          category: Database["public"]["Enums"]["gear_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          gear_id: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          simultaneous: boolean;
+          state: string;
+          suggestion_id: string;
+          unit_power_watts: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_gear";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       accepter_plan_propose: {
         Args: { p_corrige?: Json; p_line_id: string };
         Returns: {
@@ -2132,6 +2233,7 @@ export type Database = {
           budget_plan: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
+          gear_list: number;
           id: string;
           intention_note: number;
           logline: number;
@@ -2156,6 +2258,7 @@ export type Database = {
       cle_fournisseur: { Args: { p_provider: string }; Returns: string };
       clore_proposition_budget: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_decoupage: { Args: { p_suggestion_id: string }; Returns: undefined };
+      clore_proposition_materiel: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_planning: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_travail: {
         Args: {
@@ -2218,6 +2321,7 @@ export type Database = {
       contexte_decoupage: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_dialogue: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_materiel: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_travail: {
@@ -2314,6 +2418,31 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "ai_suggestion_budget_lines";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      ecarter_materiel_propose: {
+        Args: { p_line_id: string };
+        Returns: {
+          category: Database["public"]["Enums"]["gear_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          gear_id: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          simultaneous: boolean;
+          state: string;
+          suggestion_id: string;
+          unit_power_watts: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_gear";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -2483,6 +2612,10 @@ export type Database = {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;
       };
+      livrer_proposition_materiel: {
+        Args: { p_attempt_id: string; p_lines: Json };
+        Returns: string;
+      };
       livrer_proposition_planning: {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;
@@ -2503,6 +2636,31 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "job_attempts";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      materiel_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          category: Database["public"]["Enums"]["gear_category"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          gear_id: string | null;
+          id: string;
+          label: string;
+          position: number;
+          project_id: string;
+          quantity: number;
+          simultaneous: boolean;
+          state: string;
+          suggestion_id: string;
+          unit_power_watts: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_gear";
           isOneToOne: true;
           isSetofReturn: false;
         };

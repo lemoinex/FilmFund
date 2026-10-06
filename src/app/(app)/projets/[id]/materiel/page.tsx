@@ -12,12 +12,20 @@ import {
   formaterPuissance,
   puissanceLigne,
 } from "@/lib/materiel-calculs";
+import {
+  etapeProposition,
+  LIVRABLE_MATERIEL,
+  type EquipementPropose,
+  type EtapeProposition,
+} from "@/lib/propositions";
 import { createClient } from "@/lib/supabase/server";
 import type { GearCategory } from "@/lib/supabase/types";
 
 import { OngletsProjet } from "../onglets";
+import { RafraichissementPropositions } from "../proposition";
 import { supprimerEquipement } from "./actions";
 import { FormulaireEquipement, FormulaireReglages, type EquipementEditable } from "./formulaire";
+import { MaterielPropose } from "./lignes-proposees";
 
 export const metadata: Metadata = {
   title: "Matériel — filmfundAfrica",
@@ -62,6 +70,12 @@ export default async function MaterielPage({
   if (!projet) {
     notFound();
   }
+
+  const peutDecider = peutEditer === true;
+  const assistant = await lireAssistant(supabase, projet.id, peutDecider);
+  // Qui écrit le matériel voit toujours l'encart ; un lecteur, seulement
+  // quand des équipements proposés attendent — il les lit, sans en décider.
+  const montrerAssistant = peutDecider || assistant.etape.etape === "proposition";
 
   const liste = equipements ?? [];
   const reglages = {
@@ -219,6 +233,20 @@ export default async function MaterielPage({
         </div>
       )}
 
+      {montrerAssistant ? (
+        <>
+          <RafraichissementPropositions
+            actif={assistant.etape.etape === "en_attente" || assistant.etape.etape === "en_cours"}
+          />
+          <MaterielPropose
+            projetId={projet.id}
+            etape={assistant.etape}
+            equipements={assistant.equipements}
+            peutDecider={peutDecider}
+          />
+        </>
+      ) : null}
+
       {peutEditer ? (
         <section
           aria-labelledby="ajout-equipement"
@@ -244,6 +272,71 @@ export default async function MaterielPage({
       ) : null}
     </div>
   );
+}
+
+type Assistant = { etape: EtapeProposition; equipements: EquipementPropose[] };
+
+/**
+ * Où en est la dernière demande de matériel sur ce projet, et les lignes de
+ * sa proposition si elle attend encore une décision.
+ *
+ * Trois lectures bornées, sous la RLS de l'appelant. Qui écrit le matériel
+ * suit la demande depuis sa tâche ; un lecteur ne lit que la dernière
+ * proposition — il n'a pas à voir une demande en cours, seulement ce qui est
+ * proposé à l'équipe.
+ */
+async function lireAssistant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+  peutDecider: boolean,
+): Promise<Assistant> {
+  let etape: EtapeProposition = { etape: "repos" };
+
+  if (peutDecider) {
+    const { data: tache } = await supabase
+      .from("jobs")
+      .select("id, state")
+      .eq("project_id", projetId)
+      .eq("action", LIVRABLE_MATERIEL.action)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: proposition } = tache
+      ? await supabase
+          .from("ai_suggestions")
+          .select("id, content, state")
+          .eq("job_id", tache.id)
+          .maybeSingle()
+      : { data: null };
+    etape = etapeProposition(tache, proposition);
+  } else {
+    const { data: proposition } = await supabase
+      .from("ai_suggestions")
+      .select("id, content, state")
+      .eq("project_id", projetId)
+      .eq("action", LIVRABLE_MATERIEL.action)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (proposition?.state === "proposed") {
+      etape = { etape: "proposition", propositionId: proposition.id, texte: proposition.content };
+    }
+  }
+
+  if (etape.etape !== "proposition") {
+    return { etape, equipements: [] };
+  }
+
+  const { data: equipements } = await supabase
+    .from("ai_suggestion_gear")
+    .select("id, position, category, label, quantity, unit_power_watts, simultaneous, state")
+    .eq("suggestion_id", etape.propositionId)
+    .order("position")
+    // Bornée comme la base borne le dépôt.
+    .limit(LIVRABLE_MATERIEL.lignesMax);
+
+  return { etape, equipements: equipements ?? [] };
 }
 
 function LigneEquipement({

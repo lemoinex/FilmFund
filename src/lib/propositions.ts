@@ -426,6 +426,82 @@ export function messageLotPlans(acceptes: number, demandes: number): string {
 }
 
 /**
+ * La liste de matériel (agent GEAR). Tenue à part de `LIVRABLES_STRUCTURES`,
+ * que l'écran et les tests lient aux profils de FIELD. Sa borne est celle de
+ * la base et du profil ; un test vérifie qu'elles s'accordent.
+ */
+export const LIVRABLE_MATERIEL = {
+  action: "gear_list",
+  titre: "Matériel proposé par l'assistant",
+  bouton: "Proposer du matériel",
+  description:
+    "L'assistant propose des équipements à partir de la fiche du projet, du storyboard, du découpage et du matériel déjà saisi, transmis pour cela à notre fournisseur d'IA. Il ne propose ni marque, ni loueur, ni prix, et ne fait aucun calcul.",
+  /**
+   * Dit à chaque affichage des lignes : l'assistant n'a aucune fiche
+   * technique, et une puissance proposée ne doit pas passer pour une mesure.
+   */
+  avertissement:
+    "Puissances estimées par l'assistant, sans fiche technique : relevez chacune sur la plaque de l'appareil avant de vous y fier.",
+  /** Lignes qu'une proposition peut porter : la borne de la base et du profil. */
+  lignesMax: 30,
+} as const;
+
+/** Équipement proposé, tel que l'écran le lit. */
+export type EquipementPropose = {
+  id: string;
+  position: number;
+  category: string;
+  label: string;
+  quantity: number;
+  unit_power_watts: number | null;
+  simultaneous: boolean;
+  state: string;
+};
+
+/** Où en est une liste proposée : combien de lignes attendent, sont entrées ou écartées. */
+export function bilanEquipements(equipements: readonly { state: string }[]): {
+  enAttente: number;
+  acceptes: number;
+  ecartes: number;
+} {
+  let enAttente = 0;
+  let acceptes = 0;
+  let ecartes = 0;
+  for (const equipement of equipements) {
+    if (equipement.state === "accepted") {
+      acceptes += 1;
+    } else if (equipement.state === "dismissed") {
+      ecartes += 1;
+    } else {
+      enAttente += 1;
+    }
+  }
+  return { enAttente, acceptes, ecartes };
+}
+
+/** « 1 équipement », « 12 équipements ». */
+export function nombreEquipements(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "équipements" : "équipement"}`;
+}
+
+/**
+ * Ce que l'écran dit après « tout accepter » du matériel, qui n'est pas
+ * atomique : si une ligne est refusée en chemin, les précédentes sont déjà au
+ * matériel, et l'écran doit le dire plutôt que d'annoncer un échec.
+ */
+export function messageLotEquipements(acceptes: number, demandes: number): string {
+  if (acceptes >= demandes) {
+    return `${nombreEquipements(acceptes)} ${acceptes > 1 ? "ajoutés" : "ajouté"} au matériel.`;
+  }
+  if (acceptes === 0) {
+    return "Aucun équipement n'a pu être ajouté. Réessayez dans un instant.";
+  }
+  return `${nombreEquipements(acceptes)} sur ${NOMBRE.format(demandes)} ${
+    acceptes > 1 ? "ajoutés" : "ajouté"
+  } au matériel ; les autres attendent toujours votre décision.`;
+}
+
+/**
  * Les dialogues d'une scène (agent VOICE). Ce livrable ne se demande pas
  * depuis un encart de texte mais depuis une sélection dans le scénario : il
  * est tenu à part de `LIVRABLES_IA`. Ses bornes sont celles de la base ; un

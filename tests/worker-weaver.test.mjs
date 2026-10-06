@@ -37,6 +37,7 @@ import {
   PROFILS_ARC,
   PROFILS_FIELD,
   PROFILS_FRAME,
+  PROFILS_GEAR,
   PROFILS_IA,
   PROFILS_SCRIPT,
   PROFILS_VOICE,
@@ -540,6 +541,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_VOICE),
         ...Object.keys(PROFILS_FIELD),
         ...Object.keys(PROFILS_FRAME),
+        ...Object.keys(PROFILS_GEAR),
       ].sort(),
     );
     assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
@@ -578,6 +580,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_VOICE),
         ...Object.keys(PROFILS_FIELD),
         ...Object.keys(PROFILS_FRAME),
+        ...Object.keys(PROFILS_GEAR),
       ].sort(),
     );
 

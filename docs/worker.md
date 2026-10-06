@@ -130,6 +130,10 @@ FRAME propose le découpage technique d'une scène (lot J3c-2a, action `shot_lis
 contexte porte le scénario enregistré en entier, ce qui en fait l'appel dont l'entrée est la
 plus longue. Si la scène a été supprimée avant l'appel, rien n'est envoyé.
 
+GEAR propose une liste de matériel (lot J3c-3, action `gear_list`, profil `gear.materiel@1`),
+sur le même chemin. Sa demande vise le projet entier ; son contexte porte le storyboard, le
+découpage résumé et le matériel déjà saisi, sans scénario ni budget. Il ne rend aucun calcul.
+
 - **Aucune date** : un jalon proposé porte un titre, une phase et une durée en jours. FIELD
   ne connaît ni le jour ni le calendrier de l'équipe ; elle date le jalon en l'acceptant.
   Sans date, la durée estimée est gardée dans les notes du jalon.
