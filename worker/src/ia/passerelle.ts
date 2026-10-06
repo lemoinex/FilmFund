@@ -322,10 +322,15 @@ export function creerFournisseurRecherchePerplexity(cleApi: string): Fournisseur
       redirect: "error",
       signal: AbortSignal.any([signal, AbortSignal.timeout(DELAI_RECHERCHE_MS)]),
       headers: { authorization: `Bearer ${cleApi}`, "content-type": "application/json" },
+      // Avec une liste fermée de sites, quand le profil en porte une : le
+      // moteur ne cherche pas ailleurs, et l'agent le recontrôle au retour.
       body: JSON.stringify({
         query: question,
         max_results: profil.collecte.resultatsMax,
         max_tokens_per_page: profil.collecte.jetonsParPage,
+        ...(profil.collecte.domaines
+          ? { search_domain_filter: [...profil.collecte.domaines] }
+          : {}),
       }),
     });
 

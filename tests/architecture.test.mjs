@@ -1618,7 +1618,7 @@ describe("Découpage proposé par FRAME", () => {
     assert.match(lire("src/lib/offre.ts"), /bareme\.shot_list/);
     assert.match(
       lire("src/lib/offre.ts"),
-      /schedule_plan, shot_list, gear_list, research, treatment/,
+      /schedule_plan, shot_list, gear_list, research, cultural_context, treatment/,
     );
   });
 });
@@ -2060,10 +2060,11 @@ describe("Recherche de SCOUT", () => {
       passerelle,
       /const ADRESSE_RECHERCHE_PERPLEXITY = "https:\/\/api\.perplexity\.ai\/search";/,
     );
-    // Le corps de la requête : la question et deux bornes du profil, rien d'autre.
+    // Le corps de la requête : la question, deux bornes du profil, et la liste
+    // de sites quand le profil en porte une (GRIOT). Rien d'autre.
     assert.match(
       passerelle,
-      /body: JSON\.stringify\(\{\s+query: question,\s+max_results: profil\.collecte\.resultatsMax,\s+max_tokens_per_page: profil\.collecte\.jetonsParPage,\s+\}\),/,
+      /body: JSON\.stringify\(\{\s+query: question,\s+max_results: profil\.collecte\.resultatsMax,\s+max_tokens_per_page: profil\.collecte\.jetonsParPage,\s+\.\.\.\(profil\.collecte\.domaines\s+\? \{ search_domain_filter: \[\.\.\.profil\.collecte\.domaines\] \}\s+: \{\}\),\s+\}\),/,
     );
     assert.equal(passerelle.match(/redirect: "error"/g)?.length, 2, "aucune redirection suivie");
     // Aucune dépendance de plus : Perplexity est appelé sans SDK.
@@ -2092,9 +2093,10 @@ describe("Recherche de SCOUT", () => {
   it("SCOUT demande les deux clés ; le registre ne le sert pas avec une seule", () => {
     const registre = lire("worker/src/registre.ts");
     assert.match(registre, /lireCleFournisseur\(base, "perplexity"\)/);
+    // SCOUT et GRIOT naissent ensemble, des deux clés, ou pas du tout.
     assert.match(
       registre,
-      /cle && cleRecherche\s+\? \{ \.\.\.executeursScout\(base, creer\(cle\), creerRecherche\(cleRecherche\)\) \}\s+: \{\}/,
+      /if \(cle && cleRecherche\) \{\s+const texteDeRecherche = creer\(cle\);\s+const moteur = creerRecherche\(cleRecherche\);\s+recherche = \{\s+\.\.\.executeursScout\(base, texteDeRecherche, moteur\),\s+\.\.\.executeursGriot\(base, texteDeRecherche, moteur\),\s+\};\s+\} else \{\s+recherche = \{\};\s+\}/,
     );
   });
 
@@ -2224,5 +2226,124 @@ describe("Recherche de SCOUT", () => {
     const agent = lire("worker/src/agents/scout.ts");
     assert.match(agent, /reserve: enDollars\(reserve\),/);
     assert.match(agent, /jetonsSortie: profil\.jetonsMax,/);
+  });
+});
+
+/*
+ * GRIOT (lot L3) : le contexte historique et culturel. Aucune mécanique
+ * nouvelle : l'exécuteur, les tables et les coûts sont ceux de SCOUT. Ce qui
+ * le distingue tient à son profil — une liste fermée de sites, des consignes
+ * d'historien —, et la base ne lui ouvre que ce qu'elle ouvrait déjà.
+ */
+describe("Contexte de GRIOT", () => {
+  const MIGRATION = "supabase/migrations/20261006220000_griot_contexte.sql";
+  const SCOUT = "supabase/migrations/20261006180000_scout_recherche.sql";
+  const corpsDans = (fichier, fonction) => {
+    const migration = lire(fichier);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable dans ${fichier}`);
+    return migration.slice(debut, migration.indexOf("\n$$;", debut));
+  };
+
+  it("les fonctions reprises le sont à l'identique, à la seule action admise près", () => {
+    const devis = corpsDans(MIGRATION, "creer_devis");
+    assert.equal(
+      devis
+        .replace("    when 'research', 'cultural_context' then\n", "    when 'research' then\n")
+        .replace(
+          "      v_quantite := case p_action\n        when 'cultural_context' then v_bareme.cultural_context\n        else v_bareme.research\n      end;\n",
+          "      v_quantite := v_bareme.research;\n",
+        ),
+      corpsDans(SCOUT, "creer_devis"),
+    );
+    // La même question, aux mêmes bornes, pour les deux actions.
+    assert.match(
+      devis,
+      /when 'research', 'cultural_context' then[\s\S]*?char_length\(btrim\(v_question\)\) not between 10 and 500/,
+    );
+
+    assert.equal(
+      corpsDans(MIGRATION, "contexte_recherche").replace(
+        "and j.action in ('research', 'cultural_context');",
+        "and j.action = 'research';",
+      ),
+      corpsDans(SCOUT, "contexte_recherche"),
+    );
+    for (const fonction of ["provisionner_recherche", "livrer_proposition_recherche"]) {
+      assert.equal(
+        corpsDans(MIGRATION, fonction).replace(
+          "if v_job.action not in ('research', 'cultural_context') then",
+          "if v_job.action <> 'research' then",
+        ),
+        corpsDans(SCOUT, fonction),
+        fonction,
+      );
+    }
+  });
+
+  it("la migration n'ouvre ni table, ni droit, ni politique : seulement une action et son prix", async () => {
+    const profils = await import("../worker/src/ia/profils.ts");
+    const code = lire(MIGRATION).replace(/^\s*--.*$/gm, "");
+    assert.doesNotMatch(
+      code,
+      /create table|create policy|alter policy|drop policy|disable row level/i,
+    );
+    assert.doesNotMatch(code, /to filmfund_worker|grant execute|revoke /i);
+    assert.deepEqual(
+      [...code.matchAll(/^grant [^;]+;/gm)].map((m) => m[0].replace(/\s+/g, " ")),
+      [
+        "grant insert (cultural_context) on table public.text_unit_rate_versions to authenticated;",
+        "grant select (cultural_context) on table public.text_unit_rate_versions to anon;",
+      ],
+    );
+    assert.match(code, /add column cultural_context integer not null default 3;/);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(code)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    for (const action of [
+      ...Object.keys(profils.PROFILS_IA),
+      ...Object.keys(profils.PROFILS_FIELD),
+      ...Object.keys(profils.PROFILS_VOICE),
+      ...Object.keys(profils.PROFILS_FRAME),
+      ...Object.keys(profils.PROFILS_GEAR),
+      ...Object.keys(profils.PROFILS_BOARD),
+      ...Object.keys(profils.PROFILS_SCOUT),
+      ...Object.keys(profils.PROFILS_GRIOT),
+    ]) {
+      assert.ok(enBase.includes(action), action);
+    }
+    assert.match(lire("src/lib/plans.ts"), /cle: "cultural_context"/);
+    assert.match(lire("src/lib/offre.ts"), /bareme\.cultural_context/);
+  });
+
+  it("GRIOT n'a pas d'exécuteur à lui : celui de SCOUT, avec son profil", () => {
+    const agent = lire("worker/src/agents/scout.ts");
+    assert.match(
+      agent,
+      /Object\.entries\(PROFILS_GRIOT\)\.map\(\(\[action, profil\]\) => \[\s+action,\s+executeurRecherche\(base, fournisseur, moteur, profil\),\s+\]\)/,
+    );
+    assert.equal(agent.match(/function executeurRecherche\(/g)?.length, 1);
+    // Ce que le moteur rend est recontrôlé contre la liste du profil.
+    assert.match(
+      agent,
+      /retenirSources\(\s+collecte\.resultats,\s+profil\.collecte\.resultatsMax,\s+profil\.collecte\.domaines,\s+\)/,
+    );
+    assert.match(
+      agent,
+      /if \(domaines && !hoteAdmis\(new URL\(url\)\.hostname, domaines\)\) \{\s+continue;/,
+    );
+    assert.match(agent, /net === domaine \|\| net\.endsWith\(`\.\$\{domaine\}`\)/);
+    // Aucun fichier d'agent de plus, aucune adresse de plus.
+    assert.ok(!fichiersDe("worker/src/agents").some((fichier) => /griot/i.test(fichier)));
+    assert.equal(lire(PASSERELLE).match(/https?:\/\/[^\s"'`]+/g)?.length, 2);
+  });
+
+  it("la liste des sites vit dans le profil ; ni la base, ni le navigateur ne la choisissent", () => {
+    const code = lire(MIGRATION).replace(/^\s*--.*$/gm, "");
+    assert.doesNotMatch(code, /persee|openedition|domaine|search_domain/i);
+    for (const fichier of fichiersDe("src/app")) {
+      assert.doesNotMatch(lire(fichier), /search_domain_filter|DOMAINES_CONTEXTE/, fichier);
+    }
+    const actions = lire("src/app/(app)/projets/[id]/recherche/actions-ia.ts");
+    assert.doesNotMatch(actions.replace(/\/\*[\s\S]*?\*\//g, ""), /domaines|persee/i);
   });
 });

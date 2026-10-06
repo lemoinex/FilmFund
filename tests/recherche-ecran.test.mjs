@@ -16,15 +16,25 @@ import { describe, it } from "node:test";
 
 import { ongletsDuProjet } from "../src/lib/onglets-projet.ts";
 import {
+  ACTIONS_RECHERCHE,
   bilanSources,
   estActionIa,
+  estActionRecherche,
   estActionStructuree,
+  libelleRecherche,
   lireQuestion,
+  LIVRABLE_CONTEXTE,
   LIVRABLE_RECHERCHE,
+  MODES_RECHERCHE,
   nombreSources,
   segmentsSynthese,
 } from "../src/lib/propositions.ts";
-import { PROFIL_RECHERCHE, PROFILS_SCOUT } from "../worker/src/ia/profils.ts";
+import {
+  DOMAINES_CONTEXTE,
+  PROFIL_RECHERCHE,
+  PROFILS_GRIOT,
+  PROFILS_SCOUT,
+} from "../worker/src/ia/profils.ts";
 
 const DOSSIER = "src/app/(app)/projets/[id]/recherche";
 const MIGRATION = "supabase/migrations/20261006180000_scout_recherche.sql";
@@ -150,6 +160,70 @@ describe("Recherche : catalogue, question et synthèse", () => {
   });
 });
 
+describe("Recherche : les deux façons de chercher", () => {
+  it("l'écran propose exactement ce que SCOUT et GRIOT savent produire, et rien d'autre", () => {
+    assert.deepEqual(
+      [...ACTIONS_RECHERCHE],
+      [...Object.keys(PROFILS_SCOUT), ...Object.keys(PROFILS_GRIOT)],
+    );
+    assert.deepEqual(
+      MODES_RECHERCHE.map((mode) => mode.action),
+      [LIVRABLE_RECHERCHE.action, LIVRABLE_CONTEXTE.action],
+    );
+    assert.equal(estActionRecherche("research"), true);
+    assert.equal(estActionRecherche("cultural_context"), true);
+    for (const valeur of ["logline", "gear_list", "", "RESEARCH", null, undefined, 3, {}]) {
+      assert.equal(estActionRecherche(valeur), false, String(valeur));
+    }
+    assert.equal(estActionIa(LIVRABLE_CONTEXTE.action), false);
+    assert.equal(estActionStructuree(LIVRABLE_CONTEXTE.action), false);
+    assert.equal(libelleRecherche("research"), "Recherche documentaire");
+    assert.equal(libelleRecherche("cultural_context"), "Contexte historique et culturel");
+    // Une action inconnue ne se présente pas sous le nom d'une autre recherche.
+    assert.equal(libelleRecherche("inconnue"), "Recherche documentaire");
+  });
+
+  it("l'écran nomme les sites que le moteur consulte, ceux-là et aucun autre", () => {
+    assert.deepEqual([...LIVRABLE_CONTEXTE.domaines], [...DOMAINES_CONTEXTE]);
+    assert.match(LIVRABLE_CONTEXTE.description, /liste fermée/);
+    assert.match(LIVRABLE_CONTEXTE.description, /Afrique centrale/);
+    assert.match(LIVRABLE_CONTEXTE.perimetre, /et eux seuls/);
+    // Ce que la liste ne garantit pas, dit avec elle.
+    assert.match(LIVRABLE_CONTEXTE.reserve, /elle ne vérifie rien/);
+    assert.match(LIVRABLE_CONTEXTE.reserve, /époque coloniale ou vient des missions/);
+    assert.match(LIVRABLE_CONTEXTE.reserve, /peuvent ne rien rendre/);
+    for (const texte of Object.values(LIVRABLE_CONTEXTE).filter((v) => typeof v === "string")) {
+      assert.doesNotMatch(texte, /fiable|garanti|certifi|exhausti|officiel|validé/i, texte);
+    }
+  });
+
+  it("le choix est dit avant la question, et la liste des sites s'affiche en entier", () => {
+    const composants = sansCommentaires(lire(`${DOSSIER}/recherche.tsx`));
+    assert.match(composants, /<legend className="text-xs font-medium">Où chercher<\/legend>/);
+    assert.match(composants, /\{MODES_RECHERCHE\.map\(\(choix\) => \(/);
+    assert.match(composants, /type="radio"[\s\S]*?checked=\{mode === choix\.action\}/);
+    assert.ok(composants.indexOf("Où chercher") < composants.indexOf("Votre question"));
+    assert.match(
+      composants,
+      /\{mode === LIVRABLE_CONTEXTE\.action \? \([\s\S]*?\{LIVRABLE_CONTEXTE\.perimetre\}[\s\S]*?\{LIVRABLE_CONTEXTE\.domaines\.map\(\(domaine\) => \(\s+<li key=\{domaine\}>\{domaine\}<\/li>[\s\S]*?\{LIVRABLE_CONTEXTE\.reserve\}/,
+    );
+    // Le mode choisi part avec la question, et se relit avant la confirmation.
+    assert.match(composants, /demanderDevisRecherche\(projetId, saisie, mode\)/);
+    assert.match(composants, /\{libelleRecherche\(demande\.mode\)\}/);
+    // Aucun site écrit en dur dans l'écran.
+    assert.doesNotMatch(composants, /persee|openedition|cairn/i);
+  });
+
+  it("la page lit les deux recherches, et dit laquelle a produit la synthèse", () => {
+    const page = sansCommentaires(lire(`${DOSSIER}/page.tsx`));
+    assert.equal(page.match(/\.in\("action", ACTIONS_RECHERCHE\)/g)?.length, 2);
+    assert.doesNotMatch(page, /\.eq\("action",/);
+    assert.match(page, /\.select\("id, content, job_id, action"\)/);
+    assert.match(page, /\{libelleRecherche\(recherche\.mode\)\}/);
+    assert.match(page, /mode: proposition\.action,/);
+  });
+});
+
 describe("Recherche : actions serveur", () => {
   const source = sansCommentaires(lire(`${DOSSIER}/actions-ia.ts`));
   const fonctions = source.split("\nexport async function ").slice(1);
@@ -197,11 +271,18 @@ describe("Recherche : actions serveur", () => {
   it("le navigateur pose une question ; il ne choisit ni l'action, ni le moteur, ni le nombre de pages", () => {
     const devis = corps("demanderDevisRecherche");
     assert.match(devis, /const question = lireQuestion\(saisie\);\s+if \(question === null\) \{/);
-    assert.match(devis, /p_action: ACTION,\s+p_params: \{ question \},/);
+    assert.match(devis, /p_action: mode,\s+p_params: \{ question \},/);
+    // Le choix de la recherche vient d'une liste fermée, revérifiée ici.
+    assert.match(
+      devis,
+      /if \(!UUID\.test\(projetId\) \|\| !estActionRecherche\(mode\)\) \{\s+return DEMANDE_INVALIDE;/,
+    );
     // La question contrôlée est rendue à l'écran, qui la remontre avant l'envoi.
     assert.match(devis, /return \{\s+question,\s+devis: \{/);
-    assert.match(source, /const ACTION = LIVRABLE_RECHERCHE\.action;/);
-    assert.doesNotMatch(source, /max_results|resultatsMax|modele|model:|perplexity|profil/i);
+    assert.doesNotMatch(
+      source,
+      /max_results|resultatsMax|modele|model:|perplexity|profil|domaines|search_domain/i,
+    );
   });
 
   it("une source se retient telle que collectée : aucune correction, aucun statut", () => {
@@ -288,10 +369,7 @@ describe("Recherche : page et composants", () => {
       pageNue,
       /\.eq\("suggestion_id", proposition\.id\)\s+\.order\("position"\)\s+\.limit\(LIVRABLE_RECHERCHE\.sourcesMax\)/,
     );
-    assert.match(
-      pageNue,
-      /\.eq\("project_id", projetId\)\s+\.eq\("action", LIVRABLE_RECHERCHE\.action\)/,
-    );
+    assert.match(pageNue, /\.eq\("project_id", projetId\)\s+\.in\("action", ACTIONS_RECHERCHE\)/);
     // Aucune borne écrite en dur dans les composants.
     assert.doesNotMatch(composantsNus, /minLength=\{\d|maxLength=\{\d/);
     assert.match(composantsNus, /minLength=\{LIVRABLE_RECHERCHE\.questionMin\}/);
@@ -313,7 +391,10 @@ describe("Recherche : page et composants", () => {
       composantsNus,
       /\(\) => lancerRecherche\(projetId, demande\.devis\.id, demande\.cle\)/,
     );
-    assert.match(composantsNus, /setDemande\(\{ \.\.\.resultat, cle: crypto\.randomUUID\(\) \}\)/);
+    assert.match(
+      composantsNus,
+      /setDemande\(\{ \.\.\.resultat, mode, cle: crypto\.randomUUID\(\) \}\)/,
+    );
   });
 
   it("l'avertissement accompagne la synthèse comme les sources retenues, et rien ne se dit vérifié par la plateforme", () => {

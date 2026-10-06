@@ -6,8 +6,12 @@ import { useId, useState, useTransition } from "react";
 import { Message } from "@/components/ui/form";
 import {
   enNombre,
+  libelleRecherche,
+  LIVRABLE_CONTEXTE,
   LIVRABLE_RECHERCHE,
+  MODES_RECHERCHE,
   unitesTexte,
+  type ActionRecherche,
   type EtapeProposition,
 } from "@/lib/propositions";
 
@@ -52,12 +56,16 @@ export function DemandeRecherche({
   const [enCours, demarrer] = useTransition();
   const [erreur, setErreur] = useState<string | null>(null);
   const [saisie, setSaisie] = useState("");
+  const [mode, setMode] = useState<ActionRecherche>(LIVRABLE_RECHERCHE.action);
   // Le devis affiché, la question telle qu'elle partira, et la clé de la
   // demande : la clé naît avec le devis et ne change plus, si bien qu'un
   // double clic ne réserve qu'une fois.
-  const [demande, setDemande] = useState<{ devis: Devis; question: string; cle: string } | null>(
-    null,
-  );
+  const [demande, setDemande] = useState<{
+    devis: Devis;
+    question: string;
+    mode: ActionRecherche;
+    cle: string;
+  } | null>(null);
 
   const auRepos = etape.etape === "repos" || etape.etape === "echec";
 
@@ -77,11 +85,11 @@ export function DemandeRecherche({
   function obtenirDevis() {
     setErreur(null);
     demarrer(async () => {
-      const resultat = await demanderDevisRecherche(projetId, saisie);
+      const resultat = await demanderDevisRecherche(projetId, saisie, mode);
       if ("erreur" in resultat) {
         setErreur(resultat.erreur);
       } else {
-        setDemande({ ...resultat, cle: crypto.randomUUID() });
+        setDemande({ ...resultat, mode, cle: crypto.randomUUID() });
       }
     });
   }
@@ -121,7 +129,46 @@ export function DemandeRecherche({
             obtenirDevis();
           }}
         >
-          <label htmlFor={champ} className="text-xs font-medium">
+          <fieldset>
+            <legend className="text-xs font-medium">Où chercher</legend>
+            <div className="mt-2 space-y-2">
+              {MODES_RECHERCHE.map((choix) => (
+                <label key={choix.action} className="flex items-start gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name={`${champ}-mode`}
+                    value={choix.action}
+                    checked={mode === choix.action}
+                    onChange={() => setMode(choix.action)}
+                    className="accent-gold mt-1"
+                  />
+                  <span>
+                    {choix.libelle}
+                    <span className="text-secondary block text-xs">{choix.aide}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {mode === LIVRABLE_CONTEXTE.action ? (
+            <div className="border-app-line mt-4 rounded-lg border px-3 py-3">
+              <p className="text-secondary text-xs leading-relaxed text-pretty">
+                {LIVRABLE_CONTEXTE.description}
+              </p>
+              <p className="mt-3 text-xs font-medium">{LIVRABLE_CONTEXTE.perimetre}</p>
+              <ul className="text-secondary mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                {LIVRABLE_CONTEXTE.domaines.map((domaine) => (
+                  <li key={domaine}>{domaine}</li>
+                ))}
+              </ul>
+              <p className="text-light mt-3 text-xs leading-relaxed text-pretty">
+                {LIVRABLE_CONTEXTE.reserve}
+              </p>
+            </div>
+          ) : null}
+
+          <label htmlFor={champ} className="mt-4 block text-xs font-medium">
             Votre question
           </label>
           <textarea
@@ -146,7 +193,8 @@ export function DemandeRecherche({
 
       {auRepos && demande ? (
         <div className="mt-4">
-          <p className="text-xs font-medium">La question qui sera transmise</p>
+          <p className="text-gold text-xs font-medium">{libelleRecherche(demande.mode)}</p>
+          <p className="mt-2 text-xs font-medium">La question qui sera transmise</p>
           <p className="border-app-line mt-2 rounded-lg border px-3 py-2 text-sm leading-relaxed">
             {demande.question}
           </p>

@@ -32,6 +32,7 @@ import {
   coutMicroDollars,
   enDollars,
   estimerJetons,
+  PROFILS_GRIOT,
   PROFILS_SCOUT,
   type ProfilRecherche,
 } from "../ia/profils.ts";
@@ -110,13 +111,27 @@ export function lireDate(brute: string | null): string | null {
 }
 
 /**
+ * Vrai si l'hôte est l'un des sites admis, ou l'un de leurs sous-domaines.
+ * « evil-persee.fr » n'est pas « persee.fr » : la comparaison se fait au
+ * point près.
+ */
+export function hoteAdmis(hote: string, domaines: readonly string[]): boolean {
+  const net = hote.toLowerCase();
+  return domaines.some((domaine) => net === domaine || net.endsWith(`.${domaine}`));
+}
+
+/**
  * Retient les pages exploitables, dans l'ordre du moteur : adresse admise,
  * extrait non vide, une seule fois chacune, `max` au plus. Une page écartée
  * ne fait pas échouer la collecte — elle n'y figure pas, voilà tout.
+ *
+ * Avec `domaines`, seules les pages de ces sites passent : le moteur est
+ * censé s'y tenir, mais ce qu'il rend n'est pas cru sur parole.
  */
 export function retenirSources(
   resultats: readonly ResultatRecherche[],
   max: number,
+  domaines?: readonly string[],
 ): SourceCollectee[] {
   const sources: SourceCollectee[] = [];
   const vues = new Set<string>();
@@ -126,6 +141,9 @@ export function retenirSources(
     }
     const url = adresseAdmise(resultat.adresse.trim());
     if (url === null || vues.has(url)) {
+      continue;
+    }
+    if (domaines && !hoteAdmis(new URL(url).hostname, domaines)) {
       continue;
     }
     // L'extrait garde ses sauts de ligne ; le reste des caractères de
@@ -277,7 +295,11 @@ function executeurRecherche(
     // avant tout tri des pages.
     await confirmerRecherche(base, travail.attemptId, { requetes: 1, dollars: enDollars(frais) });
 
-    const sources = retenirSources(collecte.resultats, profil.collecte.resultatsMax);
+    const sources = retenirSources(
+      collecte.resultats,
+      profil.collecte.resultatsMax,
+      profil.collecte.domaines,
+    );
     if (sources.length === 0) {
       throw new EchecConnu("Aucune source exploitable n'a été trouvée pour cette question.");
     }
@@ -323,5 +345,23 @@ export function executeursScout(
     Object.entries(PROFILS_SCOUT).flatMap(([action, profil]) =>
       FABRIQUES[action] ? [[action, FABRIQUES[action](base, fournisseur, moteur, profil)]] : [],
     ),
+  );
+}
+
+/**
+ * Ce que GRIOT sait exécuter. Même exécuteur que SCOUT, sans copie : seuls
+ * ses profils diffèrent — une collecte restreinte à une liste de sites, et
+ * des consignes d'historien.
+ */
+export function executeursGriot(
+  base: Base,
+  fournisseur: Fournisseur,
+  moteur: FournisseurRecherche,
+): Readonly<Record<string, Executeur>> {
+  return Object.fromEntries(
+    Object.entries(PROFILS_GRIOT).map(([action, profil]) => [
+      action,
+      executeurRecherche(base, fournisseur, moteur, profil),
+    ]),
   );
 }

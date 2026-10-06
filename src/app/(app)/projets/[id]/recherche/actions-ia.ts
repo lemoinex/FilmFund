@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
-import { LIVRABLE_RECHERCHE, lireQuestion, messageErreur } from "@/lib/propositions";
+import {
+  estActionRecherche,
+  LIVRABLE_RECHERCHE,
+  lireQuestion,
+  messageErreur,
+} from "@/lib/propositions";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,14 +22,14 @@ import type { Devis } from "../actions-ia";
  * bornes sont décidés par la base ; rien de ce que le navigateur envoie n'est
  * cru sur parole.
  *
- * Le navigateur ne choisit ni le moteur, ni le modèle, ni le nombre de pages :
- * il pose une question, que la base contrôle de nouveau.
+ * Le navigateur ne choisit ni le moteur, ni le modèle, ni le nombre de pages,
+ * ni les sites consultés : il pose une question, que la base contrôle de
+ * nouveau, et dit laquelle des deux recherches il veut — une valeur prise
+ * dans une liste fermée, que cette action revérifie.
  *
  * Une source se retient telle que collectée : aucune action ne la corrige ni
  * ne change son statut. Vérifier une source n'est pas ouvert.
  */
-
-const ACTION = LIVRABLE_RECHERCHE.action;
 
 type Echec = { erreur: string };
 
@@ -44,8 +49,9 @@ function revalider(projetId: string): void {
 export async function demanderDevisRecherche(
   projetId: string,
   saisie: string,
+  mode: string,
 ): Promise<{ devis: Devis; question: string } | Echec> {
-  if (!UUID.test(projetId)) {
+  if (!UUID.test(projetId) || !estActionRecherche(mode)) {
     return DEMANDE_INVALIDE;
   }
   const question = lireQuestion(saisie);
@@ -61,7 +67,7 @@ export async function demanderDevisRecherche(
 
   const { data, error } = await acces.supabase.rpc("creer_devis", {
     p_project_id: projetId,
-    p_action: ACTION,
+    p_action: mode,
     p_params: { question },
   });
   const devis = data?.[0];

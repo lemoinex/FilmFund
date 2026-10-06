@@ -2238,6 +2238,7 @@ export type Database = {
         Row: {
           bible: number;
           budget_plan: number;
+          cultural_context: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
           gear_list: number;
@@ -2259,6 +2260,7 @@ export type Database = {
         Insert: {
           bible: number;
           budget_plan: number;
+          cultural_context: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
           gear_list: number;
@@ -2280,6 +2282,7 @@ export type Database = {
         Update: {
           bible?: number;
           budget_plan?: number;
+          cultural_context?: number;
           dialogue_per_scene?: number;
           dramatic_analysis?: number;
           gear_list?: number;
@@ -2530,6 +2533,7 @@ export type Database = {
         Returns: {
           bible: number;
           budget_plan: number;
+          cultural_context: number;
           dialogue_per_scene: number;
           dramatic_analysis: number;
           gear_list: number;

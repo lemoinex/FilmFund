@@ -392,6 +392,21 @@ Concerne SCOUT, GRIOT et MATCH.
 - Validé en recette le 6 octobre 2026. Non mesuré : ce que le moteur rend sur
   l'Afrique centrale — ne pas le présenter comme acquis.
 
+### GRIOT
+
+- Livré (lot L3, action `cultural_context`, profil `griot.contexte@1`) sur le
+  socle de SCOUT : même exécuteur, mêmes tables, mêmes coûts. Ne pas lui écrire
+  une mécanique à part.
+- Sa collecte ne sort pas d'une liste fermée de sites (`DOMAINES_CONTEXTE`, dans
+  le profil). Le worker recontrôle ce que le moteur rend. L'écran nomme ces
+  sites (`LIVRABLE_CONTEXTE.domaines`) : les deux listes doivent rester égales.
+  Changer la liste, c'est publier une version du profil.
+- Cette liste dit où chercher, elle ne valide rien : une source de GRIOT naît
+  `non_verifie`. Ne jamais présenter ces sources comme vérifiées ou validées.
+- Ses consignes sont celles d'un historien : d'où parle la source, de quand, ce
+  qui est contesté, à qui l'affirmation s'applique. Ne pas les affaiblir.
+- Écran : le choix « Où chercher » de l'onglet « Recherche ».
+
 ## 10. Fonctionnalités produit à préserver
 
 **Le schéma existant fait foi.** Les listes ci-dessous décrivent l’intention

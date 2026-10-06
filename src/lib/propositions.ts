@@ -526,6 +526,67 @@ export const LIVRABLE_RECHERCHE = {
   sourcesMax: 20,
 } as const;
 
+/**
+ * Le contexte historique et culturel (agent GRIOT). Même mécanique que la
+ * recherche, sur une liste fermée de sites : celle du profil, mot pour mot —
+ * un test vérifie qu'elles s'accordent, pour que l'écran ne nomme pas
+ * d'autres sources que celles que le moteur consulte.
+ */
+export const LIVRABLE_CONTEXTE = {
+  action: "cultural_context",
+  titre: "Contexte historique et culturel",
+  description:
+    "Pour situer votre film dans l'histoire et les sociétés d'Afrique centrale. Le moteur ne consulte qu'une liste fermée de revues, d'archives ouvertes et d'institutions ; l'assistant en rédige une synthèse qui dit d'où parle chaque source.",
+  /** Introduit la liste des sites, affichée en entier. */
+  perimetre: "Sites consultés, et eux seuls :",
+  domaines: [
+    "persee.fr",
+    "openedition.org",
+    "cairn.info",
+    "hal.science",
+    "erudit.org",
+    "jstor.org",
+    "unesco.org",
+    "africamuseum.be",
+    "horizon.documentation.ird.fr",
+  ],
+  /** Dit avec la liste : ce qu'elle garantit, et ce qu'elle ne garantit pas. */
+  reserve:
+    "Cette liste dit où chercher : elle ne vérifie rien. Une bonne part de l'écrit sur l'Afrique centrale date de l'époque coloniale ou vient des missions : lisez-le comme tel. Sur un sujet pointu, ces sites peuvent ne rien rendre.",
+} as const;
+
+/** Les deux façons de chercher, dans l'ordre où l'écran les propose. */
+export const MODES_RECHERCHE = [
+  {
+    action: LIVRABLE_RECHERCHE.action,
+    libelle: LIVRABLE_RECHERCHE.titre,
+    aide: "Sur tout le web public.",
+  },
+  {
+    action: LIVRABLE_CONTEXTE.action,
+    libelle: LIVRABLE_CONTEXTE.titre,
+    aide: "Sur une liste fermée de revues, d'archives ouvertes et d'institutions.",
+  },
+] as const;
+
+export type ActionRecherche = (typeof MODES_RECHERCHE)[number]["action"];
+
+/** Les actions que l'onglet Recherche sait demander et lire. */
+export const ACTIONS_RECHERCHE: readonly ActionRecherche[] = MODES_RECHERCHE.map(
+  (mode) => mode.action,
+);
+
+export function estActionRecherche(valeur: unknown): valeur is ActionRecherche {
+  return typeof valeur === "string" && (ACTIONS_RECHERCHE as readonly string[]).includes(valeur);
+}
+
+/** Le nom d'une façon de chercher, tel que l'écran le montre. */
+export function libelleRecherche(action: string): string {
+  return (
+    MODES_RECHERCHE.find((mode) => mode.action === action)?.libelle ?? LIVRABLE_RECHERCHE.titre
+  );
+}
+
 /** Source proposée, telle que l'écran la lit. */
 export type SourceProposee = {
   id: string;

@@ -133,6 +133,7 @@ const BAREME = {
   shot_list: 4,
   gear_list: 5,
   research: 3,
+  cultural_context: 3,
   treatment: 8,
   bible: 10,
   screenplay_per_sequence: 2,
@@ -143,7 +144,7 @@ describe("Barème des unités texte", () => {
   it("met en mots le barème de mise en service", () => {
     assert.equal(
       uniteTexteEnMots(BAREME),
-      "1 pour une logline, de 1 à 3 pour un synopsis, 3 pour une note d'intention, 4 pour une analyse dramaturgique, 6 pour un budget prévisionnel, 3 pour un planning prévisionnel, 4 pour le découpage d'une scène, 5 pour une liste de matériel, 3 pour une recherche documentaire, 8 pour un traitement, 10 pour une bible, 2 par séquence de scénario et 1 par scène de dialogues",
+      "1 pour une logline, de 1 à 3 pour un synopsis, 3 pour une note d'intention, 4 pour une analyse dramaturgique, 6 pour un budget prévisionnel, 3 pour un planning prévisionnel, 4 pour le découpage d'une scène, 5 pour une liste de matériel, 3 pour une recherche documentaire, 3 pour un contexte historique et culturel, 8 pour un traitement, 10 pour une bible, 2 par séquence de scénario et 1 par scène de dialogues",
     );
   });
 
