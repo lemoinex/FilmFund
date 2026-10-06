@@ -1883,3 +1883,149 @@ describe("Découpage et matériel dans les exports", () => {
     assert.match(page, /from\("project_gear"\)\.select\("id", \{ count: "exact", head: true \}\)/);
   });
 });
+
+/*
+ * BOARD (lot K1) : la vignette d'une scène. Un second fournisseur entre dans
+ * la passerelle, et lui seul ; le style tient au profil ; le worker ne reçoit
+ * aucun droit sur le stockage ; rien ne remplace une image sans acceptation.
+ */
+describe("Vignettes de BOARD", () => {
+  const MIGRATION = "supabase/migrations/20261006160000_board_images.sql";
+  const corps = (fonction) => {
+    const migration = lire(MIGRATION);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable`);
+    return migration.slice(debut, migration.indexOf("$$;", debut));
+  };
+
+  it("seule la passerelle parle au réseau, et vers une seule adresse d'OpenAI", () => {
+    const fichiers = [...fichiersDe("worker/src"), ...fichiersDe("src")];
+    assert.ok(fichiers.length > 50, "lecture du dépôt");
+    const appelants = fichiers.filter((fichier) => /\bfetch\(/.test(lire(fichier)));
+    assert.deepEqual(appelants, [PASSERELLE]);
+    const adresses = fichiers.filter((fichier) => /api\.openai\.com/.test(lire(fichier)));
+    assert.deepEqual(adresses, [PASSERELLE]);
+
+    const passerelle = lire(PASSERELLE);
+    assert.equal(passerelle.match(/https?:\/\/[^\s"'`]+/g)?.length, 1, "une seule adresse");
+    assert.match(
+      passerelle,
+      /const ADRESSE_IMAGES_OPENAI = "https:\/\/api\.openai\.com\/v1\/images\/generations";/,
+    );
+    // Ni redirection suivie, ni réessai, ni clé venue de l'environnement.
+    assert.match(passerelle, /redirect: "error"/);
+    assert.doesNotMatch(passerelle, /process\.env/);
+    assert.doesNotMatch(passerelle, /for \(|while \(|retry|réessaie/i);
+    // Aucune dépendance de plus : OpenAI est appelé sans son SDK.
+    const dependances = JSON.parse(lire("worker/package.json")).dependencies;
+    assert.ok(!Object.keys(dependances).some((nom) => /openai/i.test(nom)));
+  });
+
+  it("le style est écrit une fois, dans le profil, et l'agent l'envoie tel quel", async () => {
+    const { PROFIL_VIGNETTE, PROFILS_BOARD } = await import("../worker/src/ia/profils.ts");
+    assert.deepEqual(Object.keys(PROFILS_BOARD), ["storyboard_image"]);
+    assert.match(PROFIL_VIGNETTE.id, /^board\.[a-z_]+@\d+$/);
+    assert.match(PROFIL_VIGNETTE.style, /encre noire sur fond blanc/);
+    assert.match(PROFIL_VIGNETTE.interdits, /aucune couleur/);
+    assert.match(
+      PROFIL_VIGNETTE.interdits,
+      /Aucun photoréalisme, aucun rendu 3D, aucune peinture numérique/,
+    );
+
+    // L'agent ne réécrit ni ne complète le style : il l'encadre autour de la scène.
+    const agent = lire("worker/src/agents/board.ts");
+    assert.match(agent, /return \[\s+profil\.style,/);
+    assert.match(agent, /profil\.interdits,\s+\]\.join\("\\n\\n"\);/);
+    assert.doesNotMatch(agent, /couleur|photoréalis|aquarelle/i);
+    // Ni le modèle, ni la taille, ni la qualité ne viennent d'ailleurs que du profil.
+    const passerelle = lire(PASSERELLE);
+    assert.match(passerelle, /model: profil\.modele,/);
+    assert.match(passerelle, /size: profil\.taille,/);
+    assert.match(passerelle, /quality: profil\.qualite,/);
+    assert.match(passerelle, /n: 1,/);
+  });
+
+  it("la base admet le second fournisseur et l'action, sans rien retirer aux autres", async () => {
+    const { PROFILS_FIELD, PROFILS_FRAME, PROFILS_GEAR, PROFILS_IA, PROFILS_VOICE } =
+      await import("../worker/src/ia/profils.ts");
+    const migration = lire(MIGRATION);
+    assert.match(migration, /check \(provider in \('anthropic', 'openai'\)\)/);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    assert.ok(enBase.includes("storyboard_image"));
+
+    const devis = corps("creer_devis");
+    // Une image, comptée sur le quota d'images, pour une scène de ce projet.
+    assert.match(
+      devis,
+      /when 'storyboard_image' then[\s\S]*?v_unite := 'image';\s+v_quantite := 1;[\s\S]*?s\.project_id = p_project_id/,
+    );
+    for (const action of [
+      ...Object.keys(PROFILS_IA),
+      ...Object.keys(PROFILS_FIELD),
+      ...Object.keys(PROFILS_VOICE),
+      ...Object.keys(PROFILS_FRAME),
+      ...Object.keys(PROFILS_GEAR),
+    ]) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(devis.includes(`when '${action}' then`), action);
+    }
+    assert.match(devis, /Désignez la scène du storyboard à découper\./);
+    assert.match(devis, /public\.passage_du_scenario\(p_project_id, v_parametres\) is null/);
+  });
+
+  it("le worker ne reçoit aucun droit sur le stockage ni sur le storyboard", () => {
+    const migration = lire(MIGRATION);
+    const accordes = [...migration.matchAll(/^grant [^;]+ to filmfund_worker;/gm)].map((m) => m[0]);
+    assert.deepEqual(accordes, [
+      "grant execute on function public.contexte_image(uuid) to filmfund_worker;",
+      "grant execute on function public.livrer_proposition_image(uuid, bytea) to filmfund_worker;",
+    ]);
+    assert.doesNotMatch(corps("livrer_proposition_image"), /storage\.|storyboard_scenes set/);
+    // BOARD ne lit ni le scénario, ni le budget, ni aucun document.
+    assert.doesNotMatch(
+      corps("contexte_image"),
+      /project_documents|budget|project_members|profiles|fundings|logline|synopsis/,
+    );
+  });
+
+  it("rien ne remplace l'image d'une scène sans une acceptation, que la base vérifie", () => {
+    const migration = lire(MIGRATION);
+    // Le seul endroit de la migration qui écrit l'image d'une scène.
+    assert.equal(migration.match(/update public\.storyboard_scenes set image_path/g)?.length, 1);
+    const acceptation = corps("accepter_image_proposee");
+    assert.match(acceptation, /v_image := public\.image_a_decider\(p_image_id\);/);
+    assert.match(acceptation, /p_path not like v_image\.project_id::text \|\| '\/scenes\/%'/);
+    assert.match(acceptation, /or p_path like '%\/\.\.\/%'/);
+    assert.match(acceptation, /o\.bucket_id = 'project-images' and o\.name = p_path/);
+    assert.match(acceptation, /return v_ancienne;/);
+    assert.match(
+      corps("image_a_decider"),
+      /\(public\.mode_prive\(\) and not public\.is_admin\(\)\)\s+or not coalesce\(public\.peut_editer_contenu\(v_image\.project_id\), false\)/,
+    );
+    // Lue de toute l'équipe, écrite par fonctions seulement, sous le verrou du mode privé.
+    assert.match(migration, /on public\.ai_suggestion_images\s+as restrictive/);
+    assert.match(
+      migration,
+      /revoke all on table public\.ai_suggestion_images from anon, authenticated/,
+    );
+    assert.ok(corps("ecarter_lignes_restantes").includes("update public.ai_suggestion_images"));
+  });
+
+  it("le registre sert BOARD par sa propre clé, et les bornes du fichier sont celles de la base", async () => {
+    const { executeursBoard, TAILLE_MAX_IMAGE } = await import("../worker/src/agents/board.ts");
+    const { PROFILS_BOARD } = await import("../worker/src/ia/profils.ts");
+    const vide = async () => ({});
+    assert.deepEqual(Object.keys(executeursBoard({}, vide)), Object.keys(PROFILS_BOARD));
+
+    const registre = lire("worker/src/registre.ts");
+    assert.match(registre, /lireCleFournisseur\(base, "openai"\)/);
+    assert.match(registre, /executeursBoard\(base, creerImages\(cleImages\)\)/);
+    // La clé d'Anthropic ne sert jamais le fournisseur d'images, ni l'inverse.
+    assert.doesNotMatch(registre, /creerImages\(cle\)|creer\(cleImages\)/);
+
+    const migration = lire(MIGRATION);
+    assert.equal(migration.split(`between 8 and ${TAILLE_MAX_IMAGE}`).length - 1, 2);
+    assert.equal(migration.split("'\\x89504e470d0a1a0a'::bytea").length - 1, 2);
+  });
+});

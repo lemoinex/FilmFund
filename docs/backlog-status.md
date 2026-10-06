@@ -35,7 +35,8 @@ réels).
 | J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé en recette | —              |
 | J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé en recette | —              |
 | J3c-4  | Exports : sections « Découpage technique » et « Matériel »                                                                     | validé en recette | —              |
-| K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
+| K1     | BOARD : vignette d'une scène — base, passerelle d'images, profil, agent                                                        | validé localement | —              |
+| K2     | BOARD : écran de la vignette proposée, dans le storyboard                                                                      | à faire           | K1             |
 | L      | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —              |
@@ -1099,6 +1100,35 @@ classeurs de plus, `decoupage.xlsx` et `materiel.xlsx`, où focales, durées, qu
 puissances restent des nombres. Décidé avec l'utilisateur : **le dossier ne porte aucun
 calcul électrique** — ni charge, ni intensité, ni groupe conseillé. Ce chiffrage n'est pas
 certifié, et le refaire dans la base ou le worker en aurait créé un second.
+
+BOARD, décision 7 tranchée pour l'image le 6 octobre 2026 (lot K, découpé en K1 — base et
+worker — et K2 — écran) : OpenAI pour l'image ; **une image par scène**, une scène par
+demande ; jamais de remplacement d'une vignette sans accord explicite. Le budget de test de
+la recette reste à fixer par l'utilisateur. Le lot L (SCOUT, GRIOT, MATCH) attend toujours
+la même décision pour la recherche.
+
+K1, écrit le même jour. OpenAI est appelé **sans son SDK**, par une requête HTTPS écrite
+dans la passerelle : une seule adresse, fixe, sans redirection suivie ni réessai, sans
+dépendance de plus. Sa clé suit la règle des autres — le coffre de la base, depuis l'écran
+Intégrations IA — et BOARD n'entre en service que si elle est posée, indépendamment de
+celle d'Anthropic. Profil `board.vignette@1` : modèle `gpt-image-2.5-flare`, 1536 × 1024,
+qualité moyenne ; le croquis à l'encre noire sur fond blanc y est écrit une fois, en tête
+de la demande, et les interdits — couleur, photoréalisme, 3D, peinture numérique, texte
+dans l'image — en fin. Action `storyboard_image`, une unité sur le quota d'images du plan.
+
+La vignette proposée reste en base (`ai_suggestion_images`, PNG de 5 Mo au plus), comme un
+export, tant que l'équipe n'a pas décidé : **le worker ne reçoit aucun droit sur le
+stockage**. À l'acceptation, l'application dépose le fichier sous la session de qui décide,
+et `accepter_image_proposee` vérifie que l'objet y est, le rattache à la scène et rend
+l'ancienne image, à supprimer. BOARD lit la scène, ses six premiers plans, le genre et un
+extrait de la vision artistique ; ni scénario, ni budget.
+
+Ce qui n'est pas établi : le poids d'une image en jetons, qu'OpenAI ne publie pas sur les
+pages consultées. La provision d'avant l'appel emploie un plafond choisi par le lot —
+20 000 jetons, soit 0,60 $ au pire — ; le coût confirmé vient de l'usage que la réponse
+rapporte, relevé dans le code du SDK d'OpenAI, au tarif lu le 6 octobre 2026 (5 $ et 30 $ le
+million). Et rien ne vérifie un dessin par programme : que l'image soit bien un croquis en
+noir et blanc ne se jugera qu'à l'œil, en recette.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

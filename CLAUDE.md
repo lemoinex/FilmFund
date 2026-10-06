@@ -248,7 +248,9 @@ Fournisseur
 - Garde-fous en place : règle de lint et `tests/architecture.test.mjs` contre tout
   import de SDK hors passerelle.
 - Répartition des fournisseurs : Anthropic pour le texte, OpenAI pour l’image
-  (BOARD). Aucun SDK OpenAI n’est installé aujourd’hui.
+  (BOARD). OpenAI est appelé sans SDK, par une requête écrite dans la
+  passerelle, vers une seule adresse : ne pas en installer un, ne pas appeler
+  le réseau ailleurs.
 
 ### Exigences IA
 
@@ -329,6 +331,11 @@ suivent le même chemin (lot I2a), profils versionnés dans `worker/src/ia/profi
 - Pour un lot partiel : consommer uniquement les images livrées, libérer le solde
   réservé, conserver les réussites et retourner un état par vignette.
 - Préparer les contrats sans générer d’image réelle sans autorisation.
+- Livré côté serveur (lot K1, action `storyboard_image`, profil
+  `board.vignette@1`) : une image par scène, une scène par demande, sur le
+  quota d’images. La vignette proposée reste en base (`ai_suggestion_images`) ;
+  le worker n’a aucun droit sur le stockage ; `accepter_image_proposee` est le
+  seul endroit où une image en remplace une autre. Écran prévu (lot K2).
 
 ## 9. Recherche et financement
 

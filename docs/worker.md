@@ -134,6 +134,13 @@ GEAR propose une liste de matériel (lot J3c-3, action `gear_list`, profil `gear
 sur le même chemin. Sa demande vise le projet entier ; son contexte porte le storyboard, le
 découpage résumé et le matériel déjà saisi, sans scénario ni budget. Il ne rend aucun calcul.
 
+BOARD dessine la vignette d'une scène (lot K1, action `storyboard_image`, profil
+`board.vignette@1`). Il est le seul agent servi par OpenAI : la passerelle l'appelle par une
+requête HTTPS, sans SDK, vers une seule adresse. Sa clé se pose depuis Intégrations IA,
+comme celle d'Anthropic, et les deux sont indépendantes : retirer l'une ne sort pas les
+agents de l'autre. La vignette est déposée en base ; le worker n'a aucun droit sur le
+stockage. Si la réponse ne rapporte pas sa consommation, le coût est laissé à rapprocher.
+
 - **Aucune date** : un jalon proposé porte un titre, une phase et une durée en jours. FIELD
   ne connaît ni le jour ni le calendrier de l'équipe ; elle date le jalon en l'acceptant.
   Sans date, la durée estimée est gardée dans les notes du jalon.
