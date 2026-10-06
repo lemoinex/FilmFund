@@ -1369,6 +1369,11 @@ describe("Découpage et matériel", () => {
     assert.match(page, /chef\s+électricien/);
     assert.match(page, /sans\s+puissance\s+renseignée/);
 
+    // Un groupe électrogène saisi avec sa puissance gonflerait le besoin :
+    // l'encart et la ligne le disent, d'après la même fonction.
+    assert.equal(page.match(/energieDansLaCharge/g)?.length, 3);
+    assert.equal(page.match(/fournit\s+le\s+courant/g)?.length, 2);
+
     // Le module de calcul n'importe rien : ni base, ni modèle.
     assert.doesNotMatch(lire("src/lib/materiel-calculs.ts"), /^import /m);
   });

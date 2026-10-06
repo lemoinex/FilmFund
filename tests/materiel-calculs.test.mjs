@@ -16,6 +16,7 @@ import {
 } from "../src/lib/decoupage.ts";
 import {
   besoinElectrique,
+  energieDansLaCharge,
   formaterIntensite,
   formaterPuissance,
   lireEntier,
@@ -99,6 +100,36 @@ describe("Besoin électrique", () => {
     assert.equal(net(formaterPuissance(2990)), "3 kW");
     assert.equal(net(formaterPuissance(2600)), "2,6 kW");
     assert.equal(net(formaterIntensite(11.304)), "11,3 A");
+  });
+});
+
+describe("Source de courant comptée comme une charge", () => {
+  const ligne = (category, unit_power_watts, simultaneous = true) => ({
+    category,
+    quantity: 1,
+    unit_power_watts,
+    simultaneous,
+  });
+
+  it("signale un groupe électrogène saisi avec sa puissance, dans la charge simultanée", () => {
+    assert.equal(energieDansLaCharge(ligne("energie", 1000)), true);
+  });
+
+  it("ne signale ni une puissance vide ou nulle, ni une ligne sortie de la charge", () => {
+    assert.equal(energieDansLaCharge(ligne("energie", null)), false);
+    assert.equal(energieDansLaCharge(ligne("energie", 0)), false);
+    assert.equal(energieDansLaCharge(ligne("energie", 1000, false)), false);
+  });
+
+  it("ne signale aucune autre catégorie", () => {
+    for (const categorie of ["image", "lumiere", "son", "machinerie", "regie"]) {
+      assert.equal(energieDansLaCharge(ligne(categorie, 1000)), false, categorie);
+    }
+  });
+
+  it("le signalement ne change pas le calcul : l'équipe tranche, pas la plateforme", () => {
+    const liste = [ligne("image", 2), ligne("energie", 1000)];
+    assert.equal(besoinElectrique(liste, REGLAGES_PAR_DEFAUT).simultanee, 1002);
   });
 });
 
