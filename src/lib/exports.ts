@@ -18,6 +18,8 @@ export const SECTIONS = {
   budget: { libelle: "Budget prévisionnel" },
   financements: { libelle: "Plan de financement" },
   planning: { libelle: "Planning" },
+  decoupage: { libelle: "Découpage technique" },
+  materiel: { libelle: "Matériel" },
 } as const;
 
 export type SectionExport = keyof typeof SECTIONS;
@@ -26,7 +28,8 @@ export const ORDRE_SECTIONS = Object.keys(SECTIONS) as SectionExport[];
 
 /**
  * Sections qui ouvrent le dossier, avant les documents : ce qui présente le
- * projet. Les tableaux — budget, financements, planning — le ferment.
+ * projet. Les tableaux — budget, financements, planning, découpage,
+ * matériel — le ferment.
  */
 export const SECTIONS_D_OUVERTURE: readonly SectionExport[] = ["synthese", "fiche_projet"];
 

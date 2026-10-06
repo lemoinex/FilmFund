@@ -34,7 +34,7 @@ réels).
 | J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé en recette | —              |
 | J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé en recette | —              |
 | J3c-3  | GEAR : propositions de matériel — base, profil, agent et écran                                                                 | validé en recette | —              |
-| J3c-4  | Exports : sections « Découpage » et « Matériel »                                                                               | à faire           | J3c-1          |
+| J3c-4  | Exports : sections « Découpage technique » et « Matériel »                                                                     | validé localement | —              |
 | K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
 | L      | SCOUT, GRIOT, MATCH (sources et provenance)                                                                                    | bloqué            | I1, décision 7 |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —              |
@@ -1059,6 +1059,19 @@ puissance proposée est un ordre de grandeur, facultatif, que l'écran présente
 « estimée » ; il renvoie à la plaque de l'appareil. Décidé avec l'utilisateur : **GEAR ne
 propose pas de groupe électrogène** — sa puissance s'ajouterait à ce que le tournage
 consomme, défaut trouvé à la recette de J3c-1 —, l'écran calculant déjà le groupe conseillé.
+
+Exports du découpage et du matériel, écrits le 6 octobre 2026 (lot J3c-4) : deux sections de
+plus dans un dossier, sur le geste du lot M4 — `parametres_export` et `contenu_dossier`
+reprises avec un seul ajout chacune, sans table, politique ni fonction nouvelle. Une demande
+qui ne les désigne pas garde sa forme, donc son empreinte : les dossiers déjà fabriqués
+restent retrouvés.
+
+Le découpage sort scène par scène — les seules qui ont des plans —, chacune avec son
+en-tête et le tableau de ses plans. Le matériel sort rangé par catégorie. En archive, deux
+classeurs de plus, `decoupage.xlsx` et `materiel.xlsx`, où focales, durées, quantités et
+puissances restent des nombres. Décidé avec l'utilisateur : **le dossier ne porte aucun
+calcul électrique** — ni charge, ni intensité, ni groupe conseillé. Ce chiffrage n'est pas
+certifié, et le refaire dans la base ou le worker en aurait créé un second.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

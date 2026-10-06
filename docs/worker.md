@@ -272,6 +272,12 @@ Décision 8, prise le 2 octobre 2026 ; le Word s'y ajoute le 3 octobre 2026, la 
   Le format et l'étape n'y figurent pas : la page de garde les porte déjà. Les pays sont
   nommés par `Intl`, comme à l'écran ; les genres et les rôles, par la copie des libellés que
   tient le worker.
+- **Découpage et matériel** (lot J3c-4) : les sections `decoupage` et `materiel` ferment le
+  dossier, après le planning. Le découpage sort scène par scène — celles qui ont des plans,
+  et elles seules —, chacune avec son en-tête et le tableau de ses plans ; le matériel, rangé
+  par catégorie. En archive, deux classeurs de plus, `decoupage.xlsx` et `materiel.xlsx`.
+  **Aucun calcul électrique n'entre dans un dossier** : ni charge, ni intensité, ni groupe
+  conseillé — la base ne les rend pas, et le worker n'additionne rien.
 
 - **Format** : c'est l'action de la tâche — `pdf_export`, `docx_export` ou `zip_export`. Le
   worker compose le même plan de dossier, puis le rend avec `pdfkit`, avec le paquet `docx`,

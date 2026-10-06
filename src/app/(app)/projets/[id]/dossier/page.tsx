@@ -60,6 +60,8 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     { count: candidatures },
     { count: etapes },
     { count: personnages },
+    { count: plans },
+    { count: equipements },
     { data: tache },
     { data: exportsDisponibles },
   ] = await Promise.all([
@@ -86,6 +88,8 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       .from("project_characters")
       .select("id", { count: "exact", head: true })
       .eq("project_id", id),
+    supabase.from("scene_shots").select("id", { count: "exact", head: true }).eq("project_id", id),
+    supabase.from("project_gear").select("id", { count: "exact", head: true }).eq("project_id", id),
     supabase
       .from("jobs")
       .select("id, state, reason")
@@ -146,6 +150,18 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     planning: {
       detail: compte(etapes ?? 0, "étape", "étapes", "Aucune étape"),
       disponible: (etapes ?? 0) > 0,
+    },
+    decoupage: {
+      detail: plans
+        ? `${compte(plans, "plan", "plans", "")}, scène par scène, sans les images`
+        : "Aucun plan dans le découpage",
+      disponible: (plans ?? 0) > 0,
+    },
+    materiel: {
+      detail: equipements
+        ? `${compte(equipements, "équipement", "équipements", "")}, sans le besoin électrique`
+        : "Aucun équipement",
+      disponible: (equipements ?? 0) > 0,
     },
   };
 

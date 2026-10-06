@@ -24,6 +24,7 @@ import {
   normaliserDemande,
   ORDRE_FORMATS,
   ORDRE_SECTIONS,
+  SECTIONS,
   pages,
   poids,
   premierDuMois,
@@ -69,9 +70,23 @@ describe("Exports PDF : demande", () => {
       "budget",
       "financements",
       "planning",
+      "decoupage",
+      "materiel",
     ]);
     // Ce qui présente le projet ouvre le dossier, avant les documents.
     assert.deepEqual(SECTIONS_D_OUVERTURE, ["synthese", "fiche_projet"]);
+  });
+
+  it("admet le découpage et le matériel, et les range comme la base", () => {
+    assert.deepEqual(normaliserDemande(["materiel", "decoupage", "budget"], [], TYPES), {
+      sections: ["budget", "decoupage", "materiel"],
+      documents: [],
+    });
+    assert.equal(SECTIONS.decoupage.libelle, "Découpage technique");
+    assert.equal(SECTIONS.materiel.libelle, "Matériel");
+    // Des tableaux : ils ferment le dossier, après les documents.
+    assert.ok(!SECTIONS_D_OUVERTURE.includes("decoupage"));
+    assert.ok(!SECTIONS_D_OUVERTURE.includes("materiel"));
   });
 
   it("admet la fiche du projet, et la range comme la base", () => {
