@@ -124,14 +124,15 @@ select is(
     order by 1
   ),
   array[
-    'cle_fournisseur', 'confirmer_cout', 'contexte_budget', 'contexte_dialogue',
-    'contexte_export', 'contexte_planning', 'contexte_redaction', 'contexte_travail',
-    'livrer_export', 'livrer_proposition', 'livrer_proposition_budget',
-    'livrer_proposition_planning', 'marquer_tentative_soumise', 'prolonger_bail',
+    'cle_fournisseur', 'confirmer_cout', 'contexte_budget', 'contexte_decoupage',
+    'contexte_dialogue', 'contexte_export', 'contexte_planning', 'contexte_redaction',
+    'contexte_travail', 'livrer_export', 'livrer_proposition', 'livrer_proposition_budget',
+    'livrer_proposition_decoupage', 'livrer_proposition_planning', 'marquer_tentative_soumise',
+    'prolonger_bail',
     'provisionner_cout', 'purger_exports_expires', 'rapprocher_travail', 'reclamer_travail',
     'recuperer_travaux_expires', 'terminer_tentative'
   ]::text[],
-  'Le worker n''exécute que ses vingt fonctions : six pour les tâches, dix pour la passerelle IA, une pour la clé du fournisseur, trois pour les exports'
+  'Le worker n''exécute que ses vingt-deux fonctions : six pour les tâches, douze pour la passerelle IA, une pour la clé du fournisseur, trois pour les exports'
 );
 
 -- ---------------------------------------------------------------------------

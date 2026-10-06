@@ -229,6 +229,92 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_shots: {
+        Row: {
+          angle: Database["public"]["Enums"]["shot_angle"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          duration_seconds: number | null;
+          focal_mm: number | null;
+          id: string;
+          movement: Database["public"]["Enums"]["shot_movement"];
+          position: number;
+          project_id: string;
+          scene_id: string;
+          shot: Database["public"]["Enums"]["shot_type"];
+          shot_id: string | null;
+          state: string;
+          suggestion_id: string;
+        };
+        Insert: {
+          angle: Database["public"]["Enums"]["shot_angle"];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          description?: string;
+          duration_seconds?: number | null;
+          focal_mm?: number | null;
+          id?: string;
+          movement: Database["public"]["Enums"]["shot_movement"];
+          position: number;
+          project_id: string;
+          scene_id: string;
+          shot: Database["public"]["Enums"]["shot_type"];
+          shot_id?: string | null;
+          state?: string;
+          suggestion_id: string;
+        };
+        Update: {
+          angle?: Database["public"]["Enums"]["shot_angle"];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          description?: string;
+          duration_seconds?: number | null;
+          focal_mm?: number | null;
+          id?: string;
+          movement?: Database["public"]["Enums"]["shot_movement"];
+          position?: number;
+          project_id?: string;
+          scene_id?: string;
+          shot?: Database["public"]["Enums"]["shot_type"];
+          shot_id?: string | null;
+          state?: string;
+          suggestion_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_shots_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_shots_shot_id_fkey";
+            columns: ["shot_id"];
+            isOneToOne: false;
+            referencedRelation: "scene_shots";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_shots_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "plan_propose_de_sa_scene";
+            columns: ["scene_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "storyboard_scenes";
+            referencedColumns: ["id", "project_id"];
+          },
+        ];
+      };
       ai_suggestions: {
         Row: {
           action: string;
@@ -1820,6 +1906,7 @@ export type Database = {
           published_by: string | null;
           schedule_plan: number;
           screenplay_per_sequence: number;
+          shot_list: number;
           synopsis_detailed: number;
           synopsis_short: number;
           synopsis_standard: number;
@@ -1838,6 +1925,7 @@ export type Database = {
           published_by?: string | null;
           schedule_plan: number;
           screenplay_per_sequence: number;
+          shot_list: number;
           synopsis_detailed: number;
           synopsis_short: number;
           synopsis_standard: number;
@@ -1856,6 +1944,7 @@ export type Database = {
           published_by?: string | null;
           schedule_plan?: number;
           screenplay_per_sequence?: number;
+          shot_list?: number;
           synopsis_detailed?: number;
           synopsis_short?: number;
           synopsis_standard?: number;
@@ -1952,6 +2041,33 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      accepter_plan_propose: {
+        Args: { p_corrige?: Json; p_line_id: string };
+        Returns: {
+          angle: Database["public"]["Enums"]["shot_angle"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          duration_seconds: number | null;
+          focal_mm: number | null;
+          id: string;
+          movement: Database["public"]["Enums"]["shot_movement"];
+          position: number;
+          project_id: string;
+          scene_id: string;
+          shot: Database["public"]["Enums"]["shot_type"];
+          shot_id: string | null;
+          state: string;
+          suggestion_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_shots";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       accepter_proposition: {
         Args: { p_content?: string; p_suggestion_id: string };
         Returns: {
@@ -2023,6 +2139,7 @@ export type Database = {
           published_by: string | null;
           schedule_plan: number;
           screenplay_per_sequence: number;
+          shot_list: number;
           synopsis_detailed: number;
           synopsis_short: number;
           synopsis_standard: number;
@@ -2038,6 +2155,7 @@ export type Database = {
       };
       cle_fournisseur: { Args: { p_provider: string }; Returns: string };
       clore_proposition_budget: { Args: { p_suggestion_id: string }; Returns: undefined };
+      clore_proposition_decoupage: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_planning: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_travail: {
         Args: {
@@ -2097,6 +2215,7 @@ export type Database = {
       };
       contenu_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: Json };
       contexte_budget: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_decoupage: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_dialogue: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
@@ -2195,6 +2314,33 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "ai_suggestion_budget_lines";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      ecarter_plan_propose: {
+        Args: { p_line_id: string };
+        Returns: {
+          angle: Database["public"]["Enums"]["shot_angle"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          duration_seconds: number | null;
+          focal_mm: number | null;
+          id: string;
+          movement: Database["public"]["Enums"]["shot_movement"];
+          position: number;
+          project_id: string;
+          scene_id: string;
+          shot: Database["public"]["Enums"]["shot_type"];
+          shot_id: string | null;
+          state: string;
+          suggestion_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_shots";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -2333,6 +2479,10 @@ export type Database = {
       };
       livrer_proposition: { Args: { p_attempt_id: string; p_content: string }; Returns: string };
       livrer_proposition_budget: { Args: { p_attempt_id: string; p_lines: Json }; Returns: string };
+      livrer_proposition_decoupage: {
+        Args: { p_attempt_id: string; p_lines: Json };
+        Returns: string;
+      };
       livrer_proposition_planning: {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;
@@ -2384,6 +2534,33 @@ export type Database = {
         Returns: boolean;
       };
       peut_gerer_budget: { Args: { p_project_id: string }; Returns: boolean };
+      plan_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          angle: Database["public"]["Enums"]["shot_angle"];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          duration_seconds: number | null;
+          focal_mm: number | null;
+          id: string;
+          movement: Database["public"]["Enums"]["shot_movement"];
+          position: number;
+          project_id: string;
+          scene_id: string;
+          shot: Database["public"]["Enums"]["shot_type"];
+          shot_id: string | null;
+          state: string;
+          suggestion_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_shots";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       plan_en_vigueur: {
         Args: { p_studio_id: string };
         Returns: {

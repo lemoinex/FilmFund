@@ -31,8 +31,15 @@ déplacé. Les plans s'ajoutent à côté.
 | Description   | ce que montre le plan, 500 caractères au plus                 |
 | Durée estimée | en secondes, facultative                                      |
 
-**Ce que FRAME propose** : les plans d'une scène à la fois, à partir de la scène, de ce qui la
-précède et de la vision artistique du projet. Une scène par demande, vingt plans au plus.
+**Ce que FRAME propose** : les plans d'une scène à la fois. Une scène par demande, vingt plans
+au plus.
+
+**Ce que FRAME lit** (précisé le 6 octobre 2026) : le concept du projet — pitch, synopsis,
+thème, vision artistique — ; la scène du storyboard à découper et celles qui la précèdent ; et
+le scénario enregistré, lu en entier — jusqu'à 220 000 caractères, un document en portant
+200 000 au plus. Le scénario et le concept sont sa matière première :
+la scène du storyboard dit seulement laquelle découper. Sans scénario enregistré, FRAME
+travaille d'après la scène et le concept, et l'écran le dit.
 
 **Ce que FRAME ne fait pas** : il ne touche ni à la scène ni au scénario ; il ne propose aucune
 image — c'est le rôle de BOARD — ; il ne nomme ni caméra ni optique de marque.

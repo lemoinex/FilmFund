@@ -31,7 +31,8 @@ réels).
 | J3b-3a | FIELD : propositions de jalons de planning — base, profil, agent                                                               | validé en recette | —              |
 | J3b-3b | FIELD : écran des jalons proposés dans l'onglet Planning                                                                       | validé en recette | —              |
 | J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | validé localement | —              |
-| J3c-2  | FRAME : propositions de plans pour une scène                                                                                   | à faire           | J3c-1          |
+| J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé localement | —              |
+| J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | à faire           | J3c-2a         |
 | J3c-3  | GEAR : propositions de matériel                                                                                                | à faire           | J3c-1          |
 | J3c-4  | Exports : sections « Découpage » et « Matériel »                                                                               | à faire           | J3c-1          |
 | K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
@@ -898,6 +899,21 @@ sans puissance renseignée n'entre pas dans le calcul, et l'écran dit combien s
 cas. La tension se règle de 100 à 250 V : au-delà, l'alimentation serait triphasée et la
 formule fausse. Deux bornes d'écran, sans équivalent en base : 50 plans par scène, 300
 lignes de matériel par projet.
+
+FRAME, précisé le 6 octobre 2026 (lot J3c-2, découpé en J3c-2a — base et worker — et J3c-2b
+— écran) : l'assistant doit proposer le découpage **d'après le scénario et le concept**, pas
+d'après la seule scène du storyboard. FRAME lit donc le scénario enregistré en entier —
+borne de 220 000 caractères décidée par l'utilisateur, un document en portant 200 000 au
+plus —, le concept du projet et sa vision artistique ; la scène du storyboard dit laquelle
+découper, et rien ne relie encore une scène à un passage du scénario : c'est le modèle qui
+le retrouve. Ni budget, ni équipe, ni autre document.
+
+J3c-2a reprend le modèle des propositions structurées : action `shot_list` à 4 unités, la
+scène en paramètre du devis, vérifiée par la base ; table `ai_suggestion_shots` ; plans
+acceptés ou écartés un à un, un plan accepté s'ajoutant à la fin de sa scène, corrigé ou
+non. Profil `frame.decoupage@1`, vingt plans au plus, focale et durée facultatives. Ce que
+ce choix coûte : le scénario entier entre dans chaque appel, et son prix réel n'est pas
+mesuré — il le sera en recette. Sans écran tant que J3c-2b n'est pas livré.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

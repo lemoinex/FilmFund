@@ -498,9 +498,13 @@ recommandations (« à améliorer ») sont configurables et traçables.
   dans `src/lib/materiel-calculs.ts`, et n’est jamais stocké. 230 V et 30 % par
   défaut sont un choix du lot, pas une norme : l’écran le dit. Ne pas créer un
   second calcul : étendre celui-ci.
-- Prévus : FRAME propose les plans d’une scène (J3c-2), GEAR une liste de
-  matériel (J3c-3), sur le modèle des propositions structurées ; sections du
-  dossier (J3c-4). GEAR ne propose ni marque, ni loueur, ni prix.
+- FRAME (lot J3c-2a, action `shot_list`, table `ai_suggestion_shots`) propose
+  les plans d’une scène, sur le modèle des propositions structurées : acceptés
+  ou écartés un à un, un plan accepté s’ajoutant à la fin de sa scène. Il lit
+  le scénario enregistré en entier et le concept du projet ; la scène du
+  storyboard dit laquelle découper. Base et worker écrits ; écran prévu (J3c-2b).
+- Prévus : GEAR propose une liste de matériel (J3c-3), sur le même modèle ;
+  sections du dossier (J3c-4). GEAR ne propose ni marque, ni loueur, ni prix.
 
 ### Exports et stockage
 

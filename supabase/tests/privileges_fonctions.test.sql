@@ -57,6 +57,8 @@ select is_empty(
         'ecarter_ligne_budget',
         'accepter_jalon_propose',
         'ecarter_jalon_propose',
+        'accepter_plan_propose',
+        'ecarter_plan_propose',
         'definir_cle_fournisseur',
         'retirer_cle_fournisseur'
       )
