@@ -30,9 +30,9 @@ réels).
 | J3b-2  | FIELD : écran des lignes proposées dans l'onglet Budget                                                                        | validé en recette | —              |
 | J3b-3a | FIELD : propositions de jalons de planning — base, profil, agent                                                               | validé en recette | —              |
 | J3b-3b | FIELD : écran des jalons proposés dans l'onglet Planning                                                                       | validé en recette | —              |
-| J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | validé localement | —              |
-| J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé localement | —              |
-| J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé localement | —              |
+| J3c-1  | Découpage et matériel : tables, saisie manuelle, calcul électrique — sans IA                                                   | validé en recette | —              |
+| J3c-2a | FRAME : propositions de plans pour une scène — base, profil, agent                                                             | validé en recette | —              |
+| J3c-2b | FRAME : écran des plans proposés, dans le volet « Découpage »                                                                  | validé en recette | —              |
 | J3c-3  | GEAR : propositions de matériel                                                                                                | à faire           | J3c-1          |
 | J3c-4  | Exports : sections « Découpage » et « Matériel »                                                                               | à faire           | J3c-1          |
 | K      | BOARD (quota image, croquis noir et blanc)                                                                                     | bloqué            | I1, décision 7 |
@@ -549,6 +549,72 @@ Non couvert par cette recette : un scénario modifié à cet endroit entre la de
 l'acceptation, et un document non enregistré, que l'encart doit refuser (vérifiés par les
 tests) ; une scène réécrite retouchée avant d'être appliquée, une proposition écartée ; la
 largeur mobile ; un éditeur réel, faute de second compte tant que le mode privé est actif.
+
+## Recette du lot J3c : J3c-1, J3c-2a et J3c-2b
+
+Les 5 et 6 octobre 2026, la saisie du découpage et du matériel, puis le découpage proposé
+par FRAME, ont été exercés en production par un administrateur (mode privé actif), sur le
+projet « une maison hantée ».
+
+Livraison dans l'ordre retenu, la migration avant le code à chaque fois : J3c-1, migration
+constatée en base puis PR 107 (`84254a7`) le 5 octobre ; J3c-2a, migration constatée — 47
+migrations — puis PR 109 (`c1456e4`) le 6 octobre, le worker annonçant ses **seize** actions
+à 02h13 UTC, dont `shot_list`, après un arrêt propre du précédent ; J3c-2b, PR 110
+(`cd65386`), sans migration.
+
+### J3c-1 : saisie manuelle et besoin électrique
+
+- Matériel : deux équipements ajoutés, l'un modifié ensuite ; réglages enregistrés. Les
+  lignes lues en base sont celles saisies à l'écran.
+- Découpage : deux plans ajoutés à la main dans une scène.
+- **Défaut trouvé à la recette, corrigé depuis** (PR 108, `1a7b9aa`) : un groupe électrogène
+  saisi dans la catégorie « Énergie » avec la puissance qu'il fournit était additionné à ce
+  que le tournage consomme — 1 002 W de charge au lieu de 2 W. L'écran le signale désormais
+  sous la ligne et dans l'encart ; le calcul ne change pas, un chargeur de batteries rangé
+  au même endroit consommant bien du courant. La ligne de la recette n'a pas été corrigée
+  par l'équipe : elle porte toujours ses 1 000 W.
+
+Non exercés : déplacer, modifier et supprimer un plan ; supprimer un équipement ; une
+tension ou une marge autre que celles par défaut.
+
+### J3c-2 : le découpage proposé par FRAME
+
+| Demande | Scène                        | Durée  | Entrée / sortie | Plans | Coût confirmé | Unités | Décision de l'équipe  |
+| ------- | ---------------------------- | ------ | --------------- | ----- | ------------- | ------ | --------------------- |
+| 1       | les pecheurs                 | 12,3 s | 6 714 / 865     | 5     | 0,044156 $    | 4/4    | 5 acceptés d'un bloc  |
+| 2       | les pecheurs                 | 14,0 s | 7 074 / 837     | 4     | 0,045036 $    | 4/4    | 2 acceptés, 2 écartés |
+| 3       | les pecheurs dans la pirogue | 10,9 s | 6 677 / 923     | 6     | 0,045168 $    | 4/4    | 3 acceptés, 3 écartés |
+
+- Trois tâches réussies au premier essai sur `claude-opus-5-5`, sans repli, avec le profil
+  `frame.decoupage@1`. Dépense du mois après la recette : 1,317192 $ sur un plafond de 5 $ ;
+  aucune tâche à rapprocher, aucune erreur chez Vercel.
+- **L'écran sert toute la demande** : devis, confirmation, suivi, « Tout accepter »,
+  acceptation plan par plan, « Écarter le reste ».
+- **Les plans atterrissent à leur place** : dans la première scène, les deux plans saisis à
+  la main, puis les sept acceptés, à la suite et dans l'ordre.
+- **FRAME complète sans redire** : la seconde demande sur la même scène propose quatre plans
+  nouveaux, dont aucun ne répète ceux de la première.
+- **Il s'en tient au dossier** : aucun personnage, aucune action ni aucun matériel de marque
+  n'est inventé, y compris pour une scène qui n'a qu'un intitulé. Il ne plaque pas non plus
+  le scénario — une maison hantée — sur une scène qui lui est étrangère.
+- **Le schéma passe chez le fournisseur** : une réponse qui omet toutes les focales a été
+  acceptée et déposée.
+
+**Ce que la recette ne prouve pas** : que FRAME retrouve une scène dans le scénario et la
+découpe d'après lui — c'est pourtant ce pour quoi il lit le scénario en entier. Les deux
+scènes du storyboard parlent de pêcheurs, le scénario d'une maison ; elles ne se recoupent
+pas, et FRAME a découpé d'après la seule scène, comme sa consigne le prévoit dans ce cas.
+À éprouver sur une scène qui figure au scénario.
+
+Non couverts non plus : un plan corrigé avant d'être accepté ; le coût d'un scénario long —
+celui-ci fait 5 726 caractères — ; un lecteur réel, faute de second compte tant que le mode
+privé est actif ; la largeur mobile.
+
+Relevé, laissé en l'état : deux plans décrivent du son et un autre redit l'en-tête de la
+scène, quand la consigne demande ce que montre le plan ; la resserrer serait publier une
+nouvelle version du profil. Et une proposition dont des plans ont été acceptés est notée
+« écartée » après « Écarter le reste », comme pour le budget et le planning : les plans
+acceptés ne sont pas touchés.
 
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
