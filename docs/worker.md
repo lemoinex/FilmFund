@@ -244,6 +244,13 @@ mois. Le motif exact figure dans le champ `detail` de l'événement `essai_echou
 dans les journaux Railway — jamais en base, où l'équipe du projet ne lit qu'un message
 général.
 
+Un cas à part : **le compte d'OpenAI sans crédits**. OpenAI le signale par un 429, comme une
+limite de débit, mais n'a rien traité : la passerelle le reconnaît au type ou au code de
+l'erreur (`insufficient_quota`, `credit_balance_exhausted`), solde le coût à zéro et inscrit
+sur la tâche « Le compte du fournisseur n'a plus de crédits ». Tout autre 429 reste douteux.
+Le 6 octobre 2026, avant ce correctif, quatre refus de ce genre ont laissé 2,43 $ de
+provisions au registre.
+
 Un compte fournisseur sans crédit répond lui aussi 400 (`invalid_request_error`, « Your credit
 balance is too low… »), et non 402 : lire `detail` avant de soupçonner la requête.
 
