@@ -502,6 +502,56 @@ export function messageLotEquipements(acceptes: number, demandes: number): strin
 }
 
 /**
+ * La vignette d'une scène (agent BOARD). Seul livrable qui soit une image :
+ * il se compte sur le quota d'images, pas sur les unités texte, et se tient à
+ * part de tous les autres catalogues.
+ */
+export const LIVRABLE_VIGNETTE = {
+  action: "storyboard_image",
+  titre: "Vignette proposée par l'assistant",
+  bouton: "Proposer une vignette",
+  description:
+    "L'assistant dessine un croquis à l'encre noire de cette scène, d'après sa description, ses premiers plans et la vision artistique du projet, transmis pour cela à notre fournisseur d'images.",
+  /** Dit à chaque affichage d'une vignette : un dessin proposé n'est pas une intention de mise en scène. */
+  avertissement:
+    "Croquis généré par l'assistant : il illustre la scène, il ne décide ni du cadre ni de la mise en scène.",
+  /** Dit avant d'accepter quand la scène porte déjà une image : rien n'est remplacé en silence. */
+  remplacement:
+    "Cette scène a déjà une image : l'accepter la remplacera, et l'image actuelle sera supprimée.",
+} as const;
+
+/** Signature d'un fichier PNG. */
+const SIGNATURE_PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** La borne de la base et du compartiment des images : 5 Mo. */
+export const VIGNETTE_OCTETS_MAX = 5 * 1024 * 1024;
+
+/**
+ * Lit une vignette telle que l'API la rend : un `bytea` écrit en
+ * hexadécimal, précédé de `\x`. Nul si ce n'est pas un PNG dans les bornes :
+ * rien d'autre ne se sert ni ne se dépose comme une image.
+ */
+export function lireVignette(valeur: unknown): Uint8Array | null {
+  if (typeof valeur !== "string" || !/^\\x(?:[0-9a-f]{2})+$/i.test(valeur)) {
+    return null;
+  }
+  const taille = (valeur.length - 2) / 2;
+  if (taille < SIGNATURE_PNG.length || taille > VIGNETTE_OCTETS_MAX) {
+    return null;
+  }
+  const octets = new Uint8Array(taille);
+  for (let i = 0; i < taille; i += 1) {
+    octets[i] = Number.parseInt(valeur.slice(2 + i * 2, 4 + i * 2), 16);
+  }
+  return SIGNATURE_PNG.every((octet, i) => octets[i] === octet) ? octets : null;
+}
+
+/** « 1 image », « 3 images ». */
+export function unitesImage(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "images" : "image"}`;
+}
+
+/**
  * Les dialogues d'une scène (agent VOICE). Ce livrable ne se demande pas
  * depuis un encart de texte mais depuis une sélection dans le scénario : il
  * est tenu à part de `LIVRABLES_IA`. Ses bornes sont celles de la base ; un

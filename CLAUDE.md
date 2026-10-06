@@ -335,7 +335,13 @@ suivent le même chemin (lot I2a), profils versionnés dans `worker/src/ia/profi
   `board.vignette@1`) : une image par scène, une scène par demande, sur le
   quota d’images. La vignette proposée reste en base (`ai_suggestion_images`) ;
   le worker n’a aucun droit sur le stockage ; `accepter_image_proposee` est le
-  seul endroit où une image en remplace une autre. Écran prévu (lot K2).
+  seul endroit où une image en remplace une autre. Une clé OpenAI est posée en
+  production : BOARD est en service.
+- Écran (lot K2) dans la carte de chaque scène (`storyboard/actions-image.ts`,
+  `vignette-proposee.tsx`, `lecture-vignettes.ts`, catalogue
+  `LIVRABLE_VIGNETTE`). La vignette proposée se lit par sa route
+  (`storyboard/vignettes/[imageId]`), sous la session, jamais par lien signé.
+  Remplacer une image déjà en place demande un second clic, annoncé avant.
 
 ## 9. Recherche et financement
 
