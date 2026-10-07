@@ -66,6 +66,8 @@ réels).
 | V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
 | W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | en production     | —             |
 | X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | en production     | —             |
+| X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé localement | —             |
+| X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1933,7 +1935,7 @@ ferait renouveler là où le nouveau jeton ne peut pas être enregistré.
 
 Livrables d'écriture manquants, décidés le 7 octobre 2026 (lot X) : le sujet se coupe en X1 —
 trois textes sur le chemin de WEAVER — et X2 — les personnages, qui sont une liste en base et
-demanderont le modèle des propositions structurées. **X2 n'est ni cadré ni écrit.**
+demandent le modèle des propositions structurées. X2 est décrit après X1, ci-dessous.
 
 Lot X1 : la note de réalisation, le pitch développé et le pitch oral suivent le chemin de la
 note d'intention — devis, réservation, tâche, worker, proposition, acceptation —, et
@@ -1984,3 +1986,57 @@ tâche, aucune proposition de ces trois actions n'y existe.
 **Reste à faire en recette, sur accord et dans un budget défini** : un livrable de chaque en
 production. Un fournisseur factice ne prouve pas que la note est bonne ni que le pitch oral
 tient en trois minutes.
+
+Lot X2 : ARC propose les personnages qui manquent à un projet (action `character_list`, profil
+`arc.personnages@1`, table `ai_suggestion_characters`). Cinquième livrable structuré, sur le
+modèle du budget, du planning, du découpage et du matériel : une proposition parente, ses
+lignes dans une table fille, acceptées ou écartées une à une. Cadré et approuvé le 7 octobre
+2026 : 3 unités, douze personnages au plus par proposition, écran dans l'étape « Personnages »
+de l'assistant.
+
+ARC lit le projet, son concept, sa vision et les personnages déjà saisis ; ni scénario, ni
+document, ni budget. **Il ne propose que des personnages à ajouter** : aucun chemin ne réécrit
+un personnage existant, et un personnage accepté prend la dernière place. Ses consignes lui
+interdisent, pour un documentaire, d'écrire sur une personne réelle ce que le dossier ne dit
+pas.
+
+Cinquante personnages par projet : l'écran tenait seul cette borne. La base la tient désormais
+à l'acceptation, sous le verrou du projet — deux propositions du même projet se décident sous
+des verrous distincts —, et refuse un devis quand la liste est déjà pleine, avant toute
+dépense. La saisie à la main reste bornée par l'écran seul, comme avant.
+
+Trois écarts au plan présenté :
+
+- un lecteur ne voit pas les personnages proposés. La base le lui permet, comme pour le
+  matériel ; mais l'assistant de création n'existe que pour le porteur et les éditeurs, et
+  l'encart y vit. Un administrateur hors équipe ne le voit pas non plus à l'écran ;
+- un personnage proposé qui porte le nom d'un personnage déjà saisi n'est pas refusé : l'écran
+  le signale et laisse l'équipe décider. Seul un nom rendu deux fois dans la même réponse est
+  dédoublonné, par le worker ;
+- `src/lib/fiche.ts` a été touché, hors liste, pour un commentaire devenu faux.
+
+X2a et X2b sont validés localement le 7 octobre 2026, **sans aucun appel payant** : 13 tests
+SQL, 15 tests de l'API avec un fournisseur factice, 8 tests d'architecture et 18 tests d'écran
+de plus ; suites complètes à 772 tests SQL et 1 285 tests de l'API. Trente-deux sabotages
+attrapés un par un — le dixième avait d'abord échappé : retirer en base le contrôle du rôle au
+dépôt ne faisait tomber aucun test, le worker écartant déjà un rôle inconnu avant de déposer ;
+un test SQL lit désormais ce contrôle, et les bornes du dépôt, dans les fonctions en place.
+Rendu réel sur un serveur de production local, 31 points sur 31 sous six situations —
+porteuse, éditeur, lecteur, étranger, administrateur hors équipe, visiteur : l'encart et ses
+trois états, un balisage venu du modèle affiché comme du texte, l'homonyme signalé, le
+personnage accepté à la fin de l'onglet « Fiche », le prix sur la vitrine et au barème de
+l'administration.
+
+**Non couvert** : les boutons eux-mêmes. Le rendu a lu les pages et décidé par les fonctions de
+la base ; aucun clic n'a été joué dans un navigateur, ni la correction d'un personnage, ni
+« Tout accepter », ni l'affichage à 375 px.
+
+Treize fichiers de tests existants énuméraient les prix du barème, les fonctions du worker ou les actions
+servies, et ont été complétés. Le bloc d'architecture qui lit l'état courant des devis pointe
+sur la migration du lot X2a ; contexte et propositions de texte restent ceux du lot X1.
+
+**Reste à faire** : la livraison — branche, PR, CI, fusion, puis la migration
+`20261007230000_arc_personnages.sql`, à pousser **aussitôt après la fusion** : entre les deux,
+la vitrine lit une colonne du barème qui n'existe pas encore. Puis, en recette, sur accord et
+dans un budget défini, une proposition réelle : un fournisseur factice ne prouve ni que les
+personnages proposés servent le récit, ni qu'ARC s'abstient d'inventer sur une personne réelle.

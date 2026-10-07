@@ -69,8 +69,9 @@ export function dureeEnClair(minutes: number): string {
 }
 
 /**
- * Personnages par projet, à l'écran. La base n'en fixe pas : c'est une borne
- * de confort, pas de sécurité.
+ * Personnages par projet. Une borne de confort, pas de sécurité : la base ne
+ * la tient qu'à l'acceptation d'un personnage proposé par l'assistant, où un
+ * test d'architecture la compare à celle-ci.
  */
 export const MAX_PERSONNAGES = 50;
 

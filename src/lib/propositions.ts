@@ -21,6 +21,7 @@ export const ERREURS_BASE = {
   tacheDejaPrise: "TR002",
   propositionDejaTraitee: "PR001",
   passageChange: "PR002",
+  listePleine: "PR003",
 } as const;
 
 /**
@@ -535,6 +536,97 @@ export function messageLotEquipements(acceptes: number, demandes: number): strin
 }
 
 /**
+ * Les personnages proposés (agent ARC). Tenus à part de
+ * `LIVRABLES_STRUCTURES`, que l'écran et les tests lient aux profils de FIELD.
+ * Sa borne est celle de la base et du profil ; un test vérifie qu'elles
+ * s'accordent.
+ */
+export const LIVRABLE_PERSONNAGES = {
+  action: "character_list",
+  titre: "Personnages proposés par l'assistant",
+  bouton: "Proposer des personnages",
+  description:
+    "L'assistant propose les personnages qui manquent, à partir de la fiche du projet — pitch, synopsis, thème, enjeux, vision — et des personnages déjà saisis, transmis pour cela à notre fournisseur d'IA. Il n'en modifie aucun.",
+  /**
+   * Dit à chaque affichage des personnages : ce que l'assistant ajoute pour
+   * leur donner corps ne vient pas de l'auteur, et ne doit pas passer pour
+   * un fait — moins encore quand le personnage est une personne réelle.
+   */
+  avertissement:
+    "Propositions de l'assistant, d'après votre fiche : relisez chaque portrait avant de l'accepter, surtout s'il décrit une personne réelle.",
+  /** Personnages qu'une proposition peut porter : la borne de la base et du profil. */
+  lignesMax: 12,
+} as const;
+
+/** Personnage proposé, tel que l'écran le lit. */
+export type PersonnagePropose = {
+  id: string;
+  position: number;
+  name: string;
+  role: string;
+  description: string;
+  state: string;
+};
+
+/** Où en est une proposition de personnages : combien attendent, sont entrés ou écartés. */
+export function bilanPersonnages(personnages: readonly { state: string }[]): {
+  enAttente: number;
+  acceptes: number;
+  ecartes: number;
+} {
+  let enAttente = 0;
+  let acceptes = 0;
+  let ecartes = 0;
+  for (const personnage of personnages) {
+    if (personnage.state === "accepted") {
+      acceptes += 1;
+    } else if (personnage.state === "dismissed") {
+      ecartes += 1;
+    } else {
+      enAttente += 1;
+    }
+  }
+  return { enAttente, acceptes, ecartes };
+}
+
+/** « 1 personnage », « 12 personnages ». */
+export function nombrePersonnages(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "personnages" : "personnage"}`;
+}
+
+/**
+ * Deux noms désignent le même personnage à la casse, aux accents et aux
+ * espaces près. Sert à signaler, sans rien refuser, un personnage proposé
+ * qui porte le nom d'un personnage déjà saisi.
+ */
+export function cleDeNom(nom: string): string {
+  return nom
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Ce que l'écran dit après « tout accepter » des personnages, qui n'est pas
+ * atomique : si l'un est refusé en chemin — la liste est pleine —, les
+ * précédents sont déjà au projet, et l'écran doit le dire plutôt que
+ * d'annoncer un échec.
+ */
+export function messageLotPersonnages(acceptes: number, demandes: number): string {
+  if (acceptes >= demandes) {
+    return `${nombrePersonnages(acceptes)} ${acceptes > 1 ? "ajoutés" : "ajouté"} au projet.`;
+  }
+  if (acceptes === 0) {
+    return "Aucun personnage n'a pu être ajouté. Réessayez dans un instant.";
+  }
+  return `${nombrePersonnages(acceptes)} sur ${NOMBRE.format(demandes)} ${
+    acceptes > 1 ? "ajoutés" : "ajouté"
+  } au projet ; les autres attendent toujours votre décision.`;
+}
+
+/**
  * La recherche documentaire (agent SCOUT). Un moteur de recherche collecte
  * des pages, l'assistant de texte en fait une synthèse : ses bornes sont
  * celles de la base, un test vérifie qu'elles s'accordent.
@@ -957,6 +1049,8 @@ export function messageErreur(code: string | undefined): string {
       return "Cette proposition a déjà été appliquée ou écartée.";
     case ERREURS_BASE.passageChange:
       return "Le scénario a changé à cet endroit depuis la demande : la scène ne peut plus y être remplacée. Reportez la proposition à la main, ou écartez-la.";
+    case ERREURS_BASE.listePleine:
+      return "Ce projet compte déjà cinquante personnages : supprimez-en un pour en ajouter un autre.";
     default:
       return "La demande n'a pas abouti. Réessayez dans un instant.";
   }

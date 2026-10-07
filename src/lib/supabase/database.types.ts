@@ -198,6 +198,73 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_characters: {
+        Row: {
+          character_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          id: string;
+          name: string;
+          position: number;
+          project_id: string;
+          role: string;
+          state: string;
+          suggestion_id: string;
+        };
+        Insert: {
+          character_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          description: string;
+          id?: string;
+          name: string;
+          position: number;
+          project_id: string;
+          role: string;
+          state?: string;
+          suggestion_id: string;
+        };
+        Update: {
+          character_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          description?: string;
+          id?: string;
+          name?: string;
+          position?: number;
+          project_id?: string;
+          role?: string;
+          state?: string;
+          suggestion_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_characters_character_id_fkey";
+            columns: ["character_id"];
+            isOneToOne: false;
+            referencedRelation: "project_characters";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_characters_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_characters_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_suggestion_gear: {
         Row: {
           category: Database["public"]["Enums"]["gear_category"];
@@ -2430,6 +2497,7 @@ export type Database = {
         Row: {
           bible: number;
           budget_plan: number;
+          character_list: number;
           cultural_context: number;
           dialogue_per_scene: number;
           direction_note: number;
@@ -2455,6 +2523,7 @@ export type Database = {
         Insert: {
           bible: number;
           budget_plan: number;
+          character_list: number;
           cultural_context: number;
           dialogue_per_scene: number;
           direction_note: number;
@@ -2480,6 +2549,7 @@ export type Database = {
         Update: {
           bible?: number;
           budget_plan?: number;
+          character_list?: number;
           cultural_context?: number;
           dialogue_per_scene?: number;
           direction_note?: number;
@@ -2646,6 +2716,29 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      accepter_personnage_propose: {
+        Args: { p_corrige?: Json; p_line_id: string };
+        Returns: {
+          character_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          id: string;
+          name: string;
+          position: number;
+          project_id: string;
+          role: string;
+          state: string;
+          suggestion_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_characters";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       accepter_plan_propose: {
         Args: { p_corrige?: Json; p_line_id: string };
         Returns: {
@@ -2762,6 +2855,7 @@ export type Database = {
         Returns: {
           bible: number;
           budget_plan: number;
+          character_list: number;
           cultural_context: number;
           dialogue_per_scene: number;
           direction_note: number;
@@ -2795,6 +2889,7 @@ export type Database = {
       clore_proposition_budget: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_decoupage: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_materiel: { Args: { p_suggestion_id: string }; Returns: undefined };
+      clore_proposition_personnages: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_planning: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_recherche: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_veille: { Args: { p_suggestion_id: string }; Returns: undefined };
@@ -2892,6 +2987,7 @@ export type Database = {
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_image: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_materiel: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_personnages: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_recherche: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
@@ -3046,6 +3142,29 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "ai_suggestion_opportunities";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      ecarter_personnage_propose: {
+        Args: { p_line_id: string };
+        Returns: {
+          character_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          id: string;
+          name: string;
+          position: number;
+          project_id: string;
+          role: string;
+          state: string;
+          suggestion_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_characters";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -3269,6 +3388,10 @@ export type Database = {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;
       };
+      livrer_proposition_personnages: {
+        Args: { p_attempt_id: string; p_lines: Json };
+        Returns: string;
+      };
       livrer_proposition_planning: {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;
@@ -3374,6 +3497,29 @@ export type Database = {
       };
       parametres_export: { Args: { p_params: Json }; Returns: Json };
       passage_du_scenario: { Args: { p_params: Json; p_project_id: string }; Returns: string };
+      personnage_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          character_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          description: string;
+          id: string;
+          name: string;
+          position: number;
+          project_id: string;
+          role: string;
+          state: string;
+          suggestion_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_characters";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites_pour: {

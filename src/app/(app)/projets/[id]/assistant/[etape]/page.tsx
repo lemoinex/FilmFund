@@ -7,11 +7,19 @@ import { estEtape, etapeDe, etapePrecedente, etapeSuivante, type CleEtape } from
 import { lireAcces } from "@/lib/equipes";
 import { MAX_PERSONNAGES, ROLES_PERSONNAGE } from "@/lib/fiche";
 import { listerPays } from "@/lib/profils";
+import {
+  etapeProposition,
+  LIVRABLE_PERSONNAGES,
+  type EtapeProposition,
+  type PersonnagePropose,
+} from "@/lib/propositions";
 import { createClient } from "@/lib/supabase/server";
 
+import { RafraichissementPropositions } from "../../proposition";
 import { supprimerPersonnage } from "../actions";
 import { BarreEtapes, FormulaireEtape } from "../formulaires";
 import { FormulairePersonnage, type PersonnageEditable } from "../personnages";
+import { PersonnagesProposes } from "../personnages-proposes";
 
 export const metadata: Metadata = {
   title: "Assistant de création — filmfundAfrica",
@@ -128,6 +136,7 @@ async function Personnages({
     .order("position")
     .order("created_at");
   const personnages: PersonnageEditable[] = data ?? [];
+  const assistant = await lireAssistant(supabase, projetId);
 
   return (
     <>
@@ -170,6 +179,16 @@ async function Personnages({
         )}
       </section>
 
+      <RafraichissementPropositions
+        actif={assistant.etape.etape === "en_attente" || assistant.etape.etape === "en_cours"}
+      />
+      <PersonnagesProposes
+        projetId={projetId}
+        etape={assistant.etape}
+        personnages={assistant.proposes}
+        nomsExistants={personnages.map((personnage) => personnage.name)}
+      />
+
       <div className="border-navy-line mt-10 flex flex-col gap-2 border-t pt-8 sm:flex-row sm:items-center">
         <Link href={suivante} className={BOUTON}>
           Continuer
@@ -183,6 +202,50 @@ async function Personnages({
       </div>
     </>
   );
+}
+
+/**
+ * Où en est la dernière demande de personnages sur ce projet, et les lignes
+ * de sa proposition si elle attend encore une décision.
+ *
+ * Trois lectures bornées, sous la RLS de l'appelant. L'assistant n'existe que
+ * pour le porteur et les éditeurs : tous suivent la demande depuis sa tâche.
+ */
+async function lireAssistant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+): Promise<{ etape: EtapeProposition; proposes: PersonnagePropose[] }> {
+  const { data: tache } = await supabase
+    .from("jobs")
+    .select("id, state")
+    .eq("project_id", projetId)
+    .eq("action", LIVRABLE_PERSONNAGES.action)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: proposition } = tache
+    ? await supabase
+        .from("ai_suggestions")
+        .select("id, content, state")
+        .eq("job_id", tache.id)
+        .maybeSingle()
+    : { data: null };
+  const etape = etapeProposition(tache, proposition);
+
+  if (etape.etape !== "proposition") {
+    return { etape, proposes: [] };
+  }
+
+  const { data: proposes } = await supabase
+    .from("ai_suggestion_characters")
+    .select("id, position, name, role, description, state")
+    .eq("suggestion_id", etape.propositionId)
+    .order("position")
+    // Bornée comme la base borne le dépôt.
+    .limit(LIVRABLE_PERSONNAGES.lignesMax);
+
+  return { etape, proposes: proposes ?? [] };
 }
 
 function Personnage({

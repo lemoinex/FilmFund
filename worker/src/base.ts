@@ -617,6 +617,63 @@ export async function livrerPropositionMateriel(
   }
 }
 
+/** Personnage proposé, tel que le worker le dépose : contrôlé de nouveau par la base. */
+export type PersonnagePropose = {
+  name: string;
+  role: string;
+  description: string;
+};
+
+/**
+ * Ce qu'ARC lit pour proposer des personnages : le projet, son concept, sa
+ * vision et les personnages déjà saisis. Ni scénario, ni document, ni budget,
+ * ni équipe.
+ */
+export type ContextePersonnages = {
+  action: string;
+  projet: ContexteRedaction["projet"];
+  contexte: ContexteRedaction["contexte"];
+  vision: ContexteRedaction["vision"];
+  personnages: ContexteRedaction["personnages"];
+};
+
+/**
+ * Contexte de la tâche de personnages en cours ; null si l'essai ne nous
+ * appartient plus ou si le projet n'existe plus.
+ */
+export async function lireContextePersonnages(
+  base: Base,
+  attemptId: string,
+): Promise<ContextePersonnages | null> {
+  const { rows } = await base.query("select public.contexte_personnages($1) as contexte", [
+    attemptId,
+  ]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose les personnages proposés et conclut l'essai. Faux : l'essai ne nous
+ * appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionPersonnages(
+  base: Base,
+  attemptId: string,
+  personnages: readonly PersonnagePropose[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_personnages($1, $2::jsonb)", [
+      attemptId,
+      JSON.stringify(personnages),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}
+
 /**
  * Ce que BOARD lit pour dessiner une scène : la scène, ses premiers plans et
  * le genre du projet. Ni scénario, ni budget, ni équipe.
