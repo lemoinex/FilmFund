@@ -174,6 +174,24 @@ describe("Libellés du journal d'administration", () => {
     );
   });
 
+  it("décrit la demande d'une veille des opportunités, avec ce qui était cherché", () => {
+    assert.equal(
+      descriptionDe(
+        entree("veille_opportunites", {
+          operation: "demande",
+          tache: "t",
+          question: "Fonds pour le documentaire en Afrique centrale",
+        }),
+        annuaire,
+      ),
+      "a demandé une veille des opportunités : « Fonds pour le documentaire en Afrique centrale »",
+    );
+    assert.equal(
+      descriptionDe(entree("veille_opportunites", {}), annuaire),
+      "a demandé une veille des opportunités",
+    );
+  });
+
   it("décrit le rapprochement d'une tâche et son issue", () => {
     assert.equal(
       descriptionDe(

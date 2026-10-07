@@ -16,8 +16,9 @@ export type Travail = {
   attemptNumber: number;
   action: string;
   params: unknown;
-  projectId: string;
-  studioId: string;
+  /** Nuls pour une tâche de l'administration, qui n'appartient à aucun projet. */
+  projectId: string | null;
+  studioId: string | null;
 };
 
 /** Issue d'un travail réussi. Sans précision, toute la réservation est consommée. */

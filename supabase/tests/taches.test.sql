@@ -128,14 +128,15 @@ select is(
     'contexte_dialogue', 'contexte_export', 'contexte_image', 'contexte_materiel',
     'contexte_planning', 'contexte_recherche',
     'contexte_redaction',
-    'contexte_travail', 'livrer_export', 'livrer_proposition', 'livrer_proposition_budget',
+    'contexte_travail', 'contexte_veille', 'livrer_export', 'livrer_proposition', 'livrer_proposition_budget',
     'livrer_proposition_decoupage', 'livrer_proposition_image', 'livrer_proposition_materiel',
-    'livrer_proposition_planning', 'livrer_proposition_recherche', 'marquer_tentative_soumise',
+    'livrer_proposition_planning', 'livrer_proposition_recherche', 'livrer_proposition_veille',
+    'marquer_tentative_soumise',
     'prolonger_bail',
     'provisionner_cout', 'provisionner_recherche', 'purger_exports_expires', 'rapprocher_travail', 'reclamer_travail',
     'recuperer_travaux_expires', 'terminer_tentative'
   ]::text[],
-  'Le worker n''exécute que ses trente fonctions : six pour les tâches, vingt pour la passerelle IA, une pour la clé du fournisseur, trois pour les exports'
+  'Le worker n''exécute que ses trente-deux fonctions : six pour les tâches, vingt-deux pour la passerelle IA, une pour la clé du fournisseur, trois pour les exports'
 );
 
 -- ---------------------------------------------------------------------------
