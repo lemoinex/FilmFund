@@ -525,3 +525,162 @@ export function etapeVeille(
 export function cleOpportunite(nom: string, organisme: string): string {
   return `${nom.trim().toLowerCase()}\u0000${organisme.trim().toLowerCase()}`;
 }
+
+/**
+ * Consultation du catalogue par les équipes (lot L5a) : ce que l'écran lit,
+ * ce qu'il filtre et dans quel ordre il le présente.
+ *
+ * L'écran des équipes ne montre que ce qu'un compte lit. La RLS le garantit
+ * aux comptes ; un administrateur, lui, lit tout — la page filtre donc aussi
+ * sur ces statuts, sans quoi il y verrait une démonstration.
+ */
+export const STATUTS_VISIBLES = ["verifie", "expire"] as const;
+
+/** Opportunités lues pour la consultation : au-delà, la page le dit. */
+export const LIMITE_CATALOGUE = 200;
+
+/** Longueur d'une recherche : assez pour un nom de fonds, pas pour un texte. */
+export const RECHERCHE_MAX = 100;
+
+/** Où en est la date limite, le jour de la lecture. */
+export const ECHEANCES = {
+  a_venir: "Date limite à venir",
+  sans_date: "Date limite non fournie",
+  passee: "Expirées",
+} as const;
+
+export type Echeance = keyof typeof ECHEANCES;
+
+/**
+ * Une opportunité sans date limite n'est pas « ouverte » : la source ne le
+ * dit pas. Elle a sa propre case.
+ */
+export function echeanceDe(
+  opportunite: { status: string; deadline: string | null },
+  aujourdhui: string,
+): Echeance {
+  if (statutPresente(opportunite, aujourdhui) === "expire") {
+    return "passee";
+  }
+  return opportunite.deadline === null ? "sans_date" : "a_venir";
+}
+
+export type FiltresCatalogue = {
+  /** Mots cherchés dans le nom, l'organisme et la description ; vide : aucun. */
+  texte: string;
+  categorie: CategorieOpportunite | null;
+  pays: string | null;
+  format: string | null;
+  genre: string | null;
+  echeance: Echeance | null;
+};
+
+/**
+ * Lit les filtres d'une adresse. Une valeur inconnue est ignorée plutôt que
+ * refusée : une adresse recopiée de travers montre le catalogue, pas une
+ * erreur. Rien de ce qui est lu ici ne part dans une requête : le filtrage
+ * se fait sur les lignes déjà lues.
+ */
+export function lireFiltres(
+  lire: (champ: string) => unknown,
+  referentiels: {
+    formats: Readonly<Record<string, string>>;
+    genres: Readonly<Record<string, string>>;
+  },
+): FiltresCatalogue {
+  const connu = (valeur: unknown, referentiel: Readonly<Record<string, string>>) =>
+    typeof valeur === "string" && Object.hasOwn(referentiel, valeur) ? valeur : null;
+  const recherche = ligne(lire("q")) ?? "";
+  const pays = texte(lire("pays")).trim().toUpperCase();
+
+  return {
+    texte: recherche.slice(0, RECHERCHE_MAX),
+    categorie: connu(lire("categorie"), CATEGORIES_OPPORTUNITE) as CategorieOpportunite | null,
+    pays: /^[A-Z]{2}$/.test(pays) ? pays : null,
+    format: connu(lire("format"), referentiels.formats),
+    genre: connu(lire("genre"), referentiels.genres),
+    echeance: connu(lire("echeance"), ECHEANCES) as Echeance | null,
+  };
+}
+
+/** Vrai si un filtre au moins restreint la liste. */
+export function filtresActifs(filtres: FiltresCatalogue): boolean {
+  return Boolean(
+    filtres.texte ||
+    filtres.categorie ||
+    filtres.pays ||
+    filtres.format ||
+    filtres.genre ||
+    filtres.echeance,
+  );
+}
+
+/** Minuscules, sans accent : « Résidence » se trouve en cherchant « residence ». */
+const sansAccent = (valeur: string) => valeur.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+const RANG_ECHEANCE: Readonly<Record<Echeance, number>> = { a_venir: 0, sans_date: 1, passee: 2 };
+
+/**
+ * Les opportunités que les filtres retiennent, la date limite la plus proche
+ * d'abord, puis celles sans date, puis les expirées.
+ *
+ * Un filtre ne retient que les opportunités qui précisent ce qu'il cherche :
+ * une liste de pays vide veut dire « non précisé », pas « tous les pays ». La
+ * retenir ferait dire à la source ce qu'elle ne dit pas.
+ */
+export function filtrerCatalogue<
+  Opportunite extends {
+    name: string;
+    organization: string;
+    category: string;
+    description: string;
+    countries: readonly string[];
+    formats: readonly string[];
+    genres: readonly string[];
+    deadline: string | null;
+    status: string;
+  },
+>(catalogue: readonly Opportunite[], filtres: FiltresCatalogue, aujourdhui: string): Opportunite[] {
+  const mots = sansAccent(filtres.texte).split(" ").filter(Boolean);
+
+  return catalogue
+    .filter((opportunite) => {
+      if (filtres.categorie && opportunite.category !== filtres.categorie) {
+        return false;
+      }
+      if (filtres.pays && !opportunite.countries.includes(filtres.pays)) {
+        return false;
+      }
+      if (filtres.format && !opportunite.formats.includes(filtres.format)) {
+        return false;
+      }
+      if (filtres.genre && !opportunite.genres.includes(filtres.genre)) {
+        return false;
+      }
+      if (filtres.echeance && echeanceDe(opportunite, aujourdhui) !== filtres.echeance) {
+        return false;
+      }
+      if (!mots.length) {
+        return true;
+      }
+      const contenu = sansAccent(
+        `${opportunite.name} ${opportunite.organization} ${opportunite.description}`,
+      );
+      return mots.every((mot) => contenu.includes(mot));
+    })
+    .map((opportunite, rang) => ({ opportunite, rang }))
+    .sort((a, b) => {
+      const ecart =
+        RANG_ECHEANCE[echeanceDe(a.opportunite, aujourdhui)] -
+        RANG_ECHEANCE[echeanceDe(b.opportunite, aujourdhui)];
+      if (ecart !== 0) {
+        return ecart;
+      }
+      const [limiteA, limiteB] = [a.opportunite.deadline, b.opportunite.deadline];
+      if (limiteA !== null && limiteB !== null && limiteA !== limiteB) {
+        return limiteA < limiteB ? -1 : 1;
+      }
+      return a.rang - b.rang;
+    })
+    .map(({ opportunite }) => opportunite);
+}

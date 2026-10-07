@@ -486,8 +486,19 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   son extrait ; les comptes ne lisent que le vérifié et l’expiré, jamais une
   démonstration ; chaque écriture est journalisée. Une date limite passée ne
   réécrit rien : l’écran présente l’opportunité comme expirée. Ne pas créer un
-  second catalogue. Consultation et compatibilité : lot L5, non livré — un score
-  calculé par des règles lisibles, sans IA.
+  second catalogue.
+- Consultation (lot L5a, sans IA, sans migration) : rubrique « Opportunités »
+  (`/opportunites`, fiche `/opportunites/[id]`, filtres dans `src/lib/opportunites.ts`).
+  Les pages des équipes filtrent elles-mêmes sur `STATUTS_VISIBLES` : un
+  administrateur n'y lit pas une démonstration. Une liste vide (pays, formats,
+  genres) veut dire « non précisé », jamais « tous ». Aucun `loading.tsx` ne
+  couvre une fiche ni une page de projet : il ferait répondre 200 à une page absente.
+- Compatibilité (lot L5b, sans IA) : onglet « Opportunités » du projet, ouvert à
+  toute l'équipe ; règles dans `src/lib/compatibilite.ts`, rien n'est stocké.
+  Trois critères — type de projet, pays, genre —, quatre états, **un décompte et
+  non une note** : ni pourcentage, ni score sur 100. Le montant n'est pas un
+  critère, et la comparaison ne lit ni budget ni financement. Ne pas créer un
+  second calcul : étendre celui-ci.
 - Veille des opportunités (lot L6, agent MATCH, action `opportunity_watch`,
   profil `match.veille@1`) : livrée. Sur le socle de SCOUT — même collecte
   (`collecter`), mêmes coûts —, MATCH relève dans les extraits rendus par le

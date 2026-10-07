@@ -33,6 +33,7 @@ const RUBRIQUES: Rubrique[] = [
   { libelle: "Mes projets", icone: ClapperIcon, href: "/projets" },
   { libelle: "Documents", icone: DocumentIcon, href: "/documents" },
   { libelle: "Storyboard", icone: StoryboardIcon, href: "/storyboard" },
+  { libelle: "Opportunités", icone: AfricaIcon, href: "/opportunites" },
   { libelle: "Assistant IA", icone: SparkIcon },
   { libelle: "Ressources", icone: QuillIcon },
 ];
@@ -45,7 +46,8 @@ const RUBRIQUES_ADMINISTRATION: Rubrique[] = [
   { libelle: "Journal d'administration", icone: ShieldIcon, href: "/administration/journal" },
   { libelle: "Plans et quotas", icone: TagIcon, href: "/administration/plans" },
   { libelle: "Score de maturité", icone: CheckIcon, href: "/administration/ponderations" },
-  { libelle: "Opportunités", icone: AfricaIcon, href: "/administration/opportunites" },
+  // Nommée autrement que la rubrique des équipes : un administrateur voit les deux.
+  { libelle: "Catalogue et veille", icone: AfricaIcon, href: "/administration/opportunites" },
   { libelle: "Intégrations IA", icone: SparkIcon, href: "/administration/integrations" },
 ];
 

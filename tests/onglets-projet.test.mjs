@@ -26,6 +26,7 @@ describe("Rubriques d'un projet", () => {
       "Storyboard",
       "Matériel",
       "Planning",
+      "Opportunités",
       "Budget",
       "Financements",
       "Dossier",
@@ -41,6 +42,7 @@ describe("Rubriques d'un projet", () => {
         `/projets/${PROJET}/storyboard`,
         `/projets/${PROJET}/materiel`,
         `/projets/${PROJET}/planning`,
+        `/projets/${PROJET}/opportunites`,
         `/projets/${PROJET}/budget`,
         `/projets/${PROJET}/financements`,
         `/projets/${PROJET}/dossier`,
@@ -58,6 +60,7 @@ describe("Rubriques d'un projet", () => {
       "Storyboard",
       "Matériel",
       "Planning",
+      "Opportunités",
       "Équipe",
     ]);
   });

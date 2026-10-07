@@ -34,6 +34,8 @@ export function ongletsDuProjet(
     { cle: "storyboard", libelle: "Storyboard", href: `${base}/storyboard` },
     { cle: "materiel", libelle: "Matériel", href: `${base}/materiel` },
     { cle: "planning", libelle: "Planning", href: `${base}/planning` },
+    // Ouvert à toute l'équipe : la comparaison ne lit ni budget ni financement.
+    { cle: "opportunites", libelle: "Opportunités", href: `${base}/opportunites` },
     // Budget et financements : mêmes droits, montants confidentiels.
     ...(budget
       ? [
