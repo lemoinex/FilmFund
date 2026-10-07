@@ -14,7 +14,14 @@ export default function ChargementTableauDeBord() {
         </p>
 
         <div aria-hidden="true" className="animate-pulse">
-          <div className="border-app-line flex justify-between border-b pb-4">
+          <div className="bg-surface-hover h-8 w-64 rounded" />
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="bg-surface border-app-line h-24 rounded-xl border" />
+            ))}
+          </div>
+
+          <div className="border-app-line mt-6 flex justify-between border-b pb-4">
             <div className="bg-surface-hover h-4 w-24 rounded" />
             <div className="bg-surface-hover h-6 w-28 rounded-full" />
           </div>

@@ -429,6 +429,15 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 - Cartes projet : titre, genre, statut, dernière modification, score de maturité.
 - Opportunités recommandées : fonds, montant, date limite, compatibilité sourcée.
 - Chaque chiffre affiché est calculé sur des données réelles.
+- Livré (lot T1, sans IA, sans migration) : quatre chiffres — projets, documents,
+  opportunités à étudier, échéances à trente jours —, le bloc « Opportunités à
+  étudier » du projet mis en avant et le bloc « Prochaines échéances »
+  (`src/lib/tableau-de-bord.ts`, `tableau-de-bord/chiffres.tsx`,
+  `opportunites.tsx`, `echeances.tsx`). « À étudier » veut dire : au moins un
+  critère rempli, aucun contredit (`estAEtudier`, calcul du lot L5b) — ne pas
+  l'appeler « compatible », ne pas y mettre de pourcentage. « Documents », pas
+  « documents générés » : la base ne les distingue pas. Une candidature de
+  financement n'y remonte que par la RLS, sans montant.
 
 ### Projets et assistant de création
 
