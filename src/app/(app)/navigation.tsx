@@ -6,6 +6,7 @@ import { useEffect, useRef, type ComponentType } from "react";
 
 import {
   AfricaIcon,
+  BellIcon,
   CheckIcon,
   ClapperIcon,
   DocumentIcon,
@@ -31,6 +32,7 @@ type Rubrique = {
  */
 const RUBRIQUES: Rubrique[] = [
   { libelle: "Tableau de bord", icone: KanbanIcon, href: "/tableau-de-bord" },
+  { libelle: "Alertes", icone: BellIcon, href: "/alertes" },
   { libelle: "Mes projets", icone: ClapperIcon, href: "/projets" },
   { libelle: "Documents", icone: DocumentIcon, href: "/documents" },
   { libelle: "Storyboard", icone: StoryboardIcon, href: "/storyboard" },

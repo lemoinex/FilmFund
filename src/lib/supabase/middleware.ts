@@ -8,6 +8,7 @@ import type { Database } from "@/lib/supabase/types";
 /** Préfixes réservés aux utilisateurs connectés. */
 const ROUTES_PROTEGEES = [
   "/tableau-de-bord",
+  "/alertes",
   "/projets",
   "/documents",
   "/storyboard",
