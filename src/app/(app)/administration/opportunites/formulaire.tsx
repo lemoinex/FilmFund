@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, type FormEvent } from "react";
+import Link from "next/link";
+import { startTransition, useActionState, useEffect, useRef, type FormEvent } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
 import { GENRES } from "@/lib/fiche";
@@ -131,6 +132,19 @@ export function FormulaireOpportunite({ opportunite }: { opportunite?: Opportuni
   );
   const p = opportunite ? `opportunite-${opportunite.id}` : "opportunite-nouvelle";
   const statut = (opportunite?.status ?? "non_verifie") as StatutOpportunite;
+  const formulaire = useRef<HTMLFormElement>(null);
+  const ajoutee = !opportunite && etat && "succes" in etat ? etat.fiche : undefined;
+
+  /*
+   * Après un ajout réussi, le formulaire se vide. Resté rempli, il invitait à
+   * le corriger et à le renvoyer — ce qui ajoutait une seconde fiche au lieu
+   * de compléter la première. Une saisie refusée, elle, n'est pas effacée.
+   */
+  useEffect(() => {
+    if (ajoutee) {
+      formulaire.current?.reset();
+    }
+  }, [ajoutee]);
 
   /*
    * Envoi déclenché à la main, et non par `action={action}` : après une
@@ -144,10 +158,22 @@ export function FormulaireOpportunite({ opportunite }: { opportunite?: Opportuni
   }
 
   return (
-    <form onSubmit={envoyer} className="space-y-6">
+    <form ref={formulaire} onSubmit={envoyer} className="space-y-6">
       {opportunite ? <input type="hidden" name="id" value={opportunite.id} /> : null}
       {etat && "erreur" in etat ? <Message ton="erreur">{etat.erreur}</Message> : null}
       {etat && "succes" in etat ? <Message ton="succes">{etat.succes}</Message> : null}
+      {ajoutee ? (
+        <p className="text-sm leading-relaxed">
+          Pour la compléter ou la vérifier :{" "}
+          <Link
+            href={`/administration/opportunites?modifier=${ajoutee}#opportunite-${ajoutee}`}
+            className="text-gold hover:text-gold-bright underline underline-offset-2"
+          >
+            modifier cette opportunité
+          </Link>
+          . Le formulaire ci-dessous sert à en ajouter une autre.
+        </p>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field
