@@ -40,8 +40,8 @@ réels).
 | L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | validé en recette | —             |
 | L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
 | L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
-| L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | en production     | —             |
-| L5a    | MATCH : consultation du catalogue par les équipes, filtres et recherche (sans IA)                                              | en production     | —             |
+| L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | validé en recette | —             |
+| L5a    | MATCH : consultation du catalogue par les équipes, filtres et recherche (sans IA)                                              | validé en recette | —             |
 | L5b    | MATCH : compatibilité d'une opportunité avec un projet, par règles lisibles (sans IA)                                          | en production     | —             |
 | L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | validé en recette | —             |
 | L6b    | MATCH : agent de veille, écran d'administration                                                                                | validé en recette | —             |
@@ -59,8 +59,8 @@ réels).
 | R2     | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —             |
 | S1     | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —             |
 | S2     | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —             |
-| T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | validé localement | —             |
-| U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé localement | —             |
+| T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | en production     | —             |
+| U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé en recette | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1609,6 +1609,61 @@ Vérifié en local par le rendu réel sous trois sessions — porteuse, lecteur,
 sur des opportunités fictives : champs repris, démonstration et expirée sans effet, aucune
 candidature créée par la seule ouverture des liens. **Non exercé : l'envoi du formulaire
 prérempli lui-même**, qui passe par l'action déjà livrée, et tout contrôle au navigateur.
+
+T1 est en production depuis le 7 octobre 2026 (PR 130, `338c064`), U1 depuis le même jour
+(PR 131, `748da04`), tous deux sans migration ; CI de `main` verte, déploiement Vercel prêt sur
+ce dernier commit, servi par l'adresse de production. Le worker n'est pas redéployé : il n'a
+pas changé.
+
+**Recette du 7 octobre 2026 : L4, L5a et U1.** Un administrateur a mené en production, de
+l'administration à la candidature, le chemin que ces lots forment ensemble (mode privé actif),
+sur le projet « une maison hantée ». Les faits ci-dessous sont relus en base et dans les
+journaux de la passerelle Supabase ; **un seul écran a été vu, par une capture**, celle de la
+rubrique vide.
+
+- **Avant** : le catalogue compte une opportunité, non vérifiée, entrée le matin par la veille.
+  La rubrique « Opportunités » affiche « Aucune opportunité vérifiée n'est encore au
+  catalogue. […] » (capture de l'utilisateur, à 12h25 UTC) : un administrateur n'y lit pas ce
+  que les comptes ne liraient pas.
+- **Passage à « vérifiée »**, à 12h34 UTC, depuis « Catalogue et veille » : une seule écriture
+  sur le catalogue, acceptée ; l'opportunité porte son adresse de source, sa date de collecte
+  et son extrait — 1 999 caractères pour 2 000 admis —, et la ligne du journal
+  d'administration est de la même transaction. Message lu par l'utilisateur : « « IBF
+  Classic » est enregistrée. ». **C'est la garantie centrale du lot L4, exercée pour la
+  première fois à l'écran.**
+- **Consultation** : rubrique, onglet « Opportunités » du projet et page des financements lus
+  ensuite sans erreur ; le droit de gérer le budget a répondu, et le lien « Préparer une
+  candidature » a mené au formulaire.
+- **Un lien n'écrit rien** : la page des financements a été ouverte une première fois depuis
+  l'opportunité, à 12h50 UTC, sans qu'aucune écriture n'arrive à la base ; aucune candidature
+  n'existait alors.
+- **Candidature créée à 12h56 UTC**, par l'envoi du formulaire : une seule écriture, acceptée.
+  Elle porte l'organisme et le nom de l'opportunité, et en note « Reprise du catalogue des
+  opportunités. », suivie de la source et de son jour de lecture. **Le montant demandé et le
+  type sont ceux que l'utilisateur a saisis** : pour un fonds, le formulaire ne propose aucun
+  type et oblige à choisir. Sans date limite ni devise au catalogue, aucune n'a été reprise.
+  Statut « à préparer » ; l'autre candidature du projet n'a pas bougé ; rien au journal
+  d'administration, l'administrateur agissant dans un projet.
+- Aucune erreur d'exécution chez Vercel sur la période.
+
+Relevé pendant cette recette : le bouton « Préparer une candidature » n'existe que dans
+l'onglet du projet. L'utilisateur l'a d'abord cherché dans la rubrique et sur la fiche de
+l'opportunité, qui ne le portent pas — une opportunité s'y lit sans projet. Laissé en l'état.
+
+**L5b et T1 restent « en production », sans être dits validés en recette.** L'opportunité
+vérifiée ne dit ni ses types de projet, ni ses pays, ni ses genres, ni sa date limite : la
+veille ne remplit pas ces champs, et personne ne les a saisis. Les trois critères sont donc
+« non précisé », aucun n'a été comparé à un projet, et rien ne peut remonter dans
+« Opportunités à étudier » ni dans les échéances du tableau de bord. L'onglet et le tableau de
+bord ont été chargés sans erreur ; ce qu'ils calculent n'a pas été exercé. Il suffira de
+compléter cette opportunité d'après sa source, puis de relire les deux écrans.
+
+Non couvert par cette recette : pour L4, le refus d'un doublon, la saisie des critères et une
+date limite passée ; pour L5a, les filtres et la recherche, faute de plusieurs opportunités, et
+la fiche d'une opportunité aux champs remplis ; pour U1, le type repris d'une résidence ou
+d'une coproduction, la devise et la date limite reprises, « Vider le formulaire » ; pour tous,
+l'aspect des pages et le téléphone, et un éditeur ou un lecteur réel, faute de second compte
+tant que le mode privé est actif (vérifiés localement et par les tests).
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
