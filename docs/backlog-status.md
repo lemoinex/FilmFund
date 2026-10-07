@@ -63,6 +63,7 @@ réels).
 | U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé en recette | —             |
 | V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | en production     | —             |
 | V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | validé localement | —             |
+| V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1800,3 +1801,32 @@ d'administrateur. Un compte suspendu voit aujourd'hui les pages de l'application
 message qui le lui dise : c'est l'objet de V2b. **En production, il n'y a personne à
 suspendre** — deux comptes, tous deux administrateurs : la recette attendra la levée du mode
 privé. Retour d'urgence du contrôle de l'API : `docs/mode-prive.md`.
+
+V2a est fusionné depuis le 7 octobre 2026 (PR 135, `4e166e4`), CI verte sur une base neuve :
+le réglage `db_pre_request` s'y applique, et toute la suite passe avec lui. **Sa migration
+n'est pas poussée en production** : elle le sera avec V2b, pour qu'un compte suspendu lise un
+message et non des pages en erreur.
+
+Lot V2b, sans migration : la fiche d'un compte porte une section « Suspension » — le motif,
+puis une confirmation qui dit ce que la suspension retire ; une fois le compte suspendu, son
+état, son auteur, son motif et le bouton qui le rétablit. La liste étiquette les comptes
+suspendus. Un compte suspendu n'y reçoit plus la proposition du rôle d'administrateur, et
+l'écran dit pourquoi un administrateur ne se suspend pas. Les actions n'écrivent que le compte
+et le motif : l'auteur et la date restent ceux de la base.
+
+Pour le compte suspendu : le middleware interroge `compte_suspendu()` sur chaque page
+protégée, et le renvoie à « Compte suspendu » (`/compte-suspendu`) dès que la base répond par
+le code `CS001` ; une action postée reçoit un refus 403. La page dit la suspension et que les
+données sont conservées, **jamais le motif**, et ne lit rien en base. **C'est une requête de
+plus par page protégée, pour tous les comptes** : le prix d'une suspension qui prend effet à la
+page suivante, sans attendre l'expiration d'un jeton. Tout autre échec de cet appel laisse
+passer — la base reste le verrou. `exigerAcces` n'a pas reçu de contrôle de plus : le
+middleware refuse déjà toute action postée, et la base toute requête.
+
+V2b est validé localement le 7 octobre 2026 : 13 tests de plus, treize sabotages attrapés un
+par un — le treizième avait d'abord échappé : le test du code de suspension lisait toute la
+migration, qui lève d'autres codes ailleurs ; il lit désormais le contrôle lui-même. Rendu réel
+et actions rejoués sur un serveur de production local, 37 points sur 37 : refus, suspension,
+ce que voit l'administration, ce que voit le compte suspendu sur quatre pages, vitrine servie
+à un visiteur comme au compte suspendu, rétablissement. **Aucun contrôle au navigateur** : ni
+l'aspect, ni le téléphone, ni les clics eux-mêmes.

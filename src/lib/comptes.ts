@@ -105,15 +105,21 @@ export function adresseListe(recherche: string, page: number): string {
 export function obstacleAuChangementDeRole({
   soiMeme,
   modePrive,
+  suspendu = false,
 }: {
   soiMeme: boolean;
   modePrive: boolean;
+  /** Le compte est suspendu, et c'est le rôle d'administrateur qui est demandé. */
+  suspendu?: boolean;
 }): string | null {
   if (modePrive) {
     return "Le mode privé est actif : les changements de rôle sont suspendus pour tous les comptes, administrateurs compris.";
   }
   if (soiMeme) {
     return "Un administrateur ne retire pas son propre rôle : un autre administrateur doit le faire.";
+  }
+  if (suspendu) {
+    return "Ce compte est suspendu : rétablissez-le avant de lui donner le rôle d'administrateur.";
   }
   return null;
 }
@@ -124,3 +130,60 @@ export function annonceChangementDeRole(nouveau: RoleCompte): string {
     ? "Un administrateur lit et gère tout : projets, budgets, comptes, plans et clés des fournisseurs. Tant que le mode privé est actif, ce compte doit aussi figurer dans la liste des adresses autorisées pour entrer dans l'application."
     : "Ce compte perdra l'accès à l'administration et ne lira plus que ses propres projets et ceux de ses équipes.";
 }
+
+/*
+ * Suspension d'un compte (lot V2b).
+ */
+
+/** Code que la base rend à toute requête d'un compte suspendu. */
+export const CODE_COMPTE_SUSPENDU = "CS001";
+
+/** Ce que le compte suspendu lit : jamais le motif, réservé à l'administration. */
+export const MESSAGE_COMPTE_SUSPENDU =
+  "Ce compte est suspendu. Vos projets et vos documents sont conservés, mais vous ne pouvez plus y accéder.";
+
+/** Bornes du motif. Mêmes bornes que la contrainte de `account_suspensions`. */
+export const MOTIF_SUSPENSION = { min: 10, max: 500 } as const;
+
+/**
+ * Motif saisi, ramené à une ligne. Nul s'il n'a pas la forme d'un texte, sort
+ * des bornes ou garde un caractère de contrôle.
+ */
+export function lireMotif(valeur: unknown): string | null {
+  if (typeof valeur !== "string") {
+    return null;
+  }
+  const texte = valeur.replace(/\s+/g, " ").trim();
+  const longueur = [...texte].length;
+  if (CONTROLE.test(texte) || longueur < MOTIF_SUSPENSION.min || longueur > MOTIF_SUSPENSION.max) {
+    return null;
+  }
+  return texte;
+}
+
+/**
+ * Pourquoi un compte ne se suspend pas, ou nul s'il se suspend. La base
+ * refuse de toute façon ; l'écran le dit avant.
+ */
+export function obstacleALaSuspension({
+  soiMeme,
+  administrateur,
+}: {
+  soiMeme: boolean;
+  administrateur: boolean;
+}): string | null {
+  if (soiMeme) {
+    return "Un administrateur ne suspend pas son propre compte.";
+  }
+  if (administrateur) {
+    return "Un administrateur ne peut pas être suspendu : retirez d'abord son rôle.";
+  }
+  return null;
+}
+
+/** Ce que l'écran annonce avant le second clic. */
+export const ANNONCE_SUSPENSION =
+  "Ce compte ne lira ni n'écrira plus rien : ni projet, ni document, ni fichier, et ses tâches en attente seront annulées. Il pourra encore se connecter, et verra qu'il est suspendu, sans le motif. Ses données sont conservées ; le rétablir lui rend tout.";
+
+export const ANNONCE_RETABLISSEMENT =
+  "Ce compte retrouvera aussitôt l'accès à ses projets et à ceux de ses équipes.";
