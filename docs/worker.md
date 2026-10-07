@@ -473,6 +473,18 @@ Une ligne JSON par événement, sans contenu d'œuvre, paramètre ni secret.
 | `purge_exports_impossible`       | La purge a échoué : elle sera retentée à l'heure suivante                                        |
 | `arret_demande`, `worker_arrete` | Arrêt propre, après la tâche en cours                                                            |
 
+## Note de réalisation et pitchs (lot X1)
+
+Trois actions de plus pour WEAVER, sans mécanique propre : `direction_note`,
+`pitch_extended` et `pitch_oral` passent par la fabrique d'exécuteurs des autres rédactions,
+avec leurs profils — `weaver.note_realisation@1`, `weaver.pitch_developpe@1`,
+`weaver.pitch_oral@1`. Ce qui part chez le fournisseur est le contexte des autres
+rédactions : projet, contexte, personnages, vision, documents finalisés. Bornes de la base au
+dépôt : 20 000 caractères pour la note, 6 000 pour un pitch ; le worker refuse un texte plus
+long avant de le déposer, et la tâche échoue après deux essais, unités rendues. Le worker
+annonce donc trois actions de plus à son démarrage. Suite locale :
+`tests/worker-realisation-pitch.test.mjs`, avec un fournisseur factice.
+
 ## Tâche d'un compte suspendu (lot V2a)
 
 Le worker ne passe pas par l'API : le contrôle qui refuse tout à un compte suspendu ne le

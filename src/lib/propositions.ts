@@ -146,6 +146,39 @@ export const LIVRABLES_IA = {
     longueurMax: 20_000,
     lignes: 16,
   },
+  direction_note: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de note de réalisation",
+    bouton: "Proposer une note de réalisation",
+    remplace: "Document actuel",
+    description:
+      "L'assistant écrit, à la première personne, comment le film sera fait — image, son, rythme, jeu des acteurs —, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA.",
+    longueurMax: 20_000,
+    lignes: 16,
+  },
+  pitch_extended: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de pitch développé",
+    bouton: "Proposer un pitch développé",
+    remplace: "Document actuel",
+    description:
+      "L'assistant présente le projet en une page, pour un dossier, sans en dévoiler la fin, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA. Ce n'est pas le pitch d'une phrase de la page du projet.",
+    longueurMax: 6000,
+    lignes: 12,
+  },
+  pitch_oral: {
+    /** Rubrique du projet où l'encart se tient, près de ce qu'il écrit. */
+    page: "documents",
+    titre: "Proposition de pitch oral",
+    bouton: "Proposer un pitch oral",
+    remplace: "Document actuel",
+    description:
+      "L'assistant écrit un texte à dire, trois minutes environ, en phrases courtes, à partir de la fiche du projet, de ses personnages, de sa vision et de ses documents finalisés, transmis pour cela à notre fournisseur d'IA. La durée est une estimation : lisez-le à voix haute pour la vérifier.",
+    longueurMax: 6000,
+    lignes: 12,
+  },
 } as const;
 
 export type ActionIa = keyof typeof LIVRABLES_IA;

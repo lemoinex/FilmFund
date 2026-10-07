@@ -95,7 +95,7 @@ describe("Propositions : étapes de l'écran", () => {
 });
 
 describe("Propositions : catalogue des livrables", () => {
-  it("porte les cinq livrables de WEAVER, dans l'ordre d'affichage", () => {
+  it("porte chaque livrable rédigé, dans l'ordre d'affichage", () => {
     assert.deepEqual(ORDRE_LIVRABLES, [
       "logline",
       "synopsis_standard",
@@ -106,6 +106,9 @@ describe("Propositions : catalogue des livrables", () => {
       "bible",
       "screenplay",
       "intention_note",
+      "direction_note",
+      "pitch_extended",
+      "pitch_oral",
     ]);
   });
 
@@ -190,6 +193,9 @@ describe("Propositions : catalogue des livrables", () => {
         bible: "documents",
         screenplay: "documents",
         intention_note: "documents",
+        direction_note: "documents",
+        pitch_extended: "documents",
+        pitch_oral: "documents",
       },
     );
   });

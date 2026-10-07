@@ -56,7 +56,9 @@ export const ROLES_PERSONNAGE: Readonly<Record<string, string>> = {
 };
 
 export const TYPES_DOCUMENT: Readonly<Record<string, string>> = {
+  pitch_developpe: "Pitch développé",
   note_intention: "Note d'intention",
+  note_realisation: "Note de réalisation",
   synopsis: "Synopsis détaillé",
   traitement: "Traitement",
   bible: "Bible de série",
@@ -64,6 +66,7 @@ export const TYPES_DOCUMENT: Readonly<Record<string, string>> = {
   analyse: "Analyse dramaturgique",
   biographie: "Biographie et filmographie",
   lettre: "Lettre",
+  pitch_oral: "Pitch oral",
   autre: "Autre document",
 };
 

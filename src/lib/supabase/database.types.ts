@@ -2432,11 +2432,14 @@ export type Database = {
           budget_plan: number;
           cultural_context: number;
           dialogue_per_scene: number;
+          direction_note: number;
           dramatic_analysis: number;
           gear_list: number;
           id: string;
           intention_note: number;
           logline: number;
+          pitch_extended: number;
+          pitch_oral: number;
           published_at: string;
           published_by: string | null;
           research: number;
@@ -2454,11 +2457,14 @@ export type Database = {
           budget_plan: number;
           cultural_context: number;
           dialogue_per_scene: number;
+          direction_note: number;
           dramatic_analysis: number;
           gear_list: number;
           id?: string;
           intention_note: number;
           logline: number;
+          pitch_extended: number;
+          pitch_oral: number;
           published_at?: string;
           published_by?: string | null;
           research: number;
@@ -2476,11 +2482,14 @@ export type Database = {
           budget_plan?: number;
           cultural_context?: number;
           dialogue_per_scene?: number;
+          direction_note?: number;
           dramatic_analysis?: number;
           gear_list?: number;
           id?: string;
           intention_note?: number;
           logline?: number;
+          pitch_extended?: number;
+          pitch_oral?: number;
           published_at?: string;
           published_by?: string | null;
           research?: number;
@@ -2755,11 +2764,14 @@ export type Database = {
           budget_plan: number;
           cultural_context: number;
           dialogue_per_scene: number;
+          direction_note: number;
           dramatic_analysis: number;
           gear_list: number;
           id: string;
           intention_note: number;
           logline: number;
+          pitch_extended: number;
+          pitch_oral: number;
           published_at: string;
           published_by: string | null;
           research: number;
@@ -3666,7 +3678,9 @@ export type Database = {
         | "imprevus";
       document_status: "brouillon" | "en_relecture" | "finalise";
       document_type:
+        | "pitch_developpe"
         | "note_intention"
+        | "note_realisation"
         | "synopsis"
         | "traitement"
         | "bible"
@@ -3674,6 +3688,7 @@ export type Database = {
         | "biographie"
         | "lettre"
         | "analyse"
+        | "pitch_oral"
         | "autre";
       funding_kind:
         | "aide_publique"
@@ -3843,7 +3858,9 @@ export const Constants = {
       ],
       document_status: ["brouillon", "en_relecture", "finalise"],
       document_type: [
+        "pitch_developpe",
         "note_intention",
+        "note_realisation",
         "synopsis",
         "traitement",
         "bible",
@@ -3851,6 +3868,7 @@ export const Constants = {
         "biographie",
         "lettre",
         "analyse",
+        "pitch_oral",
         "autre",
       ],
       funding_kind: [
