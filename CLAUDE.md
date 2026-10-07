@@ -483,8 +483,20 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   note d’intention, chacun dans son propre type de document — deux livrables qui
   partageraient un type s’écraseraient à l’acceptation. « Pitch » reste la
   logline : ne pas renommer ces deux-là. La durée d’un pitch oral est une
-  estimation, que l’écran présente comme telle. Prévus : personnages (lot X2,
-  propositions structurées).
+  estimation, que l’écran présente comme telle.
+- Personnages proposés (lot X2, agent ARC, action `character_list`, profil
+  `arc.personnages@1`, table `ai_suggestion_characters`) : sur le modèle des
+  propositions structurées, acceptés ou écartés un à un. ARC lit le projet,
+  son concept, sa vision et les personnages déjà saisis ; ni scénario, ni
+  document, ni budget. **Il ne propose que des personnages à ajouter** : aucun
+  chemin ne réécrit un personnage existant, et un personnage accepté prend la
+  dernière place. Cinquante personnages au plus, tenus par la base à
+  l’acceptation et au devis. Pour un documentaire, ses consignes lui
+  interdisent d’écrire sur une personne réelle ce que le dossier ne dit pas :
+  ne pas les affaiblir. Écran dans l’étape « Personnages » de l’assistant
+  (`assistant/actions-ia.ts`, `personnages-proposes.tsx`, catalogue
+  `LIVRABLE_PERSONNAGES`), ouvert au porteur et aux éditeurs ; un homonyme d’un
+  personnage saisi est signalé, jamais refusé.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,

@@ -69,6 +69,7 @@ export const CHAMPS_BAREME = [
     min: 0,
     max: 1_000,
   },
+  { cle: "character_list", libelle: "Liste de personnages", unite: "unités", min: 0, max: 1_000 },
   { cle: "budget_plan", libelle: "Budget prévisionnel", unite: "unités", min: 0, max: 1_000 },
   { cle: "schedule_plan", libelle: "Planning prévisionnel", unite: "unités", min: 0, max: 1_000 },
   { cle: "shot_list", libelle: "Découpage d'une scène", unite: "unités", min: 0, max: 1_000 },

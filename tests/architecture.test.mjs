@@ -795,11 +795,12 @@ const avantX1 = (profils) => Object.keys(profils).filter((a) => !LIVRABLES_X1.in
  * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
  */
 describe("Livrables des agents", () => {
-  // Le lot X1 a repris les quatre fonctions d'un coup : c'est sa migration
-  // qui dit ce que la base admet aujourd'hui.
-  const DEVIS = "supabase/migrations/20261007210000_weaver_realisation_pitch.sql";
-  const CONTEXTE = DEVIS;
-  const PROPOSITIONS = DEVIS;
+  // Le lot X1 a repris les quatre fonctions d'un coup ; le lot X2a a repris
+  // les devis après lui. Ce sont ces migrations qui disent ce que la base
+  // admet aujourd'hui.
+  const DEVIS = "supabase/migrations/20261007230000_arc_personnages.sql";
+  const CONTEXTE = "supabase/migrations/20261007210000_weaver_realisation_pitch.sql";
+  const PROPOSITIONS = CONTEXTE;
 
   /** Corps de la fonction nommée, jusqu'à la suivante. */
   const corps = (migration, nom) => {
@@ -855,13 +856,17 @@ describe("Livrables des agents", () => {
     const { executeursWeaver } = await import("../worker/src/agents/weaver.ts");
     const { executeursScript } = await import("../worker/src/agents/script.ts");
     const { executeursArc } = await import("../worker/src/agents/arc.ts");
-    const { PROFILS_ARC, PROFILS_IA, PROFILS_SCRIPT, PROFILS_WEAVER } =
+    const { PROFILS_ARC, PROFILS_ARC_PERSONNAGES, PROFILS_IA, PROFILS_SCRIPT, PROFILS_WEAVER } =
       await import("../worker/src/ia/profils.ts");
     // Ni la base ni le fournisseur ne sont touchés : rien n'est appelé ici.
     const vide = async () => ({});
     assert.deepEqual(Object.keys(executeursWeaver({}, vide)), Object.keys(PROFILS_WEAVER));
     assert.deepEqual(Object.keys(executeursScript({}, vide)), Object.keys(PROFILS_SCRIPT));
-    assert.deepEqual(Object.keys(executeursArc({}, vide)), Object.keys(PROFILS_ARC));
+    // ARC sert ses textes, puis ses personnages, qui ne sont pas un texte.
+    assert.deepEqual(Object.keys(executeursArc({}, vide)), [
+      ...Object.keys(PROFILS_ARC),
+      ...Object.keys(PROFILS_ARC_PERSONNAGES),
+    ]);
     // Aucun profil n'est oublié par un agent, et aucun n'est servi deux fois.
     assert.deepEqual(
       [
@@ -2551,5 +2556,227 @@ describe("Veille de MATCH", () => {
         ),
       ),
     );
+  });
+});
+
+/*
+ * ARC (lot X2a) : les personnages proposés. Le profil, la base, le worker et
+ * l'écran décrivent les mêmes personnages ; un écart ferait refuser un dépôt
+ * après un appel payé. Et aucun chemin ne réécrit un personnage existant.
+ */
+describe("Personnages proposés par ARC", () => {
+  const MIGRATION = "supabase/migrations/20261007230000_arc_personnages.sql";
+  const X1 = "supabase/migrations/20261007210000_weaver_realisation_pitch.sql";
+  const VEILLE = "supabase/migrations/20261007120000_match_veille.sql";
+  const FICHE = "supabase/migrations/20261003010956_fiche_projet.sql";
+  const corpsDans = (fichier, fonction) => {
+    const migration = lire(fichier);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable`);
+    return migration.slice(debut, migration.indexOf("$$;", debut));
+  };
+  const corps = (fonction) => corpsDans(MIGRATION, fonction);
+
+  it("la base admet l'action d'ARC et la facture au barème, sans rien retirer aux autres", async () => {
+    const profils = await import("../worker/src/ia/profils.ts");
+    const migration = lire(MIGRATION);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    const devis = corps("creer_devis");
+
+    for (const [action, profil] of Object.entries(profils.PROFILS_ARC_PERSONNAGES)) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(devis.includes(`v_quantite := v_bareme.${action};`), `devis de ${action}`);
+      assert.match(profil.id, /^arc\.[a-z_]+@\d+$/, action);
+      assert.ok(!(action in profils.PROFILS_ARC), action);
+    }
+    for (const action of [
+      ...Object.keys(profils.PROFILS_IA),
+      ...Object.keys(profils.PROFILS_FIELD),
+      ...Object.keys(profils.PROFILS_VOICE),
+      ...Object.keys(profils.PROFILS_FRAME),
+      ...Object.keys(profils.PROFILS_GEAR),
+      ...Object.keys(profils.PROFILS_BOARD),
+      ...Object.keys(profils.PROFILS_SCOUT),
+      ...Object.keys(profils.PROFILS_GRIOT),
+    ]) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(
+        devis
+          .split("\n")
+          .some((ligne) => /^\s+when '/.test(ligne) && ligne.includes(`'${action}'`)),
+        `devis de ${action}`,
+      );
+    }
+    assert.match(migration, /add column character_list integer not null default 3;/);
+    assert.match(migration, /alter column character_list drop default;/);
+  });
+
+  it("creer_devis n'a changé que d'un cas, et l'écartement que d'une table", () => {
+    // Retirer le cas ajouté doit rendre, au mot près, la fonction du lot X1.
+    const ajout =
+      /    when 'character_list' then\n(?: {6}.*\n)+? {6}v_quantite := v_bareme\.character_list;\n/;
+    const devis = corps("creer_devis");
+    assert.match(devis, ajout);
+    assert.equal(devis.replace(ajout, ""), corpsDans(X1, "creer_devis"));
+
+    const huitieme =
+      /\n\n {2}update public\.ai_suggestion_characters\n {2}set state = 'dismissed', decided_by = new\.decided_by, decided_at = new\.decided_at\n {2}where suggestion_id = new\.id and state = 'proposed';/;
+    const ecart = corps("ecarter_lignes_restantes");
+    assert.match(ecart, huitieme);
+    assert.equal(ecart.replace(huitieme, ""), corpsDans(VEILLE, "ecarter_lignes_restantes"));
+  });
+
+  it("le schéma ne connaît que les rôles de la base, et les trois champs d'un personnage", async () => {
+    const { PROFIL_PERSONNAGES, ROLES_PERSONNAGE } = await import("../worker/src/ia/profils.ts");
+    const { ROLES_PERSONNAGE: ECRAN } = await import("../src/lib/fiche.ts");
+    const enBase = [
+      .../constraint personnage_role check \(role in \(([^)]+)\)\)/
+        .exec(lire(FICHE))[1]
+        .matchAll(/'(\w+)'/g),
+    ].map((m) => m[1]);
+
+    assert.deepEqual([...ROLES_PERSONNAGE], enBase);
+    assert.deepEqual(Object.keys(ECRAN), enBase);
+
+    const ligne = PROFIL_PERSONNAGES.schema.properties.lines.items;
+    assert.equal(PROFIL_PERSONNAGES.schema.additionalProperties, false);
+    assert.equal(ligne.additionalProperties, false);
+    assert.deepEqual(ligne.properties.role.enum, enBase);
+    assert.deepEqual(Object.keys(ligne.properties), ["name", "role", "description"]);
+    assert.deepEqual(ligne.required, ["name", "role", "description"]);
+    for (const role of enBase) {
+      assert.ok(PROFIL_PERSONNAGES.systeme.includes(role), role);
+    }
+
+    // La table, le dépôt et l'acceptation admettent exactement cette liste.
+    const listes = [...lire(MIGRATION).matchAll(/in \(('principal'[^)]+)\)/g)].map((m) =>
+      [...m[1].matchAll(/'(\w+)'/g)].map((r) => r[1]),
+    );
+    assert.equal(listes.length, 3);
+    for (const admis of listes) {
+      assert.deepEqual(admis, enBase);
+    }
+  });
+
+  it("les bornes du profil, du worker, de l'écran et de la base sont les mêmes", async () => {
+    const { PROFIL_PERSONNAGES } = await import("../worker/src/ia/profils.ts");
+    const { LIVRABLE_PERSONNAGES } = await import("../src/lib/propositions.ts");
+    const { MAX_PERSONNAGES } = await import("../src/lib/fiche.ts");
+    const migration = lire(MIGRATION);
+    const fiche = lire(FICHE);
+    const agent = lire("worker/src/agents/arc.ts");
+
+    assert.equal(LIVRABLE_PERSONNAGES.lignesMax, PROFIL_PERSONNAGES.lignesMax);
+    assert.equal(LIVRABLE_PERSONNAGES.action, "character_list");
+    assert.match(
+      migration,
+      new RegExp(`v_nombre not between 1 and ${PROFIL_PERSONNAGES.lignesMax} then`),
+    );
+    assert.ok(PROFIL_PERSONNAGES.systeme.includes(String(PROFIL_PERSONNAGES.lignesMax)));
+
+    // Le nom et la description d'un personnage proposé tiennent dans ceux
+    // d'un personnage : mêmes longueurs, à la table, au dépôt, à l'acceptation.
+    const nomMax = Number(/char_length\(btrim\(name\)\) between 1 and (\d+)/.exec(fiche)[1]);
+    const descriptionMax = Number(/char_length\(description\) <= (\d+)/.exec(fiche)[1]);
+    const fois = (borne) =>
+      migration.match(new RegExp(`between 1 and ${borne}(?!\\d)`, "g"))?.length ?? 0;
+    assert.equal(fois(nomMax), 3);
+    assert.equal(fois(descriptionMax), 2);
+    assert.ok(migration.includes(`char_length(v_retenu ->> 'description') <= ${descriptionMax}`));
+    assert.ok(agent.includes(`const NOM_MAX = ${nomMax};`));
+    assert.ok(agent.includes(`const DESCRIPTION_MAX = ${descriptionMax};`));
+    assert.ok(PROFIL_PERSONNAGES.systeme.includes(`${nomMax} caractères`));
+    assert.ok(PROFIL_PERSONNAGES.systeme.includes(`jamais plus de ${descriptionMax}`));
+
+    // Cinquante personnages : la borne de l'écran, tenue par la base à
+    // l'acceptation, au devis, et dans la lecture du contexte.
+    assert.equal(MAX_PERSONNAGES, 50);
+    assert.ok(
+      corps("accepter_personnage_propose").includes(`if v_nombre >= ${MAX_PERSONNAGES} then`),
+    );
+    assert.match(corps("creer_devis"), new RegExp(`\\) >= ${MAX_PERSONNAGES} then`));
+    assert.ok(corps("contexte_personnages").includes(`limit ${MAX_PERSONNAGES}`));
+  });
+
+  it("ARC lit le concept et les personnages saisis, jamais un document ni le budget", () => {
+    const contexte = corps("contexte_personnages");
+    assert.match(contexte, /from public\.project_characters c/);
+    assert.match(contexte, /and j\.action = 'character_list'/);
+    assert.doesNotMatch(
+      contexte,
+      /project_documents|budget|project_members|profiles|fundings|storyboard|scene_shots/,
+    );
+    assert.equal(contexte.match(/limit \d+/g)?.length, 1);
+  });
+
+  it("aucun chemin ne réécrit un personnage existant", () => {
+    const migration = lire(MIGRATION);
+    assert.doesNotMatch(
+      migration,
+      /update public\.project_characters|delete from public\.project_characters/,
+    );
+    assert.equal(migration.split("insert into public.project_characters").length - 1, 1);
+    // Le personnage accepté prend la dernière place.
+    assert.match(corps("accepter_personnage_propose"), /coalesce\(max\(c\.position\), -1\) \+ 1/);
+    assert.match(lire("worker/src/ia/profils.ts"), /Tu ne modifies aucun personnage existant/);
+  });
+
+  it("les personnages proposés suivent les droits des personnages et ne s'écrivent que par fonctions", () => {
+    const migration = lire(MIGRATION);
+    assert.match(
+      migration,
+      /on public\.ai_suggestion_characters for select\s+to authenticated\s+using \(public\.acces_au_projet\(project_id\) is not null or \(select public\.is_admin\(\)\)\)/,
+    );
+    assert.match(migration, /on public\.ai_suggestion_characters\s+as restrictive/);
+    assert.match(
+      migration,
+      /revoke all on table public\.ai_suggestion_characters from anon, authenticated/,
+    );
+    assert.match(
+      corps("personnage_a_decider"),
+      /\(public\.mode_prive\(\) and not public\.is_admin\(\)\)\s+or not coalesce\(public\.peut_editer_contenu\(v_ligne\.project_id\), false\)/,
+    );
+    // PostgreSQL tronque un nom au-delà de 63 octets : deux politiques
+    // finiraient par porter le même.
+    for (const [, nom] of migration.matchAll(/create policy "([^"]+)"/g)) {
+      assert.ok(Buffer.byteLength(nom) <= 63, nom);
+    }
+    const accordes = [...migration.matchAll(/^grant [^;]+ to filmfund_worker;/gm)].map((m) => m[0]);
+    assert.deepEqual(accordes, [
+      "grant execute on function public.contexte_personnages(uuid) to filmfund_worker;",
+      "grant execute on function public.livrer_proposition_personnages(uuid, jsonb) to filmfund_worker;",
+    ]);
+    for (const signature of [
+      "controler_personnage_propose()",
+      "contexte_personnages(uuid)",
+      "livrer_proposition_personnages(uuid, jsonb)",
+      "clore_proposition_personnages(uuid)",
+      "personnage_a_decider(uuid)",
+      "accepter_personnage_propose(uuid, jsonb)",
+      "ecarter_personnage_propose(uuid)",
+    ]) {
+      assert.match(
+        migration,
+        new RegExp(
+          `revoke all on function public\\.${signature.replace(/[()]/g, "\\$&")}\\s+from public, anon, authenticated`,
+        ),
+        signature,
+      );
+    }
+  });
+
+  it("le registre sert ARC, et le barème de l'écran connaît son prix", async () => {
+    const { executeursArc } = await import("../worker/src/agents/arc.ts");
+    const { PROFILS_ARC, PROFILS_ARC_PERSONNAGES } = await import("../worker/src/ia/profils.ts");
+    const vide = async () => ({});
+    assert.deepEqual(Object.keys(executeursArc({}, vide)), [
+      ...Object.keys(PROFILS_ARC),
+      ...Object.keys(PROFILS_ARC_PERSONNAGES),
+    ]);
+    assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursArc\(base, fournisseur\)/);
+    assert.match(lire("src/lib/plans.ts"), /cle: "character_list"/);
+    assert.match(lire("src/lib/offre.ts"), /bareme\.character_list/);
+    assert.match(lire("src/lib/offre.ts"), /dramatic_analysis, character_list, budget_plan/);
   });
 });

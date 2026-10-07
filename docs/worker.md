@@ -134,6 +134,13 @@ GEAR propose une liste de matériel (lot J3c-3, action `gear_list`, profil `gear
 sur le même chemin. Sa demande vise le projet entier ; son contexte porte le storyboard, le
 découpage résumé et le matériel déjà saisi, sans scénario ni budget. Il ne rend aucun calcul.
 
+ARC propose des personnages (lot X2a, action `character_list`, profil `arc.personnages@1`),
+sur le même chemin. Sa demande vise le projet entier ; son contexte porte le concept, la
+vision et les personnages déjà saisis, sans scénario, document ni budget. Un nom rendu deux
+fois n'est gardé qu'une ; un homonyme d'un personnage saisi est laissé à la décision de
+l'équipe. `executeursArc` sert donc deux familles de profils : ses textes (`PROFILS_ARC`) et
+ses lignes (`PROFILS_ARC_PERSONNAGES`).
+
 BOARD dessine la vignette d'une scène (lot K1, action `storyboard_image`, profil
 `board.vignette@1`). Il est le seul agent servi par OpenAI : la passerelle l'appelle par une
 requête HTTPS, sans SDK, vers une seule adresse. Sa clé se pose depuis Intégrations IA,

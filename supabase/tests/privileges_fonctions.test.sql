@@ -63,6 +63,8 @@ select is_empty(
         'ecarter_plan_propose',
         'accepter_materiel_propose',
         'ecarter_materiel_propose',
+        'accepter_personnage_propose',
+        'ecarter_personnage_propose',
         'accepter_image_proposee',
         'ecarter_image_proposee',
         'accepter_source_proposee',

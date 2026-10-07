@@ -21,13 +21,13 @@ values ('essai_devis', 5, 1, 0, 20, 3, 1, 0, now() - interval '90 days');
 insert into public.text_unit_rate_versions (
   logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note,
   direction_note, pitch_extended, pitch_oral,
-  dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible,
+  dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible,
   screenplay_per_sequence,
   dialogue_per_scene, published_at
 )
 values
-  (1, 1, 2, 3, 3, 3, 2, 2, 4, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, now() - interval '60 days'),
-  (1, 1, 2, 3, 3, 3, 2, 2, 4, 6, 3, 4, 5, 3, 3, 7, 10, 2, 1, now() - interval '5 days');
+  (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, now() - interval '60 days'),
+  (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 7, 10, 2, 1, now() - interval '5 days');
 
 insert into auth.users (id, email, aud, role)
 values
@@ -224,11 +224,11 @@ select set_config('request.jwt.claims', '', true);
 insert into public.text_unit_rate_versions (
   logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note,
   direction_note, pitch_extended, pitch_oral,
-  dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible,
+  dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible,
   screenplay_per_sequence,
   dialogue_per_scene, published_at
 )
-values (1, 1, 2, 3, 4, 3, 2, 2, 4, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, now() - interval '20 days');
+values (1, 1, 2, 3, 4, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, now() - interval '20 days');
 
 set local role authenticated;
 select set_config(

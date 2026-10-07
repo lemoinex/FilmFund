@@ -35,6 +35,7 @@ import {
   PROFIL_SYNOPSIS_STANDARD,
   PROFIL_TRAITEMENT,
   PROFILS_ARC,
+  PROFILS_ARC_PERSONNAGES,
   PROFILS_FIELD,
   PROFILS_FRAME,
   PROFILS_GEAR,
@@ -545,6 +546,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_FIELD),
         ...Object.keys(PROFILS_FRAME),
         ...Object.keys(PROFILS_GEAR),
+        ...Object.keys(PROFILS_ARC_PERSONNAGES),
       ].sort(),
     );
     assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
@@ -584,6 +586,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_FIELD),
         ...Object.keys(PROFILS_FRAME),
         ...Object.keys(PROFILS_GEAR),
+        ...Object.keys(PROFILS_ARC_PERSONNAGES),
       ].sort(),
     );
 
@@ -1519,9 +1522,12 @@ describe("ARC : analyse dramaturgique", () => {
     });
   });
 
-  it("sait exécuter l'analyse, et elle seule", () => {
+  it("sait exécuter l'analyse, seul texte d'ARC, puis ses personnages", () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
-    assert.deepEqual(Object.keys(executeursArc(base, fournisseur)), Object.keys(PROFILS_ARC));
+    assert.deepEqual(Object.keys(executeursArc(base, fournisseur)), [
+      ...Object.keys(PROFILS_ARC),
+      ...Object.keys(PROFILS_ARC_PERSONNAGES),
+    ]);
     assert.deepEqual(Object.keys(PROFILS_ARC), ["dramatic_analysis"]);
   });
 });
