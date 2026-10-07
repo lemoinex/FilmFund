@@ -77,3 +77,76 @@ export function joursAvant(dateLimite: string, aujourdhui: string): number {
     (Date.parse(`${dateLimite}T00:00:00Z`) - Date.parse(`${aujourdhui}T00:00:00Z`)) / jour,
   );
 }
+
+/**
+ * Catégories d'opportunité qui ont leur équivalent exact parmi les types de
+ * financement. Un « fonds » peut être public ou privé : le reprendre comme
+ * « aide publique » serait le deviner.
+ */
+const TYPE_DE_CATEGORIE: Readonly<Record<string, "residence" | "coproduction">> = {
+  residence: "residence",
+  coproduction: "coproduction",
+};
+
+const jourLong = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
+
+export type CandidaturePreremplie = {
+  funder: string;
+  program: string;
+  /** Nul : le type reste à choisir. */
+  kind: "residence" | "coproduction" | null;
+  /** Nul : la devise de l'opportunité n'est pas de celles du budget. */
+  currency: string | null;
+  deadline: string | null;
+  notes: string;
+};
+
+/**
+ * Ce qu'une candidature reprend d'une opportunité du catalogue (lot U1).
+ *
+ * Seulement ce qui se reprend sans rien inventer : l'organisme, le nom, la
+ * date limite encore à venir, la devise si le budget la connaît, et la source
+ * dans les notes. Le montant ne se reprend pas — celui d'une opportunité est
+ * celui de l'aide, pas ce que le projet demande.
+ *
+ * Rien n'est écrit ici : ces valeurs remplissent un formulaire, que l'équipe
+ * relit et envoie.
+ */
+export function preremplirCandidature(
+  opportunite: {
+    name: string;
+    organization: string;
+    category: string;
+    currency: string | null;
+    deadline: string | null;
+    source_url: string | null;
+    collected_on: string | null;
+  },
+  devisesConnues: readonly string[],
+  aujourdhui: string,
+): CandidaturePreremplie {
+  const source = opportunite.source_url
+    ? ` Source : ${opportunite.source_url}${
+        opportunite.collected_on
+          ? `, lue le ${jourLong.format(new Date(`${opportunite.collected_on}T00:00:00Z`))}`
+          : ""
+      }.`
+    : "";
+
+  return {
+    funder: opportunite.organization.trim().slice(0, 200),
+    program: opportunite.name.trim().slice(0, 200),
+    kind: Object.hasOwn(TYPE_DE_CATEGORIE, opportunite.category)
+      ? TYPE_DE_CATEGORIE[opportunite.category]
+      : null,
+    currency:
+      opportunite.currency && devisesConnues.includes(opportunite.currency)
+        ? opportunite.currency
+        : null,
+    deadline:
+      opportunite.deadline !== null && opportunite.deadline >= aujourdhui
+        ? opportunite.deadline
+        : null,
+    notes: `Reprise du catalogue des opportunités.${source}`.slice(0, 2000),
+  };
+}
