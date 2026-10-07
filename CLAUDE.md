@@ -652,10 +652,17 @@ recommandations (« à améliorer ») sont configurables et traçables.
 - Plans, prix, quotas et barème restent configurables par l’administration ;
   aucune utilisation IA illimitée implicite.
 - Admin livré : journal d’administration, plans et quotas, pondérations du score
-  de maturité.
-- Admin prévu : utilisateurs (consulter, suspendre, rôles), opportunités (ajouter,
-  modifier, supprimer, vérifier), statistiques anonymisées, fournisseurs/modèles/
-  coûts/limites IA, abonnements.
+  de maturité, catalogue et veille des opportunités, intégrations IA, comptes.
+- Comptes (lot V1, sans IA) : rubrique « Utilisateurs »
+  (`/administration/utilisateurs`, `src/lib/comptes.ts`) — liste, recherche, fiche
+  d’un compte, changement de rôle. Les adresses ne se lisent que par
+  `comptes_administration()`, réservée aux administrateurs, cent comptes au plus
+  par appel : ne pas les lire autrement, ni avec le rôle de service. Le rôle ne
+  s’écrit que par `definir_role()`, que le mode privé gèle : l’écran le dit au
+  lieu de proposer un changement. Ne pas créer un second chemin.
+- Admin prévu : suspension d’un compte (lot V2, à cadrer : une politique RLS ne
+  ferme pas les fonctions `security definer`), statistiques anonymisées,
+  modèles/coûts/limites IA, abonnements.
 
 ## 11. État et ordre de mise en œuvre
 

@@ -2781,6 +2781,21 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      comptes_administration: {
+        Args: { p_compte?: string; p_decalage?: number; p_limite?: number; p_recherche?: string };
+        Returns: {
+          country: string;
+          cree_le: string;
+          derniere_connexion: string;
+          display_name: string;
+          email: string;
+          email_confirme: boolean;
+          id: string;
+          profile_type: Database["public"]["Enums"]["profile_type"];
+          role: Database["public"]["Enums"]["user_role"];
+          total: number;
+        }[];
+      };
       confirmer_cout: {
         Args: {
           p_attempt_id: string;

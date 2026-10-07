@@ -39,6 +39,7 @@ select is_empty(
         -- Chacune vérifie elle-même l'identité de l'appelant.
         'is_admin',
         'definir_role',
+        'comptes_administration',
         'acces_au_projet',
         'email_confirme_courant',
         'equipe_du_projet',
