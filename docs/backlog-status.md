@@ -64,6 +64,7 @@ réels).
 | V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | en production     | —             |
 | V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | en production     | —             |
 | V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
+| W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1849,3 +1850,35 @@ répondent.
 compte que ses deux administrateurs, qui ne peuvent pas être suspendus : aucune suspension n'y
 a eu lieu, et aucune ne pourra y être éprouvée avant la levée du mode privé. Le coût de la
 requête de plus que le middleware fait sur chaque page protégée n'a pas été mesuré.
+
+Alertes internes, décidées le 7 octobre 2026 (lot W1, sans IA, sans migration) : une alerte
+est **calculée à la lecture et jamais stockée**, comme le score de maturité et la
+compatibilité. Elle existe tant que sa cause existe et disparaît quand on l'a traitée : il n'y
+a donc ni « lu », ni « non lu », ni historique. Cinq natures, de la plus pressante à la moins
+pressante : étape en retard ; dossier incomplet — une candidature « à préparer » dont la date
+limite tombe dans les 30 jours, sans pièce jointe ou avec une pièce qui n'est pas finalisée ;
+candidature à déposer — pièces finalisées, date limite dans les 14 jours ; opportunité à
+étudier bientôt close, dans les 14 jours ; étape à venir, dans les 7 jours. **Ces délais sont
+un choix du lot, pas une norme : l'écran le dit.** Une candidature ne donne jamais deux
+alertes, et une date limite passée n'alerte plus.
+
+Écartés de ce lot : l'e-mail, qui demande de choisir un service d'envoi ; un compteur dans la
+barre latérale, que la coque ne recalcule pas à chaque navigation et qui serait donc périmé ;
+l'alerte « nouvelle opportunité », la base ne gardant pas la date à laquelle une opportunité
+est devenue visible.
+
+Écran : rubrique « Alertes » (`/alertes`), groupée par projet, chaque ligne menant à la page
+où elle se traite, avec le principe et les cinq règles dits en clair ; bloc « À traiter » en
+tête du tableau de bord, les trois plus pressantes et le total, absent quand il n'y a rien.
+Règles dans `src/lib/alertes.ts`, lecture dans `alertes/lecture.ts`, bornée — cent projets,
+cent lignes par nature — et sous la RLS de l'utilisateur : une candidature n'alerte que qui
+gère le budget, son montant n'est pas lu, et le catalogue ne rend jamais une démonstration.
+« À étudier » est la règle du lot L5b, pas une seconde.
+
+W1 est validé localement le 7 octobre 2026 : 25 tests de plus, vingt et un sabotages attrapés
+un par un. Rendu réel sur un serveur de production local, 22 points sur 22 sous cinq sessions —
+porteuse, éditeur, lecteur, compte sans projet, administratrice : six alertes pour la porteuse
+et l'éditeur, trois pour le lecteur, sans aucun nom de financeur ; aucune pour un projet
+d'autrui ; et quatre une fois trois causes traitées. **Aucun contrôle au navigateur** : ni
+l'aspect, ni le téléphone. Le tableau de bord relit étapes et candidatures une seconde fois
+pour ce bloc : le lot T1 n'a pas été réécrit.

@@ -49,7 +49,9 @@ import {
 } from "@/lib/tableau-de-bord";
 
 import { chargerScores, EtiquetteMaturite, ScoreMaturite } from "../projets/[id]/maturite";
+import { chargerAlertes } from "../alertes/lecture";
 import { OngletsProjet } from "../projets/[id]/onglets";
+import { AlertesATraiter } from "./alertes";
 import { ChiffresCles } from "./chiffres";
 import { ProchainesEcheances } from "./echeances";
 import { InvitationsRecues } from "./invitations";
@@ -87,12 +89,13 @@ export default async function TableauDeBord() {
   // travaille, sans qu'aucune préférence ne soit stockée.
   const [projet, ...autres] = projets;
 
-  const [visuels, accueil] = projet
+  const [visuels, accueil, lecture] = projet
     ? await Promise.all([
         chargerVisuels(supabase, projet.id),
         chargerAccueil(supabase, tous, projet),
+        chargerAlertes(supabase, tous),
       ])
-    : [null, null];
+    : [null, null, null];
   const borneAtteinte = tous.length >= LIMITE_PROJETS_COMPTES;
 
   return (
@@ -135,6 +138,8 @@ export default async function TableauDeBord() {
             ]}
           />
         ) : null}
+
+        {lecture ? <AlertesATraiter alertes={lecture.alertes} /> : null}
 
         <div className="border-app-line mt-6 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <p className="text-secondary text-sm font-medium">Mon projet</p>

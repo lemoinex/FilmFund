@@ -138,6 +138,16 @@ export function CameraIcon({ className }: IconProps) {
   );
 }
 
+/** Cloche, pour les alertes. */
+export function BellIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.6 2H4.4L6 16.5Z" />
+      <path d="M10 20.5a2.1 2.1 0 0 0 4 0" />
+    </svg>
+  );
+}
+
 /** Coche, pour les listes de benefices. */
 export function CheckIcon({ className }: IconProps) {
   return (

@@ -589,8 +589,16 @@ recommandations (« à améliorer ») sont configurables et traçables.
 - Plan de financement : budget total, producteur, fonds, télévision, coproducteur,
   investisseur, sponsor et autres ; calculer acquis, recherché et pourcentage.
 - Calendrier : développement, préproduction, tournage, postproduction, distribution.
-- Alertes internes et e-mail, non livrées : opportunité, deadline, dossier
-  incomplet, matching.
+- Alertes internes (lot W1, sans IA, sans migration) : livrées. **Calculées à la
+  lecture, jamais stockées** : ni « lu », ni historique, une alerte disparaît
+  avec sa cause. Cinq natures — étape en retard, dossier incomplet, candidature
+  à déposer, opportunité bientôt close, étape à venir —, règles et délais dans
+  `src/lib/alertes.ts`, lecture bornée dans `alertes/lecture.ts`, écrans
+  `/alertes` et bloc « À traiter » du tableau de bord. Les délais (7, 14 et
+  30 jours) sont un choix du lot : l’écran le dit. Une candidature n’alerte que
+  qui gère le budget, sans son montant. Ne pas créer un second calcul, ni de
+  table d’alertes, ni de compteur dans la coque : étendre celui-ci.
+- Alertes par e-mail et alerte « nouvelle opportunité » : non livrées.
 
 ### Découpage technique et matériel
 
