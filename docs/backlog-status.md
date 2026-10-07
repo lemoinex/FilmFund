@@ -41,7 +41,8 @@ réels).
 | L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
 | L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
 | L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | en production     | —             |
-| L5     | MATCH : consultation du catalogue et compatibilité calculée (sans IA)                                                          | à faire           | L4            |
+| L5a    | MATCH : consultation du catalogue par les équipes, filtres et recherche (sans IA)                                              | validé localement | —             |
+| L5b    | MATCH : compatibilité d'une opportunité avec un projet, par règles lisibles (sans IA)                                          | validé localement | —             |
 | L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | validé en recette | —             |
 | L6b    | MATCH : agent de veille, écran d'administration                                                                                | validé en recette | —             |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
@@ -1498,6 +1499,55 @@ vérifiée ; les comptes n'en lisent aucune.
 
 Dépense d'IA du mois au 7 octobre, après cette veille : 4,25 $ sur 5 $ d'après les registres,
 dont quatre provisions restées sans coût confirmé. Aucune tâche en attente ni à rapprocher.
+
+L5, écrit le 7 octobre 2026 en deux lots, **sans IA, sans migration, sans dépendance** : la
+politique du lot L4 ouvrait déjà aux comptes les opportunités vérifiées et expirées.
+
+L5a, la consultation. La rubrique « Opportunités » (`/opportunites`) liste ce que les équipes
+lisent du catalogue, avec la source et le jour de sa lecture ; chaque opportunité a sa fiche
+(`/opportunites/[id]`), où ce que la source ne dit pas s'affiche « Information non fournie. ».
+Filtres par type, pays éligible, type de projet, genre et état de la date limite, et recherche
+dans le nom, l'organisme et la description. Trois choix :
+
+- **La page filtre elle-même sur « vérifiée » et « expirée »** : la RLS le garantit aux
+  comptes, mais un administrateur lit tout, et il y aurait vu une démonstration.
+- **Un filtre ne retient que ce qui est précisé** : une liste de pays vide veut dire « la
+  source ne le dit pas », pas « tous les pays ». L'écran le dit sous les filtres.
+- **Aucune saisie ne part dans une requête** : les filtres s'appliquent aux lignes déjà lues,
+  deux cents au plus, ce que la page annonce quand la borne est atteinte.
+
+Dans le menu, la rubrique d'administration s'appelle désormais « Catalogue et veille » : un
+administrateur aurait vu deux entrées « Opportunités ».
+
+L5b, la compatibilité. L'onglet « Opportunités » d'un projet, ouvert à toute l'équipe,
+compare le projet aux opportunités non expirées, par des règles écrites dans
+`src/lib/compatibilite.ts` ; rien n'est stocké. Ce que le calcul fait, et ne fait pas :
+
+- **Trois critères, ceux que le catalogue et le projet portent tous deux** : type de projet,
+  pays, genre. Ni la durée, ni le stade, ni la thématique, ni la langue, ni les exigences ne
+  sont jugés — le catalogue ne les porte pas dans un champ comparable —, et l'écran le dit.
+- **Quatre états par critère** : rempli, non rempli, non précisé par l'opportunité, non
+  renseigné dans le projet. Un critère que la source ne précise pas n'est jamais compté rempli.
+- **Un décompte, pas une note** : « 2 critères remplis sur 3 évalués ; 1 critère non évalué »,
+  sans pourcentage. L'écran dit que c'est une aide pour trier, pas une garantie d'éligibilité.
+- **Le montant n'est pas un critère** : c'est celui de l'aide, pas une fourchette de budget
+  éligible. La comparaison ne lit donc ni budget ni financement.
+- **Pays** : un pays de production commun suffit ; l'écran rappelle qu'une opportunité peut
+  entendre par là la nationalité ou la résidence de l'auteur.
+- **Classement** : ce que rien ne contredit d'abord, puis le plus de critères remplis ; une
+  opportunité sans précision passe avant une opportunité contredite.
+
+Défaut trouvé au rendu réel, corrigé avant livraison : un squelette de chargement posé sur ces
+routes faisait répondre 200, et non 404, à une fiche absente comme au projet d'autrui. Celui
+de la liste vit désormais dans un groupe de routes qui ne couvre pas la fiche, la page du
+projet n'en a pas, et un test refuse qu'on en repose un.
+
+Vérifié en local par le rendu réel des pages sous trois sessions — membre, administratrice,
+compte étranger — sur des opportunités fictives ; **pas au navigateur** : ni l'aspect, ni le
+téléphone n'ont été vus. Hors lot : les cartes « opportunités recommandées » et « échéances »
+du tableau de bord, et la création d'une candidature depuis une opportunité. La recette
+demande au moins une opportunité « vérifiée » au catalogue de production, qui n'en compte
+aucune : elle fera aussi celle de L4.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
