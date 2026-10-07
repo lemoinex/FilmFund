@@ -2,9 +2,17 @@ import type { DocumentStatus, DocumentType } from "@/lib/supabase/types";
 
 /** Types de documents, dans l'ordre où un dossier de film les présente. */
 export const TYPES_DOCUMENT: Record<DocumentType, { libelle: string; description: string }> = {
+  pitch_developpe: {
+    libelle: "Pitch développé",
+    description: "Le projet en une page, pour ouvrir un dossier.",
+  },
   note_intention: {
     libelle: "Note d'intention",
     description: "Pourquoi ce film, pourquoi vous, pourquoi maintenant.",
+  },
+  note_realisation: {
+    libelle: "Note de réalisation",
+    description: "Comment le film sera fait : image, son, rythme, jeu des acteurs.",
   },
   synopsis: {
     libelle: "Synopsis détaillé",
@@ -33,6 +41,10 @@ export const TYPES_DOCUMENT: Record<DocumentType, { libelle: string; description
   lettre: {
     libelle: "Lettre",
     description: "Lettre de motivation, d'engagement ou de soutien.",
+  },
+  pitch_oral: {
+    libelle: "Pitch oral",
+    description: "Le texte à dire devant un jury ou un producteur.",
   },
   autre: {
     libelle: "Autre document",

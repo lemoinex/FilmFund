@@ -235,6 +235,42 @@ export const PROFIL_NOTE_INTENTION: Profil = profilRedaction({
   objectif: "Écris la note d'intention de ce projet.",
 });
 
+export const PROFIL_NOTE_REALISATION: Profil = profilRedaction({
+  id: "weaver.note_realisation@1",
+  effort: "high",
+  jetonsMax: 20_000,
+  longueurCible: 6000,
+  longueurMax: 20_000,
+  mission: "Tu aides un réalisateur à écrire la note de réalisation de son projet.",
+  attendu:
+    "Une note de réalisation est écrite à la première personne, par le réalisateur : comment le film sera fait, là où la note d'intention dit pourquoi il existe. Elle expose les partis pris de mise en scène et ce que chacun sert dans le récit — le point de vue et la place de la caméra, l'image et la lumière, le son et la musique, le rythme et le montage, la direction d'acteurs, les lieux et les décors. Chaque choix part d'une scène, d'un personnage ou d'un enjeu du dossier. Elle ne chiffre rien, ne nomme ni matériel ni marque, et ne cite aucun film ni aucun cinéaste que le dossier ne cite pas.",
+  objectif: "Écris la note de réalisation de ce projet.",
+});
+
+export const PROFIL_PITCH_DEVELOPPE: Profil = profilRedaction({
+  id: "weaver.pitch_developpe@1",
+  effort: "medium",
+  jetonsMax: 12_000,
+  longueurCible: 2500,
+  longueurMax: 6000,
+  mission: "Tu aides un auteur à écrire le pitch développé de son projet.",
+  attendu:
+    "Un pitch développé tient en une page et s'adresse à quelqu'un qui décide vite : une accroche, le protagoniste et ce qu'il veut, ce qui s'y oppose, ce qui est en jeu, le genre et le ton, puis ce qui rend ce film singulier. Il donne envie de lire le dossier sans raconter tout le film : il ne dévoile pas le dénouement. Pas de liste, pas de superlatif, pas de promesse de succès ni de comparaison avec des films que le dossier ne cite pas.",
+  objectif: "Écris le pitch développé de ce projet, en une page.",
+});
+
+export const PROFIL_PITCH_ORAL: Profil = profilRedaction({
+  id: "weaver.pitch_oral@1",
+  effort: "medium",
+  jetonsMax: 12_000,
+  longueurCible: 2700,
+  longueurMax: 6000,
+  mission: "Tu aides un auteur à préparer le pitch oral de son projet.",
+  attendu:
+    "Un pitch oral est un texte à dire, face à un jury ou à un producteur, en trois minutes environ. Il s'écrit pour l'oreille, à la première personne : des phrases courtes, une idée par phrase, rien qui ne se dise pas à voix haute — ni parenthèse, ni sigle, ni longue énumération. Il s'ouvre sur une accroche, présente le film et son protagoniste, dit ce qui est en jeu et pourquoi l'auteur le porte, puis se termine sur ce que l'auteur vient chercher, si le dossier le dit. Il ne dévoile pas le dénouement.",
+  objectif: "Écris le pitch oral de ce projet, à dire en trois minutes environ.",
+});
+
 /**
  * Ce que WEAVER sait écrire, par action de tâche. L'action de la base et le
  * profil versionné sont noués ici, à un seul endroit : un test
@@ -367,6 +403,9 @@ export const PROFILS_WEAVER: Readonly<Record<string, Profil>> = {
   synopsis_standard: PROFIL_SYNOPSIS_STANDARD,
   synopsis_detailed: PROFIL_SYNOPSIS_DETAILLE,
   intention_note: PROFIL_NOTE_INTENTION,
+  direction_note: PROFIL_NOTE_REALISATION,
+  pitch_extended: PROFIL_PITCH_DEVELOPPE,
+  pitch_oral: PROFIL_PITCH_ORAL,
 };
 
 /**

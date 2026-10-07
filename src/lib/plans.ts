@@ -59,6 +59,9 @@ export const CHAMPS_BAREME = [
   { cle: "synopsis_standard", libelle: "Synopsis standard", unite: "unités", min: 0, max: 1_000 },
   { cle: "synopsis_detailed", libelle: "Synopsis détaillé", unite: "unités", min: 0, max: 1_000 },
   { cle: "intention_note", libelle: "Note d'intention", unite: "unités", min: 0, max: 1_000 },
+  { cle: "direction_note", libelle: "Note de réalisation", unite: "unités", min: 0, max: 1_000 },
+  { cle: "pitch_extended", libelle: "Pitch développé", unite: "unités", min: 0, max: 1_000 },
+  { cle: "pitch_oral", libelle: "Pitch oral", unite: "unités", min: 0, max: 1_000 },
   {
     cle: "dramatic_analysis",
     libelle: "Analyse dramaturgique",

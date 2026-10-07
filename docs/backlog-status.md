@@ -65,6 +65,7 @@ réels).
 | V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | en production     | —             |
 | V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
 | W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | en production     | —             |
+| X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1929,3 +1930,45 @@ le compte des appels reçus par la base locale, requête par requête, qui l'a m
 par préchargement, comme avant. Écartée aussi : sortir les préchargements du middleware par
 son `matcher`. La session s'y rafraîchit ; un préchargement tombant sur un jeton expiré le
 ferait renouveler là où le nouveau jeton ne peut pas être enregistré.
+
+Livrables d'écriture manquants, décidés le 7 octobre 2026 (lot X) : le sujet se coupe en X1 —
+trois textes sur le chemin de WEAVER — et X2 — les personnages, qui sont une liste en base et
+demanderont le modèle des propositions structurées. **X2 n'est ni cadré ni écrit.**
+
+Lot X1 : la note de réalisation, le pitch développé et le pitch oral suivent le chemin de la
+note d'intention — devis, réservation, tâche, worker, proposition, acceptation —, et
+atterrissent chacun dans un document versionné, créé en brouillon. « Pitch » désigne déjà la
+logline à l'écran : ces deux-là s'appellent **pitch développé** — le projet en une page, pour
+un dossier — et **pitch oral** — un texte à dire, trois minutes environ. La durée d'un pitch
+oral n'est pas mesurée : l'écran dit que c'est une estimation, à vérifier à voix haute.
+
+Prix décidés avec l'utilisateur : 3 unités pour la note de réalisation, 2 pour chaque pitch,
+modifiables depuis « Plans et quotas ». Bornes : 20 000 caractères pour la note, 6 000 pour un
+pitch. Profils `weaver.note_realisation@1`, `weaver.pitch_developpe@1` et
+`weaver.pitch_oral@1`, visant 6 000, 2 500 et 2 700 caractères.
+
+**Chaque livrable a son type de document** — `note_realisation`, `pitch_developpe`,
+`pitch_oral`. L'acceptation réécrit le document le plus récemment modifié de son type : deux
+livrables qui en partageraient un s'écraseraient l'un l'autre. Ces trois valeurs d'énumération
+ne se retirent pas. La migration reprend d'un coup `creer_devis`, `contexte_redaction`,
+`livrer_proposition` et `accepter_proposition`, telles qu'elles étaient, avec trois cas de
+plus ; elle n'ouvre ni table, ni politique, ni droit au worker.
+
+X1 est validé localement le 7 octobre 2026, **sans aucun appel payant** : 15 tests SQL et 14
+tests de l'API de plus, avec un fournisseur factice, de la demande au document versionné ;
+vingt sabotages attrapés un par un — le vingtième avait d'abord échappé : relever en base la
+borne du dépôt d'un pitch ne faisait tomber aucun test, le worker refusant déjà un texte trop
+long avant de le déposer ; un test SQL lit désormais les bornes dans les fonctions en place.
+Rendu réel sur un serveur de production local, 13 points sur 13 : les trois encarts pour la
+porteuse et aucun pour un lecteur, le document que chacun remplacerait, les trois prix au
+barème de l'administration et sur la vitrine.
+
+Une vingtaine de tests existants énuméraient les prix du barème ou les actions, et ont été
+complétés. Sept tests d'architecture relisaient la migration d'un lot antérieur en y cherchant
+tous les livrables actuels : ils ignorent désormais ceux nés après elle, et le bloc qui lit
+l'état courant pointe sur la migration du lot X1.
+
+**Reste à faire en recette, sur accord et dans un budget défini** : un livrable de chaque en
+production. Un fournisseur factice ne prouve pas que la note est bonne ni que le pitch oral
+tient en trois minutes. À la mise en production, la vitrine affichera son repli quelques
+minutes entre la fusion et la poussée de la migration.

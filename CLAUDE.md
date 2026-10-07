@@ -298,19 +298,19 @@ requêtes PostgreSQL l’écrirait dans les journaux.
 Les onze agents font partie de la V1, sans être nécessairement activés en même
 temps. Ce sont des profils internes, traçables par l’exécution et la facturation.
 
-| Agent  | Responsabilité                                              |
-| ------ | ----------------------------------------------------------- |
-| WEAVER | Logline, synopsis court/standard/détaillé, note d’intention |
-| SCRIPT | Traitement, bible, scénario                                 |
-| VOICE  | Dialogues de fiction et séries                              |
-| SCOUT  | Recherche documentaire                                      |
-| GRIOT  | Contexte historique et anthropologique d’Afrique centrale   |
-| ARC    | Analyse dramaturgique, personnages et arcs narratifs        |
-| FRAME  | Découpage technique et focales                              |
-| GEAR   | Matériel, calculs électriques et générateurs                |
-| BOARD  | Storyboard : croquis à l’encre noir et blanc                |
-| FIELD  | Budget, financement et calendrier                           |
-| MATCH  | Financements, scoring et sources                            |
+| Agent  | Responsabilité                                                 |
+| ------ | -------------------------------------------------------------- |
+| WEAVER | Logline, synopsis, notes d’intention et de réalisation, pitchs |
+| SCRIPT | Traitement, bible, scénario                                    |
+| VOICE  | Dialogues de fiction et séries                                 |
+| SCOUT  | Recherche documentaire                                         |
+| GRIOT  | Contexte historique et anthropologique d’Afrique centrale      |
+| ARC    | Analyse dramaturgique, personnages et arcs narratifs           |
+| FRAME  | Découpage technique et focales                                 |
+| GEAR   | Matériel, calculs électriques et générateurs                   |
+| BOARD  | Storyboard : croquis à l’encre noir et blanc                   |
+| FIELD  | Budget, financement et calendrier                              |
+| MATCH  | Financements, scoring et sources                               |
 
 L’utilisateur voit un copilote unifié, pas onze applications séparées.
 
@@ -477,8 +477,14 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   l’éditeur du scénario : le navigateur n’envoie que le texte sélectionné, le serveur le
   retrouve dans le document enregistré et calcule position et empreinte
   (`localiserPassage`, `documents/[documentId]/actions-ia.ts`) ; l’encart refuse d’agir sur
-  un document non enregistré et recharge la page après une acceptation. Prévues :
-  note de réalisation, personnages, pitch oral/écrit.
+  un document non enregistré et recharge la page après une acceptation.
+  Note de réalisation, pitch développé et pitch oral (lot X1, agent WEAVER,
+  actions `direction_note`, `pitch_extended`, `pitch_oral`) : même chemin que la
+  note d’intention, chacun dans son propre type de document — deux livrables qui
+  partageraient un type s’écraseraient à l’acceptation. « Pitch » reste la
+  logline : ne pas renommer ces deux-là. La durée d’un pitch oral est une
+  estimation, que l’écran présente comme telle. Prévus : personnages (lot X2,
+  propositions structurées).
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,

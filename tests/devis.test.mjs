@@ -80,6 +80,9 @@ describe("Formulaire du barème", () => {
     synopsis_standard: "2",
     synopsis_detailed: "3",
     intention_note: "3",
+    direction_note: "3",
+    pitch_extended: "2",
+    pitch_oral: "2",
     dramatic_analysis: "4",
     budget_plan: "6",
     schedule_plan: "3",
@@ -102,6 +105,9 @@ describe("Formulaire du barème", () => {
         synopsis_standard: 2,
         synopsis_detailed: 3,
         intention_note: 3,
+        direction_note: 3,
+        pitch_extended: 2,
+        pitch_oral: 2,
         dramatic_analysis: 4,
         budget_plan: 6,
         schedule_plan: 3,
@@ -443,7 +449,7 @@ describe("Devis et réservations", () => {
       const { data: courante } = await compte.client
         .from("text_unit_rate_versions")
         .select(
-          "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
+          "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
         )
         .order("version_number", { ascending: false })
         .limit(1)

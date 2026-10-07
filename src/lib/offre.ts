@@ -128,6 +128,9 @@ export type BaremePublie = {
   synopsis_standard: number;
   synopsis_detailed: number;
   intention_note: number;
+  direction_note: number;
+  pitch_extended: number;
+  pitch_oral: number;
   dramatic_analysis: number;
   budget_plan: number;
   schedule_plan: number;
@@ -155,6 +158,10 @@ export function uniteTexteEnMots(bareme: BaremePublie): string {
     `${n(bareme.logline)} pour une logline`,
     min === max ? `${n(min)} pour un synopsis` : `de ${n(min)} à ${n(max)} pour un synopsis`,
     `${n(bareme.intention_note)} pour une note d'intention`,
+    `${n(bareme.direction_note)} pour une note de réalisation`,
+    bareme.pitch_extended === bareme.pitch_oral
+      ? `${n(bareme.pitch_extended)} pour un pitch développé ou oral`
+      : `${n(bareme.pitch_extended)} pour un pitch développé, ${n(bareme.pitch_oral)} pour un pitch oral`,
     `${n(bareme.dramatic_analysis)} pour une analyse dramaturgique`,
     `${n(bareme.budget_plan)} pour un budget prévisionnel`,
     `${n(bareme.schedule_plan)} pour un planning prévisionnel`,
@@ -196,7 +203,7 @@ export async function lireBareme(
     const { data, error } = await clientPublic(url, clePubliable)
       .from("text_unit_rate_versions")
       .select(
-        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
+        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
       )
       .order("version_number", { ascending: false })
       .limit(1)

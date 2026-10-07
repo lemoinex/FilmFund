@@ -35,6 +35,9 @@ const LIVRABLES_DOCUMENTS: Readonly<
         | "synopsis_detailed"
         | "dramatic_analysis"
         | "intention_note"
+        | "direction_note"
+        | "pitch_extended"
+        | "pitch_oral"
         | "treatment"
         | "bible"
         | "screenplay"
@@ -47,6 +50,9 @@ const LIVRABLES_DOCUMENTS: Readonly<
   bible: "bible",
   screenplay: "scenario",
   intention_note: "note_intention",
+  direction_note: "note_realisation",
+  pitch_extended: "pitch_developpe",
+  pitch_oral: "pitch_oral",
   dramatic_analysis: "analyse",
 };
 

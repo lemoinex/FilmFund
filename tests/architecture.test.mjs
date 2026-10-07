@@ -779,18 +779,27 @@ describe("Catalogue public", () => {
 });
 
 /*
+ * Livrables ouverts par le lot X1. Plusieurs blocs ci-dessous relisent la
+ * migration d'un lot antérieur pour vérifier qu'elle n'a rien retiré aux
+ * livrables qui existaient alors : elle ne peut pas avoir « gardé » ceux-ci,
+ * nés après elle. C'est le bloc « Livrables des agents », qui lit la dernière
+ * migration, qui vérifie que la base les admet.
+ */
+const LIVRABLES_X1 = ["direction_note", "pitch_extended", "pitch_oral"];
+const avantX1 = (profils) => Object.keys(profils).filter((a) => !LIVRABLES_X1.includes(a));
+
+/*
  * Livrables de WEAVER. Un profil versionné noue une action de tâche à ses
  * consignes ; la base doit admettre cette action, la facturer, accepter la
  * proposition qu'elle produira et savoir où l'appliquer. Un profil sans l'un
  * ou l'autre ferait échouer la demande, ou perdre le texte au dépôt.
  */
 describe("Livrables des agents", () => {
-  // Le devis a été repris en dernier par le planning de FIELD ; le contexte,
-  // par le correctif du lot J2a ; le dépôt et l'acceptation datent de sa
-  // première migration.
-  const DEVIS = "supabase/migrations/20261005170000_field_planning.sql";
-  const CONTEXTE = "supabase/migrations/20261005150000_scenario_contexte.sql";
-  const PROPOSITIONS = "supabase/migrations/20261005130000_script_scenario.sql";
+  // Le lot X1 a repris les quatre fonctions d'un coup : c'est sa migration
+  // qui dit ce que la base admet aujourd'hui.
+  const DEVIS = "supabase/migrations/20261007210000_weaver_realisation_pitch.sql";
+  const CONTEXTE = DEVIS;
+  const PROPOSITIONS = DEVIS;
 
   /** Corps de la fonction nommée, jusqu'à la suivante. */
   const corps = (migration, nom) => {
@@ -986,7 +995,7 @@ describe("Dialogues de VOICE", () => {
   it("le devis repris garde chaque livrable déjà ouvert", async () => {
     const { PROFILS_FIELD, PROFILS_IA } = await import("../worker/src/ia/profils.ts");
     const devis = corps("creer_devis");
-    for (const action of [...Object.keys(PROFILS_IA), ...Object.keys(PROFILS_FIELD)]) {
+    for (const action of [...avantX1(PROFILS_IA), ...Object.keys(PROFILS_FIELD)]) {
       assert.ok(devis.includes(`when '${action}' then`), action);
     }
     // Le scénario garde sa séquence unique et la borne de sa description.
@@ -994,7 +1003,7 @@ describe("Dialogues de VOICE", () => {
     assert.match(devis, /not between 1 and 1200/);
     // Les propositions de textes gardent leurs bornes et leurs atterrissages.
     const acceptation = corps("accepter_proposition");
-    for (const action of Object.keys(PROFILS_IA)) {
+    for (const action of avantX1(PROFILS_IA)) {
       assert.match(acceptation, new RegExp(`when '${action}' then v_max :=`), action);
     }
     assert.match(acceptation, /else v_ancien \|\| E'\\n\\n' \|\| v_final/);
@@ -1033,7 +1042,7 @@ describe("Livrables structurés", () => {
       assert.ok(!(action in PROFILS_IA), action);
     }
     // La migration de FIELD reprend le devis : elle doit garder les autres.
-    for (const action of Object.keys(PROFILS_IA)) {
+    for (const action of avantX1(PROFILS_IA)) {
       assert.ok(enBase.includes(action), action);
     }
   });
@@ -1168,7 +1177,7 @@ describe("Écrans des propositions", () => {
 
   it("la borne de l'écran est celle que la base applique à l'acceptation", async () => {
     const { LIVRABLES_IA, ORDRE_LIVRABLES } = await import("../src/lib/propositions.ts");
-    const migration = lire("supabase/migrations/20261005130000_script_scenario.sql");
+    const migration = lire("supabase/migrations/20261007210000_weaver_realisation_pitch.sql");
     const debut = migration.indexOf("create or replace function public.accepter_proposition");
     assert.ok(debut >= 0, "accepter_proposition introuvable");
     const acceptation = migration.slice(debut);
@@ -1450,7 +1459,7 @@ describe("Découpage proposé par FRAME", () => {
 
     // Le devis repris garde chaque livrable déjà ouvert, et ses gardes.
     for (const action of [
-      ...Object.keys(PROFILS_IA),
+      ...avantX1(PROFILS_IA),
       ...Object.keys(PROFILS_FIELD),
       ...Object.keys(PROFILS_VOICE),
     ]) {
@@ -1652,7 +1661,7 @@ describe("Matériel proposé par GEAR", () => {
       assert.match(profil.id, /^gear\.[a-z_]+@\d+$/, action);
     }
     for (const action of [
-      ...Object.keys(PROFILS_IA),
+      ...avantX1(PROFILS_IA),
       ...Object.keys(PROFILS_FIELD),
       ...Object.keys(PROFILS_VOICE),
       ...Object.keys(PROFILS_FRAME),
@@ -1965,7 +1974,7 @@ describe("Vignettes de BOARD", () => {
       /when 'storyboard_image' then[\s\S]*?v_unite := 'image';\s+v_quantite := 1;[\s\S]*?s\.project_id = p_project_id/,
     );
     for (const action of [
-      ...Object.keys(PROFILS_IA),
+      ...avantX1(PROFILS_IA),
       ...Object.keys(PROFILS_FIELD),
       ...Object.keys(PROFILS_VOICE),
       ...Object.keys(PROFILS_FRAME),
@@ -2145,7 +2154,7 @@ describe("Recherche de SCOUT", () => {
     const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
     for (const action of [
-      ...Object.keys(profils.PROFILS_IA),
+      ...avantX1(profils.PROFILS_IA),
       ...Object.keys(profils.PROFILS_FIELD),
       ...Object.keys(profils.PROFILS_VOICE),
       ...Object.keys(profils.PROFILS_FRAME),
@@ -2308,7 +2317,7 @@ describe("Contexte de GRIOT", () => {
     const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(code)?.[1] ?? "";
     const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
     for (const action of [
-      ...Object.keys(profils.PROFILS_IA),
+      ...avantX1(profils.PROFILS_IA),
       ...Object.keys(profils.PROFILS_FIELD),
       ...Object.keys(profils.PROFILS_VOICE),
       ...Object.keys(profils.PROFILS_FRAME),

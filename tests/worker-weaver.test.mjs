@@ -163,7 +163,7 @@ describe("WEAVER : logline", () => {
     return { travail, proposition, reglement, couts, confirmes };
   }
 
-  it("sait exécuter les cinq livrables de WEAVER, et eux seuls", () => {
+  it("sait exécuter les livrables de WEAVER, et eux seuls", () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
     assert.deepEqual(Object.keys(executeursWeaver(base, fournisseur)), Object.keys(PROFILS_WEAVER));
     assert.deepEqual(Object.keys(PROFILS_WEAVER), [
@@ -172,6 +172,9 @@ describe("WEAVER : logline", () => {
       "synopsis_standard",
       "synopsis_detailed",
       "intention_note",
+      "direction_note",
+      "pitch_extended",
+      "pitch_oral",
     ]);
   });
 
