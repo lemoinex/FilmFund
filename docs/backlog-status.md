@@ -61,6 +61,7 @@ réels).
 | S2     | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —             |
 | T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | en production     | —             |
 | U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé en recette | —             |
+| V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1716,3 +1717,33 @@ maturité » (`/administration/ponderations`) : neuf entiers dont le total fait 
 par l'action puis par la base ; la version s'applique aussitôt à tous les projets, puisque
 rien n'est stocké. Aucune version n'a encore été publiée en production depuis cet écran : la
 première publication y sera un changement réel, à relire au journal.
+
+Administration des comptes, décidée le 7 octobre 2026 (lot V) : le sujet se coupe en V1 —
+consulter les comptes et changer un rôle — et V2 — suspendre un compte —, qui demande un audit
+à part : beaucoup d'actions passent par des fonctions `security definer`, qu'une politique RLS
+ne suffit pas à fermer. **V2 n'est ni cadré ni écrit.**
+
+Lot V1, sans IA : une seule fonction de lecture, `comptes_administration()`, réservée aux
+administrateurs, rend ce que `profiles` ne porte pas — l'adresse, sa confirmation, la date de
+création, la dernière connexion — avec l'essentiel du profil ; cent comptes au plus par appel,
+et un texte cherché qui n'est jamais lu comme un motif. Aucune table nouvelle. Le changement
+de rôle reste celui de `definir_role()`, livrée et journalisée depuis le premier jour : l'écran
+n'écrit le rôle par aucun autre chemin, et l'adresse qu'elle demande est relue en base, jamais
+reçue du navigateur. Écran : rubrique « Utilisateurs » (`/administration/utilisateurs`), liste
+par cinquante, recherche par adresse ou par nom, fiche d'un compte (compte, profil, studio
+personnel et plan, projets portés, rôle). Un rôle se change en deux clics, le premier disant ce
+qu'il ouvre ou retire.
+
+V1 est validé localement le 7 octobre 2026 : 18 tests SQL et 17 tests de l'API de plus, quinze
+sabotages attrapés un par un — le quinzième avait d'abord échappé : retirer le contrôle du rôle
+de la fiche ne faisait tomber aucun test, celui de l'architecture se contentant d'un
+`notFound()` quelque part dans la page ; un test du lot le vérifie désormais. Rendu réel
+contrôlé sur un serveur de production local, 29 points sur 29 sous quatre situations — visiteur,
+membre, administrateur, mode privé —, et l'action de changement de rôle rejouée telle que le
+navigateur l'envoie, 14 points sur 14 : appel forgé par un membre, saisies refusées, gel du mode
+privé, promotion puis retour, chacun relu en base et au journal. **Aucun contrôle au
+navigateur** : ni l'aspect des pages, ni le téléphone, ni les deux clics eux-mêmes.
+
+**La recette en production ne pourra porter que sur la consultation.** Le mode privé gèle les
+rôles pour tous, administrateurs compris : tant qu'il est actif, la fiche le dit et ne propose
+aucun changement. Le changement de rôle ne sera éprouvé en conditions réelles qu'à sa levée.

@@ -10,6 +10,7 @@ import {
   ClapperIcon,
   DocumentIcon,
   KanbanIcon,
+  PeopleIcon,
   QuillIcon,
   ShieldIcon,
   SparkIcon,
@@ -44,6 +45,7 @@ const RUBRIQUES: Rubrique[] = [
  */
 const RUBRIQUES_ADMINISTRATION: Rubrique[] = [
   { libelle: "Journal d'administration", icone: ShieldIcon, href: "/administration/journal" },
+  { libelle: "Utilisateurs", icone: PeopleIcon, href: "/administration/utilisateurs" },
   { libelle: "Plans et quotas", icone: TagIcon, href: "/administration/plans" },
   { libelle: "Score de maturité", icone: CheckIcon, href: "/administration/ponderations" },
   // Nommée autrement que la rubrique des équipes : un administrateur voit les deux.
