@@ -62,6 +62,7 @@ réels).
 | T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | en production     | —             |
 | U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé en recette | —             |
 | V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | en production     | —             |
+| V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1766,3 +1767,36 @@ du lot, est gelé par le mode privé et ne s'éprouvera en réel qu'à sa levée
 plus : la recherche et la pagination, faute de comptes ; le message du gel des rôles, que la
 fiche doit afficher à la place du bouton, non confirmé explicitement ; l'aspect des pages et le
 téléphone.
+
+Suspension d'un compte, décidée le 7 octobre 2026 (lot V2, découpé en V2a — base — et V2b —
+écran) : un compte suspendu garde ses données et peut encore se connecter, mais ne lit ni
+n'écrit plus rien ; le rétablir lui rend tout. L'état vit dans une table à part
+(`account_suspensions`, une ligne par compte suspendu), et non dans `profiles`, que chaque
+compte modifie. Le motif est obligatoire, lisible des seuls administrateurs, et entre au
+journal. Le mode privé ne gèle pas la suspension.
+
+**Pourquoi pas une politique de plus par table** : trente-quatre fonctions `security definer`
+sont appelables par un compte, et la RLS ne les ferme pas. La suspension se joue en trois
+endroits, un par chemin d'accès : l'API, par une fonction que PostgREST appelle avant chaque
+requête (`pgrst.db_pre_request`, `controle_avant_requete()`, refus sous le code `CS001`) ; le
+stockage, que ce contrôle ne couvre pas, par une politique restrictive sur `storage.objects` ;
+le worker, par `peut_engager_unites_pour()`, déjà consultée à la réclamation d'une tâche.
+Garde-fous : un administrateur ne se suspend pas et ne peut pas être suspendu, et un compte
+suspendu ne devient pas administrateur — l'administration ne peut pas se fermer la porte.
+
+Ce que la suspension ne fait pas : elle ne ferme pas la session chez Supabase Auth, elle
+n'interrompt pas une tâche déjà en cours, et un lien signé déjà émis vers un fichier reste
+valable jusqu'à son expiration.
+
+V2a est validé localement le 7 octobre 2026 : 24 tests SQL et 12 tests de l'API de plus,
+dix-sept sabotages attrapés un par un, dont le retrait du réglage `db_pre_request` lui-même.
+**Un défaut a été attrapé en écrivant le lot** : dans sa première forme, le contrôle refusait
+tout visiteur — PostgreSQL vérifie le droit d'exécuter une fonction dès qu'il prépare
+l'expression qui la nomme, même si elle n'est jamais évaluée —, et la vitrine serait tombée
+avec lui. Corrigé avant tout commit ; un test de l'API et un test SQL le tiennent.
+
+**V2a n'a pas d'écran** : la suspension ne se fait que par l'API, sous une session
+d'administrateur. Un compte suspendu voit aujourd'hui les pages de l'application échouer, sans
+message qui le lui dise : c'est l'objet de V2b. **En production, il n'y a personne à
+suspendre** — deux comptes, tous deux administrateurs : la recette attendra la levée du mode
+privé. Retour d'urgence du contrôle de l'API : `docs/mode-prive.md`.

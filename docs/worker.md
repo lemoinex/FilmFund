@@ -473,6 +473,16 @@ Une ligne JSON par événement, sans contenu d'œuvre, paramètre ni secret.
 | `purge_exports_impossible`       | La purge a échoué : elle sera retentée à l'heure suivante                                        |
 | `arret_demande`, `worker_arrete` | Arrêt propre, après la tâche en cours                                                            |
 
+## Tâche d'un compte suspendu (lot V2a)
+
+Le worker ne passe pas par l'API : le contrôle qui refuse tout à un compte suspendu ne le
+concerne pas. C'est `peut_engager_unites_pour()`, consultée par `reclamer_travail()`, qui tient
+ce verrou. Une tâche **en attente** dont l'auteur est suspendu n'est pas exécutée : elle est
+close « Droits de l'auteur retirés avant l'exécution », comme pour une adhésion révoquée, et
+ses unités sont rendues. Une tâche **déjà en cours** se termine : son coût est engagé chez le
+fournisseur. La proposition qu'elle dépose attend le rétablissement du compte, ou la décision
+d'un autre membre de l'équipe.
+
 ## Tâche « à rapprocher »
 
 L'issue d'un essai est inconnue : le fournisseur a peut-être travaillé. Elle n'est jamais

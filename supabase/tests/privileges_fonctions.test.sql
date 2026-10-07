@@ -40,6 +40,7 @@ select is_empty(
         'is_admin',
         'definir_role',
         'comptes_administration',
+        'compte_suspendu',
         'acces_au_projet',
         'email_confirme_courant',
         'equipe_du_projet',
