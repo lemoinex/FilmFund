@@ -60,6 +60,7 @@ réels).
 | S1     | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —             |
 | S2     | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —             |
 | T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | validé localement | —             |
+| U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1580,6 +1581,34 @@ Vérifié en local par le rendu réel sous quatre sessions — porteuse, lecteur
 projet, administratrice — sur des données fictives ; **pas au navigateur** : ni l'aspect, ni
 le téléphone n'ont été vus. La page étant servie en flux, le bloc des échéances arrive en
 plusieurs fragments : un contrôle qui ne lirait que le premier se tromperait.
+
+U1, écrit le 7 octobre 2026, **sans IA, sans migration, sans dépendance** : depuis l'onglet
+« Opportunités » d'un projet, « Préparer une candidature » ouvre le formulaire des
+financements, rempli d'après l'opportunité. Décision de l'utilisateur : pas de colonne de lien,
+la candidature est une copie datée qui vit ensuite sa vie.
+
+- **Un lien n'écrit rien** : il ouvre le formulaire livré, et c'est son envoi, par l'action et
+  les contrôles existants, qui crée la candidature. L'action serveur n'a pas changé.
+- **Ce qui se reprend** : l'organisme, le nom (dans « programme »), la date limite si elle est
+  à venir, la devise si le budget la connaît, et la source avec son jour de lecture, en note.
+- **Ce qui ne se reprend pas** : le montant demandé — celui d'une opportunité est celui de
+  l'aide, montré en repère à côté du champ, qui reste vide — ; et le type, sauf pour une
+  résidence ou une coproduction, qui ont leur équivalent exact. Pour le reste, le type se
+  choisit : un « fonds » peut être public ou privé.
+- **Même filtre que les écrans des équipes** : une démonstration, une opportunité non vérifiée
+  ou expirée, un identifiant inconnu ou mal formé laissent le formulaire vide, sans erreur —
+  y compris pour un administrateur.
+- **Le bouton ne se montre qu'à qui gère le budget** ; un lecteur lit la comparaison sans lui,
+  et la page des financements lui reste introuvable.
+
+Limites assumées : sans lien conservé, rien n'empêche de préparer deux fois la même
+candidature ; après un ajout, l'adresse garde l'opportunité et le formulaire se présente de
+nouveau rempli — « Vider le formulaire » l'efface.
+
+Vérifié en local par le rendu réel sous trois sessions — porteuse, lecteur, administratrice —
+sur des opportunités fictives : champs repris, démonstration et expirée sans effet, aucune
+candidature créée par la seule ouverture des liens. **Non exercé : l'envoi du formulaire
+prérempli lui-même**, qui passe par l'action déjà livrée, et tout contrôle au navigateur.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

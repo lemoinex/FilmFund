@@ -32,4 +32,9 @@ export function estStatutFinancement(valeur: string): valeur is FundingStatus {
   return Object.hasOwn(STATUTS_FINANCEMENT, valeur);
 }
 
-export { calculerPlanFinancement, joursAvant } from "./financements-calculs";
+export {
+  calculerPlanFinancement,
+  joursAvant,
+  preremplirCandidature,
+  type CandidaturePreremplie,
+} from "./financements-calculs";

@@ -508,6 +508,13 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   non une note** : ni pourcentage, ni score sur 100. Le montant n'est pas un
   critère, et la comparaison ne lit ni budget ni financement. Ne pas créer un
   second calcul : étendre celui-ci.
+- Candidature depuis une opportunité (lot U1, sans IA, sans migration) : le bouton
+  « Préparer une candidature » de l'onglet « Opportunités » ouvre le formulaire
+  des financements, prérempli (`preremplirCandidature`, `?opportunite=<id>`).
+  Un lien n'écrit rien ; seule l'action livrée crée la candidature. Le montant
+  demandé ne se reprend jamais, le type seulement pour une résidence ou une
+  coproduction. Aucune colonne ne relie la candidature à l'opportunité : ne pas
+  en ajouter sans décision.
 - Veille des opportunités (lot L6, agent MATCH, action `opportunity_watch`,
   profil `match.veille@1`) : livrée. Sur le socle de SCOUT — même collecte
   (`collecter`), mêmes coûts —, MATCH relève dans les extraits rendus par le

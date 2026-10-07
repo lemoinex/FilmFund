@@ -12,6 +12,7 @@ import {
   PROGRAMME_MAX,
   STATUTS_FINANCEMENT,
   TYPES_FINANCEMENT,
+  type CandidaturePreremplie,
 } from "@/lib/financements";
 import type { FundingKind, FundingStatus } from "@/lib/supabase/types";
 
@@ -39,17 +40,22 @@ export type CandidatureEditable = {
  * Le statut, le montant accordé et les pièces du dossier ne se renseignent
  * qu'à la modification : à la création, une candidature est « à préparer »
  * et rien ne lui a encore été accordé.
+ *
+ * `prerempli` : valeurs reprises d'une opportunité du catalogue. Elles ne
+ * font que remplir les champs ; rien n'est enregistré avant l'envoi.
  */
 export function FormulaireCandidature({
   projetId,
   deviseParDefaut,
   candidature,
+  prerempli,
   documents = [],
   pieces = [],
 }: {
   projetId: string;
   deviseParDefaut?: string;
   candidature?: CandidatureEditable;
+  prerempli?: CandidaturePreremplie;
   documents?: { id: string; title: string }[];
   pieces?: string[];
 }) {
@@ -61,7 +67,10 @@ export function FormulaireCandidature({
   const message = useMessageFormulaire(etat, formulaire);
 
   const p = candidature ? `candidature-${candidature.id}` : "nouvelle-candidature";
-  const devise = candidature?.currency ?? deviseParDefaut ?? "";
+  const devise = candidature?.currency ?? prerempli?.currency ?? deviseParDefaut ?? "";
+  // Une opportunité sans équivalent exact laisse le type à choisir : le
+  // formulaire ne propose alors aucune valeur par défaut.
+  const typeAChoisir = !candidature && prerempli !== undefined && prerempli.kind === null;
 
   return (
     <form ref={formulaire} action={action} className="space-y-5">
@@ -77,7 +86,7 @@ export function FormulaireCandidature({
           id={`${p}-organisme`}
           required
           maxLength={ORGANISME_MAX}
-          defaultValue={candidature?.funder}
+          defaultValue={candidature?.funder ?? prerempli?.funder}
           placeholder="Fonds, chaîne, coproducteur…"
         />
         <Field
@@ -85,7 +94,7 @@ export function FormulaireCandidature({
           name="programme"
           id={`${p}-programme`}
           maxLength={PROGRAMME_MAX}
-          defaultValue={candidature?.program}
+          defaultValue={candidature?.program ?? prerempli?.program}
           placeholder="Aide à l'écriture, au développement…"
         />
       </div>
@@ -98,9 +107,17 @@ export function FormulaireCandidature({
           <select
             id={`${p}-type`}
             name="type"
-            defaultValue={candidature?.kind ?? "aide_publique"}
+            required={typeAChoisir}
+            defaultValue={
+              candidature?.kind ?? (typeAChoisir ? "" : (prerempli?.kind ?? "aide_publique"))
+            }
             className={CLASSES_CHAMP}
           >
+            {typeAChoisir ? (
+              <option value="" disabled>
+                Choisissez
+              </option>
+            ) : null}
             {Object.entries(TYPES_FINANCEMENT).map(([valeur, libelle]) => (
               <option key={valeur} value={valeur}>
                 {libelle}
@@ -141,7 +158,7 @@ export function FormulaireCandidature({
             id={`${p}-date_limite`}
             name="date_limite"
             type="date"
-            defaultValue={candidature?.deadline ?? ""}
+            defaultValue={candidature?.deadline ?? prerempli?.deadline ?? ""}
             className={CLASSES_CHAMP}
           />
         </div>
@@ -226,7 +243,7 @@ export function FormulaireCandidature({
           name="notes"
           rows={3}
           maxLength={NOTES_FINANCEMENT_MAX}
-          defaultValue={candidature?.notes}
+          defaultValue={candidature?.notes ?? prerempli?.notes}
           className={`${CLASSES_CHAMP} resize-y leading-relaxed`}
         />
       </div>

@@ -5,14 +5,16 @@ import { notFound } from "next/navigation";
 import { SparkIcon } from "@/components/icons";
 import { BarreAvancement } from "@/components/ui/avancement";
 import { BoutonConfirme } from "@/components/ui/confirmation";
-import { enCentimes, formaterMontant } from "@/lib/budgets";
+import { DEVISES, enCentimes, formaterMontant } from "@/lib/budgets";
 import {
   calculerPlanFinancement,
   joursAvant,
+  preremplirCandidature,
   ORDRE_STATUTS,
   STATUTS_FINANCEMENT,
   TYPES_FINANCEMENT,
 } from "@/lib/financements";
+import { echeanceDe, montantEnClair, STATUTS_VISIBLES } from "@/lib/opportunites";
 import { aujourdhui, formaterJour } from "@/lib/planning";
 import { createClient } from "@/lib/supabase/server";
 import type { FundingStatus } from "@/lib/supabase/types";
@@ -26,6 +28,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const jourLong = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
+
 const TONS_STATUT: Record<FundingStatus, string> = {
   a_preparer: "bg-surface-hover text-secondary",
   deposee: "border border-gold/40 text-gold",
@@ -38,10 +44,10 @@ export default async function FinancementsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ candidature?: string }>;
+  searchParams: Promise<{ candidature?: string; opportunite?: string }>;
 }) {
   const { id } = await params;
-  const { candidature: enModification } = await searchParams;
+  const { candidature: enModification, opportunite: opportuniteId } = await searchParams;
   const supabase = await createClient();
 
   const [
@@ -73,6 +79,29 @@ export default async function FinancementsPage({
   if (!projet || !autorise) {
     notFound();
   }
+
+  // Candidature préparée depuis une opportunité du catalogue (lot U1). Lue
+  // après le contrôle des droits, avec le filtre des écrans des équipes :
+  // une démonstration ou une opportunité non vérifiée ne préremplit rien,
+  // même pour un administrateur. Un identifiant inconnu, mal formé ou une
+  // opportunité expirée laisse le formulaire vide, sans erreur.
+  const jourCourant = aujourdhui();
+  const { data: opportuniteLue } =
+    typeof opportuniteId === "string" && UUID.test(opportuniteId)
+      ? await supabase
+          .from("funding_opportunities")
+          .select(
+            "id, name, organization, category, budget_min, budget_max, currency, deadline, source_url, collected_on, status",
+          )
+          .eq("id", opportuniteId)
+          .in("status", STATUTS_VISIBLES)
+          .maybeSingle()
+      : { data: null };
+  const reprise =
+    opportuniteLue && echeanceDe(opportuniteLue, jourCourant) !== "passee" ? opportuniteLue : null;
+  const prerempli = reprise
+    ? preremplirCandidature(reprise, Object.keys(DEVISES), jourCourant)
+    : undefined;
 
   const liste = candidatures ?? [];
   const totalBudget = (lignes ?? []).reduce((somme, l) => somme + enCentimes(l.total ?? 0), 0);
@@ -224,8 +253,49 @@ export default async function FinancementsPage({
         <h2 id="ajout-candidature" className="font-serif text-2xl leading-tight">
           Nouvelle candidature
         </h2>
+        {reprise && prerempli ? (
+          <div className="border-app-line bg-surface mt-5 rounded-xl border p-5 text-sm">
+            <p className="font-medium">
+              Préparée d&apos;après « {reprise.name} », du catalogue des opportunités
+            </p>
+            <p className="text-secondary mt-2 text-xs leading-relaxed text-pretty">
+              L&apos;organisme, le programme{prerempli.deadline ? ", la date limite" : ""}
+              {prerempli.currency ? ", la devise" : ""} et la note de source sont repris de sa fiche
+              {reprise.collected_on
+                ? `, lue à sa source le ${jourLong.format(new Date(`${reprise.collected_on}T00:00:00Z`))}`
+                : ""}
+              . Elle a pu changer depuis : vérifiez sur la source avant d&apos;enregistrer. Rien
+              n&apos;est enregistré tant que vous n&apos;avez pas ajouté la candidature.
+            </p>
+            <p className="text-secondary mt-2 text-xs leading-relaxed text-pretty">
+              Montant de l&apos;aide annoncé : {montantEnClair(reprise)} Le montant demandé reste à
+              saisir : ce n&apos;est pas le même chiffre.
+              {prerempli.kind === null ? " Le type de financement reste à choisir." : ""}
+            </p>
+            <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+              <Link
+                href={`/opportunites/${reprise.id}`}
+                className="text-gold hover:text-gold-bright underline-offset-2 hover:underline"
+              >
+                Relire la fiche et sa source
+              </Link>
+              <Link
+                href={`/projets/${projet.id}/financements#ajout-candidature`}
+                className="text-secondary hover:text-light transition-colors"
+              >
+                Vider le formulaire
+              </Link>
+            </p>
+          </div>
+        ) : null}
         <div className="mt-6">
-          <FormulaireCandidature projetId={projet.id} deviseParDefaut={budget?.currency} />
+          {/* Clé : passer d'une opportunité à l'autre remonte le formulaire avec ses valeurs. */}
+          <FormulaireCandidature
+            key={reprise?.id ?? "vide"}
+            projetId={projet.id}
+            deviseParDefaut={budget?.currency}
+            prerempli={prerempli}
+          />
         </div>
       </section>
     </div>

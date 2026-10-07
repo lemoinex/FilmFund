@@ -208,7 +208,7 @@ export default async function OpportunitesProjetPage({
                 </div>
               </dl>
 
-              <p className="mt-4 text-xs">
+              <p className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs">
                 <Link
                   href={`/opportunites/${opportunite.id}`}
                   className="text-gold hover:text-gold-bright underline-offset-2 hover:underline"
@@ -216,6 +216,16 @@ export default async function OpportunitesProjetPage({
                   Exigences, source et candidature
                   <span className="sr-only"> : {opportunite.name}</span>
                 </Link>
+                {/* Les financements ne s'ouvrent qu'à qui gère le budget : le lien aussi. */}
+                {budget === true ? (
+                  <Link
+                    href={`/projets/${id}/financements?opportunite=${opportunite.id}#ajout-candidature`}
+                    className="text-gold hover:text-gold-bright underline-offset-2 hover:underline"
+                  >
+                    Préparer une candidature
+                    <span className="sr-only"> à {opportunite.name}</span>
+                  </Link>
+                ) : null}
               </p>
             </li>
           ))}
