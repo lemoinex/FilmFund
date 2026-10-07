@@ -12,9 +12,18 @@ import {
 } from "@/components/icons";
 import { BarreAvancement } from "@/components/ui/avancement";
 import { Couverture } from "@/components/ui/couverture";
+import { calculerCompatibilite, classerParCompatibilite, estAEtudier } from "@/lib/compatibilite";
 import { compterMots, libelleMots, STATUTS_DOCUMENT } from "@/lib/documents";
 import { ROLES_PROJET } from "@/lib/equipes";
+import { GENRES } from "@/lib/fiche";
 import { chargerMesProjets, type ResumeProjet } from "@/lib/mes-projets";
+import {
+  echeanceDe,
+  filtrerCatalogue,
+  LIMITE_CATALOGUE,
+  lireFiltres,
+  STATUTS_VISIBLES,
+} from "@/lib/opportunites";
 import {
   aujourdhui,
   calculerAvancement,
@@ -26,10 +35,25 @@ import { salutation } from "@/lib/profils";
 import { ETAPES, FORMATS } from "@/lib/projets";
 import { liensSignes } from "@/lib/supabase/liens-images";
 import { createClient } from "@/lib/supabase/server";
+import {
+  compterDansHorizon,
+  ECHEANCES_PRESENTEES,
+  echeancesAVenir,
+  HORIZON_ECHEANCES_JOURS,
+  LIMITE_LECTURE_ECHEANCES,
+  LIMITE_PROJETS_COMPTES,
+  nombreBorne,
+  OPPORTUNITES_PRESENTEES,
+  PROJETS_PRESENTES,
+  type Echeance,
+} from "@/lib/tableau-de-bord";
 
 import { chargerScores, EtiquetteMaturite, ScoreMaturite } from "../projets/[id]/maturite";
 import { OngletsProjet } from "../projets/[id]/onglets";
+import { ChiffresCles } from "./chiffres";
+import { ProchainesEcheances } from "./echeances";
 import { InvitationsRecues } from "./invitations";
+import { OpportunitesAEtudier, type OpportuniteAEtudier } from "./opportunites";
 
 export const metadata: Metadata = {
   title: "Tableau de bord — filmfundAfrica",
@@ -52,18 +76,24 @@ export default async function TableauDeBord() {
   // Projets possédés et partagés, jamais ceux que l'administration rend
   // visibles : ce tableau de bord est celui du travail de l'utilisateur.
   const [{ possedes, partages }, { data: profil }] = await Promise.all([
-    chargerMesProjets(supabase, user.id, { limite: 5 }),
+    chargerMesProjets(supabase, user.id, { limite: LIMITE_PROJETS_COMPTES }),
     supabase.from("profiles").select("first_name, display_name").eq("id", user.id).maybeSingle(),
   ]);
-  const projets = [...possedes, ...partages].sort((a, b) =>
-    b.updated_at.localeCompare(a.updated_at),
-  );
+  // Tous comptés, cinq présentés : les chiffres portent sur l'ensemble.
+  const tous = [...possedes, ...partages].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  const projets = tous.slice(0, PROJETS_PRESENTES);
 
   // Le projet mis en avant est le dernier modifié : celui sur lequel on
   // travaille, sans qu'aucune préférence ne soit stockée.
   const [projet, ...autres] = projets;
 
-  const visuels = projet ? await chargerVisuels(supabase, projet.id) : null;
+  const [visuels, accueil] = projet
+    ? await Promise.all([
+        chargerVisuels(supabase, projet.id),
+        chargerAccueil(supabase, tous, projet),
+      ])
+    : [null, null];
+  const borneAtteinte = tous.length >= LIMITE_PROJETS_COMPTES;
 
   return (
     <div className="flex min-h-full">
@@ -72,6 +102,39 @@ export default async function TableauDeBord() {
           {salutation(profil)}
           <span className="sr-only"> — tableau de bord</span>
         </h1>
+
+        {projet && accueil ? (
+          <ChiffresCles
+            chiffres={[
+              {
+                titre: "Projets",
+                valeur: nombreBorne(tous.length, LIMITE_PROJETS_COMPTES),
+                precision: "Portés par vous ou partagés avec vous",
+                href: "/projets",
+              },
+              {
+                titre: "Documents",
+                valeur: accueil.documents === null ? "Non disponible" : String(accueil.documents),
+                precision: borneAtteinte
+                  ? `Dans vos ${LIMITE_PROJETS_COMPTES} projets les plus récents, brouillons compris`
+                  : "Dans ces projets, brouillons compris",
+                href: "/documents",
+              },
+              {
+                titre: "Opportunités à étudier",
+                valeur: String(accueil.nombreAEtudier),
+                precision: `Pour « ${projet.title} »`,
+                href: `/projets/${projet.id}/opportunites`,
+              },
+              {
+                titre: "Échéances",
+                valeur: String(accueil.dansHorizon),
+                precision: `Dans les ${HORIZON_ECHEANCES_JOURS} jours`,
+                href: "#echeances-titre",
+              },
+            ]}
+          />
+        ) : null}
 
         <div className="border-app-line mt-6 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <p className="text-secondary text-sm font-medium">Mon projet</p>
@@ -85,7 +148,20 @@ export default async function TableauDeBord() {
         <InvitationsRecues />
 
         {projet ? (
-          <ProjetEnCours projet={projet} autres={autres} couverture={visuels?.couverture ?? null} />
+          <ProjetEnCours projet={projet} autres={autres} couverture={visuels?.couverture ?? null}>
+            {accueil ? (
+              <>
+                <OpportunitesAEtudier
+                  projetId={projet.id}
+                  titreProjet={projet.title}
+                  opportunites={accueil.aEtudier}
+                  total={accueil.nombreAEtudier}
+                  catalogueVide={accueil.catalogueVide}
+                />
+                <ProchainesEcheances echeances={accueil.echeances} aujourdhui={accueil.jour} />
+              </>
+            ) : null}
+          </ProjetEnCours>
         ) : (
           <AucunProjet />
         )}
@@ -139,14 +215,147 @@ async function chargerVisuels(
   };
 }
 
+/**
+ * Ce que les chiffres et les deux blocs du lot T1 lisent, en une passe.
+ *
+ * Tout passe par la RLS de l'utilisateur : une candidature de financement ne
+ * remonte que pour un projet dont il gère le budget, parce que la base ne lui
+ * rend que celles-là. Le catalogue est filtré comme sur les écrans des
+ * équipes : jamais une démonstration, même pour un administrateur.
+ */
+async function chargerAccueil(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tous: ResumeProjet[],
+  projet: ResumeProjet,
+) {
+  const ids = tous.map((p) => p.id);
+  const titres = new Map(tous.map((p) => [p.id, p.title]));
+  const jour = aujourdhui();
+
+  const [
+    { count: documents },
+    { data: etapes },
+    { data: candidatures },
+    { data: fiche },
+    { data: catalogue },
+  ] = await Promise.all([
+    // Nombre seul, sans rapatrier les documents.
+    supabase
+      .from("project_documents")
+      .select("id", { count: "exact", head: true })
+      .in("project_id", ids),
+    supabase
+      .from("project_milestones")
+      .select("project_id, title, due_on")
+      .in("project_id", ids)
+      .neq("status", "termine")
+      .gte("due_on", jour)
+      .order("due_on")
+      .limit(LIMITE_LECTURE_ECHEANCES),
+    // À préparer seulement : une candidature déposée n'a plus d'échéance à tenir.
+    supabase
+      .from("project_fundings")
+      .select("project_id, funder, program, deadline")
+      .in("project_id", ids)
+      .eq("status", "a_preparer")
+      .gte("deadline", jour)
+      .order("deadline")
+      .limit(LIMITE_LECTURE_ECHEANCES),
+    supabase.from("projects").select("format, genre, countries").eq("id", projet.id).maybeSingle(),
+    supabase
+      .from("funding_opportunities")
+      .select(
+        "id, name, organization, category, description, countries, formats, genres, budget_min, budget_max, currency, deadline, status",
+      )
+      .in("status", STATUTS_VISIBLES)
+      .order("updated_at", { ascending: false })
+      .limit(LIMITE_CATALOGUE),
+  ]);
+
+  // Même classement que l'onglet « Opportunités » du projet, réduit à ce
+  // que rien ne contredit.
+  const sansFiltre = lireFiltres(() => undefined, { formats: FORMATS, genres: GENRES });
+  const ouvertes = filtrerCatalogue(catalogue ?? [], sansFiltre, jour).filter(
+    (opportunite) => echeanceDe(opportunite, jour) !== "passee",
+  );
+  const aEtudier: OpportuniteAEtudier[] = fiche
+    ? classerParCompatibilite(
+        ouvertes.map((opportunite) => ({
+          ...opportunite,
+          compatibilite: calculerCompatibilite(fiche, opportunite),
+        })),
+      ).filter((opportunite) => estAEtudier(opportunite.compatibilite))
+    : [];
+
+  const echeances: Echeance[] = echeancesAVenir(
+    [
+      ...(etapes ?? []).flatMap((etape) =>
+        etape.due_on
+          ? [
+              {
+                nature: "etape" as const,
+                jour: etape.due_on,
+                titre: etape.title,
+                contexte: titres.get(etape.project_id) ?? "",
+                href: `/projets/${etape.project_id}/planning`,
+              },
+            ]
+          : [],
+      ),
+      ...(candidatures ?? []).flatMap((candidature) =>
+        candidature.deadline
+          ? [
+              {
+                nature: "candidature" as const,
+                jour: candidature.deadline,
+                titre: candidature.program
+                  ? `${candidature.funder} — ${candidature.program}`
+                  : candidature.funder,
+                contexte: titres.get(candidature.project_id) ?? "",
+                href: `/projets/${candidature.project_id}/financements`,
+              },
+            ]
+          : [],
+      ),
+      ...aEtudier.flatMap((opportunite) =>
+        opportunite.deadline
+          ? [
+              {
+                nature: "opportunite" as const,
+                jour: opportunite.deadline,
+                titre: opportunite.name,
+                contexte: opportunite.organization,
+                href: `/opportunites/${opportunite.id}`,
+              },
+            ]
+          : [],
+      ),
+    ],
+    jour,
+  );
+
+  return {
+    jour,
+    documents: documents ?? null,
+    aEtudier: aEtudier.slice(0, OPPORTUNITES_PRESENTEES),
+    nombreAEtudier: aEtudier.length,
+    catalogueVide: !(catalogue ?? []).length,
+    echeances: echeances.slice(0, ECHEANCES_PRESENTEES),
+    dansHorizon: compterDansHorizon(echeances, jour),
+  };
+}
+
 async function ProjetEnCours({
   projet,
   autres,
   couverture,
+  children,
 }: {
   projet: ResumeProjet;
   autres: ResumeProjet[];
   couverture: string | null;
+  /** Les blocs du projet mis en avant, placés avant les autres projets. */
+  children?: React.ReactNode;
 }) {
   const supabase = await createClient();
 
@@ -372,6 +581,8 @@ async function ProjetEnCours({
           />
         </ul>
       </section>
+
+      {children}
 
       {autres.length ? (
         <section aria-labelledby="autres-titre" className="mt-10">

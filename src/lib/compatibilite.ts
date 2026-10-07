@@ -192,3 +192,16 @@ export function classerParCompatibilite<Ligne extends { compatibilite: Compatibi
     })
     .map(({ ligne }) => ligne);
 }
+
+/**
+ * « À étudier » : au moins un critère rempli, aucun contredit. Ce n'est pas
+ * « compatible » — trois critères ne font pas une éligibilité —, c'est ce qui
+ * mérite d'être ouvert en premier.
+ */
+export function estAEtudier(compatibilite: Compatibilite): boolean {
+  return compatibilite.remplis > 0 && compatibilite.nonRemplis === 0;
+}
+
+/** La règle, dite là où le mot s'affiche. */
+export const REGLE_A_ETUDIER =
+  "« À étudier » : au moins un critère rempli parmi le type de projet, le pays et le genre, et aucun contredit par la fiche du projet. Ce n'est pas une garantie d'éligibilité : seule la source fait foi.";

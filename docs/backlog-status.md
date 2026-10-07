@@ -41,8 +41,8 @@ réels).
 | L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
 | L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
 | L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | en production     | —             |
-| L5a    | MATCH : consultation du catalogue par les équipes, filtres et recherche (sans IA)                                              | validé localement | —             |
-| L5b    | MATCH : compatibilité d'une opportunité avec un projet, par règles lisibles (sans IA)                                          | validé localement | —             |
+| L5a    | MATCH : consultation du catalogue par les équipes, filtres et recherche (sans IA)                                              | en production     | —             |
+| L5b    | MATCH : compatibilité d'une opportunité avec un projet, par règles lisibles (sans IA)                                          | en production     | —             |
 | L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | validé en recette | —             |
 | L6b    | MATCH : agent de veille, écran d'administration                                                                                | validé en recette | —             |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
@@ -59,6 +59,7 @@ réels).
 | R2     | Assistant de création, écrans : étapes, enregistrement étape par étape, récapitulatif                                          | validé en recette | —             |
 | S1     | Score de maturité : pondérations versionnées, faits du projet, calcul, encart (page du projet, tableau de bord)                | validé en recette | —             |
 | S2     | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —             |
+| T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1548,6 +1549,37 @@ téléphone n'ont été vus. Hors lot : les cartes « opportunités recommandée
 du tableau de bord, et la création d'une candidature depuis une opportunité. La recette
 demande au moins une opportunité « vérifiée » au catalogue de production, qui n'en compte
 aucune : elle fera aussi celle de L4.
+
+L5a et L5b sont en production depuis le 7 octobre 2026 (PR 129, `d06767c`, sans migration ; CI
+de `main` verte, déploiement Vercel prêt sur ce commit). Vérifié depuis l'extérieur : un
+visiteur est renvoyé à la connexion sur les trois routes, et aucune erreur d'exécution n'est
+relevée chez Vercel dans l'heure. Les pages elles-mêmes n'ont pas été vues en production.
+
+T1, écrit le 7 octobre 2026, **sans IA, sans migration, sans dépendance** : le tableau de bord
+reçoit ce que le cahier des charges lui prévoyait et qui manquait. Tout se lit sous la RLS de
+l'utilisateur ; rien n'est stocké.
+
+- **Quatre chiffres**, chacun avec ce qu'il compte : projets portés ou partagés, documents de
+  ces projets (brouillons compris), opportunités à étudier pour le projet mis en avant,
+  échéances dans les trente jours. Au-delà de cent projets, le chiffre dit « 100 et plus ».
+- **« Opportunités à étudier »**, et non « compatibles » : au moins un critère rempli, aucun
+  contredit, d'après le calcul du lot L5b — il n'y en a pas de second. Les trois premières sont
+  montrées avec leur décompte ; la règle est écrite sous le titre, sans pourcentage.
+- **« Prochaines échéances »**, tous projets confondus, cinq au plus, en trois natures
+  nommées : étape du planning, candidature de financement à préparer, date limite d'une
+  opportunité à étudier. Une échéance passée n'y figure pas : le planning dit déjà le retard.
+- **« Documents », et non « documents générés »** : la base ne distingue pas un document écrit
+  à la main d'un document né d'une proposition.
+
+Le cloisonnement du budget tient sans code propre : une candidature de financement ne remonte
+qu'à qui gère le budget du projet, parce que la base ne rend ces lignes qu'à lui ; aucun
+montant de candidature n'est lu. Vérifié au rendu réel : la porteuse lit quatre échéances dont
+une candidature, un lecteur du même projet en lit deux et aucune candidature.
+
+Vérifié en local par le rendu réel sous quatre sessions — porteuse, lecteur, compte sans
+projet, administratrice — sur des données fictives ; **pas au navigateur** : ni l'aspect, ni
+le téléphone n'ont été vus. La page étant servie en flux, le bloc des échéances arrive en
+plusieurs fragments : un contrôle qui ne lirait que le premier se tromperait.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
