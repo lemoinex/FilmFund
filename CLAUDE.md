@@ -671,8 +671,13 @@ recommandations (« à améliorer ») sont configurables et traçables.
   administrateur ne se suspend pas et ne peut pas être suspendu. Retour
   d’urgence : `docs/mode-prive.md`. Ne pas ajouter de contrôle de suspension
   table par table.
-- Admin prévu : écran de la suspension (lot V2b), statistiques anonymisées,
-  modèles/coûts/limites IA, abonnements.
+- Écran de la suspension (lot V2b) : section « Suspension » de la fiche d’un
+  compte (`formulaire-suspension.tsx`), étiquette dans la liste. Le compte
+  suspendu est renvoyé à `/compte-suspendu` par le middleware, qui interroge
+  `compte_suspendu()` sur chaque page protégée et ne réagit qu’au code `CS001`.
+  Cette page ne lit rien en base et **ne montre jamais le motif**, réservé à
+  l’administration. Ne pas la placer sous la coque de l’application.
+- Admin prévu : statistiques anonymisées, modèles/coûts/limites IA, abonnements.
 
 ## 11. État et ordre de mise en œuvre
 

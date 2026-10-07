@@ -63,6 +63,17 @@ export default async function UtilisateursPage({
   }
 
   const comptes = (data ?? []) as Compte[];
+  // Cinquante identifiants au plus : la liste tient dans une adresse.
+  const { data: suspensions } = comptes.length
+    ? await supabase
+        .from("account_suspensions")
+        .select("user_id")
+        .in(
+          "user_id",
+          comptes.map((compte) => compte.id),
+        )
+    : { data: [] };
+  const suspendus = new Set((suspensions ?? []).map((suspension) => suspension.user_id));
   const total = comptes[0]?.total ?? 0;
   const pages = nombreDePages(total);
   const noms = new Intl.DisplayNames("fr", { type: "region", fallback: "none" });
@@ -138,14 +149,21 @@ export default async function UtilisateursPage({
                   >
                     {compte.display_name.trim() || "Sans nom"}
                   </Link>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-xs ${
-                      compte.role === "admin"
-                        ? "border-gold/40 text-gold-bright"
-                        : "border-app-line text-secondary"
-                    }`}
-                  >
-                    {ROLES_COMPTE[compte.role]}
+                  <span className="flex flex-wrap items-center gap-2">
+                    {suspendus.has(compte.id) ? (
+                      <span className="rounded-full border border-red-400/40 px-2.5 py-0.5 text-xs text-red-200">
+                        Suspendu
+                      </span>
+                    ) : null}
+                    <span
+                      className={`rounded-full border px-2.5 py-0.5 text-xs ${
+                        compte.role === "admin"
+                          ? "border-gold/40 text-gold-bright"
+                          : "border-app-line text-secondary"
+                      }`}
+                    >
+                      {ROLES_COMPTE[compte.role]}
+                    </span>
                   </span>
                 </div>
                 <p className="text-secondary mt-1 text-sm break-all">

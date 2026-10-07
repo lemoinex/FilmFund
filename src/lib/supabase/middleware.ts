@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { accesAutorise, MESSAGE_ACCES_RESERVE } from "@/lib/acces-prive";
+import { CODE_COMPTE_SUSPENDU, MESSAGE_COMPTE_SUSPENDU } from "@/lib/comptes";
 import type { Database } from "@/lib/supabase/types";
 
 /** Préfixes réservés aux utilisateurs connectés. */
@@ -27,6 +28,9 @@ const ROUTES_INVITE = ["/connexion", "/inscription"];
 
 /** Page d'explication pour les comptes que le mode privé tient à l'écart. */
 const ROUTE_ACCES_REFUSE = "/acces-refuse";
+
+/** Page d'explication pour un compte suspendu. */
+const ROUTE_COMPTE_SUSPENDU = "/compte-suspendu";
 
 /** Les pages sous ce préfixe n'existent que pour les administrateurs. */
 const ROUTE_ADMINISTRATION = "/administration";
@@ -115,6 +119,37 @@ export async function updateSession(request: NextRequest) {
     url.pathname = ROUTE_ACCES_REFUSE;
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  /*
+   * Compte suspendu : la base lui refuse toute requête, sous un code qui lui
+   * est propre. Sans ce renvoi, chaque page échouerait à sa première lecture,
+   * sans rien lui dire. Une requête de plus par page protégée, pour tous :
+   * c'est le prix d'une suspension qui prend effet à la page suivante, sans
+   * attendre l'expiration d'un jeton.
+   *
+   * Tout autre échec de l'appel laisse passer : la base reste le verrou, et
+   * une panne passagère ne doit pas fermer l'application à tout le monde.
+   */
+  if (user && ROUTES_PROTEGEES.some((route) => pathname.startsWith(route))) {
+    const { error } = await supabase.rpc("compte_suspendu");
+
+    if (error?.code === CODE_COMPTE_SUSPENDU) {
+      if (request.method !== "GET" || request.headers.has("next-action")) {
+        return new NextResponse(MESSAGE_COMPTE_SUSPENDU, {
+          status: 403,
+          headers: { "content-type": "text/plain; charset=utf-8" },
+        });
+      }
+
+      const url = request.nextUrl.clone();
+      url.pathname = ROUTE_COMPTE_SUSPENDU;
+      url.search = "";
+      const renvoi = NextResponse.redirect(url);
+      // La session a pu être rafraîchie plus haut : ses cookies suivent.
+      response.cookies.getAll().forEach((cookie) => renvoi.cookies.set(cookie));
+      return renvoi;
+    }
   }
 
   /*

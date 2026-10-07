@@ -226,7 +226,11 @@ describe("Comptes : ce que l'écran lit et annonce", () => {
 
 describe("Comptes : ce que les pages et l'action laissent passer", () => {
   it("l'action revérifie la session et le rôle, puis relit l'adresse en base", () => {
-    const action = sansCommentaires(lire(`${DOSSIER}/actions.ts`));
+    // Le fichier porte aussi les actions de la suspension (lot V2b) : seule
+    // celle du rôle est lue ici.
+    const fichier = sansCommentaires(lire(`${DOSSIER}/actions.ts`));
+    const debut = fichier.indexOf("export async function changerRole(");
+    const action = fichier.slice(debut, fichier.indexOf("\nexport ", debut + 1));
     const etapes = [
       "exigerAcces(supabase)",
       'rpc("is_admin")',

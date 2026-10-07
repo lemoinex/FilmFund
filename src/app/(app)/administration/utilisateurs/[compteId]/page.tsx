@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { Horodatage } from "@/components/ui/horodatage";
 import {
   estIdentifiantDeCompte,
+  obstacleALaSuspension,
   obstacleAuChangementDeRole,
   ROLES_COMPTE,
   type Compte,
@@ -14,6 +15,7 @@ import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
 import { FormulaireRole } from "../formulaire-role";
+import { FormulaireRetablissement, FormulaireSuspension } from "../formulaire-suspension";
 
 export const metadata: Metadata = {
   title: "Compte — filmfundAfrica",
@@ -62,6 +64,7 @@ export default async function ComptePage({ params }: { params: Promise<{ compteI
     { data: plans },
     { data: projets, count: nombreProjets },
     { data: modePrive },
+    { data: suspension },
   ] = await Promise.all([
     supabase.rpc("comptes_administration", { p_compte: compteId, p_limite: 1 }),
     supabase
@@ -82,6 +85,11 @@ export default async function ComptePage({ params }: { params: Promise<{ compteI
       .order("updated_at", { ascending: false })
       .limit(LIMITE_PROJETS),
     supabase.rpc("mode_prive"),
+    supabase
+      .from("account_suspensions")
+      .select("reason, suspended_by, suspended_at")
+      .eq("user_id", compteId)
+      .maybeSingle(),
   ]);
 
   const compte = (comptes as Compte[] | null)?.[0];
@@ -101,7 +109,19 @@ export default async function ComptePage({ params }: { params: Promise<{ compteI
     soiMeme: soiMeme && compte.role === "admin",
     // Sans réponse, on ne propose rien : la base refuserait de toute façon.
     modePrive: modePrive !== false,
+    suspendu: !!suspension && compte.role !== "admin",
   });
+  const obstacleSuspension = obstacleALaSuspension({
+    soiMeme,
+    administrateur: compte.role === "admin",
+  });
+  const { data: auteurSuspension } = suspension?.suspended_by
+    ? await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", suspension.suspended_by)
+        .maybeSingle()
+    : { data: null };
   const listeProjets = projets ?? [];
   const totalProjets = nombreProjets ?? listeProjets.length;
 
@@ -199,6 +219,45 @@ export default async function ComptePage({ params }: { params: Promise<{ compteI
             </p>
           ) : (
             <FormulaireRole compteId={compte.id} role={compte.role} />
+          )}
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="suspension-titre"
+        className="border-app-line mt-6 rounded-xl border p-5 sm:p-6"
+      >
+        <h2 id="suspension-titre" className="font-serif text-2xl">
+          Suspension
+        </h2>
+        <p className="text-secondary mt-1 max-w-2xl text-xs leading-relaxed">
+          Un compte suspendu garde ses données, mais ne lit ni n&apos;écrit plus rien. Il peut
+          encore se connecter, et voit alors qu&apos;il est suspendu, sans le motif. Suspendre et
+          rétablir sont inscrits au journal d&apos;administration.
+        </p>
+        <div className="mt-5">
+          {suspension ? (
+            <div className="space-y-5">
+              <dl className="divide-y divide-[var(--app-line)] rounded-lg border border-red-400/40 px-4">
+                <Ligne libelle="État">Suspendu</Ligne>
+                <Ligne libelle="Depuis le">
+                  <Horodatage iso={suspension.suspended_at} />
+                </Ligne>
+                <Ligne libelle="Par">
+                  {suspension.suspended_by
+                    ? auteurSuspension?.display_name?.trim() || "un compte supprimé"
+                    : "L'exploitant (hors application)"}
+                </Ligne>
+                <Ligne libelle="Motif">{suspension.reason}</Ligne>
+              </dl>
+              <FormulaireRetablissement compteId={compte.id} />
+            </div>
+          ) : obstacleSuspension ? (
+            <p className="border-app-line text-secondary rounded-lg border border-dashed px-4 py-3 text-sm leading-relaxed">
+              {obstacleSuspension}
+            </p>
+          ) : (
+            <FormulaireSuspension compteId={compte.id} />
           )}
         </div>
       </section>
