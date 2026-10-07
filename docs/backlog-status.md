@@ -62,8 +62,8 @@ réels).
 | T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | en production     | —             |
 | U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé en recette | —             |
 | V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | en production     | —             |
-| V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | validé localement | —             |
-| V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | validé localement | —             |
+| V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | en production     | —             |
+| V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1830,3 +1830,22 @@ et actions rejoués sur un serveur de production local, 37 points sur 37 : refus
 ce que voit l'administration, ce que voit le compte suspendu sur quatre pages, vitrine servie
 à un visiteur comme au compte suspendu, rétablissement. **Aucun contrôle au navigateur** : ni
 l'aspect, ni le téléphone, ni les clics eux-mêmes.
+
+V2a et V2b sont en production depuis le 7 octobre 2026 : V2b fusionné à 18h22 UTC (PR 136,
+`89e7c17`, sans migration), puis la migration de V2a poussée à 18h27 UTC (57 migrations),
+déploiement Vercel terminé, worker non redéployé. Entre les deux, cinq minutes pendant
+lesquelles la section « Suspension » ne pouvait rien enregistrer ; rien d'autre n'était touché.
+
+Relu en production aussitôt après la poussée, le contrôle s'exécutant désormais pour chaque
+requête : le réglage `pgrst.db_pre_request` est posé sur `authenticator` — l'hébergement
+l'accepte, ce qui n'avait pas pu être éprouvé avant — ; **un visiteur lit toujours les plans et
+leurs versions par l'API**, à travers le contrôle ; il ne lit aucun projet et se voit refuser
+`compte_suspendu()` ; sous leurs sessions simulées, les deux administrateurs passent le
+contrôle ; la politique du stockage et les quatre politiques de la table sont en place ; aucune
+erreur serveur aux journaux de l'API ; la vitrine, la connexion et la page « Compte suspendu »
+répondent.
+
+**V2a et V2b restent « en production », sans être dits validés en recette.** La production ne
+compte que ses deux administrateurs, qui ne peuvent pas être suspendus : aucune suspension n'y
+a eu lieu, et aucune ne pourra y être éprouvée avant la levée du mode privé. Le coût de la
+requête de plus que le middleware fait sur chaque page protégée n'a pas été mesuré.
