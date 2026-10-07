@@ -1907,5 +1907,25 @@ passée pour éprouver le reste.
 quatre minutes de navigation d'un seul compte, `compte_suspendu()` a été appelée 151 fois. Le
 middleware l'interroge à chaque requête vers une page protégée, et Next précharge les pages
 vers lesquelles pointent les liens affichés : chaque préchargement compte. Aucune erreur, mais
-c'est une charge à réduire avant l'ouverture — en n'interrogeant pas la base pour un
-préchargement, par exemple. Non corrigé dans ce lot.
+c'est une charge à réduire avant l'ouverture. Non corrigé dans ce lot.
+
+**Coût du contrôle de suspension : décision du 7 octobre 2026.** Rien n'est changé pour
+l'instant. À deux comptes en production, 153 appels légers en quatre minutes ne pèsent pas, et
+aucune erreur ni lenteur n'a été constatée. **La correction se fera quand la plateforme
+comptera plus de cinq utilisateurs**, et sa forme est arrêtée : le middleware garde en
+mémoire, trente secondes et par compte, la réponse « non suspendu ». Seule cette réponse est
+gardée — une suspension constatée ne l'est jamais. Contrepartie acceptée : un compte suspendu
+pendant qu'il navigue peut mettre jusqu'à trente secondes à être renvoyé vers « Compte
+suspendu », en voyant des pages en erreur mais aucune donnée, la base refusant tout aussitôt.
+Limite connue : cette mémoire est propre à chaque instance du serveur, et le gain réel ne se
+mesurera qu'en production.
+
+**Une piste essayée et abandonnée, à ne pas reprendre** : ne pas interroger la base pour un
+préchargement, en lisant l'en-tête `next-router-prefetch`. Elle ne peut pas marcher — Next
+retire ses en-têtes internes de la requête avant d'appeler le middleware
+(`server/web/adapter.js`, Next 16.3.6), qui ne voit donc jamais celui-là. Les tests de lecture
+du code passaient : ils vérifiaient que la condition était écrite, pas qu'elle servait. C'est
+le compte des appels reçus par la base locale, requête par requête, qui l'a montré — un appel
+par préchargement, comme avant. Écartée aussi : sortir les préchargements du middleware par
+son `matcher`. La session s'y rafraîchit ; un préchargement tombant sur un jeton expiré le
+ferait renouveler là où le nouveau jeton ne peut pas être enregistré.
