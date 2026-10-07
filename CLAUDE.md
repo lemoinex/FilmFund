@@ -487,7 +487,20 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   démonstration ; chaque écriture est journalisée. Une date limite passée ne
   réécrit rien : l’écran présente l’opportunité comme expirée. Ne pas créer un
   second catalogue. Consultation et compatibilité : lot L5, non livré — un score
-  calculé par des règles lisibles, sans IA. Agent de veille : lot L6, non livré.
+  calculé par des règles lisibles, sans IA.
+- Veille des opportunités (lot L6, agent MATCH, action `opportunity_watch`,
+  profil `match.veille@1`) : livrée. Sur le socle de SCOUT — même collecte
+  (`collecter`), mêmes coûts —, MATCH relève dans les extraits rendus par le
+  moteur les opportunités qu’ils annoncent : nom, organisme, catégorie, résumé,
+  et le rang de la page. **Ni montant, ni date limite, ni pays, ni critère** ;
+  l’adresse et l’extrait viennent de la page, jamais du modèle. C’est une tâche
+  de l’administration, sans projet ni studio, sans devis ni réservation
+  (`demander_veille`) : ne pas la rattacher à un projet. Une opportunité
+  acceptée (`accepter_opportunite_proposee`) entre au catalogue `non_verifie` ;
+  aucun chemin ne la fait naître vérifiée. Le résumé est celui d’un extrait, pas
+  de la page : l’écran le dit, ne pas le présenter autrement. Écran : la section
+  « Veille » d’Administration → Opportunités (`actions-veille.ts`, `veille.tsx`,
+  catalogue `LIVRABLE_VEILLE`).
 - Données : nom, organisme, description, site, pays, pays éligibles, types de
   projet, genres, budgets min/max, devise, ouverture, date limite, candidature,
   exigences, statut, source, dates.

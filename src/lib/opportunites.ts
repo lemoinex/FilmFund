@@ -369,3 +369,159 @@ export function montantEnClair(opportunite: {
 export function jourCourant(maintenant: Date = new Date()): string {
   return maintenant.toISOString().slice(0, 10);
 }
+
+/**
+ * La veille des opportunités (agent MATCH) : ce que l'écran d'administration
+ * en dit. Ses bornes sont celles de la base et du profil de l'agent ; un test
+ * vérifie qu'elles s'accordent.
+ */
+export const LIVRABLE_VEILLE = {
+  action: "opportunity_watch",
+  titre: "Veille des opportunités",
+  bouton: "Lancer la veille",
+  description:
+    "Décrivez ce que vous cherchez : un moteur de recherche collecte des pages publiques, puis l'assistant y relève les opportunités qu'elles annoncent, chacune avec sa page et un résumé de l'extrait.",
+  /** Dit avant tout envoi : ce qui quitte la plateforme, et ce que cela coûte. */
+  transmission:
+    "Votre recherche, et elle seule, est transmise à un moteur de recherche externe. Chaque veille est un appel payant, compté dans la dépense d'IA du mois ; elle n'entame le quota d'aucun studio.",
+  /** Dit à chaque affichage d'une opportunité proposée. */
+  avertissement:
+    "Rien de ce qui suit n'est vérifié. L'assistant n'a lu qu'un extrait de chaque page, pas la page entière : il peut être tronqué, ancien, ou décrire une édition close. Ouvrez la page avant d'accepter. Une opportunité acceptée entre au catalogue « non vérifiée » : les comptes ne la lisent pas tant que vous ne l'avez pas vérifiée et complétée.",
+  /** Dit de ce que la veille ne propose pas. */
+  limites:
+    "La veille ne propose ni montant, ni date limite, ni pays, ni critère : ils se lisent sur la page et se saisissent dans la fiche.",
+  questionMin: 10,
+  questionMax: 500,
+  /** Opportunités qu'une veille peut porter : la borne de la base. */
+  opportunitesMax: 20,
+} as const;
+
+/** La recherche telle qu'elle partira : une ligne, bornée ; null si elle ne l'est pas. */
+export function lireQuestionVeille(valeur: unknown): string | null {
+  if (typeof valeur !== "string") {
+    return null;
+  }
+  const question = valeur.replace(/\s+/g, " ").trim();
+  return question.length < LIVRABLE_VEILLE.questionMin ||
+    question.length > LIVRABLE_VEILLE.questionMax ||
+    /[\u0000-\u001f\u007f]/.test(question)
+    ? null
+    : question;
+}
+
+/**
+ * Ce qu'un administrateur corrige en acceptant : le nom, l'organisme et la
+ * catégorie. La provenance ne se corrige pas. Erreur lisible si une valeur
+ * sort des bornes — la base les recontrôle.
+ */
+export function lireCorrection(
+  nom: unknown,
+  organisme: unknown,
+  categorie: unknown,
+): { name: string; organization: string; category: CategorieOpportunite } | { erreur: string } {
+  const name = typeof nom === "string" ? nom.replace(/\s+/g, " ").trim() : "";
+  const organization = typeof organisme === "string" ? organisme.replace(/\s+/g, " ").trim() : "";
+  if (name.length < 1 || name.length > LONGUEURS_OPPORTUNITE.name) {
+    return { erreur: "Donnez le nom de l'opportunité." };
+  }
+  if (organization.length < 1 || organization.length > LONGUEURS_OPPORTUNITE.organization) {
+    return {
+      erreur:
+        "Indiquez l'organisme, tel que la page le nomme : la veille ne l'a pas trouvé, et il ne se déduit pas du site.",
+    };
+  }
+  if (typeof categorie !== "string" || !Object.hasOwn(CATEGORIES_OPPORTUNITE, categorie)) {
+    return { erreur: "Choisissez une catégorie." };
+  }
+  if (/[\u0000-\u001f\u007f]/.test(name + organization)) {
+    return { erreur: "Le nom et l'organisme tiennent sur une ligne." };
+  }
+  return { name, organization, category: categorie as CategorieOpportunite };
+}
+
+/** Codes que la base rend à une demande ou à une décision de veille. */
+export const ERREURS_VEILLE = {
+  refus: "42501",
+  invalide: "22023",
+  clesAbsentes: "55000",
+  dejaEnCours: "VE001",
+  limiteDuJour: "VE002",
+  doublon: "23505",
+  horsCatalogue: "23514",
+  dejaDecidee: "PR001",
+  tacheDejaPrise: "TR002",
+} as const;
+
+/** Message lisible pour une erreur de la base ; générique si elle est inconnue. */
+export function messageVeille(code: string | undefined): string {
+  switch (code) {
+    case ERREURS_VEILLE.refus:
+      return "Action réservée à l'administration.";
+    case ERREURS_VEILLE.invalide:
+      return "Cette saisie n'est pas admise telle quelle : vérifiez sa longueur, et qu'elle tient sur une ligne.";
+    case ERREURS_VEILLE.clesAbsentes:
+      return "La veille demande les clés d'Anthropic et de Perplexity : posez-les depuis Intégrations IA.";
+    case ERREURS_VEILLE.dejaEnCours:
+      return "Une veille est déjà en cours : attendez son résultat.";
+    case ERREURS_VEILLE.limiteDuJour:
+      return "Vous avez atteint la limite de veilles pour vingt-quatre heures.";
+    case ERREURS_VEILLE.doublon:
+      return "Cette opportunité est déjà au catalogue, sous ce nom et cet organisme : modifiez sa fiche, ou écartez cette proposition.";
+    case ERREURS_VEILLE.horsCatalogue:
+      return "Le catalogue refuse cette opportunité telle quelle : vérifiez sa catégorie.";
+    case ERREURS_VEILLE.dejaDecidee:
+      return "Cette opportunité a déjà été acceptée ou écartée.";
+    case ERREURS_VEILLE.tacheDejaPrise:
+      return "La veille est déjà en cours : elle ne s'annule plus.";
+    default:
+      return "La demande n'a pas abouti. Réessayez dans un instant.";
+  }
+}
+
+/** Étape de la veille que l'écran affiche. */
+export type EtapeVeille =
+  | { etape: "repos" }
+  /** En file : annulable. */
+  | { etape: "en_attente"; tacheId: string }
+  | { etape: "en_cours" }
+  /** Interrompue après l'envoi : issue inconnue. */
+  | { etape: "a_rapprocher" }
+  | { etape: "echec"; motif: string | null }
+  /** Terminée sans rien relever : la phrase de la base le dit. */
+  | { etape: "sans_resultat"; texte: string };
+
+/**
+ * Étape affichée, d'après la dernière veille et sa proposition. Une veille
+ * réussie ramène au repos : ses opportunités, s'il y en a, se lisent plus bas.
+ * Un état inconnu aussi — mieux vaut laisser redemander que d'afficher une
+ * attente sans fin.
+ */
+export function etapeVeille(
+  tache: { id: string; state: string; reason: string | null } | null | undefined,
+  proposition: { content: string; state: string; lignes: number } | null | undefined,
+): EtapeVeille {
+  if (!tache) {
+    return { etape: "repos" };
+  }
+  switch (tache.state) {
+    case "queued":
+      return { etape: "en_attente", tacheId: tache.id };
+    case "running":
+      return { etape: "en_cours" };
+    case "awaiting_reconciliation":
+      return { etape: "a_rapprocher" };
+    case "failed":
+      return { etape: "echec", motif: tache.reason };
+    case "succeeded":
+      return proposition && proposition.lignes === 0
+        ? { etape: "sans_resultat", texte: proposition.content }
+        : { etape: "repos" };
+    default:
+      return { etape: "repos" };
+  }
+}
+
+/** Clé de comparaison d'une opportunité : son nom chez son organisme, comme en base. */
+export function cleOpportunite(nom: string, organisme: string): string {
+  return `${nom.trim().toLowerCase()}\u0000${organisme.trim().toLowerCase()}`;
+}
