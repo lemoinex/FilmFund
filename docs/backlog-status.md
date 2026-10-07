@@ -64,7 +64,7 @@ réels).
 | V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | en production     | —             |
 | V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | en production     | —             |
 | V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
-| W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | validé localement | —             |
+| W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1882,3 +1882,30 @@ et l'éditeur, trois pour le lecteur, sans aucun nom de financeur ; aucune pour 
 d'autrui ; et quatre une fois trois causes traitées. **Aucun contrôle au navigateur** : ni
 l'aspect, ni le téléphone. Le tableau de bord relit étapes et candidatures une seconde fois
 pour ce bloc : le lot T1 n'a pas été réécrit.
+
+W1 est en production depuis le 7 octobre 2026 (PR 138, `ae62b76`, sans migration ;
+déploiement Vercel terminé, un visiteur renvoyé à la connexion depuis `/alertes`, worker non
+redéployé).
+
+**Recette du 7 octobre 2026 : l'état vide seulement.** Un administrateur a ouvert la rubrique
+et le tableau de bord en production (mode privé actif), de 19h13 à 19h16 UTC : trois lectures
+des étapes bornées par le délai des alertes, huit des candidatures et cinq de leurs pièces,
+toutes réussies, relevées aux journaux de Supabase. La rubrique lui a répondu, mot pour mot :
+« Aucune alerte : aucune étape en retard ni à venir, aucune candidature à déposer, aucune
+opportunité à étudier bientôt close. » C'est exact : relue en base, la production n'a aucune
+cause d'alerte — ni étape datée non terminée dans le délai, ni candidature « à préparer »,
+ni opportunité dont la date limite approche.
+
+**W1 reste « en production », sans être dit validé en recette.** Aucune alerte n'a été vue en
+conditions réelles, donc ni le bloc « À traiter », qui ne s'affiche que s'il y en a une, ni la
+disparition d'une alerte une fois sa cause traitée. Non couverts non plus : un éditeur ou un
+lecteur réel, faute de second compte tant que le mode privé est actif (vérifiés localement) ;
+l'aspect des pages et le téléphone. Il suffira d'une étape du planning dont l'échéance est
+passée pour éprouver le reste.
+
+**Mesuré pendant cette recette : le coût du contrôle de suspension (lot V2b).** En moins de
+quatre minutes de navigation d'un seul compte, `compte_suspendu()` a été appelée 151 fois. Le
+middleware l'interroge à chaque requête vers une page protégée, et Next précharge les pages
+vers lesquelles pointent les liens affichés : chaque préchargement compte. Aucune erreur, mais
+c'est une charge à réduire avant l'ouverture — en n'interrogeant pas la base pour un
+préchargement, par exemple. Non corrigé dans ce lot.
