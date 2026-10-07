@@ -366,6 +366,81 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_opportunities: {
+        Row: {
+          category: string;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          name: string;
+          opportunity_id: string | null;
+          organization: string;
+          position: number;
+          published_on: string | null;
+          source_excerpt: string;
+          source_title: string;
+          source_url: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+        };
+        Insert: {
+          category: string;
+          collected_at: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          name: string;
+          opportunity_id?: string | null;
+          organization?: string;
+          position: number;
+          published_on?: string | null;
+          source_excerpt: string;
+          source_title: string;
+          source_url: string;
+          state?: string;
+          suggestion_id: string;
+          summary: string;
+        };
+        Update: {
+          category?: string;
+          collected_at?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          name?: string;
+          opportunity_id?: string | null;
+          organization?: string;
+          position?: number;
+          published_on?: string | null;
+          source_excerpt?: string;
+          source_title?: string;
+          source_url?: string;
+          state?: string;
+          suggestion_id?: string;
+          summary?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_opportunities_opportunity_id_fkey";
+            columns: ["opportunity_id"];
+            isOneToOne: false;
+            referencedRelation: "funding_opportunities";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_opportunities_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_suggestion_shots: {
         Row: {
           angle: Database["public"]["Enums"]["shot_angle"];
@@ -544,10 +619,10 @@ export type Database = {
           job_id: string;
           model: string;
           profile: string;
-          project_id: string;
+          project_id: string | null;
           replaced_content: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
         };
         Insert: {
           action: string;
@@ -561,10 +636,10 @@ export type Database = {
           job_id: string;
           model: string;
           profile: string;
-          project_id: string;
+          project_id?: string | null;
           replaced_content?: string | null;
           state?: string;
-          studio_id: string;
+          studio_id?: string | null;
         };
         Update: {
           action?: string;
@@ -578,10 +653,10 @@ export type Database = {
           job_id?: string;
           model?: string;
           profile?: string;
-          project_id?: string;
+          project_id?: string | null;
           replaced_content?: string | null;
           state?: string;
-          studio_id?: string;
+          studio_id?: string | null;
         };
         Relationships: [
           {
@@ -846,11 +921,11 @@ export type Database = {
           id: string;
           lease_until: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id: string | null;
           reason: string | null;
-          reservation_id: string;
+          reservation_id: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
           updated_at: string;
           worker: string | null;
         };
@@ -863,11 +938,11 @@ export type Database = {
           id?: string;
           lease_until?: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id?: string | null;
           reason?: string | null;
-          reservation_id: string;
+          reservation_id?: string | null;
           state?: string;
-          studio_id: string;
+          studio_id?: string | null;
           updated_at?: string;
           worker?: string | null;
         };
@@ -880,11 +955,11 @@ export type Database = {
           id?: string;
           lease_until?: string | null;
           params?: NonNullable<Json>;
-          project_id?: string;
+          project_id?: string | null;
           reason?: string | null;
-          reservation_id?: string;
+          reservation_id?: string | null;
           state?: string;
-          studio_id?: string;
+          studio_id?: string | null;
           updated_at?: string;
           worker?: string | null;
         };
@@ -1771,9 +1846,9 @@ export type Database = {
           job_id: string;
           model: string;
           profile: string;
-          project_id: string;
+          project_id: string | null;
           provider: string;
-          studio_id: string;
+          studio_id: string | null;
         };
         Insert: {
           attempt_id: string;
@@ -1784,9 +1859,9 @@ export type Database = {
           job_id: string;
           model: string;
           profile: string;
-          project_id: string;
+          project_id?: string | null;
           provider: string;
-          studio_id: string;
+          studio_id?: string | null;
         };
         Update: {
           attempt_id?: string;
@@ -1797,9 +1872,9 @@ export type Database = {
           job_id?: string;
           model?: string;
           profile?: string;
-          project_id?: string;
+          project_id?: string | null;
           provider?: string;
-          studio_id?: string;
+          studio_id?: string | null;
         };
         Relationships: [];
       };
@@ -1811,9 +1886,9 @@ export type Database = {
           estimated_usd: number;
           job_id: string;
           profile: string;
-          project_id: string;
+          project_id: string | null;
           provider: string;
-          studio_id: string;
+          studio_id: string | null;
         };
         Insert: {
           attempt_id: string;
@@ -1822,9 +1897,9 @@ export type Database = {
           estimated_usd: number;
           job_id: string;
           profile: string;
-          project_id: string;
+          project_id?: string | null;
           provider: string;
-          studio_id: string;
+          studio_id?: string | null;
         };
         Update: {
           attempt_id?: string;
@@ -1833,9 +1908,9 @@ export type Database = {
           estimated_usd?: number;
           job_id?: string;
           profile?: string;
-          project_id?: string;
+          project_id?: string | null;
           provider?: string;
-          studio_id?: string;
+          studio_id?: string | null;
         };
         Relationships: [];
       };
@@ -2498,6 +2573,34 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      accepter_opportunite_proposee: {
+        Args: { p_category?: string; p_line_id: string; p_name?: string; p_organization?: string };
+        Returns: {
+          category: string;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          name: string;
+          opportunity_id: string | null;
+          organization: string;
+          position: number;
+          published_on: string | null;
+          source_excerpt: string;
+          source_title: string;
+          source_url: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_opportunities";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       accepter_plan_propose: {
         Args: { p_corrige?: Json; p_line_id: string };
         Returns: {
@@ -2539,10 +2642,10 @@ export type Database = {
           job_id: string;
           model: string;
           profile: string;
-          project_id: string;
+          project_id: string | null;
           replaced_content: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
         };
         SetofOptions: {
           from: "*";
@@ -2594,11 +2697,11 @@ export type Database = {
           id: string;
           lease_until: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id: string | null;
           reason: string | null;
-          reservation_id: string;
+          reservation_id: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
           updated_at: string;
           worker: string | null;
         };
@@ -2646,6 +2749,7 @@ export type Database = {
       clore_proposition_materiel: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_planning: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_recherche: { Args: { p_suggestion_id: string }; Returns: undefined };
+      clore_proposition_veille: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_travail: {
         Args: {
           p_consumed: number;
@@ -2662,11 +2766,11 @@ export type Database = {
           id: string;
           lease_until: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id: string | null;
           reason: string | null;
-          reservation_id: string;
+          reservation_id: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
           updated_at: string;
           worker: string | null;
         };
@@ -2737,6 +2841,7 @@ export type Database = {
           title: string;
         }[];
       };
+      contexte_veille: { Args: { p_attempt_id: string }; Returns: Json };
       creer_devis: {
         Args: { p_action: string; p_params?: Json; p_project_id: string };
         Returns: {
@@ -2773,6 +2878,7 @@ export type Database = {
         Args: { email_cible: string; nouveau_role: Database["public"]["Enums"]["user_role"] };
         Returns: undefined;
       };
+      demander_veille: { Args: { p_question: string }; Returns: string };
       depense_ia_du_mois: { Args: Record<PropertyKey, never>; Returns: number };
       deplacer_plan: { Args: { p_plan_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
@@ -2851,6 +2957,34 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      ecarter_opportunite_proposee: {
+        Args: { p_line_id: string };
+        Returns: {
+          category: string;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          name: string;
+          opportunity_id: string | null;
+          organization: string;
+          position: number;
+          published_on: string | null;
+          source_excerpt: string;
+          source_title: string;
+          source_url: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_opportunities";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       ecarter_plan_propose: {
         Args: { p_line_id: string };
         Returns: {
@@ -2892,10 +3026,10 @@ export type Database = {
           job_id: string;
           model: string;
           profile: string;
-          project_id: string;
+          project_id: string | null;
           replaced_content: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
         };
         SetofOptions: {
           from: "*";
@@ -3078,6 +3212,10 @@ export type Database = {
         Args: { p_attempt_id: string; p_content: string; p_sources: Json };
         Returns: string;
       };
+      livrer_proposition_veille: {
+        Args: { p_attempt_id: string; p_opportunities: Json; p_sources: Json };
+        Returns: string;
+      };
       marquer_tentative_soumise: {
         Args: { p_attempt_id: string; p_provider_ref?: string };
         Returns: {
@@ -3137,6 +3275,34 @@ export type Database = {
       };
       mode_prive: { Args: Record<PropertyKey, never>; Returns: boolean };
       octets_du_studio: { Args: { p_studio_id: string }; Returns: number };
+      opportunite_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          category: string;
+          collected_at: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          name: string;
+          opportunity_id: string | null;
+          organization: string;
+          position: number;
+          published_on: string | null;
+          source_excerpt: string;
+          source_title: string;
+          source_url: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_opportunities";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       parametre_entier: {
         Args: { p_cle: string; p_maximum: number; p_params: Json };
         Returns: number;
@@ -3221,9 +3387,9 @@ export type Database = {
           job_id: string;
           model: string;
           profile: string;
-          project_id: string;
+          project_id: string | null;
           provider: string;
-          studio_id: string;
+          studio_id: string | null;
         };
         SetofOptions: {
           from: "*";
@@ -3248,9 +3414,9 @@ export type Database = {
           estimated_usd: number;
           job_id: string;
           profile: string;
-          project_id: string;
+          project_id: string | null;
           provider: string;
-          studio_id: string;
+          studio_id: string | null;
         };
         SetofOptions: {
           from: "*";
@@ -3271,11 +3437,11 @@ export type Database = {
           id: string;
           lease_until: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id: string | null;
           reason: string | null;
-          reservation_id: string;
+          reservation_id: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
           updated_at: string;
           worker: string | null;
         };
@@ -3297,11 +3463,11 @@ export type Database = {
           id: string;
           lease_until: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id: string | null;
           reason: string | null;
-          reservation_id: string;
+          reservation_id: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
           updated_at: string;
           worker: string | null;
         };
@@ -3385,11 +3551,11 @@ export type Database = {
           id: string;
           lease_until: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id: string | null;
           reason: string | null;
-          reservation_id: string;
+          reservation_id: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
           updated_at: string;
           worker: string | null;
         };
@@ -3411,11 +3577,11 @@ export type Database = {
           id: string;
           lease_until: string | null;
           params: NonNullable<Json>;
-          project_id: string;
+          project_id: string | null;
           reason: string | null;
-          reservation_id: string;
+          reservation_id: string | null;
           state: string;
-          studio_id: string;
+          studio_id: string | null;
           updated_at: string;
           worker: string | null;
         };
@@ -3430,6 +3596,7 @@ export type Database = {
         Args: { p_period_start: string; p_studio_id: string; p_unit: string };
         Returns: number;
       };
+      veilles_par_jour: { Args: Record<PropertyKey, never>; Returns: number };
     };
     Enums: {
       budget_category:

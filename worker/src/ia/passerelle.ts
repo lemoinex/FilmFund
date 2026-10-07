@@ -279,7 +279,8 @@ export function creerFournisseurImagesOpenAI(cleApi: string): FournisseurImages 
 }
 
 export type DemandeRecherche = {
-  profil: ProfilRecherche;
+  /** Seule la collecte du profil part chez le moteur : une recherche et une veille en portent une. */
+  profil: Pick<ProfilRecherche, "collecte">;
   /** La question, et elle seule : rien d'autre du projet ne part chez le moteur. */
   question: string;
 };

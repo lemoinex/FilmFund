@@ -42,7 +42,8 @@ réels).
 | L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
 | L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | validé localement | —             |
 | L5     | MATCH : consultation du catalogue et compatibilité calculée (sans IA)                                                          | à faire           | L4            |
-| L6     | MATCH : agent de veille, qui propose des opportunités à vérifier                                                               | à faire           | L5            |
+| L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | validé localement | L4            |
+| L6b    | MATCH : agent de veille, écran d'administration                                                                                | à faire           | L6a           |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
 | M3     | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —             |
@@ -1367,6 +1368,53 @@ le dit.
 
 Ce que ce lot ne fait pas : aucun écran pour les équipes, aucun score, aucune recherche —
 c'est L5. Le catalogue naît vide : sa valeur dépendra de ce que l'administration y saisira.
+
+Correctif de L4, le 7 octobre 2026 : en recette, le même fonds est entré trois fois au
+catalogue par trois envois du même formulaire. Un index unique sur le nom et l'organisme —
+casse et espaces autour mis à part — le refuse désormais ; le formulaire se vide après un
+ajout et mène à la fiche créée. En production le 7 octobre (PR 125, `ef9428a`, 54 migrations,
+index vérifié en base). L'écran n'a pas été revu en recette.
+
+**Décision de l'utilisateur, le 7 octobre 2026 : les opportunités ne se saisissent plus de
+mémoire, un agent les propose, avec leur source et un résumé.** L6 passe donc avant L5, en
+deux lots : base et worker (L6a), écran (L6b). Quatre choix, sur recommandation :
+
+- **Le résumé est celui de l'extrait rendu par le moteur**, pas de la page entière : le worker
+  ne visite toujours aucune page.
+- **Une veille est une tâche de l'administration**, sans projet ni studio : ni devis, ni
+  réservation, aucun quota entamé. Elle compte dans la dépense d'IA du mois.
+- **L'agent propose un nom, un organisme, une catégorie et un résumé.** Ni montant, ni date
+  limite, ni pays, ni critère dans un champ à part : un extrait tronqué en donnerait de faux.
+- **Le formulaire manuel reste** : c'est par lui qu'une fiche se complète et se vérifie.
+
+L6a, écrit le même jour. La mécanique est celle de SCOUT — la collecte est désormais une
+fonction commune (`collecter`), que SCOUT, GRIOT et MATCH partagent. Ce que la base garantit,
+quoi que dépose le worker :
+
+- **La provenance vient de la page** : adresse, titre, extrait et date d'une opportunité
+  proposée sont lus dans la collecte, au rang que le modèle désigne ; il n'écrit aucune
+  adresse.
+- **Rien ne naît vérifié** : une opportunité acceptée entre au catalogue « non vérifiée »,
+  invisible des comptes. Son nom, son organisme et sa catégorie se corrigent à l'acceptation ;
+  sa provenance, non. Sans organisme nommé par la page, il se saisit — il ne se devine pas.
+- **Pas deux fois la même** : une opportunité déjà au catalogue est refusée.
+- **Seule l'administration** demande une veille, lit ses propositions et en décide. La
+  demande est journalisée ; l'ajout au catalogue l'est par le catalogue. Une veille à la
+  fois, vingt par administrateur et par vingt-quatre heures ; le worker revérifie le rôle de
+  l'auteur avant d'exécuter.
+- **Aucune opportunité relevée n'est pas un échec** : la tâche réussit et la proposition se
+  dépose close, sans rappeler le modèle.
+
+Pour porter une tâche sans projet, trois tables rendent facultatifs le studio et le projet
+— `jobs` (et sa réservation), les deux registres de coûts, `ai_suggestions` —, tenus à la
+seule action `opportunity_watch` par une contrainte. Quatre fonctions livrées sont reprises
+à l'identique, à un ajout près : `clore_travail`, `reclamer_travail`, `annuler_travail`,
+`provisionner_recherche`.
+
+Ce que ce lot ne fait pas : aucun écran — la veille ne se demande encore que par la base ;
+c'est L6b. Ce que les fournisseurs factices ne prouvent pas, et que la recette dira : ce que
+le moteur rend sur les fonds ouverts au cinéma africain, si le modèle s'en tient aux
+extraits, et s'il distingue un appel d'un palmarès.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

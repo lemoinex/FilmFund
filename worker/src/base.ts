@@ -793,3 +793,57 @@ export async function livrerPropositionRecherche(
     throw erreur;
   }
 }
+
+/** Ce que MATCH lit pour une veille : ce que l'administration cherche, et rien d'autre. */
+export type ContexteVeille = { question: string };
+
+/**
+ * Contexte de la veille en cours ; null si l'essai ne nous appartient plus
+ * ou si son auteur n'est plus administrateur — rien ne doit alors être envoyé.
+ */
+export async function lireContexteVeille(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteVeille | null> {
+  const { rows } = await base.query("select public.contexte_veille($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Opportunité relevée dans une page collectée, telle que le worker la
+ * dépose : `source` est le rang de cette page, d'où la base tirera l'adresse
+ * et l'extrait.
+ */
+export type OpportuniteRelevee = {
+  source: number;
+  name: string;
+  organization: string;
+  category: string;
+  summary: string;
+};
+
+/**
+ * Dépose les pages collectées et les opportunités relevées, et conclut
+ * l'essai. Une liste vide se dépose aussi : la veille a réussi, sans rien
+ * trouver. Faux : l'essai ne nous appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionVeille(
+  base: Base,
+  attemptId: string,
+  sources: readonly SourceCollectee[],
+  opportunites: readonly OpportuniteRelevee[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_veille($1, $2::jsonb, $3::jsonb)", [
+      attemptId,
+      JSON.stringify(sources),
+      JSON.stringify(opportunites),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}

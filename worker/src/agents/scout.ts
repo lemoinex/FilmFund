@@ -34,6 +34,7 @@ import {
   estimerJetons,
   PROFILS_GRIOT,
   PROFILS_SCOUT,
+  type ProfilAppel,
   type ProfilRecherche,
 } from "../ia/profils.ts";
 
@@ -232,13 +233,83 @@ export function lireSynthese(texte: string, sources: number, max: number): strin
  * bornes, et la question à la sienne. Sert à réserver le coût de la synthèse
  * avant la collecte, quand le message n'existe pas encore.
  */
-function longueurPire(profil: ProfilRecherche): number {
+function longueurPire(profil: ProfilCollecte): number {
   return (
     profil.systeme.length +
     profil.objectif.length +
     1_000 +
     profil.collecte.resultatsMax * (TITRE_MAX + EXTRAIT_MAX + 400)
   );
+}
+
+/** Ce qu'il faut d'un profil pour collecter : sa collecte, et de quoi réserver l'appel qui suit. */
+export type ProfilCollecte = ProfilAppel & Pick<ProfilRecherche, "objectif" | "collecte">;
+
+/**
+ * La collecte d'un essai : provision, requête au moteur, coût confirmé, tri
+ * des pages. Une recherche et une veille la partagent — le coût d'une requête
+ * ne se compte qu'ici.
+ */
+export async function collecter(
+  base: Base,
+  moteur: FournisseurRecherche,
+  profil: ProfilCollecte,
+  attemptId: string,
+  question: string,
+  signal: AbortSignal,
+): Promise<SourceCollectee[]> {
+  // Provision de la requête, avec en réserve le pire coût de l'appel au
+  // modèle : le plafond du mois refuse l'ensemble maintenant, pas après la
+  // collecte.
+  const frais = profil.collecte.microDollarsParRequete;
+  const reserve =
+    coutMicroDollars([
+      {
+        modele: profil.modele,
+        jetonsEntree: estimerJetons("x".repeat(longueurPire(profil))),
+        jetonsSortie: profil.jetonsMax,
+      },
+    ]) ?? 0;
+  try {
+    await provisionnerRecherche(base, attemptId, {
+      fournisseur: profil.collecte.fournisseur,
+      profil: profil.id,
+      requetes: 1,
+      dollars: enDollars(frais),
+      reserve: enDollars(reserve),
+    });
+  } catch (erreur) {
+    if (codeDe(erreur) === PLAFOND_ATTEINT) {
+      throw new EchecConnu("Plafond mensuel des dépenses d'IA atteint.");
+    }
+    throw erreur;
+  }
+
+  let collecte;
+  try {
+    collecte = await moteur({ profil, question }, signal);
+  } catch (erreur) {
+    // Requête refusée : ni servie ni facturée. La recherche est soldée à
+    // zéro, sans quoi sa provision pèserait sur le plafond du mois.
+    if (erreur instanceof EchecConnu && erreur.sansFrais) {
+      await confirmerRecherche(base, attemptId, { requetes: 0, dollars: "0.000000" });
+    }
+    throw erreur;
+  }
+
+  // La requête a été servie, quelle que soit la suite : elle est inscrite
+  // avant tout tri des pages.
+  await confirmerRecherche(base, attemptId, { requetes: 1, dollars: enDollars(frais) });
+
+  const sources = retenirSources(
+    collecte.resultats,
+    profil.collecte.resultatsMax,
+    profil.collecte.domaines,
+  );
+  if (sources.length === 0) {
+    throw new EchecConnu("Aucune source exploitable n'a été trouvée pour cette question.");
+  }
+  return sources;
 }
 
 function executeurRecherche(
@@ -253,56 +324,14 @@ function executeurRecherche(
       throw new EchecConnu("Le projet de cette tâche n'est plus accessible.");
     }
 
-    // Provision de la requête, avec en réserve le pire coût de la synthèse :
-    // le plafond du mois refuse l'ensemble maintenant, pas après la collecte.
-    const frais = profil.collecte.microDollarsParRequete;
-    const reserve =
-      coutMicroDollars([
-        {
-          modele: profil.modele,
-          jetonsEntree: estimerJetons("x".repeat(longueurPire(profil))),
-          jetonsSortie: profil.jetonsMax,
-        },
-      ]) ?? 0;
-    try {
-      await provisionnerRecherche(base, travail.attemptId, {
-        fournisseur: profil.collecte.fournisseur,
-        profil: profil.id,
-        requetes: 1,
-        dollars: enDollars(frais),
-        reserve: enDollars(reserve),
-      });
-    } catch (erreur) {
-      if (codeDe(erreur) === PLAFOND_ATTEINT) {
-        throw new EchecConnu("Plafond mensuel des dépenses d'IA atteint.");
-      }
-      throw erreur;
-    }
-
-    let collecte;
-    try {
-      collecte = await moteur({ profil, question: contexte.question }, signal);
-    } catch (erreur) {
-      // Requête refusée : ni servie ni facturée. La recherche est soldée à
-      // zéro, sans quoi sa provision pèserait sur le plafond du mois.
-      if (erreur instanceof EchecConnu && erreur.sansFrais) {
-        await confirmerRecherche(base, travail.attemptId, { requetes: 0, dollars: "0.000000" });
-      }
-      throw erreur;
-    }
-
-    // La requête a été servie, quelle que soit la suite : elle est inscrite
-    // avant tout tri des pages.
-    await confirmerRecherche(base, travail.attemptId, { requetes: 1, dollars: enDollars(frais) });
-
-    const sources = retenirSources(
-      collecte.resultats,
-      profil.collecte.resultatsMax,
-      profil.collecte.domaines,
+    const sources = await collecter(
+      base,
+      moteur,
+      profil,
+      travail.attemptId,
+      contexte.question,
+      signal,
     );
-    if (sources.length === 0) {
-      throw new EchecConnu("Aucune source exploitable n'a été trouvée pour cette question.");
-    }
 
     // La synthèse : même mécanique que tout texte, sur ces sources-là.
     return creerExecuteur<string>(base, fournisseur, {

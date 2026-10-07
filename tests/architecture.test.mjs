@@ -2076,13 +2076,21 @@ describe("Recherche de SCOUT", () => {
 
   it("l'agent ne transmet au moteur que la question, et ne visite aucune page", () => {
     const agent = lire("worker/src/agents/scout.ts");
-    assert.match(agent, /await moteur\(\{ profil, question: contexte\.question \}, signal\)/);
+    // Un seul appel au moteur, dans la collecte que SCOUT, GRIOT et MATCH
+    // partagent ; la question y arrive du contexte de la tâche.
+    assert.equal(agent.match(/\bmoteur\(/g)?.length, 1);
+    assert.match(agent, /collecte = await moteur\(\{ profil, question \}, signal\)/);
+    assert.match(
+      agent,
+      /await collecter\(\s+base,\s+moteur,\s+profil,\s+travail\.attemptId,\s+contexte\.question,\s+signal,\s+\)/,
+    );
     assert.doesNotMatch(agent, /\bfetch\(|node:https?|node:net|node:dns|undici/);
     // La requête est inscrite avant tout tri des pages, et le modèle n'est
     // appelé qu'avec des sources.
     assert.ok(
-      agent.indexOf("await confirmerRecherche(base, travail.attemptId, { requetes: 1") <
-        agent.indexOf("const sources = retenirSources("),
+      agent.indexOf("await confirmerRecherche(base, attemptId, { requetes: 1") > 0 &&
+        agent.indexOf("await confirmerRecherche(base, attemptId, { requetes: 1") <
+          agent.indexOf("const sources = retenirSources("),
     );
     assert.match(agent, /if \(sources\.length === 0\) \{\s+throw new EchecConnu\(/);
     // Le coût de la synthèse passe par la mécanique commune, pas par une copie.
@@ -2093,10 +2101,10 @@ describe("Recherche de SCOUT", () => {
   it("SCOUT demande les deux clés ; le registre ne le sert pas avec une seule", () => {
     const registre = lire("worker/src/registre.ts");
     assert.match(registre, /lireCleFournisseur\(base, "perplexity"\)/);
-    // SCOUT et GRIOT naissent ensemble, des deux clés, ou pas du tout.
+    // SCOUT, GRIOT et MATCH naissent ensemble, des deux clés, ou pas du tout.
     assert.match(
       registre,
-      /if \(cle && cleRecherche\) \{\s+const texteDeRecherche = creer\(cle\);\s+const moteur = creerRecherche\(cleRecherche\);\s+recherche = \{\s+\.\.\.executeursScout\(base, texteDeRecherche, moteur\),\s+\.\.\.executeursGriot\(base, texteDeRecherche, moteur\),\s+\};\s+\} else \{\s+recherche = \{\};\s+\}/,
+      /if \(cle && cleRecherche\) \{\s+const texteDeRecherche = creer\(cle\);\s+const moteur = creerRecherche\(cleRecherche\);\s+recherche = \{\s+\.\.\.executeursScout\(base, texteDeRecherche, moteur\),\s+\.\.\.executeursGriot\(base, texteDeRecherche, moteur\),\s+\.\.\.executeursMatch\(base, texteDeRecherche, moteur\),\s+\};\s+\} else \{\s+recherche = \{\};\s+\}/,
     );
   });
 
@@ -2345,5 +2353,192 @@ describe("Contexte de GRIOT", () => {
     }
     const actions = lire("src/app/(app)/projets/[id]/recherche/actions-ia.ts");
     assert.doesNotMatch(actions.replace(/\/\*[\s\S]*?\*\//g, ""), /domaines|persee/i);
+  });
+});
+
+/*
+ * MATCH (lot L6a) : la veille des opportunités. Aucune collecte de plus,
+ * aucune adresse de plus : celle de SCOUT. Ce qui lui est propre : une tâche
+ * de l'administration, sans projet ni réservation, et un relevé dont
+ * l'adresse et l'extrait viennent de la page, jamais du modèle. Rien de ce
+ * qu'il propose ne naît vérifié.
+ */
+describe("Veille de MATCH", () => {
+  const MIGRATION = "supabase/migrations/20261007120000_match_veille.sql";
+  const corpsDans = (fichier, fonction) => {
+    const migration = lire(fichier);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable dans ${fichier}`);
+    return migration.slice(debut, migration.indexOf("\n$$;", debut));
+  };
+  const corps = (fonction) => corpsDans(MIGRATION, fonction);
+  const sansCommentaires = (source) => source.replace(/^\s*--.*$/gm, "");
+
+  it("MATCH n'a ni collecte ni appel à lui : ceux de SCOUT et de la mécanique commune", () => {
+    const agent = lire("worker/src/agents/match.ts");
+    assert.match(agent, /import \{ collecter \} from "\.\/scout\.ts";/);
+    assert.match(
+      agent,
+      /await collecter\(\s+base,\s+moteur,\s+profil,\s+travail\.attemptId,\s+contexte\.question,\s+signal,\s+\)/,
+    );
+    assert.match(agent, /return creerExecuteur<OpportuniteRelevee\[\]>\(base, fournisseur, \{/);
+    assert.doesNotMatch(agent, /\bmoteur\(/);
+    assert.doesNotMatch(
+      agent,
+      /provisionnerCout|confirmerCout|provisionnerRecherche|confirmerRecherche/,
+    );
+    assert.doesNotMatch(agent, /\bfetch\(|node:https?|node:net|node:dns|undici/);
+    // Aucune adresse de plus dans la passerelle.
+    assert.equal(lire(PASSERELLE).match(/https?:\/\/[^\s"'`]+/g)?.length, 2);
+    // Le message du modèle ne porte que la recherche et les pages.
+    assert.doesNotMatch(agent, /projet\.|lireContexteRecherche|contexte_recherche/);
+  });
+
+  it("le profil ne demande pas plus que la base n'accepte, et ses catégories sont les siennes", async () => {
+    const { CATEGORIES_OPPORTUNITE, PROFIL_VEILLE, PROFILS_MATCH } =
+      await import("../worker/src/ia/profils.ts");
+    const { executeursMatch } = await import("../worker/src/agents/match.ts");
+    const vide = async () => ({});
+    assert.deepEqual(Object.keys(executeursMatch({}, vide, vide)), Object.keys(PROFILS_MATCH));
+
+    const depot = corps("livrer_proposition_veille");
+    assert.equal(
+      Number(/if v_nombre > (\d+) then/.exec(depot)?.[1]),
+      PROFIL_VEILLE.opportunitesMax,
+    );
+    assert.ok(
+      PROFIL_VEILLE.collecte.resultatsMax <=
+        Number(/v_pages not between 1 and (\d+)/.exec(depot)?.[1]),
+    );
+
+    const migration = lire(MIGRATION);
+    const liste =
+      /constraint opportunite_proposee_categorie check \(\s*category in \(([^)]+)\)/.exec(
+        migration,
+      )?.[1] ?? "";
+    assert.deepEqual(
+      [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]),
+      [...CATEGORIES_OPPORTUNITE],
+    );
+    // Les bornes du worker sont celles de la base.
+    const agent = lire("worker/src/agents/match.ts");
+    assert.match(agent, /const NOM_MAX = 200;/);
+    assert.match(agent, /const RESUME_MAX = 1500;/);
+    assert.match(depot, /char_length\(btrim\(v_element ->> 'name'\)\) between 1 and 200/);
+    assert.match(depot, /char_length\(btrim\(v_element ->> 'summary'\)\) between 1 and 1500/);
+  });
+
+  it("la provenance vient de la page désignée, et rien n'entre au catalogue vérifié", () => {
+    const depot = sansCommentaires(corps("livrer_proposition_veille"));
+    // L'adresse, le titre, l'extrait et la date sont lus dans la collecte.
+    assert.match(
+      depot,
+      /s\.source ->> 'url',\s+btrim\(s\.source ->> 'title'\),\s+btrim\(s\.source ->> 'excerpt'\),\s+\(s\.source ->> 'published_on'\)::date,\s+v_collecte\.settled_at/,
+    );
+    assert.match(depot, /on s\.rang = \(t\.opportunite ->> 'source'\)::integer/);
+    assert.doesNotMatch(depot, /t\.opportunite ->> '(url|source_url|excerpt|title)'/);
+    // Pas de dépôt sans les deux coûts.
+    assert.match(depot, /from public\.provider_charges c where c\.attempt_id = p_attempt_id/);
+    assert.match(depot, /where s\.attempt_id = p_attempt_id and s\.requests >= 1/);
+
+    const acceptation = sansCommentaires(corps("accepter_opportunite_proposee"));
+    assert.match(acceptation, /v_ligne\.source_excerpt, 'non_verifie'\s+\)/);
+    assert.doesNotMatch(acceptation, /'verifie'/);
+    // Ni montant, ni date limite, ni pays n'entrent par la veille.
+    assert.match(
+      acceptation,
+      /insert into public\.funding_opportunities \(\s+name, organization, category, description, source_url, collected_on, source_excerpt, status\s+\)/,
+    );
+    // La provenance ne se corrige pas à l'acceptation.
+    assert.match(
+      lire(MIGRATION),
+      /create or replace function public\.accepter_opportunite_proposee\(\s+p_line_id uuid,\s+p_name text default null,\s+p_organization text default null,\s+p_category text default null\s+\)/,
+    );
+    for (const fonction of ["accepter_opportunite_proposee", "ecarter_opportunite_proposee"]) {
+      assert.match(corps(fonction), /v_ligne := public\.opportunite_a_decider\(p_line_id\);/);
+    }
+    assert.match(
+      sansCommentaires(corps("opportunite_a_decider")),
+      /\(select auth\.uid\(\)\) is null or not public\.is_admin\(\)/,
+    );
+  });
+
+  it("une veille est une tâche de l'administration : ni devis, ni réservation, ni projet", () => {
+    const migration = sansCommentaires(lire(MIGRATION));
+    const demande = sansCommentaires(corps("demander_veille"));
+    assert.ok(
+      demande.indexOf("not public.is_admin()") < demande.indexOf("insert into public.jobs"),
+      "le rôle est vérifié avant toute écriture",
+    );
+    assert.match(demande, /insert into public\.jobs \(action, params, created_by\)/);
+    assert.match(demande, /perform public\.journaliser\(\s+'veille_opportunites',/);
+    assert.doesNotMatch(demande, /creer_devis|reservations|quotes/);
+    // L'action n'entre pas aux devis : aucun compte ne l'engage sur un projet.
+    assert.doesNotMatch(migration, /devis_action_connue/);
+    assert.doesNotMatch(migration, /text_unit_rate_versions/);
+    assert.match(
+      migration,
+      /\(reservation_id is null and studio_id is null and project_id is null\)\s+= \(action = 'opportunity_watch'\)/,
+    );
+    // Le worker revérifie le rôle de l'auteur, à la réclamation et au contexte.
+    for (const fonction of ["reclamer_travail", "contexte_veille"]) {
+      assert.match(
+        corps(fonction),
+        /select 1 from public\.profiles pr where pr\.id = v_job\.created_by and pr\.role = 'admin'/,
+        fonction,
+      );
+    }
+    // Aucune route ni composant ne nomme l'action hors de l'administration.
+    const ailleurs = fichiersDe("src").filter(
+      (fichier) =>
+        /opportunity_watch|demander_veille/.test(lire(fichier)) &&
+        !fichier.includes("administration") &&
+        !fichier.endsWith("database.types.ts"),
+    );
+    assert.deepEqual(ailleurs, []);
+  });
+
+  it("les fonctions reprises le sont à l'identique, à leur seul ajout près", () => {
+    const TACHES = "supabase/migrations/20261001061231_taches.sql";
+    const net = (source) => sansCommentaires(source).replace(/\s+/g, " ").trim();
+
+    assert.equal(
+      net(corps("clore_travail")).replace(
+        "if p_job.reservation_id is not null then perform public.regler_reservation( p_job.reservation_id, coalesce(p_consumed, case when p_state = 'succeeded' then v_quantite else 0 end) ); end if;",
+        "perform public.regler_reservation( p_job.reservation_id, coalesce(p_consumed, case when p_state = 'succeeded' then v_quantite else 0 end) );",
+      ),
+      net(corpsDans(TACHES, "clore_travail")),
+    );
+    assert.equal(
+      net(corps("reclamer_travail")).replace(
+        "if v_job.project_id is null then if exists ( select 1 from public.profiles pr where pr.id = v_job.created_by and pr.role = 'admin' ) then exit; end if; elsif public.peut_engager_unites_pour(v_job.created_by, v_job.project_id) then exit; end if;",
+        "if public.peut_engager_unites_pour(v_job.created_by, v_job.project_id) then exit; end if;",
+      ),
+      net(corpsDans("supabase/migrations/20261001072243_worker_connexion.sql", "reclamer_travail")),
+    );
+    assert.equal(
+      net(corps("provisionner_recherche")).replace(
+        "('research', 'cultural_context', 'opportunity_watch')",
+        "('research', 'cultural_context')",
+      ),
+      net(
+        corpsDans(
+          "supabase/migrations/20261006220000_griot_contexte.sql",
+          "provisionner_recherche",
+        ),
+      ),
+    );
+    assert.equal(
+      net(corps("ecarter_lignes_restantes")).replace(
+        " update public.ai_suggestion_opportunities set state = 'dismissed', decided_by = new.decided_by, decided_at = new.decided_at where suggestion_id = new.id and state = 'proposed';",
+        "",
+      ),
+      net(
+        corpsDans(
+          "supabase/migrations/20261006180000_scout_recherche.sql",
+          "ecarter_lignes_restantes",
+        ),
+      ),
+    );
   });
 });

@@ -8,9 +8,9 @@
  *
  * Trois fournisseurs, trois clés, indépendantes : celle d'Anthropic sert les
  * agents de texte, celle d'OpenAI le seul agent d'image, celle de Perplexity
- * la collecte de SCOUT et de GRIOT. Retirer l'une ne sort pas les agents des
- * autres — sauf ces deux-là, qui collectent chez l'un et synthétisent chez
- * l'autre : il leur faut les deux clés, et ils sortent dès qu'une manque.
+ * la collecte de SCOUT, de GRIOT et de MATCH. Retirer l'une ne sort pas les
+ * agents des autres — sauf ces trois-là, qui collectent chez l'un et lisent
+ * chez l'autre : il leur faut les deux clés, et ils sortent dès qu'une manque.
  *
  * Aucune clé ne quitte cette fermeture : ni journal, ni valeur de retour.
  * Seule sa présence est observable du dehors.
@@ -20,6 +20,7 @@ import { executeursBoard } from "./agents/board.ts";
 import { executeursField } from "./agents/field.ts";
 import { executeursFrame } from "./agents/frame.ts";
 import { executeursGear } from "./agents/gear.ts";
+import { executeursMatch } from "./agents/match.ts";
 import { executeursGriot, executeursScout } from "./agents/scout.ts";
 import { executeursScript } from "./agents/script.ts";
 import { executeursVoice } from "./agents/voice.ts";
@@ -113,6 +114,7 @@ export function registreDesAgents({
         recherche = {
           ...executeursScout(base, texteDeRecherche, moteur),
           ...executeursGriot(base, texteDeRecherche, moteur),
+          ...executeursMatch(base, texteDeRecherche, moteur),
         };
       } else {
         recherche = {};

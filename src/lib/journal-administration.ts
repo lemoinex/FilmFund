@@ -215,6 +215,11 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       return `${verbe} l'opportunité « ${nom} »${organisme ? ` de ${organisme}` : ""}${etat}`;
     }
 
+    case "veille_opportunites": {
+      const question = texte(details, "question");
+      return `a demandé une veille des opportunités${question ? ` : « ${question} »` : ""}`;
+    }
+
     case "cle_fournisseur": {
       const operations: Record<string, string> = {
         ajout: "a enregistré",

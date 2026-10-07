@@ -177,6 +177,37 @@ SCOUT, avec un autre profil. Deux différences :
 Changer la liste ou les consignes, c'est publier une nouvelle version du profil. Si rien ne
 revient des sites admis : « Aucune source exploitable n'a été trouvée pour cette question. »
 
+MATCH relève les opportunités que des pages annoncent, pour le catalogue de
+l'administration (lot L6a, action `opportunity_watch`, profil `match.veille@1`). Sa collecte
+est celle de SCOUT (`collecter`, dans `agents/scout.ts`) : même moteur, même prix, même
+registre. Ce qui lui est propre :
+
+- **Une tâche de l'administration** : elle n'a ni projet, ni studio, ni réservation, et
+  n'entame le quota d'aucun studio. Elle naît de `demander_veille`, réservée aux
+  administrateurs et journalisée ; elle compte dans la dépense du mois, et le plafond la
+  refuse comme toute autre. Une veille à la fois ; vingt par administrateur et par
+  vingt-quatre heures. Le worker revérifie que son auteur est toujours administrateur.
+- **Un relevé, pas une synthèse** : pour chaque opportunité, le rang de la page, un nom, un
+  organisme, une catégorie et un résumé. Ni montant, ni date limite, ni pays, ni critère dans
+  un champ à part. L'organisme reste vide si ni le titre ni l'extrait ne le nomment.
+- **Contrôles** : le schéma chez le fournisseur, puis le worker (`lireOpportunites` : page
+  de la collecte, catégorie du catalogue, 200 caractères pour un nom, 1 500 pour un résumé,
+  aucune adresse écrite, 20 opportunités au plus), puis la base au dépôt
+  (`livrer_proposition_veille`). L'adresse, le titre, l'extrait et la date d'une opportunité
+  viennent de la page désignée, jamais du modèle.
+- **Aucune opportunité relevée** : la tâche réussit, et la proposition se dépose close —
+  rappeler le modèle ne trouverait rien de plus dans ces pages. Un relevé invalide, lui, fait
+  échouer la tâche : « La réponse du fournisseur n'est pas un relevé exploitable… ».
+- **Dépôt** : une proposition parente sans projet, dont le texte est écrit par la base, et
+  une ligne par opportunité dans `ai_suggestion_opportunities`, lue des seuls
+  administrateurs. Rien n'entre au catalogue avant `accepter_opportunite_proposee`, qui
+  l'ajoute « non vérifiée » — nom, organisme et catégorie s'y corrigent, la provenance non.
+  Une opportunité déjà au catalogue est refusée.
+
+Ce que le worker ne fait pas : il ne visite aucune page. Le résumé est celui d'un extrait
+rendu par le moteur, pas de la page entière ; vérifier une opportunité reste le geste d'un
+administrateur, page ouverte.
+
 - **Aucune date** : un jalon proposé porte un titre, une phase et une durée en jours. FIELD
   ne connaît ni le jour ni le calendrier de l'équipe ; elle date le jalon en l'acceptant.
   Sans date, la durée estimée est gardée dans les notes du jalon.
