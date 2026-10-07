@@ -40,10 +40,10 @@ réels).
 | L1     | SCOUT : recherche sourcée — base, moteur de recherche, profil, agent                                                           | validé en recette | —             |
 | L2     | SCOUT : écran de la recherche, onglet « Recherche »                                                                            | validé en recette | —             |
 | L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
-| L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | validé localement | —             |
+| L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | en production     | —             |
 | L5     | MATCH : consultation du catalogue et compatibilité calculée (sans IA)                                                          | à faire           | L4            |
-| L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | en production     | L4            |
-| L6b    | MATCH : agent de veille, écran d'administration                                                                                | validé localement | L6a           |
+| L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | validé en recette | —             |
+| L6b    | MATCH : agent de veille, écran d'administration                                                                                | validé en recette | —             |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
 | M3     | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —             |
@@ -1431,8 +1431,73 @@ site. Une opportunité déjà au catalogue est signalée avant même d'être ref
 qui ne relève rien le dit, sans échec. Le formulaire manuel reste, pour compléter et vérifier.
 
 Vérifié en local sous une vraie session d'administrateur, par la page que le serveur rend ;
-**pas au navigateur** : ni l'aspect, ni le téléphone, ni les clics n'ont été vus. La recette
-— une veille réelle, payante — reste à faire.
+**pas au navigateur** : ni l'aspect, ni le téléphone, ni les clics n'ont été vus.
+
+L6b est en production depuis le 7 octobre 2026 (PR 127, `0798bfc`, sans migration ; CI de
+`main` verte).
+
+**Recette de MATCH, le 7 octobre 2026, lots L6a et L6b.** Un administrateur a demandé, depuis
+la section « Veille » d'Administration → Opportunités (mode privé actif) : « fonds de soutien
+au documentaire ouverts aux réalisateurs d'Afrique centrale en 2027 ». La demande est au
+journal d'administration, à 09h47 UTC. Tâche sans studio, sans projet et sans réservation,
+envoyée au fournisseur une seconde après sa création : un seul essai, 41,9 secondes, sans
+repli, sur `claude-opus-5-5`, avec le profil `match.veille@1`. Le moteur a rendu 10 pages ;
+MATCH y a relevé **6 opportunités, tirées de 4 pages**. Coût confirmé : **0,12286 $** —
+0,005 $ pour la requête, 0,11786 $ pour le relevé (8 630 jetons en entrée, 4 167 en sortie) —,
+pour 0,20444 $ provisionnés. Aucun quota entamé.
+
+Le texte de la proposition parente est écrit par la base : la recherche, « 6 opportunités
+relevées dans les 10 pages collectées », et « Rien n'est vérifié. ».
+
+Onze minutes plus tard, une opportunité a été acceptée telle quelle — un fonds de soutien au
+documentaire. Relu en base :
+
+- **Elle est entrée au catalogue « non vérifiée »**, donc invisible des comptes, et son ajout
+  est au journal dans la même seconde.
+- **Sa provenance est celle de la page** : même adresse et même extrait que dans la collecte,
+  date de collecte du jour.
+- **Ni montant, ni date limite, ni pays dans un champ à part** : ces colonnes sont vides au
+  catalogue.
+- Nom, organisme et catégorie sont ceux que l'agent proposait ; rien n'a été corrigé.
+
+À la lecture des six résumés, le modèle dit ce que l'extrait ne dit pas — « ne précise ni les
+montants, ni les dates de dépôt » —, signale les pages non datées et, pour un fonds, qu'une
+autre page de 2020 le donnait comme nouvellement lancé : « l'information est donc à vérifier ».
+Sans organisme nommé par la page, il a laissé l'organisme vide plutôt que de le déduire.
+
+Réserves :
+
+- **Une fiche de projet relevée comme opportunité** : la sixième proposition est un programme
+  financé par un bailleur, classé « atelier », dont le résumé dit lui-même « Il s'agit d'une
+  fiche de projet et non d'un appel ». Le modèle distingue donc, mais relève quand même. Si
+  cela se reproduit, une version 2 du profil devra l'écarter.
+- **Des montants et une date dans la prose du résumé** : le résumé de l'opportunité acceptée
+  cite deux plafonds en euros et une date limite en 2027, repris de l'extrait. Aucun champ ne
+  les porte, et l'écran dit que le résumé est celui d'un extrait ; ils restent à vérifier sur
+  la page comme le reste.
+- **Une déduction** : « L'absence de condition de nationalité rend en principe ce dispositif
+  accessible aux réalisateurs d'Afrique centrale. » L'extrait ne le dit pas.
+- **Deux pages ont donné chacune deux opportunités**, dont une « condition commune à cinq
+  fonds » que le résumé reprend deux fois sans savoir à qui elle s'applique — et il le dit.
+- **Non comparé aux extraits** : les résumés n'ont pas été relus ligne à ligne contre les
+  extraits, et aucune page n'a été ouverte. Aucun chiffre n'est certifié.
+- **Une seule veille, une seule décision** : cinq opportunités attendent encore ; la
+  proposition reste ouverte. **Écarter** — une opportunité ou le reste —, **corriger avant
+  d'accepter**, saisir un organisme manquant, le signalement d'une opportunité déjà au
+  catalogue et une veille qui ne relève rien n'ont pas été exercés.
+- **Non éprouvés** : l'aspect de la page, qu'aucune capture n'a montré, et le téléphone ; la
+  limite d'une veille à la fois et de vingt par vingt-quatre heures en conditions réelles.
+
+**L4 reste « en production », sans être dit validé en recette.** Son écran a servi en
+production le 6 octobre — trois ajouts puis trois retraits, tous au journal —, et le catalogue
+a reçu le 7 octobre sa première ligne par la veille. Mais ni le correctif des doublons n'a été
+revu à l'écran, ni une modification, ni surtout le passage d'une opportunité à « vérifiée »,
+avec sa source, sa date et son extrait : c'est la garantie centrale du lot, et elle n'a encore
+été exercée que par les tests. Le catalogue de production compte une opportunité, non
+vérifiée ; les comptes n'en lisent aucune.
+
+Dépense d'IA du mois au 7 octobre, après cette veille : 4,25 $ sur 5 $ d'après les registres,
+dont quatre provisions restées sans coût confirmé. Aucune tâche en attente ni à rapprocher.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux
