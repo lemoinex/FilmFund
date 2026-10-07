@@ -23,6 +23,42 @@ export type Database = {
   };
   public: {
     Tables: {
+      account_suspensions: {
+        Row: {
+          reason: string;
+          suspended_at: string;
+          suspended_by: string | null;
+          user_id: string;
+        };
+        Insert: {
+          reason: string;
+          suspended_at?: string;
+          suspended_by?: string | null;
+          user_id: string;
+        };
+        Update: {
+          reason?: string;
+          suspended_at?: string;
+          suspended_by?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "account_suspensions_suspended_by_fkey";
+            columns: ["suspended_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "account_suspensions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       admin_audit_log: {
         Row: {
           action: string;
@@ -2781,6 +2817,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      compte_suspendu: { Args: Record<PropertyKey, never>; Returns: boolean };
       comptes_administration: {
         Args: { p_compte?: string; p_decalage?: number; p_limite?: number; p_recherche?: string };
         Returns: {
@@ -2857,6 +2894,7 @@ export type Database = {
         }[];
       };
       contexte_veille: { Args: { p_attempt_id: string }; Returns: Json };
+      controle_avant_requete: { Args: Record<PropertyKey, never>; Returns: undefined };
       creer_devis: {
         Args: { p_action: string; p_params?: Json; p_project_id: string };
         Returns: {

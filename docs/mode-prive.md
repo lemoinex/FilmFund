@@ -86,6 +86,26 @@ définitivement, **après** ces tests : copier
 `supabase/migrations/` sous un nouveau nom horodaté, et suivre le parcours habituel (branche,
 pull request, CI, `supabase db push`).
 
+## Suspension d'un compte : ce que le mode privé ne gèle pas
+
+Le mode privé gèle les rôles, pas la suspension (lot V2a) : fermer un compte doit rester
+possible à tout moment. Un administrateur ne peut ni se suspendre ni être suspendu, mode privé
+actif ou non.
+
+La suspension repose sur une fonction que PostgREST appelle **avant chaque requête de l'API,
+visiteurs compris** (`pgrst.db_pre_request`, fonction `controle_avant_requete()`). Si elle
+venait à échouer pour une autre raison que la suspension, toute l'application répondrait en
+erreur, vitrine comprise. Retour d'urgence, en SQL direct — il rouvre tout aussitôt, et laisse
+les comptes suspendus libres d'accéder à l'API :
+
+```sql
+alter role authenticator reset pgrst.db_pre_request;
+notify pgrst, 'reload config';
+```
+
+Pour le rétablir : `alter role authenticator set pgrst.db_pre_request =
+'public.controle_avant_requete';`, puis le même `notify`.
+
 ## Tests
 
 - `tests/mode-prive.test.mjs` : active le verrou en base, éprouve chaque refus et chaque droit

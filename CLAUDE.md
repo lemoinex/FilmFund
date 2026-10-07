@@ -660,8 +660,18 @@ recommandations (« à améliorer ») sont configurables et traçables.
   par appel : ne pas les lire autrement, ni avec le rôle de service. Le rôle ne
   s’écrit que par `definir_role()`, que le mode privé gèle : l’écran le dit au
   lieu de proposer un changement. Ne pas créer un second chemin.
-- Admin prévu : suspension d’un compte (lot V2, à cadrer : une politique RLS ne
-  ferme pas les fonctions `security definer`), statistiques anonymisées,
+- Suspension d’un compte (lot V2a, base seule, sans écran) : table
+  `account_suspensions`, écrite par les seuls administrateurs. Elle se joue en
+  trois endroits, un par chemin d’accès : l’API, par `controle_avant_requete()`
+  que PostgREST appelle avant chaque requête (`pgrst.db_pre_request`, code
+  `CS001`) ; le stockage, par une politique restrictive ; le worker, par
+  `peut_engager_unites_pour()`. **Cette fonction s’exécute pour chaque requête,
+  visiteurs compris** : ne pas l’alourdir, et ne jamais y nommer une fonction
+  qu’un visiteur n’exécute pas dans une condition qu’il atteint. Un
+  administrateur ne se suspend pas et ne peut pas être suspendu. Retour
+  d’urgence : `docs/mode-prive.md`. Ne pas ajouter de contrôle de suspension
+  table par table.
+- Admin prévu : écran de la suspension (lot V2b), statistiques anonymisées,
   modèles/coûts/limites IA, abonnements.
 
 ## 11. État et ordre de mise en œuvre

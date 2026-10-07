@@ -231,6 +231,14 @@ export function descriptionDe(entree: EntreeJournal, annuaire: Annuaire): string
       return `${verbe} la clé du fournisseur d'IA ${fournisseur}`;
     }
 
+    case "suspension_compte": {
+      const motif = texte(details, "motif");
+      return `a suspendu le compte ${de(nomDuCompte(texte(details, "compte"), annuaire))}${motif ? ` : « ${motif} »` : ""}`;
+    }
+
+    case "retablissement_compte":
+      return `a rétabli le compte ${de(nomDuCompte(texte(details, "compte"), annuaire))}`;
+
     case "changement_plan_studio": {
       const compte = texte(details, "compte");
       const studio = compte
