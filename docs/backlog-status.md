@@ -61,7 +61,7 @@ réels).
 | S2     | Score de maturité : cartes de la liste des projets, écran de publication des pondérations                                      | validé en recette | —             |
 | T1     | Tableau de bord : chiffres, opportunités à étudier, prochaines échéances (sans IA)                                             | en production     | —             |
 | U1     | Candidature préparée depuis une opportunité du catalogue : formulaire prérempli (sans IA)                                      | validé en recette | —             |
-| V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | validé localement | —             |
+| V1     | Administration des comptes : liste, recherche, fiche d'un compte, changement de rôle (sans IA)                                 | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1747,3 +1747,22 @@ navigateur** : ni l'aspect des pages, ni le téléphone, ni les deux clics eux-m
 **La recette en production ne pourra porter que sur la consultation.** Le mode privé gèle les
 rôles pour tous, administrateurs compris : tant qu'il est actif, la fiche le dit et ne propose
 aucun changement. Le changement de rôle ne sera éprouvé en conditions réelles qu'à sa levée.
+
+V1 est en production depuis le 7 octobre 2026 (PR 133, `3be3247`, 56 migrations ; migration
+poussée après la fusion, CI de `main` verte, déploiement Vercel terminé, worker non redéployé).
+Relu en base : la fonction y est `security definer`, stable, refusée à un visiteur et au
+worker ; un appel sans session est refusé (42501) ; sous la session simulée d'un
+administrateur, elle rend les deux comptes de la production. **Le refus opposé à un simple
+membre n'y a pas été éprouvé** : la production ne compte que ses deux administrateurs.
+
+**Recette du 7 octobre 2026 : la consultation.** Un administrateur a ouvert la rubrique et la
+fiche d'un compte en production (mode privé actif), de 15h45 à 15h52 UTC : cinq lectures de
+`comptes_administration()` et deux de `mode_prive()`, toutes réussies, relevées aux journaux de
+Supabase. Il déclare avoir vu les quatre sections de la fiche — compte, profil, rôle, projets
+portés —, sans capture. Aucun appel à `definir_role()` : aucun rôle n'a changé.
+
+**V1 reste « en production », sans être dit validé en recette.** Le changement de rôle, moitié
+du lot, est gelé par le mode privé et ne s'éprouvera en réel qu'à sa levée. Non couvert non
+plus : la recherche et la pagination, faute de comptes ; le message du gel des rôles, que la
+fiche doit afficher à la place du bouton, non confirmé explicitement ; l'aspect des pages et le
+téléphone.
