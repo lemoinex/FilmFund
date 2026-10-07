@@ -65,9 +65,9 @@ réels).
 | V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | en production     | —             |
 | V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
 | W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | en production     | —             |
-| X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | en production     | —             |
-| X2a    | ARC : personnages proposés — base, profil, agent                                                                               | en production     | —             |
-| X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | en production     | —             |
+| X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | validé en recette | —             |
+| X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé en recette | —             |
+| X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé en recette | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -706,6 +706,57 @@ l'archive ZIP avec ses deux classeurs, couverts par les tests seulement ; un lon
 
 Le lot J3c est livré en entier. Reste ouverte la réserve de J3c-2 : FRAME n'a pas encore
 découpé une scène qui figure au scénario.
+
+## Recette du lot X : X1, X2a et X2b
+
+Le 7 octobre 2026, entre 23h01 et 23h11 UTC, les quatre livrables du lot X ont été demandés en
+production par un administrateur (mode privé actif), porteur du projet « une maison hantée »,
+sur accord et dans un plafond de 0,50 $. Quatre appels réels à Anthropic, un par livrable.
+
+| Livrable            | Profil                      | Durée | Longueur         | Jetons (entrée / sortie) | Coût       | Unités |
+| ------------------- | --------------------------- | ----- | ---------------- | ------------------------ | ---------- | ------ |
+| Note de réalisation | `weaver.note_realisation@1` | 82 s  | 6 974 caractères | 11 981 / 7 530           | 0,198524 $ | 3/3    |
+| Pitch oral          | `weaver.pitch_oral@1`       | 28 s  | 2 816 caractères | 11 967 / 3 274           | 0,113348 $ | 2/2    |
+| Pitch développé     | `weaver.pitch_developpe@1`  | 24 s  | 3 139 caractères | 11 929 / 2 484           | 0,097396 $ | 2/2    |
+| Personnages         | `arc.personnages@1`         | 28 s  | 7 personnages    | 4 784 / 2 098            | 0,061096 $ | 3/3    |
+
+- Quatre tâches réussies au premier essai, sans repli de modèle ; aucune à rapprocher. Coût
+  total : 0,470364 $.
+- Les trois textes ont été acceptés. **Chacun a son document**, créé en brouillon, de la
+  longueur exacte de sa proposition : aucun n'en a écrasé un autre.
+- Longueurs : le pitch oral visait 2 700 caractères, la note 6 000, le pitch développé 2 500.
+  Tous restent sous leur borne ; le pitch développé dépasse sa cible d'un quart.
+- Trois faits contrôlés dans les textes viennent du dossier : le titre « La Maison du Seuil »
+  de la fiche, « trente-deux ans » et « quinze ans » du traitement finalisé. C'est un sondage,
+  pas une relecture.
+- Personnages : un accepté seul, puis les six autres par « Tout accepter », quatre secondes
+  après. Chacun est entré à la fin de la liste, dans l'ordre de la proposition.
+- ARC désigne par la fonction ce que le dossier ne nomme pas — « La mère », « Le père », « La
+  présence » —, et écrit du père que son rôle exact « reste à préciser par l'auteur » plutôt
+  que de l'inventer.
+- À l'écran, d'après l'utilisateur, sans capture : le devis avant chaque confirmation,
+  l'avertissement au-dessus des personnages proposés, et la mention que la durée du pitch oral
+  est une estimation.
+
+Non couvert par cette recette :
+
+- corriger un personnage avant de l'accepter, en écarter un, « Écarter le reste » ;
+- **« ne pas redire un personnage déjà saisi »** : le porteur avait retiré les trois
+  personnages du projet avant la demande, la liste transmise à ARC était vide ;
+- la consigne sur les personnes réelles : le projet est une fiction ;
+- la durée réelle du pitch oral, à voix haute ; la qualité des textes, qui se juge à la lecture ;
+- un éditeur, un lecteur, l'affichage à 375 px.
+
+Deux constats à garder :
+
+- **le coût d'une rédaction suit les documents finalisés du projet.** Celui-ci en porte trois,
+  18 000 caractères, qui partent avec chaque demande de WEAVER : près de 12 000 jetons d'entrée,
+  et une note de réalisation à 0,20 $ là où 0,05 à 0,10 $ avaient été annoncés ;
+- **le plafond mensuel est presque atteint** : 4,70 $ dépensés en octobre sur 5 $. La réserve
+  au pire d'une note (0,46 $) ou d'un pitch (0,30 $) dépasse ce qui reste : la prochaine demande
+  sera refusée pour plafond atteint, sans coût, tant que l'administration ne l'a pas relevé.
+
+Le lot X est livré en entier.
 
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
@@ -1983,9 +2034,7 @@ avance sur la base ; ce que la vitrine et l'écran montraient alors n'a pas ét�
 **Non vérifié en production** : l'écran sous session, et tout appel réel — aucun devis, aucune
 tâche, aucune proposition de ces trois actions n'y existe.
 
-**Reste à faire en recette, sur accord et dans un budget défini** : un livrable de chaque en
-production. Un fournisseur factice ne prouve pas que la note est bonne ni que le pitch oral
-tient en trois minutes.
+X1 est validé en recette le 7 octobre 2026 : voir « Recette du lot X », plus haut.
 
 Lot X2 : ARC propose les personnages qui manquent à un projet (action `character_list`, profil
 `arc.personnages@1`, table `ai_suggestion_characters`). Cinquième livrable structuré, sur le
@@ -2051,7 +2100,5 @@ elle expliquait l'unité texte sans aucun chiffre du barème ; à 22h34 UTC, ell
 **Non vérifié en production** : l'écran sous session, et tout appel réel — la table des
 personnages proposés est vide.
 
-**Reste à faire en recette, sur accord et dans un budget défini** : une proposition réelle, et
-avec elle les boutons que la validation locale n'a pas joués. Un fournisseur factice ne prouve
-ni que les personnages proposés servent le récit, ni qu'ARC s'abstient d'inventer sur une
-personne réelle.
+X2a et X2b sont validés en recette le 7 octobre 2026, avec des réserves : voir « Recette du
+lot X », plus haut.
