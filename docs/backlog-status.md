@@ -42,8 +42,8 @@ réels).
 | L3     | GRIOT : contexte historique et culturel — base, profil, écran                                                                  | validé en recette | —             |
 | L4     | MATCH : catalogue des opportunités, tenu par l'administration (sans IA)                                                        | validé localement | —             |
 | L5     | MATCH : consultation du catalogue et compatibilité calculée (sans IA)                                                          | à faire           | L4            |
-| L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | validé localement | L4            |
-| L6b    | MATCH : agent de veille, écran d'administration                                                                                | à faire           | L6a           |
+| L6a    | MATCH : agent de veille, base et worker (opportunités proposées, non vérifiées)                                                | en production     | L4            |
+| L6b    | MATCH : agent de veille, écran d'administration                                                                                | validé localement | L6a           |
 | M1     | Exports PDF : contenu du dossier, fabrication par le worker, dépôt et purge                                                    | validé en recette | —             |
 | M2     | Exports PDF : écran de sélection des sections et téléchargement                                                                | validé en recette | —             |
 | M3     | Exports DOCX : le même dossier en Word, même écran, même quota                                                                 | validé en recette | —             |
@@ -1415,6 +1415,24 @@ Ce que ce lot ne fait pas : aucun écran — la veille ne se demande encore que 
 c'est L6b. Ce que les fournisseurs factices ne prouvent pas, et que la recette dira : ce que
 le moteur rend sur les fonds ouverts au cinéma africain, si le modèle s'en tient aux
 extraits, et s'il distingue un appel d'un palmarès.
+
+L6a est en production depuis le 7 octobre 2026 (PR 126, `bbcae24`, 55 migrations ; migration
+poussée avant la fusion et vérifiée en base ; worker redémarré à 02h03 UTC avec 21 actions,
+dont `opportunity_watch`). Les trois clés étant posées, MATCH est en service.
+
+L6b, écrit le même jour, sans migration : la section « Veille » d'Administration →
+Opportunités. L'administrateur écrit ce qu'il cherche ; l'écran lui remontre la recherche
+telle qu'elle partira, et dit qu'elle seule quitte la plateforme, que l'appel est payant et
+compté dans la dépense du mois. Chaque opportunité proposée est montrée « non vérifiée »,
+avec le résumé de l'extrait, la page d'où elle vient, la date de la collecte et l'extrait
+lui-même. Son nom, son organisme et sa catégorie se corrigent avant d'accepter ; sans
+organisme nommé par la page, l'écran demande de le lire sur la page, pas de le déduire du
+site. Une opportunité déjà au catalogue est signalée avant même d'être refusée. Une veille
+qui ne relève rien le dit, sans échec. Le formulaire manuel reste, pour compléter et vérifier.
+
+Vérifié en local sous une vraie session d'administrateur, par la page que le serveur rend ;
+**pas au navigateur** : ni l'aspect, ni le téléphone, ni les clics n'ont été vus. La recette
+— une veille réelle, payante — reste à faire.
 
 SCRIPT, décidé le 4 octobre 2026 (lot J, découpé en J1 — traitement et bible —, J2 — scénario
 et dialogues — et J3 — ARC, FRAME, GEAR, FIELD) : le traitement et la bible sont deux

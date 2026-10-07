@@ -2488,11 +2488,13 @@ describe("Veille de MATCH", () => {
         fonction,
       );
     }
-    // Aucune route ni composant ne nomme l'action hors de l'administration.
+    // Aucune route ni composant ne nomme l'action hors de l'administration :
+    // seuls son catalogue de libellés et les types générés la connaissent.
     const ailleurs = fichiersDe("src").filter(
       (fichier) =>
         /opportunity_watch|demander_veille/.test(lire(fichier)) &&
         !fichier.includes("administration") &&
+        !fichier.endsWith("lib/opportunites.ts") &&
         !fichier.endsWith("database.types.ts"),
     );
     assert.deepEqual(ailleurs, []);
