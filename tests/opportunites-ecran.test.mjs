@@ -349,6 +349,19 @@ describe("Opportunités : actions serveur", () => {
     assert.doesNotMatch(source, /fetch\(|process\.env|service_role/);
     assert.match(source, /revalidatePath\("\/administration\/journal"\)/);
   });
+
+  it("un doublon refusé par la base est dit, et renvoie à la fiche existante", () => {
+    assert.match(source, /const DOUBLON = "23505";/);
+    assert.match(
+      source,
+      /error\?\.code === DOUBLON\s+\? "Cette opportunité est déjà au catalogue, sous ce nom et cet organisme : modifiez sa fiche plutôt que d'en ajouter une seconde\."/,
+    );
+    // Seul un ajout rend la fiche créée : une modification ne mène nulle part.
+    assert.match(
+      source,
+      /return id\s+\? \{ succes: `« \$\{lecture\.valeurs\.name\} » est enregistrée\.` \}\s+:[^{]*\{ succes: `« \$\{lecture\.valeurs\.name\} » est ajoutée au catalogue\.`, fiche: data\.id \};/,
+    );
+  });
 });
 
 describe("Opportunités : page et formulaire", () => {
@@ -402,6 +415,21 @@ describe("Opportunités : page et formulaire", () => {
     assert.match(
       formulaire,
       /evenement\.preventDefault\(\);\s+const donnees = new FormData\(evenement\.currentTarget\);\s+startTransition\(\(\) => action\(donnees\)\);/,
+    );
+    // Un ajout réussi vide le formulaire et mène à la fiche : resté rempli, il
+    // se renvoyait, et la même opportunité entrait plusieurs fois.
+    assert.match(
+      formulaire,
+      /const ajoutee = !opportunite && etat && "succes" in etat \? etat\.fiche : undefined;/,
+    );
+    assert.match(
+      formulaire,
+      /useEffect\(\(\) => \{\s+if \(ajoutee\) \{\s+formulaire\.current\?\.reset\(\);\s+\}\s+\}, \[ajoutee\]\);/,
+    );
+    assert.match(formulaire, /<form ref=\{formulaire\} onSubmit=\{envoyer\}/);
+    assert.match(
+      formulaire,
+      /href=\{`\/administration\/opportunites\?modifier=\$\{ajoutee\}#opportunite-\$\{ajoutee\}`\}/,
     );
     // Chaque case et chaque bouton radio a son étiquette.
     assert.match(formulaire, /htmlFor=\{`\$\{prefixe\}-\$\{name\}-\$\{code\}`\}/);

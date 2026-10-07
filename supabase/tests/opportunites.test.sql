@@ -4,7 +4,7 @@
 
 begin;
 
-select plan(19);
+select plan(22);
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.funding_opportunities'::regclass),
@@ -66,11 +66,13 @@ select ok(
 );
 
 -- Les bornes, éprouvées en SQL direct : la base les tient quel que soit le chemin.
+-- Le nom suit la catégorie : deux opportunités du même nom chez le même
+-- organisme n'entrent pas au catalogue.
 prepare ajouter(text, text, date, text, numeric, text, date, date, text, text[], text[], text) as
   insert into public.funding_opportunities
     (name, organization, category, status, source_url, collected_on, source_excerpt,
      budget_min, currency, opens_on, deadline, website, countries, genres)
-  values ('Fonds d''essai', 'Organisme', $12, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+  values (initcap($12) || ' d''essai', 'Organisme', $12, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 
 select lives_ok(
   $$ execute ajouter('verifie', 'https://exemple.org/appel', '2026-10-01', 'Extrait.',
@@ -137,6 +139,24 @@ select throws_ok(
   $$ insert into public.funding_opportunities (name, organization, category, source_url, collected_on)
      values ('Fonds de demain', 'Organisme', 'fonds', 'https://exemple.org/', current_date + 30) $$,
   '22023', null, 'Une collecte datée de l''avenir est refusée'
+);
+
+-- Pas deux fois la même : un nom chez un organisme, casse et espaces mis à part.
+select throws_ok(
+  $$ execute ajouter('non_verifie', null, null, '', null, null, null, null, null, '{}', '{}', 'fonds') $$,
+  '23505', null, 'La même opportunité saisie une seconde fois est refusée'
+);
+
+select throws_ok(
+  $$ insert into public.funding_opportunities (name, organization, category)
+     values ('  FONDS D''ESSAI ', ' organisme', 'fonds') $$,
+  '23505', null, 'Ni la casse ni les espaces autour n''en font une autre'
+);
+
+select lives_ok(
+  $$ insert into public.funding_opportunities (name, organization, category)
+     values ('Fonds d''essai', 'Autre organisme', 'fonds') $$,
+  'Le même nom chez un autre organisme est une autre opportunité'
 );
 
 select * from finish();

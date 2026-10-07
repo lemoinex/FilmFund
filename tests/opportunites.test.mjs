@@ -284,6 +284,39 @@ describe("Catalogue des opportunités", () => {
     assert.equal(reprise.updated_by, second.id);
   });
 
+  it("la même opportunité ne s'ajoute pas deux fois, ni par un renommage", async () => {
+    await ajouter("Unique");
+
+    // Casse et espaces autour mis à part, c'est la même : refusée.
+    const { error: seconde } = await administrateur.client.from("funding_opportunities").insert(
+      fiche("Unique", {
+        name: `  ${nom("Unique").toUpperCase()} `,
+        organization: "organisme FICTIF ",
+      }),
+    );
+    assert.equal(seconde?.code, "23505");
+
+    // Le même nom chez un autre organisme est une autre opportunité.
+    const autre = await ajouter("Unique", { organization: "Autre organisme fictif" });
+
+    // La renommer vers l'organisme de la première ne passe pas davantage.
+    const { error: renommage } = await administrateur.client
+      .from("funding_opportunities")
+      .update({ organization: "Organisme fictif" })
+      .eq("id", autre.id);
+    assert.equal(renommage?.code, "23505");
+
+    const { data: restantes } = await administrateur.client
+      .from("funding_opportunities")
+      .select("organization")
+      .ilike("name", nom("Unique"))
+      .order("organization");
+    assert.deepEqual(
+      restantes.map((o) => o.organization),
+      ["Autre organisme fictif", "Organisme fictif"],
+    );
+  });
+
   it("en mode privé, un compte ne lit plus rien ; l'administration lit et écrit toujours", async () => {
     try {
       const actif = await sql("update public.app_settings set private_admin_only = true where id;");

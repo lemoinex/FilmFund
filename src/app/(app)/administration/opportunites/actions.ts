@@ -19,9 +19,12 @@ import type { ProjectFormat } from "@/lib/supabase/types";
  * formulaire, et une opportunité ne se dit vérifiée qu'avec sa source.
  */
 
-export type EtatOpportunite = { erreur: string } | { succes: string } | null;
+/** `fiche` : l'opportunité qui vient d'être ajoutée, pour y mener l'écran. */
+export type EtatOpportunite = { erreur: string } | { succes: string; fiche?: string } | null;
 
 const REFUS = "Action réservée à l'administration.";
+/** Code de PostgreSQL pour une ligne qui en doublerait une autre. */
+const DOUBLON = "23505";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function revalider(): void {
@@ -75,18 +78,20 @@ export async function enregistrerOpportunite(
       erreur:
         error?.code === "42501"
           ? REFUS
-          : id && !error
-            ? "Cette opportunité n'existe plus."
-            : "L'enregistrement a échoué. Vérifiez les valeurs et réessayez.",
+          : error?.code === DOUBLON
+            ? "Cette opportunité est déjà au catalogue, sous ce nom et cet organisme : modifiez sa fiche plutôt que d'en ajouter une seconde."
+            : id && !error
+              ? "Cette opportunité n'existe plus."
+              : "L'enregistrement a échoué. Vérifiez les valeurs et réessayez.",
     };
   }
 
   revalider();
-  return {
-    succes: id
-      ? `« ${lecture.valeurs.name} » est enregistrée.`
-      : `« ${lecture.valeurs.name} » est ajoutée au catalogue.`,
-  };
+  return id
+    ? { succes: `« ${lecture.valeurs.name} » est enregistrée.` }
+    : // L'écran vide alors le formulaire et mène à la fiche : la compléter se
+      // fait là, pas par un second ajout.
+      { succes: `« ${lecture.valeurs.name} » est ajoutée au catalogue.`, fiche: data.id };
 }
 
 /** Retire une opportunité du catalogue. Le retrait est journalisé par la base. */
