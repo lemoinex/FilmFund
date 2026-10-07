@@ -65,7 +65,7 @@ réels).
 | V2a    | Suspension d'un compte : table, contrôle avant requête, stockage, worker, journal (sans IA)                                    | en production     | —             |
 | V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
 | W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | en production     | —             |
-| X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | validé localement | —             |
+| X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -1968,7 +1968,19 @@ complétés. Sept tests d'architecture relisaient la migration d'un lot antérie
 tous les livrables actuels : ils ignorent désormais ceux nés après elle, et le bloc qui lit
 l'état courant pointe sur la migration du lot X1.
 
+X1 est en production depuis le 7 octobre 2026 : code fusionné à 20h58 UTC (PR 141,
+`7358085`), worker redémarré à 21h05 UTC — 24 actions annoncées, dont `direction_note`,
+`pitch_extended` et `pitch_oral` —, puis migration poussée vers 21h15 UTC (58 migrations).
+Relu en base après la poussée : les trois prix au barème (3, 2 et 2), leurs valeurs par défaut
+retirées, les droits par colonne — lecture aux visiteurs, lecture et insertion aux comptes —,
+les trois types de document, la contrainte des devis, et les quatre fonctions à jour, aucune
+ouverte aux visiteurs. La vitrine affiche « 3 pour une note de réalisation, 2 pour un pitch
+développé ou oral ». Pendant le quart d'heure entre la fusion et la poussée, le code était en
+avance sur la base ; ce que la vitrine et l'écran montraient alors n'a pas été observé.
+
+**Non vérifié en production** : l'écran sous session, et tout appel réel — aucun devis, aucune
+tâche, aucune proposition de ces trois actions n'y existe.
+
 **Reste à faire en recette, sur accord et dans un budget défini** : un livrable de chaque en
 production. Un fournisseur factice ne prouve pas que la note est bonne ni que le pitch oral
-tient en trois minutes. À la mise en production, la vitrine affichera son repli quelques
-minutes entre la fusion et la poussée de la migration.
+tient en trois minutes.
