@@ -66,8 +66,8 @@ réels).
 | V2b    | Suspension d'un compte : écran de l'administration, page « Compte suspendu »                                                   | en production     | —             |
 | W1     | Alertes internes : étapes, candidatures, opportunités — calculées, rien n'est stocké (sans IA)                                 | en production     | —             |
 | X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | en production     | —             |
-| X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé localement | —             |
-| X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé localement | —             |
+| X2a    | ARC : personnages proposés — base, profil, agent                                                                               | en production     | —             |
+| X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2035,8 +2035,23 @@ Treize fichiers de tests existants énuméraient les prix du barème, les foncti
 servies, et ont été complétés. Le bloc d'architecture qui lit l'état courant des devis pointe
 sur la migration du lot X2a ; contexte et propositions de texte restent ceux du lot X1.
 
-**Reste à faire** : la livraison — branche, PR, CI, fusion, puis la migration
-`20261007230000_arc_personnages.sql`, à pousser **aussitôt après la fusion** : entre les deux,
-la vitrine lit une colonne du barème qui n'existe pas encore. Puis, en recette, sur accord et
-dans un budget défini, une proposition réelle : un fournisseur factice ne prouve ni que les
-personnages proposés servent le récit, ni qu'ARC s'abstient d'inventer sur une personne réelle.
+X2a et X2b sont en production depuis le 7 octobre 2026 : code fusionné à 22h26 UTC (PR 143,
+`ba0ddf7`), migration poussée vers 22h28 UTC (59 migrations), worker redémarré à 22h33 UTC —
+25 actions annoncées, dont `character_list`. Relu en base après la poussée : le prix au barème
+(3) et son défaut retiré, les droits de la colonne, la contrainte des devis, la table — RLS
+active, sa politique de lecture et la politique restrictive du mode privé, ses deux
+déclencheurs, lisible des comptes sans qu'ils y écrivent, fermée aux visiteurs et au worker —,
+les sept fonctions et leurs droits, la borne de cinquante dans le devis, et l'écartement d'un
+bloc étendu aux huit tables filles.
+
+Comme prévu, la vitrine a montré son repli entre la fusion et la poussée : relue à 22h28 UTC,
+elle expliquait l'unité texte sans aucun chiffre du barème ; à 22h34 UTC, elle affichait
+« 3 pour une liste de personnages ». Elle se régénère toutes les cinq minutes.
+
+**Non vérifié en production** : l'écran sous session, et tout appel réel — la table des
+personnages proposés est vide.
+
+**Reste à faire en recette, sur accord et dans un budget défini** : une proposition réelle, et
+avec elle les boutons que la validation locale n'a pas joués. Un fournisseur factice ne prouve
+ni que les personnages proposés servent le récit, ni qu'ARC s'abstient d'inventer sur une
+personne réelle.
