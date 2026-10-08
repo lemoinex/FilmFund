@@ -98,6 +98,13 @@ export const CHAMPS_BAREME = [
     min: 0,
     max: 1_000,
   },
+  {
+    cle: "text_edit_per_passage",
+    libelle: "Retouche, par passage",
+    unite: "unités",
+    min: 0,
+    max: 1_000,
+  },
 ] as const;
 
 export type CleChampBareme = (typeof CHAMPS_BAREME)[number]["cle"];

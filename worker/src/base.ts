@@ -754,6 +754,36 @@ export async function lireContexteDialogue(
 }
 
 /**
+ * Ce que WEAVER lit pour retoucher un passage : quelques repères du projet,
+ * le document dont vient le passage, le passage, et ce qui l'entoure.
+ */
+export type ContexteRetouche = {
+  action: string;
+  projet: Pick<ContexteRedaction["projet"], "titre" | "format" | "genre" | "langues">;
+  contexte: Pick<ContexteRedaction["contexte"], "pitch">;
+  document: { type: string; titre: string };
+  /** Le passage à retoucher, relu et contrôlé par la base. */
+  passage: string;
+  /** Ce qui précède le passage dans le document : vide s'il l'ouvre. */
+  avant: string;
+  /** Ce qui le suit : vide s'il le clôt. */
+  apres: string;
+};
+
+/**
+ * Contexte de la retouche en cours ; null si l'essai ne nous appartient plus,
+ * si le projet n'existe plus, ou si le passage désigné n'est plus celui du
+ * document — rien ne doit alors être envoyé.
+ */
+export async function lireContexteRetouche(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteRetouche | null> {
+  const { rows } = await base.query("select public.contexte_retouche($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
  * Ce que SCOUT lit pour une recherche : la question, et de quoi situer la
  * synthèse. Ni titre, ni texte du projet, ni budget, ni équipe.
  */

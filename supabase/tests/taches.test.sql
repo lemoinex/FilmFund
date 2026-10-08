@@ -128,7 +128,7 @@ select is(
     'contexte_dialogue', 'contexte_export', 'contexte_image', 'contexte_materiel',
     'contexte_personnages',
     'contexte_planning', 'contexte_recherche',
-    'contexte_redaction',
+    'contexte_redaction', 'contexte_retouche',
     'contexte_travail', 'contexte_veille', 'livrer_export', 'livrer_proposition', 'livrer_proposition_budget',
     'livrer_proposition_decoupage', 'livrer_proposition_image', 'livrer_proposition_materiel',
     'livrer_proposition_personnages',

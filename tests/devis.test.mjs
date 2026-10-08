@@ -95,6 +95,7 @@ describe("Formulaire du barème", () => {
     bible: "10",
     screenplay_per_sequence: "2",
     dialogue_per_scene: "1",
+    text_edit_per_passage: "1",
   };
 
   it("lit des entiers, zéro compris", () => {
@@ -121,6 +122,7 @@ describe("Formulaire du barème", () => {
         bible: 10,
         screenplay_per_sequence: 2,
         dialogue_per_scene: 1,
+        text_edit_per_passage: 1,
       },
     });
   });
@@ -451,7 +453,7 @@ describe("Devis et réservations", () => {
       const { data: courante } = await compte.client
         .from("text_unit_rate_versions")
         .select(
-          "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene",
+          "logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage",
         )
         .order("version_number", { ascending: false })
         .limit(1)

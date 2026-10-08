@@ -868,6 +868,53 @@ export const LIVRABLE_DIALOGUE = {
   lignes: 16,
 } as const;
 
+/**
+ * Les retouches d'un passage (agent WEAVER, lot RT1). Comme les dialogues,
+ * elles se demandent depuis une sélection dans un document, et sont tenues à
+ * part de `LIVRABLES_IA`. Quatre actions, un seul prix au barème. Leurs bornes
+ * sont celles de la base ; un test d'architecture vérifie qu'elles
+ * s'accordent, et que le worker sait exécuter chacune.
+ */
+export const RETOUCHE = {
+  titre: "Retoucher un passage",
+  description:
+    "L'assistant retouche le passage que vous sélectionnez dans le texte, et lui seul. Ce passage, ce qui l'entoure, le titre du document, et le titre, le format, le genre, les langues et le pitch du projet sont transmis pour cela à notre fournisseur d'IA. Rien n'est remplacé avant que vous l'acceptiez.",
+  /** Longueur d'un passage, telle que la base l'admet au devis. */
+  passageMax: 6000,
+  lignes: 12,
+} as const;
+
+export const LIVRABLES_RETOUCHE = {
+  text_improve: {
+    bouton: "Améliorer",
+    effet: "Des phrases plus nettes, sans changer ce que dit le passage ni sa longueur.",
+    /** Longueur du passage retouché, telle que la base l'admet à l'acceptation. */
+    longueurMax: 12_000,
+  },
+  text_shorten: {
+    bouton: "Raccourcir",
+    effet: "Le même propos, resserré d'un tiers environ.",
+    longueurMax: 6000,
+  },
+  text_expand: {
+    bouton: "Développer",
+    effet: "Le passage déplié, de moitié environ, sans rien y ajouter d'étranger.",
+    longueurMax: 12_000,
+  },
+  text_correct: {
+    bouton: "Corriger",
+    effet: "Orthographe, grammaire et ponctuation seulement : le style ne change pas.",
+    longueurMax: 12_000,
+  },
+} as const;
+
+export type ActionRetouche = keyof typeof LIVRABLES_RETOUCHE;
+
+/** Vrai si l'action est une retouche de passage. */
+export function estRetouche(action: string): action is ActionRetouche {
+  return Object.hasOwn(LIVRABLES_RETOUCHE, action);
+}
+
 /** Où se trouve un passage dans un document, en caractères — et non en unités UTF-16. */
 export type PassageLocalise = { debut: number; longueur: number; passage: string };
 

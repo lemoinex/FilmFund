@@ -101,6 +101,23 @@ VOICE réécrit les répliques d'une scène du scénario (action `dialogue`, pro
 - **Atterrissage** : seul le passage est remplacé dans le document, qui garde une version ;
   la scène remplacée est conservée dans la proposition.
 
+### Retouches d'un passage (lot RT1)
+
+WEAVER retouche un passage d'un document de tout type : améliorer, raccourcir, développer,
+corriger. Quatre actions — `text_improve`, `text_shorten`, `text_expand`, `text_correct` —,
+quatre profils `weaver.retouche_*@1`, un seul prix au barème (`text_edit_per_passage`).
+
+- **Même mécanique que les dialogues** : passage désigné, pas transporté ; trois relectures,
+  ici par `passage_du_document`, qui n'exige aucun type de document ; acceptation refusée
+  (code `PR002`) si le document a changé à cet endroit.
+- **Contexte mince**, par `contexte_retouche` : le passage, les 1 500 caractères qui le
+  précèdent et les 500 qui le suivent, le titre et le type du document, et du projet son
+  titre, son format, son genre, ses langues et son pitch. Ni personnages, ni vision, ni budget.
+- **Bornes** : 6 000 caractères pour un passage ; 12 000 pour un passage retouché, 6 000
+  pour un passage raccourci. Le worker écarte une réponse plus longue avant le dépôt.
+- Tenues à part de `PROFILS_IA` (`PROFILS_RETOUCHE`) : elles ne se demandent pas depuis un
+  encart de texte. `executeursWeaver` les sert après les rédactions.
+
 ### Livrables structurés (lot J3b-1)
 
 FIELD ne rend pas un texte mais des lignes de budget (action `budget_plan`, profil

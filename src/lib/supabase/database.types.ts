@@ -2568,6 +2568,7 @@ export type Database = {
           synopsis_detailed: number;
           synopsis_short: number;
           synopsis_standard: number;
+          text_edit_per_passage: number;
           treatment: number;
           version_number: number;
         };
@@ -2594,6 +2595,7 @@ export type Database = {
           synopsis_detailed: number;
           synopsis_short: number;
           synopsis_standard: number;
+          text_edit_per_passage: number;
           treatment: number;
           version_number?: number;
         };
@@ -2620,6 +2622,7 @@ export type Database = {
           synopsis_detailed?: number;
           synopsis_short?: number;
           synopsis_standard?: number;
+          text_edit_per_passage?: number;
           treatment?: number;
           version_number?: number;
         };
@@ -2926,6 +2929,7 @@ export type Database = {
           synopsis_detailed: number;
           synopsis_short: number;
           synopsis_standard: number;
+          text_edit_per_passage: number;
           treatment: number;
           version_number: number;
         };
@@ -3042,6 +3046,7 @@ export type Database = {
       contexte_planning: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_recherche: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_redaction: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_retouche: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_travail: {
         Args: { p_attempt_id: string };
         Returns: {
@@ -3573,6 +3578,7 @@ export type Database = {
         Returns: number;
       };
       parametres_export: { Args: { p_params: Json }; Returns: Json };
+      passage_du_document: { Args: { p_params: Json; p_project_id: string }; Returns: string };
       passage_du_scenario: { Args: { p_params: Json; p_project_id: string }; Returns: string };
       personnage_a_decider: {
         Args: { p_line_id: string };

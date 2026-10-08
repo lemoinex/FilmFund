@@ -28,8 +28,8 @@ select throws_ok(
        (logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note,
         direction_note, pitch_extended, pitch_oral,
         dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible,
-        screenplay_per_sequence, dialogue_per_scene)
-     values (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, -1, 5, 3, 3, 8, 10, 2, 1) $$,
+        screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage)
+     values (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, -1, 5, 3, 3, 8, 10, 2, 1, 1) $$,
   '23514', null, 'Un prix négatif pour le découpage est refusé'
 );
 

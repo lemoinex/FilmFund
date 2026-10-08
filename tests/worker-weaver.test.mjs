@@ -40,6 +40,7 @@ import {
   PROFILS_FRAME,
   PROFILS_GEAR,
   PROFILS_IA,
+  PROFILS_RETOUCHE,
   PROFILS_SCRIPT,
   PROFILS_VOICE,
   PROFILS_WEAVER,
@@ -166,7 +167,11 @@ describe("WEAVER : logline", () => {
 
   it("sait exécuter les livrables de WEAVER, et eux seuls", () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
-    assert.deepEqual(Object.keys(executeursWeaver(base, fournisseur)), Object.keys(PROFILS_WEAVER));
+    // Ses rédactions, puis ses retouches d'un passage (lot RT1).
+    assert.deepEqual(Object.keys(executeursWeaver(base, fournisseur)), [
+      ...Object.keys(PROFILS_WEAVER),
+      ...Object.keys(PROFILS_RETOUCHE),
+    ]);
     assert.deepEqual(Object.keys(PROFILS_WEAVER), [
       "logline",
       "synopsis_short",
@@ -542,6 +547,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
       Object.keys(agents.lire()).sort(),
       [
         ...Object.keys(PROFILS_IA),
+        ...Object.keys(PROFILS_RETOUCHE),
         ...Object.keys(PROFILS_VOICE),
         ...Object.keys(PROFILS_FIELD),
         ...Object.keys(PROFILS_FRAME),
@@ -582,6 +588,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
       Object.keys(agents.lire()).sort(),
       [
         ...Object.keys(PROFILS_IA),
+        ...Object.keys(PROFILS_RETOUCHE),
         ...Object.keys(PROFILS_VOICE),
         ...Object.keys(PROFILS_FIELD),
         ...Object.keys(PROFILS_FRAME),

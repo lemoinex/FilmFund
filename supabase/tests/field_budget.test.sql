@@ -88,8 +88,8 @@ select throws_ok(
     insert into public.text_unit_rate_versions (
       logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note,
       dramatic_analysis, schedule_plan, treatment, bible, screenplay_per_sequence,
-      dialogue_per_scene
-    ) values (1, 1, 2, 3, 3, 4, 3, 8, 10, 2, 1)
+      dialogue_per_scene, text_edit_per_passage
+    ) values (1, 1, 2, 3, 3, 4, 3, 8, 10, 2, 1, 1)
   $$,
   '23502',
   null,

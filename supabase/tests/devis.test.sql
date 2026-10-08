@@ -23,11 +23,11 @@ insert into public.text_unit_rate_versions (
   direction_note, pitch_extended, pitch_oral,
   dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible,
   screenplay_per_sequence,
-  dialogue_per_scene, published_at
+  dialogue_per_scene, text_edit_per_passage, published_at
 )
 values
-  (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, now() - interval '60 days'),
-  (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 7, 10, 2, 1, now() - interval '5 days');
+  (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, 1, now() - interval '60 days'),
+  (1, 1, 2, 3, 3, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 7, 10, 2, 1, 1, now() - interval '5 days');
 
 insert into auth.users (id, email, aud, role)
 values
@@ -226,9 +226,9 @@ insert into public.text_unit_rate_versions (
   direction_note, pitch_extended, pitch_oral,
   dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible,
   screenplay_per_sequence,
-  dialogue_per_scene, published_at
+  dialogue_per_scene, text_edit_per_passage, published_at
 )
-values (1, 1, 2, 3, 4, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, now() - interval '20 days');
+values (1, 1, 2, 3, 4, 3, 2, 2, 4, 3, 6, 3, 4, 5, 3, 3, 5, 10, 2, 1, 1, now() - interval '20 days');
 
 set local role authenticated;
 select set_config(
