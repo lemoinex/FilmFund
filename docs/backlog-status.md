@@ -74,7 +74,8 @@ réels).
 | W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | en production     | —             |
 | AA1    | Rubrique « Ressources » : bibliothèque de guides et de checklists, contenus versionnés (sans IA)                               | en production     | —             |
 | ED1    | Éditeur : comparaison de deux versions d'un document (sans IA)                                                                 | en production     | —             |
-| ED2a   | Éditeur : mise en forme par marqueurs, barre d'outils, aperçu et rendu à la lecture (sans IA)                                  | validé localement | —             |
+| ED2a   | Éditeur : mise en forme par marqueurs, barre d'outils, aperçu et rendu à la lecture (sans IA)                                  | en production     | —             |
+| ED2b   | Exports : les marqueurs rendus en PDF, en Word et dans le ZIP (sans IA)                                                        | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2596,5 +2597,40 @@ l'affichage à 375 px ; la lecture avec un lecteur d'écran.
 **Connu** : un dossier exporté en PDF, en Word ou en ZIP montre encore les marqueurs tels
 qu'ils sont écrits, jusqu'au lot ED2b.
 
-**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis ED2b, les exports, et
-ED3, la sauvegarde automatique.
+ED2a est en production depuis le 8 octobre 2026 (PR 155, `f5ef79b`), sans migration ; CI de
+`main` verte, déploiement terminé. Non vu sous session en production.
+
+Lot ED2b : les exports lisent les mêmes marqueurs. Le worker ne peut pas importer
+l'application ; il tient donc **une copie de la lecture**
+(`worker/src/exports/mise-en-forme.ts`), et un test refuse que les deux diffèrent, déclaration
+par déclaration puis sur un corpus de textes. Le plan du dossier gagne un bloc,
+`texte_mis_en_forme`, produit pour le seul texte d'un document dont le type n'est pas un
+scénario ; le texte y reste tel qu'il est enregistré, et c'est le rendu qui le lit.
+
+- **PDF** : titre et sous-titre en gras, en corps 14 et 12 ; liste à puces, la puce à la
+  marge et le texte en retrait, retrait gardé quand l'élément passe à la ligne ; gras et
+  italique dans la phrase, par changement de police.
+- **Word** : de vrais titres, de niveau 3 et 4 — les deux premiers sont ceux du dossier, et
+  le sommaire d'un traitement de texte les range dessous ; une vraie liste à puces ; gras et
+  italique.
+- **ZIP** : le fichier Word de chaque document en hérite.
+
+**Un scénario et les champs de la fiche restent du texte brut** — synopsis court, thème,
+enjeux, vision, objectifs, public : ce ne sont pas des documents, et leur saisie n'a pas de
+barre d'outils. Un document sans marqueur sort comme avant.
+
+ED2b est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur ni
+migration, sans dépendance : 23 tests de plus, suite complète de l'API à 1 455 tests. Vingt-trois sabotages attrapés un par un, du
+premier coup. Les fichiers sont réellement fabriqués : le Word est relu dans son XML ; le PDF,
+dont le texte est écrit en numéros de glyphes, dans ses polices et dans la position de ses
+lignes.
+
+**Non couvert** : l'ouverture des fichiers dans un lecteur de PDF et dans un traitement de
+texte — aucun n'est installé sur le poste de test.
+
+**Connu** : un export déjà fabriqué n'est pas refait tant que le contenu demandé n'a pas
+changé ; un dossier exporté avant ce lot garde ses marqueurs jusqu'à son expiration ou jusqu'à
+une modification du projet.
+
+**Reste à faire** : la livraison — PR, CI, fusion, sans migration ; la fusion redéploie le
+worker. Puis ED3, la sauvegarde automatique.
