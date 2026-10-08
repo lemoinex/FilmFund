@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { cleValide, estFournisseurConnu, messageErreur } from "@/lib/integrations-ia";
+import { lirePlafond, messagePlafondChange } from "@/lib/plafond-ia";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
@@ -97,4 +98,42 @@ export async function gererCle(
     succes:
       "Clé enregistrée. Elle n'est plus affichable ; le worker la prendra en compte dans la minute.",
   };
+}
+
+/**
+ * Change le plafond mensuel des dépenses d'IA.
+ *
+ * Le montant est relu et borné ici, quoi qu'ait vérifié le navigateur. La
+ * base n'admet l'écriture que d'un administrateur, sous la RLS, et la
+ * journalise dans la même transaction : cette action n'emploie ni rôle de
+ * service ni fonction privilégiée.
+ */
+export async function definirPlafond(
+  _etatPrecedent: EtatIntegration,
+  formData: FormData,
+): Promise<EtatIntegration> {
+  const lu = lirePlafond(formData.get("plafond"));
+  if ("erreur" in lu) {
+    return lu;
+  }
+
+  const acces = await exigerAdministrateur();
+  if ("erreur" in acces) {
+    return acces;
+  }
+
+  // `select` après l'écriture : une mise à jour que la RLS écarte ne lève
+  // aucune erreur, elle ne touche simplement aucune ligne.
+  const { data, error } = await acces.supabase
+    .from("ai_settings")
+    .update({ monthly_budget_usd: lu.plafond })
+    .eq("id", true)
+    .select("monthly_budget_usd");
+  if (error || data?.length !== 1) {
+    return { erreur: error ? messageErreur(error.code) : REFUS };
+  }
+
+  const { data: mois } = await acces.supabase.rpc("depense_ia_administration");
+  revalider();
+  return { succes: messagePlafondChange(lu.plafond, Number(mois?.[0]?.depense ?? 0)) };
 }

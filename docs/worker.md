@@ -25,7 +25,7 @@ clé.
 | **Mot de passe du rôle**                   | Fixé à la main dans Supabase, rangé dans Railway. **Jamais dans Git.** |
 | **Clé d'API du fournisseur d'IA**          | Créée par l'exploitant, rangée dans Railway. **Jamais dans Git.**      |
 | Profils d'agents, modèle, tarifs           | `worker/src/ia/profils.ts`                                             |
-| Plafond mensuel des dépenses d'IA          | Table `ai_settings`, modifiable par un administrateur, journalisée     |
+| Plafond mensuel des dépenses d'IA          | Administration → Intégrations IA ; table `ai_settings`, journalisée    |
 | Réglages du service Railway                | Dans Railway ; décrits ci-dessous                                      |
 
 ## Mot de passe du rôle
@@ -340,6 +340,17 @@ provision qui le dépasserait est refusée : rien n'est envoyé, la tâche écho
 « Plafond mensuel des dépenses d'IA atteint. », et l'unité est rendue. Une provision jamais
 confirmée (coupure) continue de compter à son montant provisionné : le plafond se resserre
 plutôt qu'il ne cède.
+
+Depuis le lot Y1, la dépense du mois, le plafond et ce qui reste se lisent en tête
+d'**Administration → Intégrations IA**, où un administrateur change le plafond. L'écran borne
+la saisie à 50 $ : un garde-fou contre une faute de frappe, pas une limite de la base. Il
+prévient quand il reste moins de 1 $, et quand le plafond est atteint.
+
+Ce plafond est celui de la plateforme. Le crédit d'un compte chez son fournisseur est autre
+chose : un compte Anthropic ou OpenAI à sec fait échouer l'appel quel que soit le plafond, et
+un plafond atteint refuse la demande quel que soit le crédit.
+
+La voie SQL reste ouverte à l'exploitant, au-delà de 50 $ compris :
 
 ```sql
 -- Dépense du mois et plafond.

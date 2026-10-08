@@ -678,7 +678,8 @@ recommandations (« à améliorer ») sont configurables et traçables.
 - Plans, prix, quotas et barème restent configurables par l’administration ;
   aucune utilisation IA illimitée implicite.
 - Admin livré : journal d’administration, plans et quotas, pondérations du score
-  de maturité, catalogue et veille des opportunités, intégrations IA, comptes.
+  de maturité, catalogue et veille des opportunités, intégrations IA, plafond
+  mensuel d’IA, comptes.
 - Comptes (lot V1, sans IA) : rubrique « Utilisateurs »
   (`/administration/utilisateurs`, `src/lib/comptes.ts`) — liste, recherche, fiche
   d’un compte, changement de rôle. Les adresses ne se lisent que par
@@ -703,7 +704,17 @@ recommandations (« à améliorer ») sont configurables et traçables.
   `compte_suspendu()` sur chaque page protégée et ne réagit qu’au code `CS001`.
   Cette page ne lit rien en base et **ne montre jamais le motif**, réservé à
   l’administration. Ne pas la placer sous la coque de l’application.
-- Admin prévu : statistiques anonymisées, modèles/coûts/limites IA, abonnements.
+- Plafond mensuel des dépenses d’IA (lot Y1, sans IA) : section en tête
+  d’« Intégrations IA » (`formulaire-plafond.tsx`, `src/lib/plafond-ia.ts`) —
+  dépense du mois, plafond, reste, changement du plafond. La dépense ne se lit
+  que par `depense_ia_administration()`, réservée aux administrateurs, qui rend
+  le calcul du worker (`depense_ia_du_mois()`, toujours fermée aux comptes) :
+  ne pas créer un second calcul. Le plafond s’écrit sous la RLS, journalisé par
+  le déclencheur déjà en place. **La borne de saisie de 50 $ est un garde-fou
+  de l’écran, décidé avec l’utilisateur, pas une contrainte de la base** : ne
+  pas la relever sans décision. Ce plafond est celui de la plateforme ; le
+  crédit d’un compte chez son fournisseur est autre chose, et l’écran le dit.
+- Admin prévu : statistiques anonymisées, modèles et coûts de l’IA, abonnements.
 
 ## 11. État et ordre de mise en œuvre
 
