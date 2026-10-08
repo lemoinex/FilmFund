@@ -512,6 +512,26 @@ describe("Alertes : ce que la lecture rapatrie", () => {
 });
 
 describe("Alertes : les écrans", () => {
+  it("l'état vide dit tout ce qui aurait pu alerter, la nouveauté comprise", () => {
+    const page = lire("src/app/(app)/alertes/page.tsx");
+    const vide = /"(Aucune alerte : aucune [^"]+)"/.exec(page)?.[1];
+    assert.ok(vide, "phrase de l'état vide introuvable");
+    // Une mention par famille de natures : l'oublier laisserait croire
+    // qu'elle n'est pas calculée.
+    const mentions = {
+      etape_en_retard: /étape en retard/,
+      etape_proche: /ni à venir/,
+      dossier_incomplet: /candidature à déposer/,
+      candidature_proche: /candidature à déposer/,
+      opportunite_proche: /opportunité à étudier bientôt close/,
+      opportunite_nouvelle: /nouvellement vérifiée/,
+    };
+    assert.deepEqual(Object.keys(mentions).sort(), Object.keys(NATURES_ALERTE).sort());
+    for (const [nature, mention] of Object.entries(mentions)) {
+      assert.match(vide, mention, nature);
+    }
+  });
+
   it("la rubrique ne lit que les projets portés ou partagés, jamais ceux de l'administration", () => {
     const page = sansCommentaires(lire("src/app/(app)/alertes/page.tsx"));
     assert.match(
