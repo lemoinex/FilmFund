@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { TexteMisEnForme } from "@/components/texte-mis-en-forme";
 import { Horodatage } from "@/components/ui/horodatage";
 import { compterMots, libelleMots } from "@/lib/documents";
 import { createClient } from "@/lib/supabase/server";
@@ -43,7 +44,7 @@ export default async function VersionPage({
       .maybeSingle(),
     supabase
       .from("project_documents")
-      .select("id, title, content")
+      .select("id, title, content, type")
       .eq("id", documentId)
       .eq("project_id", id)
       .maybeSingle(),
@@ -91,8 +92,13 @@ export default async function VersionPage({
           {libelleMots(compterMots(version.content))} · <Horodatage iso={version.created_at} />
           {auteur ? ` · ${auteur}` : null}
         </p>
-        <div className="border-app-line mt-8 border-t pt-8 text-[0.9375rem] leading-relaxed text-pretty whitespace-pre-line">
-          {version.content || <span className="text-secondary">Cette version est vide.</span>}
+        <div className="border-app-line mt-8 border-t pt-8 text-[0.9375rem] leading-relaxed">
+          {version.content ? (
+            // Une version n'a pas de type à elle : elle se lit comme son document.
+            <TexteMisEnForme texte={version.content} type={document.type} />
+          ) : (
+            <span className="text-secondary">Cette version est vide.</span>
+          )}
         </div>
       </article>
 

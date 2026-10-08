@@ -514,6 +514,17 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   calcul, au-delà de laquelle la page le dit. Une lecture seule, ouverte à
   toute l’équipe sous la RLS des versions. Un changement ne se signale jamais
   par la seule couleur. Ne pas créer un second calcul : étendre celui-ci.
+- Mise en forme à l’écran (lot ED2a, sans IA, sans migration) : livrée. Cinq
+  marqueurs — `# `, `## `, `- ` en début de ligne, `**gras**`, `*italique*` —
+  et rien d’autre ; la règle est dans `src/lib/mise-en-forme.ts`, le rendu dans
+  `src/components/texte-mis-en-forme.tsx`, qui construit des éléments et
+  n’injecte jamais de HTML. La barre d’outils (`documents/barre-outils.tsx`)
+  n’écrit que ces marqueurs dans le texte. Un marqueur non refermé reste du
+  texte. **Un scénario garde son texte brut** (`TYPES_SANS_MISE_EN_FORME`) : un
+  tiret en tête de réplique n’y est pas une puce. La comparaison de versions
+  montre le texte brut. Les exports ne lisent pas encore les marqueurs (lot
+  ED2b) ; les consignes des agents ne les demandent pas. Ne pas créer une
+  seconde règle : étendre celle-ci.
 - Actions : régénérer, améliorer, raccourcir, développer, corriger.
 - Toute génération crée une proposition puis une version ; aucun écrasement silencieux.
 
