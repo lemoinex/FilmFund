@@ -33,19 +33,20 @@ Au début de chaque tâche :
    directement liés à la tâche.
 5. Lire le document métier correspondant seulement si nécessaire :
 
-| Sujet                             | Document à lire si présent                          |
-| --------------------------------- | --------------------------------------------------- |
-| État réel, audit et plan des lots | `docs/implementation-audit.md`                      |
-| Mode privé                        | `docs/mode-prive.md`                                |
-| Worker, passerelle IA, coûts      | `docs/worker.md`                                    |
-| Rôles d’Anthropic et d’OpenAI     | `docs/roles-anthropic-openai-filmfund-africa.md`    |
-| Produit, périmètre MVP, rôles     | `docs/product/PRD_MVP.md`                           |
-| Découpage, matériel, électricité  | `docs/product/CDC_FRAME_GEAR.md`                    |
-| Règles d’exécution                | `docs/engineering/VIBECODING_RULES.md`              |
-| Sécurité, risques, garde-fous     | `docs/engineering/GUARDRAILS_BACKLOG.md`            |
-| Lots et ordre d’exécution         | `docs/engineering/LOTS_IMPLEMENTATION.md`           |
-| Décisions d’architecture          | `docs/decisions/ADR-0001-architecture-and-scope.md` |
-| Landing page                      | `docs/design/LANDING_PAGE_SPEC.md`                  |
+| Sujet                             | Document à lire si présent                               |
+| --------------------------------- | -------------------------------------------------------- |
+| État réel, audit et plan des lots | `docs/implementation-audit.md`                           |
+| Mode privé                        | `docs/mode-prive.md`                                     |
+| Worker, passerelle IA, coûts      | `docs/worker.md`                                         |
+| Rôles d’Anthropic et d’OpenAI     | `docs/roles-anthropic-openai-filmfund-africa.md`         |
+| Produit, périmètre MVP, rôles     | `docs/product/PRD_MVP.md`                                |
+| Découpage, matériel, électricité  | `docs/product/CDC_FRAME_GEAR.md`                         |
+| Rubrique « Ressources »           | `docs/product/Claude_Code_Ressources_FilmFund_Africa.md` |
+| Règles d’exécution                | `docs/engineering/VIBECODING_RULES.md`                   |
+| Sécurité, risques, garde-fous     | `docs/engineering/GUARDRAILS_BACKLOG.md`                 |
+| Lots et ordre d’exécution         | `docs/engineering/LOTS_IMPLEMENTATION.md`                |
+| Décisions d’architecture          | `docs/decisions/ADR-0001-architecture-and-scope.md`      |
+| Landing page                      | `docs/design/LANDING_PAGE_SPEC.md`                       |
 
 Six de ces documents ne sont pas encore versionnés — `PRD_MVP.md`, les trois de
 `docs/engineering/`, l’ADR et `LANDING_PAGE_SPEC.md` : signaler leur absence, ne jamais en
@@ -654,6 +655,25 @@ recommandations (« à améliorer ») sont configurables et traçables.
   saisi ; ni scénario, ni budget. Il ne propose ni marque, ni loueur, ni prix,
   ni groupe électrogène, et **ne rend aucun calcul** : une puissance proposée
   est une estimation, facultative, que l’écran présente comme telle.
+
+### Ressources
+
+- Rubrique « Ressources » (lot AA1, sans IA, sans migration) : livrée —
+  `/ressources` et `/ressources/[slug]`, contenus dans `src/lib/ressources.ts`.
+  Une bibliothèque de guides, modèles, checklists et références : **des
+  contenus versionnés dans le dépôt, pas une table**. Ne pas créer de table, de
+  favoris, de notation ni de back-office sans décision.
+- **Un contenu est un brouillon tant qu’il n’a pas été validé** : il ne se
+  montre qu’à l’administration, sous son étiquette, et son adresse est
+  introuvable pour un autre compte. Publier, c’est passer `statut` à
+  « publie » et dater `misAJourLe`, après relecture par l’utilisateur — jamais
+  d’office.
+- Le contenu n’est que du texte, rendu comme tel. Aucun lien dans un texte ;
+  une référence externe porte une adresse `https`, sa source et le jour où le
+  lien a été vérifié. Ni fonds, ni montant, ni échéance, ni promesse
+  d’éligibilité : ce rôle est celui de MATCH. Aucun modèle téléchargeable sans
+  fichier réel.
+- La rubrique ne génère rien et n’appelle aucun fournisseur.
 
 ### Exports et stockage
 

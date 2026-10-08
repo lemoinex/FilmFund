@@ -72,6 +72,7 @@ réels).
 | Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | validé en recette | —             |
 | Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | validé en recette | —             |
 | W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | en production     | —             |
+| AA1    | Rubrique « Ressources » : bibliothèque de guides et de checklists, contenus versionnés (sans IA)                               | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2408,3 +2409,85 @@ lot et soit à étudier pour un projet.
 **Reste à faire, sans coût** : la recette des trois lots. Ouvrir Coûts de l'IA et
 Statistiques ; faire passer une opportunité à « vérifiée » depuis « Catalogue et veille », puis
 lire l'alerte dans la rubrique « Alertes » et dans le bloc « À traiter ».
+
+Cadrage du 8 octobre 2026, après les lots Z et W. L'utilisateur arrête les recettes écran par
+écran, et fixe l'échéance : **l'application reste fermée au grand public six mois, puis sera
+déployée publiquement**, vers avril 2027. Cela ne change pas ce qu'il faut construire, mais
+l'ordre : paiements, quotas et recette avant ouverture (lots N, O, P) attendront, les fonctions
+du cahier des charges passent d'abord.
+
+Un audit ciblé du cahier des charges contre le code, le même jour, relève neuf écarts.
+Constatés dans le dépôt : l'éditeur de documents est une zone de texte brut — ni titres, ni
+listes, ni gras, ni italique — ; il n'a pas de sauvegarde automatique, seulement un
+avertissement avant de quitter ; une version se restaure mais ne se compare pas ; aucune action
+de retouche — améliorer, raccourcir, développer, corriger — n'existe ; les séries n'ont que
+leur bible, ni saison, ni épisodes, ni pilote ; les opportunités n'ont pas de filtre par
+montant ni par langue ; la compatibilité compare trois critères sur les huit prévus ; les
+studios n'ont aucun écran, ni invitations ni gestion des membres ; deux rubriques du menu
+étaient annoncées « Bientôt » sans page. L'audit est une recherche ciblée, pas une relecture
+ligne à ligne ; `PRD_MVP.md` et `LANDING_PAGE_SPEC.md` manquent toujours au dépôt.
+
+Des deux rubriques annoncées : « Ressources » a reçu sa spécification, versionnée dans
+`docs/product/Claude_Code_Ressources_FilmFund_Africa.md`, et fait l'objet du lot AA1.
+« Assistant IA » était prévue comme le point d'accès commun aux onze agents ; les deux autres
+principes de sa note — l'utilisateur garde la main, les calculs restent du code — sont tenus
+partout, mais l'interface commune n'existe pas. Elle n'apporterait aucune capacité nouvelle,
+seulement un endroit où voir ce que l'assistant sait faire : recommandée pour la préparation de
+l'ouverture, **non décidée**. L'entrée du menu reste annoncée.
+
+Ordre proposé pour la suite : éditeur, retouches par l'IA, opportunités, séries, studios.
+
+Lot AA1 : la rubrique « Ressources », une bibliothèque de guides, de modèles, de checklists et
+de références. La liste (`/ressources`) offre une recherche sur le titre et la description —
+sans casse ni accents, tous les mots — et deux filtres, par catégorie et par type, dans un
+formulaire en GET : les filtres tiennent dans l'adresse, rien ne part à chaque frappe. Chaque
+ressource a sa page (`/ressources/[slug]`).
+
+**Les contenus sont versionnés dans le dépôt** (`src/lib/ressources.ts`), sur le modèle des
+pages légales : ni table, ni migration, ni stockage, ni back-office. Un contenu est fait de
+blocs de texte — paragraphes, listes, points à vérifier — rendus comme du texte : aucune
+syntaxe n'est interprétée. Les points à vérifier s'affichent en liste numérotée, pas en cases à
+cocher : rien n'étant enregistré, une case cochée se perdrait. La rubrique ne génère rien,
+n'appelle aucun fournisseur, et ne lit en base que le rôle de l'appelant.
+
+**Cinq brouillons, aucun publié.** Rédigés pour la plateforme le 8 octobre 2026 — ils ne
+figuraient pas dans la spécification — : comprendre et rédiger une logline ; structurer un
+synopsis ; préparer une note d'intention ; vérifier les pièces d'un dossier de candidature ;
+préparer une checklist de préproduction. Un brouillon ne se montre qu'à l'administration, sous
+son étiquette, et son adresse est introuvable pour tout autre compte. **Un compte ordinaire
+voit donc aujourd'hui une bibliothèque vide**, qui dit que les premiers guides sont en
+relecture. Publier un contenu est une décision de l'utilisateur, prise après l'avoir lu.
+
+Ce que le lot ne contient pas, par choix : aucune référence externe ni aucun modèle
+téléchargeable — aucun lien ni fichier n'étant fourni, aucun n'est inventé — ; ni favoris, ni
+notation, ni recommandation. La catégorie « Utilisation de filmfundAfrica » existe, sans
+contenu encore.
+
+Trois écarts au plan. Les pages de la liste sont rangées dans un groupe de routes `(liste)`,
+comme celles des opportunités, pour que leur squelette de chargement ne couvre pas la page
+d'une ressource, qui répondrait sinon 200 à une adresse inconnue. La spécification n'a pas été
+copiée sous un nouveau nom : l'utilisateur l'avait déjà déposée dans `docs/product/`, elle y
+est gardée sous le sien, seuls ses blancs ayant été remis en forme. Et
+`src/lib/supabase/middleware.ts` a été touché : un garde d'architecture, tombé à la suite
+complète, exige que chaque rubrique de l'espace connecté figure dans la liste des routes que
+le middleware protège. `/ressources` n'y était pas. Les pages vérifiaient bien la session —
+d'où un rendu réel sans défaut —, mais le middleware est seul à appliquer le mode privé et la
+suspension avant d'atteindre la page, et à mémoriser la destination d'un visiteur renvoyé à la
+connexion. La route y est maintenant.
+
+AA1 est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur : 25 tests de
+plus ; aucun test SQL, le lot ne touchant pas la base. La suite complète de l'API a donné
+1 374 tests verts sur 1 375, le seul échec étant ce garde du middleware ; corrigé, puis
+relancé avec son fichier et celui du lot (156 sur 156) — la suite entière n'a pas été rejouée
+après ce correctif d'une ligne, la CI de la PR le fait. Trente et un sabotages attrapés un par
+un, du premier coup. Rendu réel sur un serveur de production local, rejoué après le
+correctif, 26 points sur 26, sous trois sessions — administrateur, compte ordinaire,
+visiteur : les cinq brouillons et leur étiquette, la recherche et les filtres, la recherche
+sans résultat, une adresse recopiée de travers, la page d'un guide, la bibliothèque vide d'un
+compte ordinaire et la page introuvable d'un brouillon.
+
+**Non couvert** : l'affichage à 375 px ; une référence externe réelle, aucune n'existant ; et
+la justesse des cinq textes, qui ne se juge qu'à la lecture.
+
+**Reste à faire** : la livraison — PR, CI, fusion, sans migration —, puis la relecture des cinq
+brouillons par l'utilisateur, qui décidera lesquels publier.

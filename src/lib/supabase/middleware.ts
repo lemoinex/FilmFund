@@ -13,6 +13,7 @@ const ROUTES_PROTEGEES = [
   "/documents",
   "/storyboard",
   "/opportunites",
+  "/ressources",
   "/administration",
   "/profil",
 ];
