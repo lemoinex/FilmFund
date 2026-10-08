@@ -280,6 +280,85 @@ describe("Alertes : les opportunités à étudier", () => {
   });
 });
 
+describe("Alertes : les nouvelles opportunités", () => {
+  const nouvelle = (verifieeLe, surcharge = {}) => ({
+    id: "opp-2",
+    projetId: P1,
+    name: "Fonds fictif",
+    organization: "Organisme fictif",
+    deadline: null,
+    verifieeLe,
+    ...surcharge,
+  });
+  const de = (...opportunites) => calculerAlertes({ ...vide, opportunites }, JOUR);
+
+  it("nouvelle du jour de sa vérification au quatorzième jour compris", () => {
+    assert.equal(SEUILS_ALERTES.opportuniteNouvelle, 14);
+    assert.deepEqual(
+      de(nouvelle(JOUR)).map((a) => [a.nature, a.jour, a.detail, a.href]),
+      [
+        [
+          "opportunite_nouvelle",
+          JOUR,
+          "Organisme fictif · vérifiée aujourd'hui",
+          "/opportunites/opp-2",
+        ],
+      ],
+    );
+    assert.equal(de(nouvelle("2026-10-06"))[0].detail, "Organisme fictif · vérifiée hier");
+    assert.equal(
+      de(nouvelle("2026-09-23"))[0].detail,
+      "Organisme fictif · vérifiée il y a 14 jours",
+    );
+    // Le quinzième jour, elle n'est plus nouvelle : rien ne la retient.
+    assert.deepEqual(de(nouvelle("2026-09-22")), []);
+  });
+
+  it("jamais nouvelle sans date de vérification connue, ni à une date illisible ou à venir", () => {
+    for (const verifieeLe of [null, undefined, "", "hier", "2026-10-07T12:00:00Z", "2026-10-08"]) {
+      assert.deepEqual(de(nouvelle(verifieeLe)), [], String(verifieeLe));
+    }
+    // Une opportunité vérifiée avant le lot W2 n'a pas de date : elle se tait.
+    const ancienne = nouvelle(JOUR);
+    delete ancienne.verifieeLe;
+    assert.deepEqual(de(ancienne), []);
+  });
+
+  it("dit sa date limite quand elle en a une, et se tait si elle est passée", () => {
+    assert.equal(
+      de(nouvelle("2026-10-05", { deadline: "2026-12-01" }))[0].detail,
+      "Organisme fictif · vérifiée il y a 2 jours · date limite dans 55 jours",
+    );
+    assert.deepEqual(de(nouvelle("2026-10-05", { deadline: "2026-10-06" })), []);
+    assert.deepEqual(de(nouvelle("2026-10-05", { deadline: "bientôt" })), []);
+  });
+
+  it("une seule alerte par opportunité et par projet : « bientôt close » l'emporte", () => {
+    const alertes = de(nouvelle("2026-10-05", { deadline: "2026-10-15" }));
+    assert.deepEqual(natures(alertes), ["opportunite_proche"]);
+    // Au-delà du délai de clôture, elle redevient simplement nouvelle.
+    assert.deepEqual(natures(de(nouvelle("2026-10-05", { deadline: "2026-10-22" }))), [
+      "opportunite_nouvelle",
+    ]);
+  });
+
+  it("alerte chaque projet pour lequel elle est à étudier, la plus ancienne d'abord", () => {
+    const alertes = de(
+      nouvelle("2026-10-06", { projetId: P2 }),
+      nouvelle("2026-10-01"),
+      nouvelle("2026-10-03", { id: "opp-3", name: "Autre fonds" }),
+    );
+    assert.deepEqual(
+      alertes.map((a) => [a.projet, a.titre, a.jour]),
+      [
+        ["Mami Wata", "Fonds fictif", "2026-10-01"],
+        ["Mami Wata", "Autre fonds", "2026-10-03"],
+        ["Une maison hantée", "Fonds fictif", "2026-10-06"],
+      ],
+    );
+  });
+});
+
 describe("Alertes : l'ordre et le regroupement", () => {
   const tout = {
     titres,
@@ -288,6 +367,14 @@ describe("Alertes : l'ordre et le regroupement", () => {
     pieces: [{ funding_id: "b", statut: "finalise" }],
     opportunites: [
       { id: "o", projetId: P2, name: "Appel", organization: "Organisme", deadline: "2026-10-08" },
+      {
+        id: "n",
+        projetId: P1,
+        name: "Fonds récent",
+        organization: "Organisme",
+        deadline: null,
+        verifieeLe: "2026-10-05",
+      },
     ],
   };
 
@@ -299,6 +386,7 @@ describe("Alertes : l'ordre et le regroupement", () => {
       "candidature_proche",
       "opportunite_proche",
       "etape_proche",
+      "opportunite_nouvelle",
     ]);
   });
 
@@ -308,7 +396,10 @@ describe("Alertes : l'ordre et le regroupement", () => {
       groupes.map((g) => [g.projet, natures(g.alertes)]),
       [
         ["Une maison hantée", ["etape_en_retard", "opportunite_proche"]],
-        ["Mami Wata", ["dossier_incomplet", "candidature_proche", "etape_proche"]],
+        [
+          "Mami Wata",
+          ["dossier_incomplet", "candidature_proche", "etape_proche", "opportunite_nouvelle"],
+        ],
       ],
     );
   });
@@ -335,6 +426,12 @@ describe("Alertes : ce que l'écran dit", () => {
       REGLES_ALERTE.opportunite_proche,
       new RegExp(`${SEUILS_ALERTES.opportuniteProche} jours`),
     );
+    assert.match(
+      REGLES_ALERTE.opportunite_nouvelle,
+      new RegExp(`vérifiée depuis ${SEUILS_ALERTES.opportuniteNouvelle} jours au plus`),
+    );
+    // Rien n'est stocké : la règle dit pourquoi l'alerte s'éteint d'elle-même.
+    assert.match(REGLES_ALERTE.opportunite_nouvelle, /n'est pas marquée comme lue/);
   });
 
   it("le principe dit que rien n'est stocké, et que les délais sont un choix", () => {
@@ -381,6 +478,31 @@ describe("Alertes : ce que la lecture rapatrie", () => {
     for (const seuil of ["etapeProche", "dossierIncomplet", "opportuniteProche"]) {
       assert.match(lecture, new RegExp(`jourApres\\(jour, SEUILS_ALERTES\\.${seuil}\\)`), seuil);
     }
+  });
+
+  it("les nouvelles opportunités : vérifiées seulement, dans le délai, bornées, sans doublon", () => {
+    const requetes = lecture.split('.from("funding_opportunities")').slice(1);
+    assert.equal(requetes.length, 2);
+    const recentes = requetes[1];
+    // « Vérifiée » seulement : ni expirée, ni démonstration, ni en attente.
+    assert.match(recentes, /^\s*\.select\("[^"]*verified_at"\)\s*\.eq\("status", "verifie"\)/);
+    assert.match(
+      recentes,
+      /\.gte\("verified_at", `\$\{jourApres\(jour, -SEUILS_ALERTES\.opportuniteNouvelle\)\}T00:00:00Z`\)/,
+    );
+    assert.equal(lecture.match(/\.limit\(LIMITE_CATALOGUE\)/g).length, 2);
+    assert.match(lecture, /\(recentes \?\? \[\]\)\.length >= LIMITE_CATALOGUE/);
+    // Les deux lectures fusionnent par identifiant, avant la règle « à étudier ».
+    assert.match(
+      lecture,
+      /new Map\(\s*\[\.\.\.\(catalogue \?\? \[\]\), \.\.\.\(recentes \?\? \[\]\)\]\.map\(\(opportunite\) => \[opportunite\.id, opportunite\]\),?\s*\)/,
+    );
+    // Et c'est bien la fusion qui est filtrée, pas les deux listes bout à bout.
+    assert.match(lecture, /const ouvertes = \[\.\.\.lignes\.values\(\)\]\.filter\(/);
+    assert.equal(lecture.match(/\.\.\.\(recentes \?\? \[\]\)/g).length, 1);
+    assert.match(lecture, /verifieeLe: opportunite\.verified_at\?\.slice\(0, 10\) \?\? null,/);
+    // Ni l'auteur ni la source ne sont lus pour une alerte.
+    assert.doesNotMatch(lecture, /created_by|updated_by|source_url|source_excerpt/);
   });
 
   it("une pièce illisible ne compte pas comme finalisée, et rien ne passe par un accès privilégié", () => {

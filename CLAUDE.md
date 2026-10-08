@@ -616,7 +616,17 @@ recommandations (« à améliorer ») sont configurables et traçables.
   30 jours) sont un choix du lot : l’écran le dit. Une candidature n’alerte que
   qui gère le budget, sans son montant. Ne pas créer un second calcul, ni de
   table d’alertes, ni de compteur dans la coque : étendre celui-ci.
-- Alertes par e-mail et alerte « nouvelle opportunité » : non livrées.
+- Alerte « nouvelle opportunité » (lot W2, sans IA) : sixième nature, la moins
+  pressante. Une opportunité à étudier pour un projet, **vérifiée depuis
+  14 jours au plus** ; sans « lu », elle cesse d’être nouvelle passé ce délai.
+  La base pose seule `funding_opportunities.verified_at`, à l’instant où le
+  statut devient « vérifiée » — ni l’écran ni une requête ne la réécrivent, et
+  corriger une opportunité ne la redate pas. Une opportunité vérifiée avant le
+  lot n’a pas de date : elle n’est jamais « nouvelle », ne pas lui en inventer
+  une. Une opportunité ne donne qu’une alerte par projet : « bientôt close »
+  l’emporte.
+- Alertes par e-mail : non livrées, écartées le 8 octobre 2026 faute de
+  service d’envoi choisi.
 
 ### Découpage technique et matériel
 

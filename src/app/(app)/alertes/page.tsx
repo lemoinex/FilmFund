@@ -29,6 +29,7 @@ const TON: Readonly<Record<NatureAlerte, string>> = {
   candidature_proche: "border-app-line text-secondary",
   opportunite_proche: "border-app-line text-secondary",
   etape_proche: "border-app-line text-secondary",
+  opportunite_nouvelle: "border-app-line text-secondary",
 };
 
 export default async function AlertesPage() {

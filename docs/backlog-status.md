@@ -70,7 +70,8 @@ réels).
 | X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé en recette | —             |
 | Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé en recette | —             |
 | Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | en production     | —             |
-| Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | validé localement | —             |
+| Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | en production     | —             |
+| W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2289,3 +2290,54 @@ porteuse, visiteur —, chaque nombre comparé à ce que la base rend.
 **Reste à faire** : la livraison — PR, CI, fusion, puis la migration
 `20261008050000_statistiques_usage.sql`. Entre la fusion et la poussée, la rubrique répond par
 une erreur. Puis une recette sans coût : ouvrir la rubrique en production.
+
+Z3 est en production depuis le 8 octobre 2026 : PR 149 fusionnée à 08h47 UTC (`12658f1`), CI
+de `main` verte — la suite entière de l'API y est repassée avec le garde d'architecture
+corrigé —, migration poussée par l'utilisateur (62 migrations), seule sur le disque cette fois.
+Relu en base : la fonction en place, sous les droits de l'appelant, fermée aux visiteurs et au
+worker. Exécutée sous la session simulée d'un administrateur, dans une transaction annulée,
+elle rend les comptages de la production : 2 comptes, 3 projets, 13 documents, les demandes
+des trente derniers jours et les propositions par livrable. Non vérifié : l'écran sous session.
+
+Lot W2 : l'alerte « nouvelle opportunité », écartée du lot W1 parce que la base ne gardait pas
+la date à laquelle une opportunité devient visible des comptes. `updated_at` ne la dit pas :
+corriger une faute de frappe la changerait.
+
+La migration ajoute `funding_opportunities.verified_at`, posée par la base et par elle seule,
+à l'instant où le statut devient « vérifiée » — à la création comme à la modification, et de
+nouveau si l'opportunité quitte ce statut puis y revient. La colonne n'est accordée ni en
+insertion ni en modification, et le déclencheur écrase ce qu'une requête directe lui
+remettrait. Corriger une opportunité vérifiée ne la redate pas. **Les opportunités vérifiées
+avant le lot restent sans date** : on ne sait pas quand elles le sont devenues, et l'inventer
+les ferait passer pour nouvelles. Aucune politique ne change.
+
+La sixième nature d'alerte, la moins pressante : une opportunité à étudier pour un projet,
+vérifiée depuis quatorze jours au plus, sans date limite ou à une date qui n'est pas passée.
+Elle est calculée à la lecture comme les cinq autres ; rien n'est stocké, et la règle affichée
+dit qu'elle n'est pas marquée comme lue et cesse d'être nouvelle passé ce délai. Une
+opportunité ne donne qu'une alerte par projet : « bientôt close » l'emporte quand sa date
+limite approche. La lecture fait une requête de plus, bornée, sur les seules opportunités
+« vérifiées », et fusionne par identifiant avec celle des clôtures proches.
+
+Un écart au plan : `src/app/(app)/alertes/page.tsx` a été touché, pour le style que la rubrique
+porte par nature d'alerte.
+
+W2 est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur : 14 tests SQL et
+11 tests de l'API de plus ; suites complètes à 827 tests SQL et 1 349 tests de l'API. Vingt et
+un sabotages attrapés un par un, après un test renforcé : alerter deux fois pour une
+opportunité lue par les deux requêtes ne faisait rien tomber, le test vérifiant que la fusion
+existait, pas qu'elle servait. Rendu réel sur un serveur de production local, 17 points sur
+17, sous trois sessions — porteuse, autre compte, visiteur : deux nouveautés avec leur détail,
+une opportunité bientôt close qui n'alerte qu'une fois, une opportunité vérifiée depuis vingt
+jours qui se tait, une autre qui ne concerne pas le projet, le bloc « À traiter » du tableau de
+bord, la fiche liée.
+
+**Non couvert** : l'affichage à 375 px ; plus de deux cents opportunités vérifiées en quatorze
+jours, borne de la lecture, que la rubrique signale alors comme les autres.
+
+**Reste à faire** : la livraison. La migration `20261008100000_opportunite_verifiee_le.sql`
+n'ajoute qu'une colonne et son déclencheur : elle se pousse **avant** la fusion, sans effet sur
+le code en place. Dans l'ordre inverse, la lecture des alertes demanderait une colonne qui
+n'existe pas encore, et la rubrique « Alertes » comme le bloc « À traiter » ne montreraient
+plus les opportunités jusqu'à la poussée. Puis PR, CI, fusion, et une recette sans coût : faire
+passer une opportunité à « vérifiée » en production, et lire l'alerte.

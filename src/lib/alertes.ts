@@ -1,5 +1,5 @@
 /**
- * Alertes internes (lot W1) : ce qui, dans les projets de l'utilisateur,
+ * Alertes internes (lots W1 et W2) : ce qui, dans les projets de l'utilisateur,
  * demande une action. Module pur, sans import : il est aussi chargé tel quel
  * par les tests Node.
  *
@@ -16,6 +16,7 @@ export const SEUILS_ALERTES = {
   etapeProche: 7,
   candidatureProche: 14,
   opportuniteProche: 14,
+  opportuniteNouvelle: 14,
   dossierIncomplet: 30,
 } as const;
 
@@ -26,6 +27,7 @@ export const NATURES_ALERTE = {
   candidature_proche: "Candidature à déposer",
   opportunite_proche: "Opportunité bientôt close",
   etape_proche: "Étape à venir",
+  opportunite_nouvelle: "Nouvelle opportunité",
 } as const;
 
 export type NatureAlerte = keyof typeof NATURES_ALERTE;
@@ -37,6 +39,7 @@ export const REGLES_ALERTE: Readonly<Record<NatureAlerte, string>> = {
   candidature_proche: `Une candidature « à préparer », pièces finalisées, dont la date limite tombe dans les ${SEUILS_ALERTES.candidatureProche} jours.`,
   opportunite_proche: `Une opportunité à étudier pour l'un de vos projets, dont la date limite tombe dans les ${SEUILS_ALERTES.opportuniteProche} jours.`,
   etape_proche: `Une étape du planning non terminée, dont l'échéance tombe dans les ${SEUILS_ALERTES.etapeProche} jours.`,
+  opportunite_nouvelle: `Une opportunité à étudier pour l'un de vos projets, vérifiée depuis ${SEUILS_ALERTES.opportuniteNouvelle} jours au plus. Elle n'est pas marquée comme lue : elle cesse d'être nouvelle passé ce délai.`,
 };
 
 /** Ce que l'écran dit de l'ensemble, une fois. */
@@ -88,6 +91,11 @@ export type DonneesAlertes = {
     name: string;
     organization: string;
     deadline: string | null;
+    /**
+     * Le jour, AAAA-MM-JJ en UTC, où elle est devenue vérifiée. Absent ou nul
+     * quand la base ne le sait pas : elle n'est alors jamais « nouvelle ».
+     */
+    verifieeLe?: string | null;
   }[];
 };
 
@@ -107,6 +115,14 @@ export function delaiEnClair(jours: number): string {
     return "aujourd'hui";
   }
   return jours === 1 ? "demain" : `dans ${jours} jours`;
+}
+
+/** « aujourd'hui », « hier », « il y a 5 jours ». */
+function ancienneteEnClair(jours: number): string {
+  if (jours === 0) {
+    return "aujourd'hui";
+  }
+  return jours === 1 ? "hier" : `il y a ${jours} jours`;
 }
 
 /** « depuis hier », « depuis 5 jours ». */
@@ -130,6 +146,9 @@ function dansLeDelai(jour: string | null, aujourdhui: string, seuil: number): jo
  * l'est, « à déposer » une fois ses pièces finalisées. Une étape en retard
  * n'est pas aussi « à venir ». Une date limite passée n'alerte plus : le
  * planning et les financements le disent déjà.
+ *
+ * Une opportunité ne donne qu'une alerte par projet : « bientôt close » quand
+ * sa date limite approche, « nouvelle » sinon, si elle vient d'être vérifiée.
  */
 export function calculerAlertes(donnees: DonneesAlertes, aujourdhui: string): Alerte[] {
   const titre = (projetId: string) => donnees.titres.get(projetId) ?? "";
@@ -221,6 +240,34 @@ export function calculerAlertes(donnees: DonneesAlertes, aujourdhui: string): Al
         jour: opportunite.deadline,
         titre: opportunite.name,
         detail: `${opportunite.organization} · date limite ${delaiEnClair(joursEntre(aujourdhui, opportunite.deadline))}`,
+        projetId: opportunite.projetId,
+        projet: titre(opportunite.projetId),
+        href: `/opportunites/${opportunite.id}`,
+      });
+      continue;
+    }
+
+    // Vérifiée récemment, et encore ouverte : sans date limite, ou à une date
+    // qui n'est pas passée. Une date de vérification illisible, ou dans
+    // l'avenir, ne fait pas une nouveauté.
+    const verifiee = opportunite.verifieeLe ?? null;
+    if (verifiee === null || !JOUR.test(verifiee)) {
+      continue;
+    }
+    const anciennete = joursEntre(verifiee, aujourdhui);
+    const ouverte =
+      opportunite.deadline === null ||
+      (JOUR.test(opportunite.deadline) && joursEntre(aujourdhui, opportunite.deadline) >= 0);
+    if (anciennete >= 0 && anciennete <= SEUILS_ALERTES.opportuniteNouvelle && ouverte) {
+      alertes.push({
+        nature: "opportunite_nouvelle",
+        jour: verifiee,
+        titre: opportunite.name,
+        detail: `${opportunite.organization} · vérifiée ${ancienneteEnClair(anciennete)}${
+          opportunite.deadline === null
+            ? ""
+            : ` · date limite ${delaiEnClair(joursEntre(aujourdhui, opportunite.deadline))}`
+        }`,
         projetId: opportunite.projetId,
         projet: titre(opportunite.projetId),
         href: `/opportunites/${opportunite.id}`,
