@@ -4,12 +4,17 @@ import { redirect } from "next/navigation";
 
 import { GENRES } from "@/lib/fiche";
 import {
+  AIDE_FILTRE_MONTANT,
   CATEGORIES_OPPORTUNITE,
+  devisesDuCatalogue,
   echeanceDe,
+  filtreMontantActif,
   filtrerCatalogue,
+  filtrerParMontant,
   filtresActifs,
   jourCourant,
   LIMITE_CATALOGUE,
+  lireFiltreMontant,
   lireFiltres,
   montantEnClair,
   STATUTS_OPPORTUNITE,
@@ -63,8 +68,10 @@ export default async function OpportunitesPage({
   const catalogue = data ?? [];
   const aujourdhui = jourCourant();
   const filtres = lireFiltres((champ) => parametres[champ], { formats: FORMATS, genres: GENRES });
-  const actifs = filtresActifs(filtres);
-  const retenues = filtrerCatalogue(catalogue, filtres, aujourdhui);
+  const montant = lireFiltreMontant((champ) => parametres[champ]);
+  const actifs = filtresActifs(filtres) || filtreMontantActif(montant);
+  // Les filtres trient ; celui du montant, qui garde l'ordre reçu, passe après.
+  const retenues = filtrerParMontant(filtrerCatalogue(catalogue, filtres, aujourdhui), montant);
 
   const noms = new Intl.DisplayNames("fr", { type: "region", fallback: "none" });
   const nomPays = (code: string) => noms.of(code) ?? code;
@@ -72,6 +79,7 @@ export default async function OpportunitesPage({
   const pays = [...new Set(catalogue.flatMap((o) => o.countries))]
     .map((code) => [code, nomPays(code)] as const)
     .sort((a, b) => ordre.compare(a[1], b[1]));
+  const devises = devisesDuCatalogue(catalogue);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
@@ -85,12 +93,26 @@ export default async function OpportunitesPage({
       {catalogue.length ? (
         <>
           <div className="border-app-line mt-8 rounded-xl border p-5 sm:p-6">
-            <FiltresOpportunites filtres={filtres} pays={pays} actifs={actifs} />
+            <FiltresOpportunites
+              filtres={filtres}
+              montant={montant}
+              pays={pays}
+              devises={devises}
+              actifs={actifs}
+            />
             <p className="text-light mt-4 text-xs leading-relaxed text-pretty">
               Un filtre ne retient que les opportunités qui précisent ce que vous cherchez : celles
               dont la source ne dit rien du pays, du type de projet ou du genre n&apos;y figurent
               pas.
             </p>
+            {devises.length ? (
+              <p
+                id="filtre-montant-aide"
+                className="text-light mt-2 text-xs leading-relaxed text-pretty"
+              >
+                {AIDE_FILTRE_MONTANT}
+              </p>
+            ) : null}
           </div>
 
           <p role="status" className="text-secondary mt-6 text-sm">

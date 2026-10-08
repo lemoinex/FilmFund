@@ -5,6 +5,7 @@ import {
   CATEGORIES_OPPORTUNITE,
   ECHEANCES,
   RECHERCHE_MAX,
+  type FiltreMontant,
   type FiltresCatalogue,
 } from "@/lib/opportunites";
 import { FORMATS } from "@/lib/projets";
@@ -46,15 +47,19 @@ function Choix({
  * tiennent dans l'adresse, qui se partage et se retrouve au retour arrière.
  *
  * `pays` ne propose que les pays qu'une opportunité lue nomme : en proposer
- * d'autres ne mènerait qu'à une liste vide.
+ * d'autres ne mènerait qu'à une liste vide. Il en va de même des devises.
  */
 export function FiltresOpportunites({
   filtres,
+  montant,
   pays,
+  devises,
   actifs,
 }: {
   filtres: FiltresCatalogue;
+  montant: FiltreMontant;
   pays: readonly (readonly [string, string])[];
+  devises: readonly string[];
   actifs: boolean;
 }) {
   return (
@@ -101,6 +106,46 @@ export function FiltresOpportunites({
           options={Object.entries(ECHEANCES)}
         />
       </div>
+
+      {devises.length ? (
+        <fieldset className="mt-4">
+          <legend className="mb-1.5 text-xs font-medium">Montant accordé</legend>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div>
+              <label htmlFor="filtre-devise" className="sr-only">
+                Devise du montant
+              </label>
+              <select
+                id="filtre-devise"
+                name="devise"
+                defaultValue={montant.devise ?? ""}
+                className={CHAMP}
+              >
+                <option value="">Toutes devises</option>
+                {devises.map((devise) => (
+                  <option key={devise} value={devise}>
+                    {devise}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="filtre-montant" className="sr-only">
+                Montant minimal, dans la devise choisie
+              </label>
+              <input
+                id="filtre-montant"
+                name="montant"
+                inputMode="numeric"
+                defaultValue={montant.minimum ?? ""}
+                placeholder="Au moins…"
+                aria-describedby="filtre-montant-aide"
+                className={CHAMP}
+              />
+            </div>
+          </div>
+        </fieldset>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button

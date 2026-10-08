@@ -78,7 +78,8 @@ réels).
 | ED2b   | Exports : les marqueurs rendus en PDF, en Word et dans le ZIP (sans IA)                                                        | en production     | —             |
 | ED3    | Éditeur : sauvegarde automatique en brouillon, sans créer de version (sans IA)                                                 | en production     | —             |
 | RT1    | WEAVER : retouches d'un passage — améliorer, raccourcir, développer, corriger (base et worker)                                 | en production     | —             |
-| RT2    | WEAVER : écran des retouches, sous l'éditeur de tout document                                                                  | validé localement | —             |
+| RT2    | WEAVER : écran des retouches, sous l'éditeur de tout document                                                                  | en production     | —             |
+| OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2769,5 +2770,39 @@ aux deux encarts.
 **Non couvert** : la sélection et les clics dans un navigateur — le devis demandé depuis
 l'encart, la confirmation, l'acceptation ; une retouche réelle ; l'affichage à 375 px.
 
-**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Le lot RT est alors
-livré ; ce que vaut une retouche écrite par le modèle reste à constater en recette.
+RT2 est en production depuis le 8 octobre 2026 (PR 159, `795cc15`), sans migration ; CI de
+`main` verte, déploiement terminé. Le lot RT est livré. Ce que vaut une retouche écrite par le
+modèle reste à constater : aucune n'a été faite, et ni la sélection ni les clics n'ont été vus
+dans un navigateur.
+
+Lot OP, les opportunités : ce que le cahier des charges demande et que les lots L5a et L5b
+n'ont pas livré. Des sept filtres prévus, cinq existaient avec la recherche ; manquaient le
+montant et la langue. Des huit éléments de compatibilité, trois existaient ; manquaient la
+durée, le stade, la thématique, le budget et les exigences. Deux lots : OP1, le filtre par
+montant, sans migration ; OP2, la langue, la durée et le stade, que le catalogue ne porte pas
+encore. La thématique et les exigences, textes libres, restent sur la fiche ; le budget reste
+hors de la compatibilité, comme décidé au lot L5b.
+
+Lot OP1 : dans « Opportunités », un filtre « Montant accordé » — une devise, puis un montant
+minimal. **Deux devises ne se comparent jamais** : le catalogue ne porte aucun taux de change,
+et en supposer un ferait dire à une source ce qu'elle ne dit pas. Une devise seule retient
+toute opportunité qui dit un montant dans cette devise ; avec un minimum, il faut que le
+montant qu'elle dit accorder — son plafond, à défaut son plancher — l'atteigne. **Une
+opportunité sans montant n'est jamais retenue** : « non fourni » n'est pas « toute somme ».
+Le filtre ne propose que les devises dans lesquelles le catalogue visible dit un montant, et
+n'apparaît pas s'il n'y en a aucune. Un montant sans devise, ou mal écrit, est ignoré sans
+erreur. L'écran dit ce que le filtre ne fait pas, et que le montant affiché est celui que
+l'opportunité accorde, pas ce qu'un projet obtiendrait.
+
+Le filtre est tenu à part des autres (`lireFiltreMontant`, `filtrerParMontant`), s'applique
+aux lignes déjà lues, après eux, sans défaire leur tri : rien ne s'ajoute à la requête.
+
+OP1 est validé localement le 8 octobre 2026, sans migration ni appel à un fournisseur : 20 tests de plus, suite complète de l'API à 1 545 tests. Vingt-trois sabotages attrapés un par un, du premier coup. Rendu réel sur
+un serveur de production local, 18 points sur 18, avec cinq opportunités d'essai posées puis
+retirées de la base locale.
+
+**Non couvert** : l'affichage à 375 px ; le filtre en production, où le catalogue ne compte
+presque rien — il n'y changera rien de visible tant que des opportunités chiffrées n'auront
+pas été vérifiées.
+
+**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis OP2.
