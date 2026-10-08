@@ -19,11 +19,13 @@ import {
   confirmerCout,
   lireContexte,
   lireContexteRedaction,
+  lireContexteRetouche,
   livrerProposition,
   PLAFOND_ATTEINT,
   provisionnerCout,
   type Base,
   type ContexteRedaction,
+  type ContexteRetouche,
   type Fiche,
 } from "../base.ts";
 import { EchecConnu, type Executeur } from "../executeurs.ts";
@@ -33,6 +35,7 @@ import {
   enDollars,
   estimerJetons,
   PROFIL_LOGLINE,
+  PROFILS_RETOUCHE,
   PROFILS_WEAVER,
   type Profil,
   type ProfilAppel,
@@ -345,10 +348,77 @@ export function executeursDeProfils(
   );
 }
 
-/** Ce que WEAVER sait exécuter, avec ce fournisseur. */
+/**
+ * Ce qui est transmis au fournisseur pour une retouche : quelques repères du
+ * projet, le document, ce qui entoure le passage, le passage, puis l'objectif
+ * — en dernier, après la donnée. Ni personnages, ni vision, ni budget : une
+ * retouche travaille le texte qu'on lui donne.
+ */
+export function composerContexteRetouche(contexte: ContexteRetouche, objectif: string): string {
+  const lisible = (code: string) => code.replaceAll("_", " ");
+  const champ = (libelle: string, valeur: string | null | undefined) =>
+    `${libelle} : ${(valeur ?? "").trim() || "(non renseigné)"}`;
+  const { projet, document } = contexte;
+  const blocs = [
+    [
+      "<projet>",
+      champ("Titre", projet.titre),
+      champ("Format", lisible(projet.format)),
+      champ("Genre", projet.genre && lisible(projet.genre)),
+      champ("Langues", projet.langues),
+      champ("Pitch", contexte.contexte.pitch),
+      "</projet>",
+    ].join("\n"),
+    [
+      "<document>",
+      champ("Type", lisible(document.type)),
+      champ("Titre", document.titre),
+      "</document>",
+    ].join("\n"),
+    [
+      "<ce_qui_precede>",
+      contexte.avant.trim() || "(rien : ce passage ouvre le document)",
+      "</ce_qui_precede>",
+    ].join("\n"),
+    [
+      "<ce_qui_suit>",
+      contexte.apres.trim() || "(rien : ce passage clôt le document)",
+      "</ce_qui_suit>",
+    ].join("\n"),
+    ["<passage>", contexte.passage, "</passage>"].join("\n"),
+  ];
+  return [...blocs, objectif].join("\n\n");
+}
+
+/** Les retouches d'un passage : même mécanique d'appel, un autre contexte. */
+function executeursRetouches(
+  base: Base,
+  fournisseur: Fournisseur,
+): Readonly<Record<string, Executeur>> {
+  return Object.fromEntries(
+    Object.entries(PROFILS_RETOUCHE).map(([action, profil]) => [
+      action,
+      creerExecuteur<string>(base, fournisseur, {
+        profil,
+        preparer: async (attemptId) => {
+          const contexte = await lireContexteRetouche(base, attemptId);
+          return contexte ? composerContexteRetouche(contexte, profil.objectif ?? "") : null;
+        },
+        lire: (texte) => lireTexte(texte, profil.longueurMax),
+        deposer: (attemptId, texte) => livrerProposition(base, attemptId, texte),
+        inexploitable: "La réponse du fournisseur n'est pas un passage exploitable.",
+      }),
+    ]),
+  );
+}
+
+/** Ce que WEAVER sait exécuter, avec ce fournisseur : ses rédactions et ses retouches. */
 export function executeursWeaver(
   base: Base,
   fournisseur: Fournisseur,
 ): Readonly<Record<string, Executeur>> {
-  return executeursDeProfils(base, fournisseur, PROFILS_WEAVER);
+  return {
+    ...executeursDeProfils(base, fournisseur, PROFILS_WEAVER),
+    ...executeursRetouches(base, fournisseur),
+  };
 }

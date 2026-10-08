@@ -546,7 +546,26 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   tout, et la suppression du brouillon d’un autre est journalisée. Type et
   statut ne vont pas au brouillon. Ne pas sauvegarder dans
   `project_documents.content` : chaque écriture y crée une version.
-- Actions : régénérer, améliorer, raccourcir, développer, corriger.
+- Actions : régénérer, améliorer, raccourcir, développer, corriger. Régénérer,
+  c'est redemander un livrable depuis son encart.
+- Retouches d'un passage (lot RT1, agent WEAVER, base et worker, sans écran) :
+  améliorer, raccourcir, développer, corriger — quatre actions (`text_improve`,
+  `text_shorten`, `text_expand`, `text_correct`), chacune son profil
+  `weaver.retouche_*@1`, **un seul prix** (`text_edit_per_passage`, 1 unité).
+  Une retouche porte sur **un passage sélectionné, jamais sur un document
+  entier**, et sur tout type de document. Même mécanique que les dialogues :
+  le passage est désigné — document, position, longueur, empreinte — et relu
+  par la base au devis, avant l'appel et à l'acceptation
+  (`passage_du_document`) ; seul ce passage est remplacé, et si le document a
+  changé à cet endroit l'acceptation est refusée. `passage_du_scenario` reste
+  celui des dialogues. Le contexte transmis est mince : le passage, ce qui
+  l'entoure, le titre et le type du document, quelques repères du projet — ni
+  personnages, ni vision, ni budget. Les consignes gardent les marqueurs de
+  mise en forme du passage, et « corriger » ne reformule pas : ne pas les
+  affaiblir. Tenues à part de `PROFILS_IA` et de `LIVRABLES_IA`, comme les
+  dialogues (`PROFILS_RETOUCHE`, `LIVRABLES_RETOUCHE`). Qu'un passage
+  « raccourci » soit plus court n'est pas garanti par la base : l'écran devra
+  montrer les deux longueurs. Écran prévu au lot RT2.
 - Toute génération crée une proposition puis une version ; aucun écrasement silencieux.
 
 ### Financement et opportunités

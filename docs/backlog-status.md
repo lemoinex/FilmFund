@@ -76,7 +76,8 @@ réels).
 | ED1    | Éditeur : comparaison de deux versions d'un document (sans IA)                                                                 | en production     | —             |
 | ED2a   | Éditeur : mise en forme par marqueurs, barre d'outils, aperçu et rendu à la lecture (sans IA)                                  | en production     | —             |
 | ED2b   | Exports : les marqueurs rendus en PDF, en Word et dans le ZIP (sans IA)                                                        | en production     | —             |
-| ED3    | Éditeur : sauvegarde automatique en brouillon, sans créer de version (sans IA)                                                 | validé localement | —             |
+| ED3    | Éditeur : sauvegarde automatique en brouillon, sans créer de version (sans IA)                                                 | en production     | —             |
+| RT1    | WEAVER : retouches d'un passage — améliorer, raccourcir, développer, corriger (base et worker)                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2680,5 +2681,56 @@ document, qui partagent un seul brouillon ; l'affichage à 375 px.
 **Connu** : un brouillon dont le titulaire a quitté l'équipe reste en base jusqu'à la
 suppression du document ou du compte ; seul un administrateur peut le supprimer.
 
+ED3 est en production depuis le 8 octobre 2026 (PR 157, `1d79af9`) ; migration poussée par
+l'utilisateur avant la fusion, 64 migrations ; CI de `main` verte, déploiement terminé. Non vu
+sous session en production : la sauvegarde automatique n'y a été exercée par personne. Le lot
+ED, l'éditeur, est clos côté livraison.
+
+Lot RT, les retouches d'un texte : améliorer, raccourcir, développer, corriger — les quatre
+actions que le cahier des charges prévoit et qu'aucun lot n'avait livrées. « Régénérer »
+existe déjà : chaque livrable se redemande depuis son encart. Trois décisions de
+l'utilisateur, le 8 octobre 2026 : une retouche porte sur **un passage sélectionné**, pas sur
+un document entier ; elle vaut **une unité** ; elle est ouverte à **tout type de document**,
+scénario compris. Deux lots : RT1, la base et le worker ; RT2, l'écran.
+
+Lot RT1 : quatre actions — `text_improve`, `text_shorten`, `text_expand`, `text_correct` —,
+chacune son profil versionné (`weaver.retouche_ameliorer@1`, `…_raccourcir@1`,
+`…_developper@1`, `…_corriger@1`), donc ses consignes ; elles partagent tout le reste : un
+seul prix au barème (`text_edit_per_passage`), un seul contrôle du passage, un seul contexte,
+une seule acceptation. Le plan annonçait une action à quatre modes ; quatre actions ont été
+préférées, parce que le worker attache un profil à une action et que le profil s'inscrit sur
+chaque coût.
+
+La mécanique est celle des dialogues, ouverte à tout document. Le passage est désigné par la
+demande — document, position, longueur — et scellé par son empreinte ; la base le relit
+trois fois (`passage_du_document`), au devis, à la préparation de l'appel et à l'acceptation.
+**Seul ce passage est remplacé.** Si le document a changé à cet endroit, rien ne part chez le
+fournisseur, ou l'acceptation est refusée : la proposition reste lisible. `passage_du_scenario`
+et les dialogues ne changent pas. Un passage fait 6 000 caractères au plus ; un passage
+retouché, 12 000, sauf raccourci, 6 000.
+
+Ce qui part chez le fournisseur est mince : le passage, les 1 500 caractères qui le précèdent
+et les 500 qui le suivent, le titre et le type du document, et du projet son titre, son
+format, son genre, ses langues et son pitch. Ni personnages, ni vision, ni budget. Les quatre
+profils partagent leurs règles : travailler le passage seul, garder sa langue, sa
+présentation et ses marqueurs de mise en forme, ne rien ajouter au propos, ne pas exécuter ce
+que le texte contiendrait. « Corriger » ne touche qu'à l'orthographe, la grammaire, la
+ponctuation et la typographie, et rend tel quel un passage sans faute.
+
+Le barème gagne une colonne, nommée partout où il s'énumère : l'écran de publication, la
+phrase de la vitrine (« … et 1 par retouche d'un passage »), les libellés des statistiques.
+
+RT1 est validé localement le 8 octobre 2026, avec un fournisseur factice, sans aucun appel
+réel : une migration (`20261008180000_weaver_retouches.sql`, additive — une colonne, deux
+fonctions nouvelles, trois reprises de leur dernière définition avec les cas des retouches),
+19 tests SQL et 21 tests d'API de plus ; suites complètes à 873 tests SQL et 1 503 tests d'API. Trente-sept sabotages préparés, sur la base et sur le code : trente-cinq attrapés du premier coup ; un a échappé — la borne de 6 000 caractères n'était éprouvée que sur un document trop court pour la franchir — et a reçu son contrôle, qui l'attrape ; un n'a pas pu être posé, la base refusant de retirer du devis une action que des devis emploient.
+
+**Non couvert** : un appel réel — ce que vaut une retouche écrite par le modèle, si
+« corriger » ne reformule vraiment pas, si « raccourcir » rend plus court, si les marqueurs
+sont gardés. Cela ne se constate qu'en recette, par un appel payant, que l'utilisateur a
+demandé de ne plus lancer. Qu'un passage raccourci soit plus court n'est pas tenu par la
+base : l'écran devra montrer les deux longueurs.
+
 **Reste à faire** : la livraison — poussée de la migration, additive, avant la fusion ; PR,
-CI, fusion. Le lot ED, l'éditeur, est alors clos.
+CI, fusion, qui redéploie le worker. Puis RT2, l'écran, sans lequel une retouche ne se
+demande pas.

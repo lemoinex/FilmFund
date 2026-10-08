@@ -856,11 +856,21 @@ describe("Livrables des agents", () => {
     const { executeursWeaver } = await import("../worker/src/agents/weaver.ts");
     const { executeursScript } = await import("../worker/src/agents/script.ts");
     const { executeursArc } = await import("../worker/src/agents/arc.ts");
-    const { PROFILS_ARC, PROFILS_ARC_PERSONNAGES, PROFILS_IA, PROFILS_SCRIPT, PROFILS_WEAVER } =
-      await import("../worker/src/ia/profils.ts");
+    const {
+      PROFILS_ARC,
+      PROFILS_ARC_PERSONNAGES,
+      PROFILS_IA,
+      PROFILS_RETOUCHE,
+      PROFILS_SCRIPT,
+      PROFILS_WEAVER,
+    } = await import("../worker/src/ia/profils.ts");
     // Ni la base ni le fournisseur ne sont touchés : rien n'est appelé ici.
     const vide = async () => ({});
-    assert.deepEqual(Object.keys(executeursWeaver({}, vide)), Object.keys(PROFILS_WEAVER));
+    // WEAVER sert ses rédactions, puis ses retouches, qui partent d'un passage.
+    assert.deepEqual(Object.keys(executeursWeaver({}, vide)), [
+      ...Object.keys(PROFILS_WEAVER),
+      ...Object.keys(PROFILS_RETOUCHE),
+    ]);
     assert.deepEqual(Object.keys(executeursScript({}, vide)), Object.keys(PROFILS_SCRIPT));
     // ARC sert ses textes, puis ses personnages, qui ne sont pas un texte.
     assert.deepEqual(Object.keys(executeursArc({}, vide)), [
