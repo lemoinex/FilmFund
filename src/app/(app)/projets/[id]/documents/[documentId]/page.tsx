@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { TexteMisEnForme } from "@/components/texte-mis-en-forme";
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { compterMots, libelleMots, TYPES_DOCUMENT } from "@/lib/documents";
 import {
@@ -124,8 +125,12 @@ export default async function DocumentPage({
             {libelleMots(compterMots(document.content))} · modifié le{" "}
             {dateFr.format(new Date(document.updated_at))}
           </p>
-          <div className="border-app-line mt-8 border-t pt-8 text-[0.9375rem] leading-relaxed text-pretty whitespace-pre-line">
-            {document.content || <span className="text-secondary">Ce document est vide.</span>}
+          <div className="border-app-line mt-8 border-t pt-8 text-[0.9375rem] leading-relaxed">
+            {document.content ? (
+              <TexteMisEnForme texte={document.content} type={document.type} />
+            ) : (
+              <span className="text-secondary">Ce document est vide.</span>
+            )}
           </div>
         </article>
       )}

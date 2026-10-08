@@ -73,7 +73,8 @@ réels).
 | Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | validé en recette | —             |
 | W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | en production     | —             |
 | AA1    | Rubrique « Ressources » : bibliothèque de guides et de checklists, contenus versionnés (sans IA)                               | en production     | —             |
-| ED1    | Éditeur : comparaison de deux versions d'un document (sans IA)                                                                 | validé localement | —             |
+| ED1    | Éditeur : comparaison de deux versions d'un document (sans IA)                                                                 | en production     | —             |
+| ED2a   | Éditeur : mise en forme par marqueurs, barre d'outils, aperçu et rendu à la lecture (sans IA)                                  | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2547,4 +2548,53 @@ quatre adresses introuvables.
 **Non couvert** : l'affichage à 375 px ; deux versions réellement trop différentes, que seuls
 les tests du calcul éprouvent ; la lecture de la page avec un lecteur d'écran.
 
-**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis ED2, la mise en forme.
+ED1 est en production depuis le 8 octobre 2026 (PR 154, `1035a4c`), sans migration. Non vu
+sous session en production : l'utilisateur a demandé l'arrêt des recettes.
+
+Lot ED2, la mise en forme, se découpe en deux : ED2a, l'éditeur et l'affichage, dans
+l'application seule ; ED2b, les exports, qui touche le worker et le redéploie.
+
+Lot ED2a : cinq marqueurs, et rien d'autre — `# ` pour un titre, `## ` pour un sous-titre,
+`- ` pour un élément de liste, en début de ligne ; `**gras**` et `*italique*` autour d'un
+passage, sur une ligne. La règle est un module pur (`src/lib/mise-en-forme.ts`) : elle lit un
+texte en titres, paragraphes et listes, et sait poser ou retirer une marque sur une sélection.
+**Aucun caractère n'est jamais perdu** : un marqueur qui n'est pas refermé, ou qui entoure du
+vide, reste du texte. Le contenu enregistré est inchangé : une chaîne de texte, que lisent
+tels quels les exports, les agents, l'ajout d'une séquence et le repérage d'un passage.
+
+À l'écran : une barre d'outils au-dessus de la zone de texte — Titre, Sous-titre, Liste, Gras,
+Italique —, dont chaque bouton n'écrit que ce qu'on écrirait à la main, et retire la marque si
+elle est déjà là ; une phrase qui nomme les marqueurs et dit qu'ils restent dans le texte ; un
+aperçu, à la demande, du texte en cours de saisie. Le texte mis en forme se lit sur la page
+d'un document, pour qui ne peut pas l'éditer, et sur la page d'une version. Le rendu
+(`src/components/texte-mis-en-forme.tsx`) construit des éléments à partir du texte et
+n'injecte jamais de HTML : un balisage saisi s'affiche comme du texte. Les titres d'un
+document sont de niveau 2 et 3, le niveau 1 restant le titre de la page.
+
+Deux exclusions, décidées avec le plan :
+
+- **un scénario garde son texte brut** (`TYPES_SANS_MISE_EN_FORME`) : ni barre, ni aperçu, ni
+  rendu, et l'éditeur le dit. Les agents l'écrivent sans marqueur, et un tiret en tête de
+  réplique n'y est pas une puce ;
+- **la comparaison de versions montre le texte brut**, marqueurs compris : c'est le texte
+  enregistré qui s'y compare.
+
+Les consignes des agents ne changent pas : aucun ne reçoit l'ordre d'écrire des marqueurs.
+
+ED2a est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur ni migration :
+34 tests de plus, suite complète de l'API à 1 432 tests. Vingt-quatre sabotages attrapés un par un, du premier coup. Rendu réel sur
+un serveur de production local, 33 points sur 33, sous quatre sessions — porteuse, lecteur,
+étranger, visiteur : titres, liste, gras, italique et retour à la ligne rendus sur la page
+d'un document et sur celle d'une version ; un marqueur non refermé et un balisage affichés
+comme du texte ; la barre et l'aide dans l'éditeur ; le scénario laissé brut dans ses trois
+pages ; la comparaison inchangée.
+
+**Non couvert** : le clic sur un bouton de la barre et l'ouverture de l'aperçu dans un
+navigateur — la pose des marques est éprouvée par les tests de la règle, pas par un clic ;
+l'affichage à 375 px ; la lecture avec un lecteur d'écran.
+
+**Connu** : un dossier exporté en PDF, en Word ou en ZIP montre encore les marqueurs tels
+qu'ils sont écrits, jusqu'au lot ED2b.
+
+**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis ED2b, les exports, et
+ED3, la sauvegarde automatique.

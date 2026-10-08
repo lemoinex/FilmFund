@@ -2,7 +2,9 @@
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 
+import { TexteMisEnForme } from "@/components/texte-mis-en-forme";
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { AIDE_MISE_EN_FORME, estMisEnForme } from "@/lib/mise-en-forme";
 import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import {
   compterMots,
@@ -22,6 +24,7 @@ import {
   type EtatDocument,
   type EtatRestauration,
 } from "./actions";
+import { BarreOutils } from "./barre-outils";
 
 const CLASSES_SELECT =
   "border-app-line bg-app focus:border-gold w-full rounded-lg border px-4 py-3 text-sm transition-colors outline-none";
@@ -149,6 +152,10 @@ export function EditeurDocument({
   const [type, setType] = useState(document.type);
   const [statut, setStatut] = useState(document.status);
   const [contenu, setContenu] = useState(document.content);
+  const zone = useRef<HTMLTextAreaElement>(null);
+  const [apercu, setApercu] = useState(false);
+  // Un scénario garde son texte brut : ni barre d'outils, ni aperçu.
+  const misEnForme = estMisEnForme(type);
 
   // Dernière version enregistrée : la référence pour savoir s'il reste des
   // modifications en attente.
@@ -273,15 +280,52 @@ export function EditeurDocument({
           {/* Pas de région live : chaque frappe serait annoncée. */}
           <span className="text-secondary text-xs tabular-nums">{libelleMots(mots)}</span>
         </div>
+        {misEnForme ? <BarreOutils zone={zone} texte={contenu} onChange={setContenu} /> : null}
         <textarea
+          ref={zone}
           id="contenu"
           name="contenu"
           rows={22}
           maxLength={CONTENU_DOCUMENT_MAX}
           value={contenu}
           onChange={(e) => setContenu(e.target.value)}
+          aria-describedby="contenu-aide"
           className="border-app-line bg-app focus:border-gold w-full resize-y rounded-lg border px-5 py-4 text-[0.9375rem] leading-relaxed transition-colors outline-none"
         />
+        {misEnForme ? (
+          <>
+            <p id="contenu-aide" className="text-secondary mt-2 text-xs leading-relaxed">
+              {AIDE_MISE_EN_FORME}
+            </p>
+            <button
+              type="button"
+              aria-expanded={apercu}
+              aria-controls="contenu-apercu"
+              onClick={() => setApercu((ouvert) => !ouvert)}
+              className="border-app-line hover:border-secondary mt-3 rounded-full border px-4 py-2 text-xs transition-colors"
+            >
+              {apercu ? "Masquer l'aperçu" : "Afficher l'aperçu"}
+            </button>
+            {apercu ? (
+              <section
+                id="contenu-apercu"
+                aria-label="Aperçu du texte mis en forme"
+                className="border-app-line mt-3 rounded-lg border border-dashed px-5 py-4 text-[0.9375rem] leading-relaxed"
+              >
+                {contenu.trim() ? (
+                  <TexteMisEnForme texte={contenu} type={type} />
+                ) : (
+                  <p className="text-secondary text-sm">Rien à montrer : le texte est vide.</p>
+                )}
+              </section>
+            ) : null}
+          </>
+        ) : (
+          <p id="contenu-aide" className="text-secondary mt-2 text-xs leading-relaxed">
+            Un scénario garde son texte tel qu&apos;il est écrit : aucune mise en forme n&apos;y est
+            appliquée.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
