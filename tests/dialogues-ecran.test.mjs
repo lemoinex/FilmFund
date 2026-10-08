@@ -207,9 +207,11 @@ describe("Dialogues : actions serveur", () => {
   };
 
   it("chaque action valide ses identifiants et exige une session", () => {
+    // Les deux dernières sont celles des retouches (lot RT2), éprouvées par
+    // leur propre suite ; les trois autres leur servent aussi.
     assert.deepEqual(
       [...source.matchAll(/export async function (\w+)/g)].map((m) => m[1]),
-      NOMS,
+      [...NOMS, "demanderDevisRetouche", "appliquerRetouche"],
     );
     for (const nom of NOMS) {
       assert.match(corps(nom), /UUID\.test\(projetId\)/, `${nom} valide le projet`);

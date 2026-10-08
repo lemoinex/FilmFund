@@ -563,9 +563,20 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   personnages, ni vision, ni budget. Les consignes gardent les marqueurs de
   mise en forme du passage, et « corriger » ne reformule pas : ne pas les
   affaiblir. Tenues à part de `PROFILS_IA` et de `LIVRABLES_IA`, comme les
-  dialogues (`PROFILS_RETOUCHE`, `LIVRABLES_RETOUCHE`). Qu'un passage
-  « raccourci » soit plus court n'est pas garanti par la base : l'écran devra
-  montrer les deux longueurs. Écran prévu au lot RT2.
+  dialogues (`PROFILS_RETOUCHE`, `LIVRABLES_RETOUCHE`).
+- Écran des retouches (lot RT2, sans migration) : encart « Retoucher un
+  passage » sous l'éditeur de tout document (`documents/[documentId]/retouches.tsx`,
+  `demanderDevisRetouche` et `appliquerRetouche` dans `actions-ia.ts`), à part
+  de celui des dialogues, qui reste sur le seul scénario. Le navigateur
+  n'envoie que le texte sélectionné et le nom de la retouche, admis seulement
+  parmi les quatre du catalogue ; position et empreinte sont calculées par le
+  serveur. L'encart dit ce qui part chez le fournisseur avant tout envoi, et
+  rien ne part sans devis affiché ni confirmation. La proposition se lit en
+  regard du passage, **avec les deux longueurs et leur écart** : la base ne
+  garantit pas qu'un passage « raccourci » soit plus court, ne pas l'écrire.
+  Si le texte à cette position n'a plus l'empreinte de la demande, rien n'est
+  montré en regard. Comme les dialogues, l'encart refuse d'agir sur un
+  document non enregistré et recharge la page après une acceptation.
 - Toute génération crée une proposition puis une version ; aucun écrasement silencieux.
 
 ### Financement et opportunités

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,9 +9,12 @@ import { BoutonConfirme } from "@/components/ui/confirmation";
 import { brouillonAProposer, type Brouillon } from "@/lib/brouillons";
 import { compterMots, libelleMots, TYPES_DOCUMENT } from "@/lib/documents";
 import {
+  estRetouche,
   etapeProposition,
   extrairePassage,
   LIVRABLE_DIALOGUE,
+  LIVRABLES_RETOUCHE,
+  type ActionRetouche,
   type EtapeProposition,
 } from "@/lib/propositions";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +25,7 @@ import { EditeurDocument } from "../formulaires";
 import { BadgeStatut } from "../statut";
 import { Dialogues } from "./dialogues";
 import { HistoriqueVersions } from "./historique";
+import { Retouches } from "./retouches";
 
 export const metadata: Metadata = {
   title: "Document — filmfundAfrica",
@@ -53,6 +59,11 @@ export default async function DocumentPage({
   }
 
   const projet = document.projects;
+
+  // Une retouche se demande sur tout document, par qui peut l'écrire.
+  const retouche = peutEditer
+    ? await lireRetouche(supabase, projet.id, document.id, document.content)
+    : null;
 
   // Le brouillon du compte et le numéro de la dernière version : lus pour
   // l'éditeur seulement. `user_id` est nommé — un administrateur lit tous les
@@ -117,21 +128,32 @@ export default async function DocumentPage({
             />
           </div>
 
+          {/* Un seul rafraîchissement pour les deux encarts : tant que l'un attend. */}
+          <RafraichissementPropositions
+            actif={[dialogues?.etape.etape, retouche?.etape.etape].some(
+              (etape) => etape === "en_attente" || etape === "en_cours",
+            )}
+          />
+
+          {retouche ? (
+            <Retouches
+              projetId={projet.id}
+              documentId={document.id}
+              contenuEnregistre={document.content}
+              passageActuel={retouche.passage}
+              actionEnCours={retouche.action}
+              etape={retouche.etape}
+            />
+          ) : null}
+
           {dialogues ? (
-            <>
-              <RafraichissementPropositions
-                actif={
-                  dialogues.etape.etape === "en_attente" || dialogues.etape.etape === "en_cours"
-                }
-              />
-              <Dialogues
-                projetId={projet.id}
-                documentId={document.id}
-                contenuEnregistre={document.content}
-                sceneActuelle={dialogues.scene}
-                etape={dialogues.etape}
-              />
-            </>
+            <Dialogues
+              projetId={projet.id}
+              documentId={document.id}
+              contenuEnregistre={document.content}
+              sceneActuelle={dialogues.scene}
+              etape={dialogues.etape}
+            />
           ) : null}
 
           <HistoriqueVersions projetId={projet.id} documentId={document.id} />
@@ -221,4 +243,56 @@ async function lireDialogues(
     etape,
     scene: extrairePassage(contenu, Number(parametres.debut), Number(parametres.longueur)),
   };
+}
+
+/**
+ * Où en est la dernière retouche demandée sur ce document, laquelle c'était,
+ * et le passage que sa proposition remplacerait.
+ *
+ * Même lecture que pour les dialogues, sur les quatre actions de retouche. Le
+ * passage montré en regard est relu dans le document d'après la position de la
+ * demande, et son empreinte comparée à celle de la demande : si le document a
+ * changé à cet endroit, rien n'est montré en regard, et l'encart le dit. La
+ * base, qui fait le même contrôle, refusera alors le remplacement.
+ */
+async function lireRetouche(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+  documentId: string,
+  contenu: string,
+): Promise<{ etape: EtapeProposition; action: ActionRetouche | null; passage: string }> {
+  const { data: tache } = await supabase
+    .from("jobs")
+    .select("id, state, params, action")
+    .eq("project_id", projetId)
+    .in("action", Object.keys(LIVRABLES_RETOUCHE))
+    .eq("params->>document", documentId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: proposition } = tache
+    ? await supabase
+        .from("ai_suggestions")
+        .select("id, content, state")
+        .eq("job_id", tache.id)
+        .maybeSingle()
+    : { data: null };
+
+  const etape = etapeProposition(tache, proposition);
+  const action = tache && estRetouche(tache.action) ? tache.action : null;
+  if (etape.etape !== "proposition" || !tache) {
+    return { etape, action, passage: "" };
+  }
+
+  const parametres =
+    tache.params && typeof tache.params === "object" && !Array.isArray(tache.params)
+      ? tache.params
+      : {};
+  const passage = extrairePassage(contenu, Number(parametres.debut), Number(parametres.longueur));
+  // Le texte qui se trouve aujourd'hui à cette position n'est le passage
+  // désigné que s'il en a l'empreinte : sinon, mieux vaut ne rien montrer en
+  // regard que montrer un autre texte comme s'il était celui de la demande.
+  const intact = createHash("md5").update(passage, "utf8").digest("hex") === parametres.empreinte;
+  return { etape, action, passage: intact ? passage : "" };
 }
