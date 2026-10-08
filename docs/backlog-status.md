@@ -71,7 +71,7 @@ réels).
 | Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé en recette | —             |
 | Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | en production     | —             |
 | Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | en production     | —             |
-| W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | validé localement | —             |
+| W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2341,3 +2341,21 @@ le code en place. Dans l'ordre inverse, la lecture des alertes demanderait une c
 n'existe pas encore, et la rubrique « Alertes » comme le bloc « À traiter » ne montreraient
 plus les opportunités jusqu'à la poussée. Puis PR, CI, fusion, et une recette sans coût : faire
 passer une opportunité à « vérifiée » en production, et lire l'alerte.
+
+W2 est en production depuis le 8 octobre 2026, dans l'ordre retenu : migration poussée par
+l'utilisateur d'abord (63 migrations), relue en base — la colonne, nulle par défaut, lisible
+des comptes sans qu'ils la fournissent ni la modifient ; le déclencheur actif à côté des deux
+du catalogue ; l'index ; les cinq politiques inchangées —, puis PR 150 fusionnée à 09h25 UTC
+(`df02c0a`), CI de `main` verte. Aucune interruption : le code en place ignorait la colonne.
+Sous la session simulée d'un administrateur, dans une transaction annulée, les deux lectures
+des alertes s'exécutent ; elles ne rendent rien, comme attendu — aucune opportunité ne clôt
+dans les quatorze jours, et les deux opportunités vérifiées du catalogue l'étaient avant le
+lot, donc sans date.
+
+**Non vérifié en production** : les trois écrans sous session — Coûts de l'IA, Statistiques,
+Alertes — et l'alerte elle-même, qui demande qu'une opportunité devienne « vérifiée » après le
+lot et soit à étudier pour un projet.
+
+**Reste à faire, sans coût** : la recette des trois lots. Ouvrir Coûts de l'IA et
+Statistiques ; faire passer une opportunité à « vérifiée » depuis « Catalogue et veille », puis
+lire l'alerte dans la rubrique « Alertes » et dans le bloc « À traiter ».
