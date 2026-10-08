@@ -4,7 +4,16 @@ import { createHash } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 
-import { LIVRABLE_DIALOGUE, localiserPassage, messageErreur } from "@/lib/propositions";
+import {
+  estRetouche,
+  LIVRABLE_DIALOGUE,
+  LIVRABLES_RETOUCHE,
+  localiserPassage,
+  messageErreur,
+  messageErreurRetouche,
+  MOTS_PASSAGE_DOCUMENT,
+  RETOUCHE,
+} from "@/lib/propositions";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
@@ -215,6 +224,128 @@ export async function ecarterDialogue(
   revalider(projetId, documentId);
   if (error) {
     return { erreur: messageErreur(error.code) };
+  }
+  return { ok: true };
+}
+
+/*
+ * Retouches d'un passage (lot RT2) : améliorer, raccourcir, développer,
+ * corriger. Même parcours que les dialogues, sur un document de tout type.
+ * Lancer, annuler et écarter passent par les actions ci-dessus, qui ne
+ * dépendent pas du livrable ; seuls le devis et l'acceptation ont les leurs.
+ */
+
+export async function demanderDevisRetouche(
+  projetId: string,
+  documentId: string,
+  action: string,
+  selection: string,
+): Promise<{ devis: Devis; passage: string } | Echec> {
+  // L'action vient du navigateur : elle n'est admise que si elle est l'une des
+  // quatre retouches du catalogue.
+  if (
+    !UUID.test(projetId) ||
+    !UUID.test(documentId) ||
+    typeof action !== "string" ||
+    !estRetouche(action)
+  ) {
+    return DEMANDE_INVALIDE;
+  }
+  const acces = await session();
+  if ("erreur" in acces) {
+    return acces;
+  }
+
+  // Le document enregistré, lu sous la RLS de l'appelant : c'est dans ce
+  // texte-là, et non dans ce que le navigateur affiche, que le passage est
+  // cherché.
+  const { data: document } = await acces.supabase
+    .from("project_documents")
+    .select("content")
+    .eq("id", documentId)
+    .eq("project_id", projetId)
+    .maybeSingle();
+  if (!document) {
+    return { erreur: "Document introuvable." };
+  }
+
+  const localise = localiserPassage(
+    document.content,
+    selection,
+    RETOUCHE.passageMax,
+    MOTS_PASSAGE_DOCUMENT,
+  );
+  if ("erreur" in localise) {
+    return localise;
+  }
+
+  const { data, error } = await acces.supabase.rpc("creer_devis", {
+    p_project_id: projetId,
+    p_action: action,
+    p_params: {
+      document: documentId,
+      debut: localise.debut,
+      longueur: localise.longueur,
+      empreinte: createHash("md5").update(localise.passage, "utf8").digest("hex"),
+    },
+  });
+  const devis = data?.[0];
+  if (error || !devis) {
+    return { erreur: messageErreurRetouche(error?.code) };
+  }
+
+  return {
+    devis: {
+      id: devis.quote_id,
+      quantite: devis.quantity,
+      disponible: devis.available,
+      allocation: devis.allowance,
+    },
+    passage: localise.passage,
+  };
+}
+
+/**
+ * Applique le passage retouché, tel quel ou repris à la main : la base
+ * remplace le passage désigné à la demande, et lui seul — ou refuse s'il a
+ * changé. La borne dite ici est celle de la retouche ; la base la tient.
+ */
+export async function appliquerRetouche(
+  projetId: string,
+  documentId: string,
+  propositionId: string,
+  action: string,
+  texte: string,
+): Promise<{ ok: true } | Echec> {
+  if (
+    !UUID.test(projetId) ||
+    !UUID.test(documentId) ||
+    !UUID.test(propositionId) ||
+    typeof action !== "string" ||
+    !estRetouche(action)
+  ) {
+    return DEMANDE_INVALIDE;
+  }
+  const contenu = String(texte ?? "").trim();
+  if (!contenu) {
+    return { erreur: "Le passage est vide : écartez la proposition, ou écrivez-le." };
+  }
+  const max = LIVRABLES_RETOUCHE[action].longueurMax;
+  if (contenu.length > max) {
+    return { erreur: `Ce passage ne peut pas dépasser ${max} caractères.` };
+  }
+  const acces = await session();
+  if ("erreur" in acces) {
+    return acces;
+  }
+
+  const { error } = await acces.supabase.rpc("accepter_proposition", {
+    p_suggestion_id: propositionId,
+    p_content: contenu,
+  });
+  revalider(projetId, documentId, true);
+  if (error) {
+    return { erreur: messageErreurRetouche(error.code) };
   }
   return { ok: true };
 }

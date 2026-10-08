@@ -915,6 +915,47 @@ export function estRetouche(action: string): action is ActionRetouche {
   return Object.hasOwn(LIVRABLES_RETOUCHE, action);
 }
 
+/** Ce que l'écran dit d'un passage qu'il ne peut pas retenir. */
+export type MotsPassage = {
+  vide: string;
+  absent: string;
+  double: string;
+  long: (max: string) => string;
+};
+
+/** Les mots d'une scène du scénario : ceux des dialogues, tels qu'au lot J2b-2. */
+const MOTS_SCENE: MotsPassage = {
+  vide: "Sélectionnez d'abord une scène dans le texte du scénario.",
+  absent:
+    "Ce passage ne figure pas dans le scénario enregistré : enregistrez le document, puis sélectionnez la scène de nouveau.",
+  double:
+    "Ce passage figure plusieurs fois dans le scénario : sélectionnez-en davantage, pour qu'il n'y en ait qu'un.",
+  long: (max) => `Ce passage est trop long : ${max} caractères au plus, soit une scène.`,
+};
+
+/** Les mots d'un passage de tout document : ceux des retouches. */
+export const MOTS_PASSAGE_DOCUMENT: MotsPassage = {
+  vide: "Sélectionnez d'abord un passage dans le texte du document.",
+  absent:
+    "Ce passage ne figure pas dans le document enregistré : enregistrez le document, puis sélectionnez-le de nouveau.",
+  double:
+    "Ce passage figure plusieurs fois dans le document : sélectionnez-en davantage, pour qu'il n'y en ait qu'un.",
+  long: (max) => `Ce passage est trop long : ${max} caractères au plus.`,
+};
+
+/**
+ * Le refus de la base quand un document a changé à l'endroit d'une retouche.
+ * `messageErreur` le dit pour le scénario et sa scène ; une retouche porte sur
+ * tout document.
+ */
+export const PASSAGE_CHANGE_DOCUMENT =
+  "Le document a changé à cet endroit depuis la demande : le passage ne peut plus y être remplacé. Reportez la proposition à la main, ou écartez-la.";
+
+/** Message d'une erreur de la base pour une retouche : celui de tous, sauf le passage changé. */
+export function messageErreurRetouche(code: string | undefined): string {
+  return code === ERREURS_BASE.passageChange ? PASSAGE_CHANGE_DOCUMENT : messageErreur(code);
+}
+
 /** Où se trouve un passage dans un document, en caractères — et non en unités UTF-16. */
 export type PassageLocalise = { debut: number; longueur: number; passage: string };
 
@@ -938,9 +979,10 @@ export function localiserPassage(
   contenu: string,
   selection: unknown,
   max: number = LIVRABLE_DIALOGUE.passageMax,
+  mots: MotsPassage = MOTS_SCENE,
 ): PassageLocalise | { erreur: string } {
   if (typeof selection !== "string" || !selection.trim()) {
-    return { erreur: "Sélectionnez d'abord une scène dans le texte du scénario." };
+    return { erreur: mots.vide };
   }
   const nette = selection.replaceAll("\r\n", "\n").trim();
 
@@ -958,16 +1000,10 @@ export function localiserPassage(
 
   const position = ramene.indexOf(nette);
   if (position < 0) {
-    return {
-      erreur:
-        "Ce passage ne figure pas dans le scénario enregistré : enregistrez le document, puis sélectionnez la scène de nouveau.",
-    };
+    return { erreur: mots.absent };
   }
   if (ramene.indexOf(nette, position + 1) >= 0) {
-    return {
-      erreur:
-        "Ce passage figure plusieurs fois dans le scénario : sélectionnez-en davantage, pour qu'il n'y en ait qu'un.",
-    };
+    return { erreur: mots.double };
   }
 
   // Du premier au dernier caractère du passage, dans le contenu d'origine :
@@ -977,9 +1013,7 @@ export function localiserPassage(
 
   const longueur = [...passage].length;
   if (longueur > max) {
-    return {
-      erreur: `Ce passage est trop long : ${NOMBRE.format(max)} caractères au plus, soit une scène.`,
-    };
+    return { erreur: mots.long(NOMBRE.format(max)) };
   }
   return { debut: [...contenu.slice(0, debut)].length, longueur, passage };
 }

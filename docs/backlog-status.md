@@ -77,7 +77,8 @@ réels).
 | ED2a   | Éditeur : mise en forme par marqueurs, barre d'outils, aperçu et rendu à la lecture (sans IA)                                  | en production     | —             |
 | ED2b   | Exports : les marqueurs rendus en PDF, en Word et dans le ZIP (sans IA)                                                        | en production     | —             |
 | ED3    | Éditeur : sauvegarde automatique en brouillon, sans créer de version (sans IA)                                                 | en production     | —             |
-| RT1    | WEAVER : retouches d'un passage — améliorer, raccourcir, développer, corriger (base et worker)                                 | validé localement | —             |
+| RT1    | WEAVER : retouches d'un passage — améliorer, raccourcir, développer, corriger (base et worker)                                 | en production     | —             |
+| RT2    | WEAVER : écran des retouches, sous l'éditeur de tout document                                                                  | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2731,6 +2732,42 @@ sont gardés. Cela ne se constate qu'en recette, par un appel payant, que l'util
 demandé de ne plus lancer. Qu'un passage raccourci soit plus court n'est pas tenu par la
 base : l'écran devra montrer les deux longueurs.
 
-**Reste à faire** : la livraison — poussée de la migration, additive, avant la fusion ; PR,
-CI, fusion, qui redéploie le worker. Puis RT2, l'écran, sans lequel une retouche ne se
-demande pas.
+RT1 est en production depuis le 8 octobre 2026 (PR 158, `4135896`) ; migration poussée par
+l'utilisateur avant la fusion, 65 migrations ; CI de `main` verte, worker redéployé. Aucun
+appel réel n'a eu lieu.
+
+Lot RT2, l'écran : l'encart « Retoucher un passage », sous l'éditeur de tout document, pour
+qui peut l'écrire. Il est tenu à part de celui des dialogues, qui reste sur le seul scénario ;
+un scénario montre donc les deux. Le parcours est celui des dialogues, avec un choix de plus :
+
+1. l'encart dit d'abord ce qui part chez le fournisseur, et que rien n'est remplacé sans
+   accord ;
+2. un passage se sélectionne dans le texte, puis une des quatre retouches se choisit —
+   chacune avec son effet en une phrase. Le document doit être enregistré ;
+3. le devis s'affiche — une unité, le solde de la période — et rien ne part sans le bouton
+   de confirmation ;
+4. en file, la demande s'annule ; en cours, l'encart le dit ;
+5. la proposition se lit en regard du passage actuel, **avec les deux longueurs et leur écart
+   en toutes lettres** : rien ne garantit qu'un passage « raccourci » soit plus court. Elle
+   se reprend à la main avant d'être appliquée, ou s'écarte ;
+6. après une acceptation, la page se recharge, pour que l'éditeur reparte du texte à jour.
+
+Le navigateur n'envoie que le texte sélectionné et le nom de la retouche, que le serveur
+n'admet que parmi les quatre du catalogue ; position et empreinte sont calculées par le
+serveur, dans le document enregistré. Si le texte à la position de la demande n'a plus son
+empreinte, l'encart dit que le passage ne se retrouve plus, au lieu de montrer un autre texte
+en regard ; la base, elle, refuse alors le remplacement, et le refus est dit avec les mots
+d'un document, pas ceux d'un scénario. Les messages des dialogues ne changent pas.
+
+RT2 est validé localement le 8 octobre 2026, sans migration ni appel à un fournisseur — une
+proposition est déposée comme le ferait le worker : 22 tests de plus, suite complète de l'API à 1 525 tests. Vingt-six sabotages du
+code attrapés un par un ; un vingt-septième, mal conçu, ne retirait aucune protection. Rendu
+réel sur un serveur de production local, 19 points sur 19, sous quatre sessions — porteuse,
+lecteur, étranger, visiteur : repos, demande en file, proposition, document changé, scénario
+aux deux encarts.
+
+**Non couvert** : la sélection et les clics dans un navigateur — le devis demandé depuis
+l'encart, la confirmation, l'acceptation ; une retouche réelle ; l'affichage à 375 px.
+
+**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Le lot RT est alors
+livré ; ce que vaut une retouche écrite par le modèle reste à constater en recette.
