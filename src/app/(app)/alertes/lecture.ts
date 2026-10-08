@@ -35,37 +35,52 @@ export async function chargerAlertes(
   }
 
   const ids = projets.map((projet) => projet.id);
-  const [{ data: etapes }, { data: candidatures }, { data: fiches }, { data: catalogue }] =
-    await Promise.all([
-      // Les étapes en retard comme celles qui approchent : toutes ont une
-      // échéance avant la fin du délai.
-      supabase
-        .from("project_milestones")
-        .select("project_id, title, due_on, status")
-        .in("project_id", ids)
-        .neq("status", "termine")
-        .lte("due_on", jourApres(jour, SEUILS_ALERTES.etapeProche))
-        .order("due_on")
-        .limit(LIMITES_ALERTES.lignes),
-      supabase
-        .from("project_fundings")
-        .select("id, project_id, funder, program, deadline, status")
-        .in("project_id", ids)
-        .eq("status", "a_preparer")
-        .gte("deadline", jour)
-        .lte("deadline", jourApres(jour, SEUILS_ALERTES.dossierIncomplet))
-        .order("deadline")
-        .limit(LIMITES_ALERTES.lignes),
-      supabase.from("projects").select("id, format, genre, countries").in("id", ids),
-      supabase
-        .from("funding_opportunities")
-        .select("id, name, organization, countries, formats, genres, deadline, status")
-        .in("status", STATUTS_VISIBLES)
-        .gte("deadline", jour)
-        .lte("deadline", jourApres(jour, SEUILS_ALERTES.opportuniteProche))
-        .order("deadline")
-        .limit(LIMITE_CATALOGUE),
-    ]);
+  const [
+    { data: etapes },
+    { data: candidatures },
+    { data: fiches },
+    { data: catalogue },
+    { data: recentes },
+  ] = await Promise.all([
+    // Les étapes en retard comme celles qui approchent : toutes ont une
+    // échéance avant la fin du délai.
+    supabase
+      .from("project_milestones")
+      .select("project_id, title, due_on, status")
+      .in("project_id", ids)
+      .neq("status", "termine")
+      .lte("due_on", jourApres(jour, SEUILS_ALERTES.etapeProche))
+      .order("due_on")
+      .limit(LIMITES_ALERTES.lignes),
+    supabase
+      .from("project_fundings")
+      .select("id, project_id, funder, program, deadline, status")
+      .in("project_id", ids)
+      .eq("status", "a_preparer")
+      .gte("deadline", jour)
+      .lte("deadline", jourApres(jour, SEUILS_ALERTES.dossierIncomplet))
+      .order("deadline")
+      .limit(LIMITES_ALERTES.lignes),
+    supabase.from("projects").select("id, format, genre, countries").in("id", ids),
+    supabase
+      .from("funding_opportunities")
+      .select("id, name, organization, countries, formats, genres, deadline, status, verified_at")
+      .in("status", STATUTS_VISIBLES)
+      .gte("deadline", jour)
+      .lte("deadline", jourApres(jour, SEUILS_ALERTES.opportuniteProche))
+      .order("deadline")
+      .limit(LIMITE_CATALOGUE),
+    // Les opportunités devenues vérifiées dans le délai, quelle que soit
+    // leur date limite : « vérifiée » seulement, une opportunité expirée
+    // n'est pas une nouveauté.
+    supabase
+      .from("funding_opportunities")
+      .select("id, name, organization, countries, formats, genres, deadline, status, verified_at")
+      .eq("status", "verifie")
+      .gte("verified_at", `${jourApres(jour, -SEUILS_ALERTES.opportuniteNouvelle)}T00:00:00Z`)
+      .order("verified_at", { ascending: false })
+      .limit(LIMITE_CATALOGUE),
+  ]);
 
   // Les pièces des seules candidatures lues : cent identifiants au plus.
   const lues = candidatures ?? [];
@@ -80,7 +95,11 @@ export async function chargerAlertes(
     : { data: [] };
 
   // Même règle que l'onglet « Opportunités » du projet et le tableau de bord.
-  const ouvertes = (catalogue ?? []).filter(
+  // Une opportunité lue par les deux requêtes n'est gardée qu'une fois.
+  const lignes = new Map(
+    [...(catalogue ?? []), ...(recentes ?? [])].map((opportunite) => [opportunite.id, opportunite]),
+  );
+  const ouvertes = [...lignes.values()].filter(
     (opportunite) => echeanceDe(opportunite, jour) !== "passee",
   );
   const opportunites = (fiches ?? []).flatMap((fiche) =>
@@ -92,6 +111,8 @@ export async function chargerAlertes(
         name: opportunite.name,
         organization: opportunite.organization,
         deadline: opportunite.deadline,
+        // Le jour en UTC : la base rend un instant, l'alerte compte en jours.
+        verifieeLe: opportunite.verified_at?.slice(0, 10) ?? null,
       })),
   );
 
@@ -117,6 +138,7 @@ export async function chargerAlertes(
       projets.length >= LIMITES_ALERTES.projets ||
       (etapes ?? []).length >= LIMITES_ALERTES.lignes ||
       lues.length >= LIMITES_ALERTES.lignes ||
-      (catalogue ?? []).length >= LIMITE_CATALOGUE,
+      (catalogue ?? []).length >= LIMITE_CATALOGUE ||
+      (recentes ?? []).length >= LIMITE_CATALOGUE,
   };
 }

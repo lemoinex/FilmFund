@@ -914,6 +914,7 @@ export type Database = {
           status: string;
           updated_at: string;
           updated_by: string | null;
+          verified_at: string | null;
           website: string | null;
         };
         Insert: {
@@ -940,6 +941,7 @@ export type Database = {
           status?: string;
           updated_at?: string;
           updated_by?: string | null;
+          verified_at?: string | null;
           website?: string | null;
         };
         Update: {
@@ -966,6 +968,7 @@ export type Database = {
           status?: string;
           updated_at?: string;
           updated_by?: string | null;
+          verified_at?: string | null;
           website?: string | null;
         };
         Relationships: [];
