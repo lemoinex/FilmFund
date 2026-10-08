@@ -2503,15 +2503,26 @@ describe("Veille de MATCH", () => {
       );
     }
     // Aucune route ni composant ne nomme l'action hors de l'administration :
-    // seuls son catalogue de libellés et les types générés la connaissent.
+    // seuls son catalogue de libellés, celui des statistiques de
+    // l'administration (lot Z3), et les types générés la connaissent.
     const ailleurs = fichiersDe("src").filter(
       (fichier) =>
         /opportunity_watch|demander_veille/.test(lire(fichier)) &&
         !fichier.includes("administration") &&
         !fichier.endsWith("lib/opportunites.ts") &&
+        !fichier.endsWith("lib/statistiques.ts") &&
         !fichier.endsWith("database.types.ts"),
     );
     assert.deepEqual(ailleurs, []);
+    // Les statistiques ne font que la nommer, et ne servent que l'administration.
+    assert.doesNotMatch(lire("src/lib/statistiques.ts"), /demander_veille|\.rpc\(|^import /m);
+    const lecteurs = fichiersDe("src").filter((fichier) =>
+      /from "@\/lib\/statistiques"/.test(lire(fichier)),
+    );
+    assert.deepEqual(
+      lecteurs.map((fichier) => fichier.replaceAll("\\", "/")),
+      ["src/app/(app)/administration/statistiques/page.tsx"],
+    );
   });
 
   it("les fonctions reprises le sont à l'identique, à leur seul ajout près", () => {

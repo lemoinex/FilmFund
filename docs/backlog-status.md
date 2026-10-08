@@ -69,7 +69,8 @@ réels).
 | X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé en recette | —             |
 | X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé en recette | —             |
 | Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé en recette | —             |
-| Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | validé localement | —             |
+| Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | en production     | —             |
+| Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2229,3 +2230,62 @@ permet de juger.
 `20261008030000_couts_ia.sql`. Entre la fusion et la poussée, la rubrique répond par une
 erreur ; le reste de l'administration n'est pas touché. Puis une recette sans coût : ouvrir la
 rubrique en production et comparer octobre aux appels connus.
+
+Z1 est en production depuis le 8 octobre 2026 : PR 148 fusionnée à 01h36 UTC (`961081b`), CI
+de `main` verte, migration poussée par l'utilisateur (61 migrations). Entre les deux, la
+rubrique a répondu par une erreur pendant plus d'une heure : le fichier de migration du lot Z3,
+présent sur le disque et pas encore fusionné, se serait poussé avec celui de Z1 ; il a fallu
+attendre la fin des sabotages de Z3 pour le mettre de côté. **Une migration non fusionnée ne
+doit pas se trouver dans le dépôt au moment d'une poussée.** Relu en base ensuite : la fonction
+en place, sous les droits de l'appelant, fermée aux visiteurs et au worker ; le total d'octobre
+qu'elle rend, 4,719414 $, est exactement celui que le plafond compte. Non vérifié : l'écran sous
+session.
+
+Ce que la rubrique montre dès sa première lecture : sur les 4,72 $ comptés en octobre, 2,43 $
+sont des réserves, pas des dépenses — quatre tentatives de vignette du 6 octobre, refusées par
+OpenAI par un 429 et jamais soldées. C'est le comportement voulu du worker pour un 429
+ordinaire, qui peut survenir après un début de traitement ; le cas « compte sans crédits »,
+reconnu depuis, se solde à zéro, mais ces quatre-là datent d'avant. Elles pèseront sur octobre
+jusqu'à la fin du mois. Les solder à zéro serait une écriture en production, à ne faire que sur
+demande et facture d'OpenAI à l'appui.
+
+Lot Z3 : la rubrique « Statistiques » (`/administration/statistiques`) montre l'usage de la
+plateforme en comptages : comptes et studios par plan ; projets par format et par étape, et ce
+qu'ils contiennent ; documents par type et par statut ; demandes à l'assistant des trente
+derniers jours, par livrable et par issue ; propositions par livrable et par décision ; exports
+disponibles ; catalogue des opportunités par statut. **Ni nom, ni titre, ni contenu, ni
+montant, et aucun taux ni pourcentage** : sur aussi peu de données, un pourcentage ferait croire
+à une mesure. L'écran dit en tête que ces chiffres sont calculés à chaque lecture, et qu'avec
+très peu de comptes un comptage peut désigner quelqu'un.
+
+La migration ne pose qu'une fonction, `statistiques_usage()`, exécutée sous les droits de
+l'appelant : elle n'ouvre rien aux administrateurs, qui lisent déjà ces tables. Elle refuse
+nommément qui n'est pas administrateur — sans ce refus, un compte ordinaire compterait ses
+propres projets, qui passeraient pour les chiffres de la plateforme. Un code que l'écran ne
+connaît pas reste affiché tel quel, et un état inconnu garde sa colonne : aucun nombre ne
+disparaît en silence.
+
+**Limite connue** : la lecture passe par les politiques de chaque table. Sur la base locale —
+16 000 projets, 27 000 comptes de test —, elle prend 3,8 secondes ; en production, avec trois
+projets, elle est immédiate. Si le volume vient, le remède est de la passer en
+`security definer`, son contrôle de l'administrateur suffisant alors à la garder.
+
+Un écart au plan : `tests/architecture.test.mjs` a été touché. Un garde du lot L6 interdit de
+nommer l'action de veille hors de l'administration ; le catalogue de libellés des statistiques
+le déclenchait. Il admet désormais ce module, et vérifie en retour qu'il n'appelle rien et
+qu'une seule page l'emploie, celle de l'administration.
+
+Z3 est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur : 16 tests SQL et
+16 tests de l'API de plus ; suite SQL complète à 813 tests. La suite complète de l'API a donné
+1 337 tests verts sur 1 338, le seul échec étant le garde d'architecture ci-dessus, corrigé
+puis relancé seul avec son fichier (131 sur 131) : la suite entière n'a pas été rejouée après
+ce correctif, la CI de la PR le fera. Vingt-cinq sabotages attrapés un par un. Rendu réel sur
+un serveur de production local, 22 points sur 22, sous trois sessions — administrateur,
+porteuse, visiteur —, chaque nombre comparé à ce que la base rend.
+
+**Non couvert** : l'affichage à 375 px, où les tableaux croisés défilent horizontalement ; un
+état ou un code inconnu de l'écran, que seule une évolution de la base ferait apparaître.
+
+**Reste à faire** : la livraison — PR, CI, fusion, puis la migration
+`20261008050000_statistiques_usage.sql`. Entre la fusion et la poussée, la rubrique répond par
+une erreur. Puis une recette sans coût : ouvrir la rubrique en production.

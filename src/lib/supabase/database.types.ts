@@ -3776,6 +3776,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      statistiques_usage: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          cle: string;
+          detail: string;
+          domaine: string;
+          nombre: number;
+        }[];
+      };
       studio_personnel_courant: { Args: Record<PropertyKey, never>; Returns: string };
       terminer_tentative: {
         Args: { p_attempt_id: string; p_consumed?: number; p_error?: string; p_success: boolean };
