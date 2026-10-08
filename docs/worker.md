@@ -350,6 +350,13 @@ Ce plafond est celui de la plateforme. Le crédit d'un compte chez son fournisse
 chose : un compte Anthropic ou OpenAI à sec fait échouer l'appel quel que soit le plafond, et
 un plafond atteint refuse la demande quel que soit le crédit.
 
+Depuis le lot Z1, **Administration → Coûts de l'IA** montre ce que les appels ont coûté sur
+douze mois, par agent, par profil et par modèle : appels, jetons ou requêtes, montant compté,
+et ce qui empêche de le lire comme acquis — appels sans issue connue, comptés à leur réserve ;
+appels au tarif inconnu, à rapprocher ; replis de modèle ; refus du fournisseur, sans coût. La
+somme d'un mois est celle que le plafond compte. Ces montants viennent des tarifs relevés à la
+main dans `worker/src/ia/profils.ts` : la facture du fournisseur seule fait foi.
+
 La voie SQL reste ouverte à l'exploitant, au-delà de 50 $ compris :
 
 ```sql

@@ -53,6 +53,7 @@ const RUBRIQUES_ADMINISTRATION: Rubrique[] = [
   // Nommée autrement que la rubrique des équipes : un administrateur voit les deux.
   { libelle: "Catalogue et veille", icone: AfricaIcon, href: "/administration/opportunites" },
   { libelle: "Intégrations IA", icone: SparkIcon, href: "/administration/integrations" },
+  { libelle: "Coûts de l'IA", icone: TagIcon, href: "/administration/couts" },
 ];
 
 function estActive(href: string, chemin: string) {

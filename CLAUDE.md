@@ -679,7 +679,7 @@ recommandations (« à améliorer ») sont configurables et traçables.
   aucune utilisation IA illimitée implicite.
 - Admin livré : journal d’administration, plans et quotas, pondérations du score
   de maturité, catalogue et veille des opportunités, intégrations IA, plafond
-  mensuel d’IA, comptes.
+  mensuel et coûts de l’IA, comptes.
 - Comptes (lot V1, sans IA) : rubrique « Utilisateurs »
   (`/administration/utilisateurs`, `src/lib/comptes.ts`) — liste, recherche, fiche
   d’un compte, changement de rôle. Les adresses ne se lisent que par
@@ -714,7 +714,16 @@ recommandations (« à améliorer ») sont configurables et traçables.
   de l’écran, décidé avec l’utilisateur, pas une contrainte de la base** : ne
   pas la relever sans décision. Ce plafond est celui de la plateforme ; le
   crédit d’un compte chez son fournisseur est autre chose, et l’écran le dit.
-- Admin prévu : statistiques anonymisées, modèles et coûts de l’IA, abonnements.
+- Coûts de l’IA (lot Z1, sans IA) : rubrique « Coûts de l’IA »
+  (`/administration/couts`, `src/lib/couts-ia.ts`) — douze mois, par agent, par
+  profil et par modèle. Une seule lecture, `couts_ia_par_mois()`, **exécutée
+  sous les droits de l’appelant** : la RLS des registres de coûts décide de ce
+  qu’elle voit, et un compte ordinaire reçoit une liste vide. Ne pas la passer
+  en `security definer`. La somme du mois est celle du plafond
+  (`depense_ia_du_mois()`). Aucun détail par studio ni par projet ; l’écran dit
+  que seule la facture du fournisseur fait foi. Ne pas créer un second calcul.
+- Admin prévu : statistiques d’usage (lot Z3). Écartés le 8 octobre 2026, sans
+  nouvelle demande : la vue des studios et abonnements, les alertes par e-mail.
 
 ## 11. État et ordre de mise en œuvre
 
