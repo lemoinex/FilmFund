@@ -23,6 +23,7 @@ import {
   TYPES_DOCUMENT,
   TYPES_FINANCEMENT,
 } from "./libelles.ts";
+import { estMisEnForme } from "./mise-en-forme.ts";
 
 /**
  * Ce que `contexte_export()` remet : de quoi dresser la page de garde
@@ -117,6 +118,8 @@ export type Ligne = {
 export type Bloc =
   | { type: "intertitre"; texte: string }
   | { type: "texte"; texte: string }
+  /** Le texte d'un document, dont les marqueurs se lisent comme une mise en forme. */
+  | { type: "texte_mis_en_forme"; texte: string }
   | { type: "tableau"; colonnes: Colonne[]; lignes: Ligne[] };
 
 /** Ce dont une section est tirée : une rubrique de la demande, ou un document. */
@@ -535,7 +538,14 @@ export function composerDossier(contenu: ContenuDossier, etabliLe: Date): Dossie
       ajouter("document", {
         surTitre: libelle(TYPES_DOCUMENT, document.type),
         titre: document.titre,
-        blocs: [{ type: "texte", texte: document.contenu }],
+        // Seul le texte d'un document porte des marqueurs, et pas celui d'un
+        // scénario : les champs de la fiche restent du texte brut.
+        blocs: [
+          {
+            type: estMisEnForme(document.type) ? "texte_mis_en_forme" : "texte",
+            texte: document.contenu,
+          },
+        ],
       });
     }
   }

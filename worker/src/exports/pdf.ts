@@ -14,6 +14,7 @@ import { createRequire } from "node:module";
 import PDFDocument from "pdfkit";
 
 import type { Bloc, Colonne, Dossier, Ligne, Section } from "./dossier.ts";
+import { lireMiseEnForme, texteSeul, type Segment } from "./mise-en-forme.ts";
 
 const require = createRequire(import.meta.url);
 const police = (fichier: string) => require.resolve(`@expo-google-fonts/noto-serif/${fichier}`);
@@ -134,6 +135,86 @@ function texte(doc: Document, contenu: string): void {
   }
 }
 
+/** Retrait d'un élément de liste, sa puce restant à la marge. */
+const RETRAIT_LISTE = 14;
+
+/**
+ * Une ligne de passages ordinaires, gras ou en italique, écrits à la suite :
+ * seule la police change de l'un à l'autre.
+ */
+function passages(
+  doc: Document,
+  segments: readonly Segment[],
+  gauche: number,
+  largeur: number,
+  apres: number,
+): void {
+  doc.fontSize(CORPS).fillColor(ENCRE);
+  segments.forEach((segment, rang) => {
+    doc.font(segment.gras ? "gras" : segment.italique ? "italique" : "corps");
+    const options = {
+      width: largeur,
+      align: "left" as const,
+      lineGap: 3.5,
+      paragraphGap: apres,
+      continued: rang < segments.length - 1,
+    };
+    if (rang === 0) {
+      doc.text(segment.texte, gauche, doc.y, options);
+    } else {
+      doc.text(segment.texte, options);
+    }
+  });
+}
+
+/**
+ * Le texte d'un document, ses marqueurs rendus : titres en gras, listes à
+ * puces, gras et italique. Même lecture qu'à l'écran (mise-en-forme.ts).
+ */
+function texteMisEnForme(doc: Document, contenu: string): void {
+  const gauche = doc.page.margins.left;
+  const largeur = largeurUtile(doc);
+
+  for (const element of lireMiseEnForme(contenu)) {
+    if (element.type === "titre") {
+      // Un titre ne reste pas seul en bas de page.
+      if (doc.y > bas(doc) - 60) {
+        doc.addPage();
+      }
+      doc
+        .moveDown(0.4)
+        .font("gras")
+        .fontSize(element.niveau === 1 ? 14 : 12)
+        .fillColor(ENCRE)
+        .text(texteSeul(element.segments), gauche, doc.y, { width: largeur, lineGap: 2 });
+      doc.moveDown(0.4);
+    } else if (element.type === "liste") {
+      element.elements.forEach((segments, rang) => {
+        doc.font("corps").fontSize(CORPS).fillColor(ENCRE);
+        // La puce et sa première ligne vont ensemble à la page suivante.
+        if (doc.y + doc.currentLineHeight(true) > bas(doc)) {
+          doc.addPage();
+        }
+        const y = doc.y;
+        doc.text("•", gauche, y, { lineBreak: false });
+        doc.y = y;
+        passages(
+          doc,
+          segments,
+          gauche + RETRAIT_LISTE,
+          largeur - RETRAIT_LISTE,
+          rang === element.elements.length - 1 ? 9 : 3,
+        );
+      });
+    } else {
+      element.lignes.forEach((segments, rang) => {
+        passages(doc, segments, gauche, largeur, rang === element.lignes.length - 1 ? 9 : 0);
+      });
+    }
+  }
+  doc.x = gauche;
+}
+
 function intertitre(doc: Document, contenu: string): void {
   if (doc.y > bas(doc) - 60) {
     doc.addPage();
@@ -217,6 +298,9 @@ function bloc(doc: Document, element: Bloc): void {
       break;
     case "texte":
       texte(doc, element.texte);
+      break;
+    case "texte_mis_en_forme":
+      texteMisEnForme(doc, element.texte);
       break;
     case "tableau":
       tableau(doc, element.colonnes, element.lignes);

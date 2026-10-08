@@ -32,6 +32,7 @@ import {
 } from "docx";
 
 import type { Bloc, Colonne, Dossier, Ligne, Section } from "./dossier.ts";
+import { lireMiseEnForme, texteSeul, type Segment } from "./mise-en-forme.ts";
 
 const POLICE = "Cambria";
 
@@ -134,6 +135,62 @@ function texte(contenu: string): Paragraph[] {
     );
 }
 
+/** Passages ordinaires, gras ou en italique ; `retour` ouvre la ligne par un retour. */
+function passages(segments: readonly Segment[], retour = false): TextRun[] {
+  return segments.map(
+    (segment, rang) =>
+      new TextRun({
+        text: segment.texte,
+        bold: segment.gras,
+        italics: segment.italique,
+        break: retour && rang === 0 ? 1 : 0,
+      }),
+  );
+}
+
+/**
+ * Le texte d'un document, ses marqueurs rendus : de vrais titres — niveaux 3
+ * et 4, les deux premiers étant ceux du dossier —, de vraies listes à puces,
+ * gras et italique. Même lecture qu'à l'écran (mise-en-forme.ts).
+ */
+function texteMisEnForme(contenu: string): Paragraph[] {
+  return lireMiseEnForme(contenu).flatMap((element) => {
+    if (element.type === "titre") {
+      return [
+        new Paragraph({
+          heading: element.niveau === 1 ? HeadingLevel.HEADING_3 : HeadingLevel.HEADING_4,
+          keepNext: true,
+          spacing: { before: 200, after: 100 },
+          children: [
+            new TextRun({
+              text: texteSeul(element.segments),
+              bold: true,
+              size: element.niveau === 1 ? 24 : 22,
+              color: ENCRE,
+            }),
+          ],
+        }),
+      ];
+    }
+    if (element.type === "liste") {
+      return element.elements.map(
+        (segments, rang) =>
+          new Paragraph({
+            bullet: { level: 0 },
+            spacing: { after: rang === element.elements.length - 1 ? 180 : 60, line: 300 },
+            children: passages(segments),
+          }),
+      );
+    }
+    return [
+      new Paragraph({
+        spacing: { after: 180, line: 300 },
+        children: element.lignes.flatMap((segments, rang) => passages(segments, rang > 0)),
+      }),
+    ];
+  });
+}
+
 function intertitre(contenu: string): Paragraph {
   return new Paragraph({
     heading: HeadingLevel.HEADING_2,
@@ -221,6 +278,8 @@ function bloc(element: Bloc): (Paragraph | Table)[] {
       return [intertitre(element.texte)];
     case "texte":
       return texte(element.texte);
+    case "texte_mis_en_forme":
+      return texteMisEnForme(element.texte);
     case "tableau":
       // Un paragraphe vide après le tableau : sans lui, deux tableaux qui se
       // suivent fusionneraient en un seul à l'ouverture.

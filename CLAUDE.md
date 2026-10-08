@@ -522,9 +522,17 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   n’écrit que ces marqueurs dans le texte. Un marqueur non refermé reste du
   texte. **Un scénario garde son texte brut** (`TYPES_SANS_MISE_EN_FORME`) : un
   tiret en tête de réplique n’y est pas une puce. La comparaison de versions
-  montre le texte brut. Les exports ne lisent pas encore les marqueurs (lot
-  ED2b) ; les consignes des agents ne les demandent pas. Ne pas créer une
-  seconde règle : étendre celle-ci.
+  montre le texte brut. Les consignes des agents ne demandent pas de
+  marqueurs. Ne pas créer une seconde règle : étendre celle-ci.
+- Mise en forme dans les exports (lot ED2b, sans IA, sans migration) : livrée
+  en PDF, en Word et dans le ZIP. Le worker ne peut pas importer
+  l’application : il tient **une copie de la lecture**
+  (`worker/src/exports/mise-en-forme.ts`), que
+  `tests/exports-mise-en-forme.test.mjs` refuse de voir différer — changer
+  l’une, c’est changer l’autre. Seul le texte d’un document est mis en forme
+  (bloc `texte_mis_en_forme` du plan) : **ni un scénario, ni les champs de la
+  fiche**. Dans un Word, les titres d’un document sont de niveau 3 et 4, sous
+  ceux du dossier.
 - Actions : régénérer, améliorer, raccourcir, développer, corriger.
 - Toute génération crée une proposition puis une version ; aucun écrasement silencieux.
 
