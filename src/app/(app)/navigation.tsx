@@ -54,6 +54,7 @@ const RUBRIQUES_ADMINISTRATION: Rubrique[] = [
   { libelle: "Catalogue et veille", icone: AfricaIcon, href: "/administration/opportunites" },
   { libelle: "Intégrations IA", icone: SparkIcon, href: "/administration/integrations" },
   { libelle: "Coûts de l'IA", icone: TagIcon, href: "/administration/couts" },
+  { libelle: "Statistiques", icone: KanbanIcon, href: "/administration/statistiques" },
 ];
 
 function estActive(href: string, chemin: string) {

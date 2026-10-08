@@ -679,7 +679,7 @@ recommandations (« à améliorer ») sont configurables et traçables.
   aucune utilisation IA illimitée implicite.
 - Admin livré : journal d’administration, plans et quotas, pondérations du score
   de maturité, catalogue et veille des opportunités, intégrations IA, plafond
-  mensuel et coûts de l’IA, comptes.
+  mensuel et coûts de l’IA, statistiques d’usage, comptes.
 - Comptes (lot V1, sans IA) : rubrique « Utilisateurs »
   (`/administration/utilisateurs`, `src/lib/comptes.ts`) — liste, recherche, fiche
   d’un compte, changement de rôle. Les adresses ne se lisent que par
@@ -722,8 +722,18 @@ recommandations (« à améliorer ») sont configurables et traçables.
   en `security definer`. La somme du mois est celle du plafond
   (`depense_ia_du_mois()`). Aucun détail par studio ni par projet ; l’écran dit
   que seule la facture du fournisseur fait foi. Ne pas créer un second calcul.
-- Admin prévu : statistiques d’usage (lot Z3). Écartés le 8 octobre 2026, sans
-  nouvelle demande : la vue des studios et abonnements, les alertes par e-mail.
+- Statistiques d’usage (lot Z3, sans IA) : rubrique « Statistiques »
+  (`/administration/statistiques`, `src/lib/statistiques.ts`) — **des
+  comptages, et rien d’autre** : ni nom, ni titre, ni contenu, ni montant, ni
+  taux, ni pourcentage. Une seule lecture, `statistiques_usage()`, sous les
+  droits de l’appelant, et refusée nommément à qui n’est pas administrateur —
+  sans ce refus, un compte ordinaire compterait ses propres projets, qui
+  passeraient pour les chiffres de la plateforme. L’écran dit qu’avec très peu
+  de comptes un comptage peut désigner quelqu’un : ne pas le présenter comme
+  anonyme sans cette réserve. Ne pas créer une seconde lecture : étendre
+  celle-ci.
+- Écartés le 8 octobre 2026, sans nouvelle demande : la vue des studios et
+  abonnements, les alertes par e-mail.
 
 ## 11. État et ordre de mise en œuvre
 
