@@ -533,6 +533,19 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   (bloc `texte_mis_en_forme` du plan) : **ni un scénario, ni les champs de la
   fiche**. Dans un Word, les titres d’un document sont de niveau 3 et 4, sous
   ceux du dossier.
+- Sauvegarde automatique (lot ED3, sans IA) : livrée. Quelques secondes après
+  la dernière frappe (`DELAI_BROUILLON_MS`, `src/lib/brouillons.ts`), le titre
+  et le texte partent dans `project_document_drafts`, **un brouillon par compte
+  et par document, qui ne crée aucune version et ne touche pas au document**.
+  Rien d’autre que l’éditeur ne le lit : ni les exports, ni les agents, ni le
+  repérage d’un passage. Seul « Enregistrer » modifie le document, et supprime
+  le brouillon. Un brouillon trouvé à l’ouverture est **proposé, jamais
+  appliqué d’office** ; si le document a été enregistré depuis
+  (`base_version`, posé par la base), l’écran le dit. Lu et écrit par son seul
+  titulaire, tant qu’il peut éditer le projet ; les administrateurs lisent
+  tout, et la suppression du brouillon d’un autre est journalisée. Type et
+  statut ne vont pas au brouillon. Ne pas sauvegarder dans
+  `project_documents.content` : chaque écriture y crée une version.
 - Actions : régénérer, améliorer, raccourcir, développer, corriger.
 - Toute génération crée une proposition puis une version ; aucun écrasement silencieux.
 

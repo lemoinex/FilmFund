@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { TexteMisEnForme } from "@/components/texte-mis-en-forme";
 import { BoutonConfirme } from "@/components/ui/confirmation";
+import { brouillonAProposer, type Brouillon } from "@/lib/brouillons";
 import { compterMots, libelleMots, TYPES_DOCUMENT } from "@/lib/documents";
 import {
   etapeProposition,
@@ -53,6 +54,35 @@ export default async function DocumentPage({
 
   const projet = document.projects;
 
+  // Le brouillon du compte et le numéro de la dernière version : lus pour
+  // l'éditeur seulement. `user_id` est nommé — un administrateur lit tous les
+  // brouillons, et l'éditeur ne doit lui proposer que le sien.
+  let brouillon: Brouillon | null = null;
+  let derniereVersion = 0;
+  if (peutEditer) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const [{ data: enCours }, { data: derniere }] = await Promise.all([
+      supabase
+        .from("project_document_drafts")
+        .select("title, content, base_version, updated_at")
+        .eq("document_id", document.id)
+        .eq("user_id", user?.id ?? "")
+        .maybeSingle(),
+      supabase
+        .from("project_document_versions")
+        .select("version_number")
+        .eq("document_id", document.id)
+        .eq("project_id", projet.id)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    brouillon = brouillonAProposer(document, enCours);
+    derniereVersion = derniere?.version_number ?? 0;
+  }
+
   // Les dialogues d'une scène ne se demandent que sur un scénario, par qui
   // peut l'écrire : rien n'est lu pour les autres.
   const dialogues =
@@ -79,7 +109,12 @@ export default async function DocumentPage({
              * relit les données serveur, et remonter l'éditeur à ce moment
              * effacerait ce qui a été tapé pendant l'enregistrement.
              */}
-            <EditeurDocument projetId={projet.id} document={document} />
+            <EditeurDocument
+              projetId={projet.id}
+              document={document}
+              brouillon={brouillon}
+              derniereVersion={derniereVersion}
+            />
           </div>
 
           {dialogues ? (

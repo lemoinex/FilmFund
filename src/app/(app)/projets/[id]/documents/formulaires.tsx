@@ -4,6 +4,13 @@ import { startTransition, useActionState, useEffect, useRef, useState } from "re
 
 import { TexteMisEnForme } from "@/components/texte-mis-en-forme";
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import {
+  AIDE_BROUILLON,
+  brouillonASauver,
+  DELAI_BROUILLON_MS,
+  documentEnregistreDepuis,
+  type Brouillon,
+} from "@/lib/brouillons";
 import { AIDE_MISE_EN_FORME, estMisEnForme } from "@/lib/mise-en-forme";
 import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import {
@@ -18,7 +25,9 @@ import {
 import type { DocumentStatus, DocumentType } from "@/lib/supabase/types";
 
 import {
+  abandonnerBrouillon,
   creerDocument,
+  enregistrerBrouillon,
   enregistrerDocument,
   restaurerVersion,
   type EtatDocument,
@@ -136,13 +145,24 @@ export type DocumentEditable = {
  * des modifications attendent d'être enregistrées. Dans ce cas, quitter la
  * page déclenche l'avertissement du navigateur — perdre une note
  * d'intention d'une heure pour un clic égaré ne se rattrape pas.
+ *
+ * Sauvegarde automatique : quelques secondes après la dernière frappe, le
+ * titre et le texte partent dans le brouillon du compte. Le document n'est
+ * pas touché et aucune version n'est créée : cela reste le rôle du bouton.
+ * Un brouillon trouvé à l'ouverture est proposé, jamais appliqué d'office.
  */
 export function EditeurDocument({
   projetId,
   document,
+  brouillon,
+  derniereVersion,
 }: {
   projetId: string;
   document: DocumentEditable;
+  /** Le brouillon du compte, s'il diffère du document. */
+  brouillon: Brouillon | null;
+  /** Numéro de la dernière version du document ; zéro s'il n'en a pas. */
+  derniereVersion: number;
 }) {
   const [etat, action, enCours] = useActionState<EtatDocument, FormData>(enregistrerDocument, null);
   const formulaire = useRef<HTMLFormElement>(null);
@@ -166,12 +186,28 @@ export function EditeurDocument({
   const [envoye, setEnvoye] = useState(document);
   const [etatTraite, setEtatTraite] = useState<EtatDocument>(null);
 
+  // Le brouillon trouvé à l'ouverture, tant qu'il n'est ni repris ni
+  // abandonné. La sauvegarde automatique attend cette décision : sans cela,
+  // la première frappe l'écraserait.
+  const [propose, setPropose] = useState(brouillon);
+  const [erreurAbandon, setErreurAbandon] = useState<string | null>(null);
+  // Dernier texte parti au brouillon, et ce qu'il en est advenu. Un échec y
+  // reste : le même texte n'est pas renvoyé en boucle.
+  const [sauvegarde, setSauvegarde] = useState<{
+    title: string;
+    content: string;
+    le: string | null;
+  } | null>(null);
+
   // Ajustement pendant le rendu, et non dans un effet : l'état suit la
   // réponse de l'action sans rendu intermédiaire incohérent.
   if (etat !== etatTraite) {
     setEtatTraite(etat);
     if (etat && "enregistreLe" in etat) {
       setEnregistre(envoye);
+      // L'enregistrement a supprimé le brouillon : ce qui serait tapé
+      // ensuite en ouvre un nouveau.
+      setSauvegarde(null);
     }
   }
 
@@ -181,19 +217,49 @@ export function EditeurDocument({
     statut !== enregistre.status ||
     contenu !== enregistre.content;
 
+  const aSauver =
+    !propose &&
+    !enCours &&
+    brouillonASauver({ title: titre, content: contenu }, enregistre, sauvegarde);
+
   useEffect(() => {
-    if (!modifie) return;
+    if (!aSauver) return;
+    const minuterie = setTimeout(() => {
+      const saisi = { title: titre, content: contenu };
+      startTransition(async () => {
+        const reponse = await enregistrerBrouillon(projetId, document.id, titre, contenu);
+        setSauvegarde({ ...saisi, le: "sauvegardeLe" in reponse ? reponse.sauvegardeLe : null });
+      });
+    }, DELAI_BROUILLON_MS);
+    return () => clearTimeout(minuterie);
+  }, [aSauver, titre, contenu, projetId, document.id]);
+
+  // Le texte à l'écran est à l'abri s'il est dans le brouillon ; le type et le
+  // statut n'y vont pas.
+  const aLAbri =
+    sauvegarde?.le != null &&
+    sauvegarde.title === titre &&
+    sauvegarde.content === contenu &&
+    type === enregistre.type &&
+    statut === enregistre.status;
+
+  useEffect(() => {
+    if (!modifie || aLAbri) return;
     const avertir = (evenement: BeforeUnloadEvent) => evenement.preventDefault();
     window.addEventListener("beforeunload", avertir);
     return () => window.removeEventListener("beforeunload", avertir);
-  }, [modifie]);
+  }, [modifie, aLAbri]);
 
   const mots = compterMots(contenu);
-  // Formatée dans le navigateur : l'heure de l'utilisateur, pas celle du serveur.
+  // Formatées dans le navigateur : l'heure de l'utilisateur, pas celle du serveur.
+  const heureCourte = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short" });
+  const etatBrouillon = !sauvegarde
+    ? null
+    : sauvegarde.le
+      ? `brouillon sauvegardé à ${heureCourte.format(new Date(sauvegarde.le))}`
+      : "la sauvegarde du brouillon a échoué";
   const heure =
-    etat && "enregistreLe" in etat
-      ? new Intl.DateTimeFormat("fr-FR", { timeStyle: "short" }).format(new Date(etat.enregistreLe))
-      : null;
+    etat && "enregistreLe" in etat ? heureCourte.format(new Date(etat.enregistreLe)) : null;
 
   return (
     <form
@@ -217,6 +283,70 @@ export function EditeurDocument({
       <input type="hidden" name="document" value={document.id} />
 
       {message && "erreur" in message ? <Message ton="erreur">{message.erreur}</Message> : null}
+
+      {propose ? (
+        <section
+          aria-labelledby="brouillon-titre"
+          className="border-gold/60 rounded-xl border p-5 text-sm leading-relaxed"
+        >
+          <h2 id="brouillon-titre" className="font-medium">
+            Un brouillon n&apos;a pas été enregistré
+          </h2>
+          <p className="text-secondary mt-2">
+            Vous avez laissé un brouillon de ce document le{" "}
+            {new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" }).format(
+              new Date(propose.updated_at),
+            )}
+            . Le reprendre le remet à l&apos;écran, sans rien enregistrer.
+          </p>
+          {documentEnregistreDepuis(propose, derniereVersion) ? (
+            <p className="mt-2">
+              Attention : le document a été enregistré depuis ce brouillon. Le reprendre remplacera
+              à l&apos;écran un texte plus récent que lui.
+            </p>
+          ) : null}
+          {erreurAbandon ? (
+            <p role="alert" className="mt-2">
+              {erreurAbandon}
+            </p>
+          ) : null}
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setTitre(propose.title);
+                setContenu(propose.content);
+                // Déjà en base : inutile de le renvoyer tel quel.
+                setSauvegarde({
+                  title: propose.title,
+                  content: propose.content,
+                  le: propose.updated_at,
+                });
+                setPropose(null);
+              }}
+              className="border-gold hover:bg-gold/10 rounded-full border px-4 py-2 text-xs transition-colors"
+            >
+              Reprendre le brouillon
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                startTransition(async () => {
+                  const reponse = await abandonnerBrouillon(projetId, document.id);
+                  if ("erreur" in reponse) {
+                    setErreurAbandon(reponse.erreur);
+                  } else {
+                    setPropose(null);
+                  }
+                });
+              }}
+              className="border-app-line hover:border-secondary rounded-full border px-4 py-2 text-xs transition-colors"
+            >
+              Abandonner le brouillon
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <div>
         <label htmlFor="titre" className="mb-2 block text-sm font-medium">
@@ -335,12 +465,16 @@ export function EditeurDocument({
         {/* État écrit en toutes lettres : la couleur ne fait que l'appuyer. */}
         <p role="status" className="text-secondary text-sm">
           {modifie ? (
-            <span className="text-gold">Modifications non enregistrées</span>
+            <>
+              <span className="text-gold">Modifications non enregistrées</span>
+              {etatBrouillon ? ` — ${etatBrouillon}` : null}
+            </>
           ) : heure ? (
             `Enregistré à ${heure}`
           ) : null}
         </p>
       </div>
+      <p className="text-secondary text-xs leading-relaxed">{AIDE_BROUILLON}</p>
     </form>
   );
 }
