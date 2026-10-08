@@ -3003,6 +3003,25 @@ export type Database = {
       };
       contexte_veille: { Args: { p_attempt_id: string }; Returns: Json };
       controle_avant_requete: { Args: Record<PropertyKey, never>; Returns: undefined };
+      couts_ia_par_mois: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          a_rapprocher: number;
+          appels: number;
+          compte: number;
+          dont_reserve: number;
+          fournisseur: string;
+          jetons_entree: number;
+          jetons_sortie: number;
+          modele: string;
+          mois: string;
+          non_soldes: number;
+          profil: string;
+          replis: number;
+          requetes: number;
+          sans_cout: number;
+        }[];
+      };
       creer_devis: {
         Args: { p_action: string; p_params?: Json; p_project_id: string };
         Returns: {

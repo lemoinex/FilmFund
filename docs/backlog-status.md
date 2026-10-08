@@ -69,6 +69,7 @@ réels).
 | X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé en recette | —             |
 | X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé en recette | —             |
 | Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé en recette | —             |
+| Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2183,3 +2184,48 @@ fait par la requête que l'action envoie, sous la session d'un administrateur �
 Y1 est en production et validé en recette le 8 octobre 2026 : voir « Recette du lot Y1 », plus
 haut. Le plafond de production, que le lot n'avait pas touché, a été porté de 5 $ à 50 $ par
 l'utilisateur, depuis l'écran.
+
+Administration prévue et alertes non livrées, cadrées le 8 octobre 2026 en cinq lots : Z1 —
+coûts de l'IA —, Z2 — studios et abonnements —, Z3 — statistiques d'usage —, W2 — alerte
+« nouvelle opportunité » —, W3 — alertes par e-mail. **L'utilisateur en retient trois : Z1, Z3
+et W2.** Z2 et W3 sont écartés, sans date : W3 demande de choisir un service d'envoi, ce qui
+n'a pas été fait ; Z2 ne pouvait être qu'une vue de lecture, les abonnements payants n'ayant
+ni prestataire ni décision.
+
+Lot Z1 : la rubrique « Coûts de l'IA » (`/administration/couts`) montre ce que les appels aux
+fournisseurs ont coûté sur douze mois, par agent, par profil et par modèle. Le mois courant se
+lit face au plafond, avec le chemin pour le changer ; les mois précédents se déplient. Chaque
+ligne dit ses appels, son volume — des jetons pour un modèle, des requêtes pour une recherche —
+et son montant compté. L'écran dit en clair ce qui empêche de lire un montant comme acquis :
+appels sans issue connue, comptés à leur réserve ; appels au tarif inconnu, à rapprocher de la
+facture ; appels servis par un modèle de repli ; appels refusés par le fournisseur, sans coût.
+Il dit aussi que ces montants viennent des tarifs relevés à la main dans les profils, et que
+seule la facture du fournisseur fait foi.
+
+La migration ne pose qu'une fonction, `couts_ia_par_mois()`. **Elle s'exécute sous les droits
+de l'appelant** : ce sont les politiques déjà en place sur les quatre registres de coûts qui
+décident de ce qu'elle voit. Un administrateur lit tout ; un compte ordinaire reçoit une liste
+vide ; un visiteur ne l'exécute pas. Aucun droit ne change, et rien ne sort par studio, par
+projet ni par tâche. Le mois est celui du plafond — civil, en UTC — et la somme d'un mois égale
+`depense_ia_du_mois()` : les deux écrans de l'administration disent le même total, un test le
+tient. Profils et modèles vivent dans le code du worker, pas en base : l'écran montre ce qui a
+été appelé, pas un catalogue.
+
+Z1 est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur : 14 tests SQL et
+18 tests de l'API de plus ; suites complètes à 797 tests SQL et 1 322 tests de l'API.
+Vingt-cinq sabotages attrapés un par un, après deux tests renforcés : des montants additionnés
+en flottants ne faisaient rien tomber, les valeurs d'essai étant exactes en binaire — une
+valeur qui ne l'est pas est maintenant lue — ; et une rubrique poussée dans la navigation de
+tous les comptes échappait à un test qui lisait trop large. Rendu réel sur un serveur de
+production local, 19 points sur 19, sous trois sessions — administrateur, compte ordinaire,
+visiteur —, chaque montant comparé à ce que la base rend.
+
+**Non couvert** : les mois précédents dépliés — la base locale n'a d'appels qu'en octobre, le
+rendu n'a vu que « Aucun appel enregistré avant ce mois » ; l'affichage à 375 px, où les
+tableaux défilent horizontalement ; l'exactitude des tarifs eux-mêmes, que seule une facture
+permet de juger.
+
+**Reste à faire** : la livraison — PR, CI, fusion, puis la migration
+`20261008030000_couts_ia.sql`. Entre la fusion et la poussée, la rubrique répond par une
+erreur ; le reste de l'administration n'est pas touché. Puis une recette sans coût : ouvrir la
+rubrique en production et comparer octobre aux appels connus.
