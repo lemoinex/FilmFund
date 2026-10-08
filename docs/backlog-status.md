@@ -68,7 +68,7 @@ réels).
 | X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | validé en recette | —             |
 | X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé en recette | —             |
 | X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé en recette | —             |
-| Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé localement | —             |
+| Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé en recette | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -758,6 +758,42 @@ Deux constats à garder :
   sera refusée pour plafond atteint, sans coût, tant que l'administration ne l'a pas relevé.
 
 Le lot X est livré en entier.
+
+## Recette du lot Y1 : le plafond mensuel d'IA depuis l'écran
+
+Livraison le 8 octobre 2026 : PR 146 fusionnée à 00h22 UTC (`40ca8de`), migration poussée par
+l'utilisateur aussitôt après (60 migrations). Relu en base après la poussée : la fonction de
+lecture — réservée aux administrateurs, fermée aux visiteurs et au worker, rendant le calcul du
+worker —, `depense_ia_du_mois()` toujours fermée aux comptes, les politiques du plafond et son
+déclencheur de journal. Le worker n'a pas été redéployé : le lot ne le touche pas.
+
+Le même jour, entre 00h30 et 00h34 UTC, un administrateur a changé le plafond depuis
+**Administration → Intégrations IA**, en production (mode privé actif). Aucun coût : c'est un
+réglage. La dépense du mois était de 4,719414 $.
+
+| Heure (UTC) | Ancien | Nouveau |
+| ----------- | ------ | ------- |
+| 00h30:59    | 5 $    | 20 $    |
+| 00h31:35    | 20 $   | 50 $    |
+| 00h33:05    | 50 $   | 20 $    |
+| 00h34:10    | 20 $   | 50 $    |
+
+- Quatre changements, quatre entrées au journal d'administration, chacune au nom du compte
+  connecté : ils sont passés par l'application, pas par la voie SQL.
+- Un cinquième envoi, à 00h34:17, a renvoyé la valeur déjà en place : la ligne a été touchée,
+  rien n'a été journalisé. Le journal ne retient qu'un plafond qui change.
+- La chaîne tient en conditions réelles, à la hausse comme à la baisse : formulaire, action
+  serveur, écriture sous la RLS, journal. Le plafond est à 50 $ ; il reste 45,28 $ pour octobre.
+- À l'écran, d'après l'utilisateur, d'un « oui » à deux questions, sans capture : avant le
+  premier changement, 4,72 $ dépensés, un reste de 0,28 $ et l'alerte « Reste faible » ; après
+  un envoi, le message qui dit le plafond fixé et ce qui reste.
+
+Non couvert par cette recette : une saisie refusée — au-dessus de 50 $, ou invalide — ; un
+plafond fixé sous la dépense du mois, et la mise en garde qui le précède ; l'alerte « Plafond
+atteint » ; l'affichage à 375 px ; ce que voit un compte qui n'est pas administrateur, qui ne
+peut pas exister en mode privé.
+
+Le lot Y1 est livré.
 
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 
@@ -2142,10 +2178,8 @@ le journal après un changement, la page introuvable pour qui n'est pas administ
 
 **Non couvert** : le formulaire n'a pas été envoyé depuis un navigateur — le changement a été
 fait par la requête que l'action envoie, sous la session d'un administrateur —, ni l'affichage
-à 375 px. **Le plafond de production n'a pas été touché : il est toujours à 5 $.**
+à 375 px. Le lot lui-même n'a pas touché au plafond de production.
 
-**Reste à faire** : la livraison — PR, CI, fusion, puis la migration
-`20261008010000_plafond_ia_ecran.sql`. Entre la fusion et la poussée, la section affiche que
-la dépense n'a pas pu être lue, sans formulaire ; les clés des fournisseurs restent
-accessibles. Puis une recette sans coût : relever le plafond depuis l'écran et relire le
-journal.
+Y1 est en production et validé en recette le 8 octobre 2026 : voir « Recette du lot Y1 », plus
+haut. Le plafond de production, que le lot n'avait pas touché, a été porté de 5 $ à 50 $ par
+l'utilisateur, depuis l'écran.
