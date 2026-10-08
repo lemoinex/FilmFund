@@ -1282,6 +1282,54 @@ export type Database = {
           },
         ];
       };
+      project_document_drafts: {
+        Row: {
+          base_version: number;
+          content: string;
+          created_at: string;
+          document_id: string;
+          project_id: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          base_version?: number;
+          content?: string;
+          created_at?: string;
+          document_id: string;
+          project_id: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          base_version?: number;
+          content?: string;
+          created_at?: string;
+          document_id?: string;
+          project_id?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brouillon_du_document";
+            columns: ["document_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "project_documents";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "project_document_drafts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_document_versions: {
         Row: {
           content: string;

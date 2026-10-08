@@ -124,12 +124,120 @@ export async function enregistrerDocument(
     return { erreur: REFUS };
   }
 
+  // Le document porte désormais ce texte : le brouillon du compte n'a plus
+  // rien à rendre. Un échec ici ne défait pas l'enregistrement — un
+  // brouillon identique au document n'est jamais proposé.
+  await supabase
+    .from("project_document_drafts")
+    .delete()
+    .eq("document_id", documentId)
+    .eq("project_id", projetId)
+    .eq("user_id", garde.user.id);
+
   revalidatePath(`/projets/${projetId}/documents`);
   revalidatePath(`/projets/${projetId}/documents/${documentId}`);
   revalidatePath("/tableau-de-bord");
   revalidatePath("/documents");
 
   return { enregistreLe: data[0].updated_at };
+}
+
+/*
+ * `sauvegardeLe` est une date ISO, pour la même raison qu'`enregistreLe`.
+ */
+export type EtatBrouillon = { erreur: string } | { sauvegardeLe: string };
+
+const ECHEC_BROUILLON = "La sauvegarde du brouillon a échoué.";
+
+/**
+ * Sauvegarde automatique : écrit le brouillon du compte pour ce document,
+ * et rien d'autre. Le document n'est pas touché, aucune version n'est créée.
+ *
+ * Appelée par l'éditeur, pas par un formulaire : ses arguments sont validés
+ * comme ceux d'une requête forgée. La RLS n'admet que le brouillon de
+ * l'appelant, s'il peut éditer le projet ; la clé composée de la table
+ * refuse un document qui ne serait pas de ce projet.
+ */
+export async function enregistrerBrouillon(
+  projetId: string,
+  documentId: string,
+  titre: string,
+  contenu: string,
+): Promise<EtatBrouillon> {
+  if (
+    typeof projetId !== "string" ||
+    typeof documentId !== "string" ||
+    typeof titre !== "string" ||
+    typeof contenu !== "string" ||
+    !projetId ||
+    !documentId
+  ) {
+    return { erreur: "Document introuvable." };
+  }
+  if (titre.length > TITRE_DOCUMENT_MAX || contenu.length > CONTENU_DOCUMENT_MAX) {
+    return { erreur: "Le texte est trop long pour être sauvegardé." };
+  }
+
+  const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
+  const modifier = () =>
+    supabase
+      .from("project_document_drafts")
+      .update({ title: titre, content: contenu })
+      .eq("document_id", documentId)
+      .eq("project_id", projetId)
+      .eq("user_id", garde.user.id)
+      .select("updated_at");
+
+  // Le brouillon existe le plus souvent : on le modifie, et on ne le crée
+  // que s'il manque. Créé entre-temps par un autre onglet, on le modifie.
+  let { data, error } = await modifier();
+  if (!error && !data?.length) {
+    const creation = await supabase
+      .from("project_document_drafts")
+      .insert({ document_id: documentId, project_id: projetId, title: titre, content: contenu })
+      .select("updated_at");
+    ({ data, error } = creation.error?.code === "23505" ? await modifier() : creation);
+  }
+
+  if (error) {
+    return { erreur: error.code === "42501" ? REFUS : ECHEC_BROUILLON };
+  }
+  if (!data?.length) {
+    return { erreur: ECHEC_BROUILLON };
+  }
+  return { sauvegardeLe: data[0].updated_at };
+}
+
+/** Abandonne le brouillon du compte pour ce document. Le document n'est pas touché. */
+export async function abandonnerBrouillon(
+  projetId: string,
+  documentId: string,
+): Promise<{ erreur: string } | { abandonne: true }> {
+  if (typeof projetId !== "string" || typeof documentId !== "string" || !projetId || !documentId) {
+    return { erreur: "Document introuvable." };
+  }
+
+  const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
+  // `user_id` est nommé : un administrateur a le droit de supprimer le
+  // brouillon d'un autre, et ne doit ici abandonner que le sien.
+  const { error } = await supabase
+    .from("project_document_drafts")
+    .delete()
+    .eq("document_id", documentId)
+    .eq("project_id", projetId)
+    .eq("user_id", garde.user.id);
+
+  return error ? { erreur: "L'abandon du brouillon a échoué." } : { abandonne: true };
 }
 
 export type EtatRestauration = { erreur: string } | null;

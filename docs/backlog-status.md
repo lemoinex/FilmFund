@@ -75,7 +75,8 @@ réels).
 | AA1    | Rubrique « Ressources » : bibliothèque de guides et de checklists, contenus versionnés (sans IA)                               | en production     | —             |
 | ED1    | Éditeur : comparaison de deux versions d'un document (sans IA)                                                                 | en production     | —             |
 | ED2a   | Éditeur : mise en forme par marqueurs, barre d'outils, aperçu et rendu à la lecture (sans IA)                                  | en production     | —             |
-| ED2b   | Exports : les marqueurs rendus en PDF, en Word et dans le ZIP (sans IA)                                                        | validé localement | —             |
+| ED2b   | Exports : les marqueurs rendus en PDF, en Word et dans le ZIP (sans IA)                                                        | en production     | —             |
+| ED3    | Éditeur : sauvegarde automatique en brouillon, sans créer de version (sans IA)                                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2632,5 +2633,52 @@ texte — aucun n'est installé sur le poste de test.
 changé ; un dossier exporté avant ce lot garde ses marqueurs jusqu'à son expiration ou jusqu'à
 une modification du projet.
 
-**Reste à faire** : la livraison — PR, CI, fusion, sans migration ; la fusion redéploie le
-worker. Puis ED3, la sauvegarde automatique.
+ED2b est en production depuis le 8 octobre 2026 (PR 156, `b9d9ffb`), sans migration ; CI de
+`main` verte, worker redéployé par Railway. Aucun export fait en production depuis.
+
+Lot ED3, la sauvegarde automatique. L'éditeur n'enregistrait que sur son bouton ; entre deux
+clics, le texte ne vivait que dans le navigateur. Quelques secondes après la dernière frappe
+(cinq, `DELAI_BROUILLON_MS`), le titre et le texte partent désormais dans une table à part,
+`project_document_drafts` : **un brouillon par compte et par document, qui ne crée aucune
+version et ne touche pas au document**. Rien d'autre que l'éditeur ne le lit — ni les exports,
+ni les agents, ni le repérage d'un passage, qui lisent tous le texte enregistré.
+
+- **Seul « Enregistrer » modifie le document** et crée une version ; il supprime alors le
+  brouillon du compte.
+- **Un brouillon trouvé à l'ouverture est proposé, jamais appliqué d'office** : « Reprendre le
+  brouillon » le remet à l'écran sans rien enregistrer, « Abandonner le brouillon » le
+  supprime. Tant que cette décision n'est pas prise, la sauvegarde automatique attend. Un
+  brouillon identique au document n'est pas proposé.
+- **Si le document a été enregistré depuis** — par un autre éditeur, une restauration, une
+  proposition acceptée —, la proposition le dit : la base pose seule, à la naissance du
+  brouillon, le numéro de la dernière version du document (`base_version`).
+- L'éditeur dit l'état de la sauvegarde, son échec compris, et ce qu'est un brouillon.
+  L'avertissement du navigateur à la fermeture se tait quand le texte est à l'abri ; le type
+  et le statut ne vont pas au brouillon et le gardent.
+
+Droits : un brouillon est lu et écrit par son seul titulaire, tant qu'il peut éditer le
+projet — un lecteur n'en a pas, un éditeur sorti de l'équipe ne lit plus le sien. Les
+administrateurs lisent tout, écrivent le leur comme un éditeur, et peuvent supprimer celui
+d'un autre, ce qui est journalisé ; ils ne réécrivent pas le brouillon d'un autre. Les
+écritures ordinaires ne sont pas journalisées : un administrateur qui tape dans un projet qui
+n'est pas le sien n'a encore rien changé au projet, et son intervention l'est quand il
+enregistre le document. La table porte la politique restrictive du mode privé.
+
+ED3 est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur : une
+migration (`20261008160000_brouillons_documents.sql`, une table, deux fonctions de
+déclencheur), 27 tests SQL et 27 tests d'API de plus ; suites complètes à 854 tests SQL et 1 482 tests d'API. Trente-cinq sabotages un par un, sur la
+base et sur le code : trente-quatre attrapés du premier coup ; le dernier — une politique de
+suppression ouverte à toute l'équipe — ne se constatait pas par un essai, un compte ne
+supprimant que ce qu'il lit, et a reçu son contrôle. Rendu réel sur un serveur de production
+local, 19 points sur 19, sous six sessions — porteuse, éditeur, lecteur, administratrice,
+étranger, visiteur.
+
+**Non couvert** : la frappe, la minuterie et les deux boutons dans un navigateur — la règle
+est éprouvée par ses tests, pas par une frappe ; deux onglets du même compte sur le même
+document, qui partagent un seul brouillon ; l'affichage à 375 px.
+
+**Connu** : un brouillon dont le titulaire a quitté l'équipe reste en base jusqu'à la
+suppression du document ou du compte ; seul un administrateur peut le supprimer.
+
+**Reste à faire** : la livraison — poussée de la migration, additive, avant la fusion ; PR,
+CI, fusion. Le lot ED, l'éditeur, est alors clos.

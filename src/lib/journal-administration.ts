@@ -43,6 +43,7 @@ const TABLES: Record<string, string> = {
   project_budgets: "le budget",
   budget_lines: "les lignes de budget",
   project_documents: "les documents",
+  project_document_drafts: "le brouillon d'un document",
   storyboard_scenes: "le storyboard",
   scene_shots: "le découpage technique",
   project_gear: "le matériel",
