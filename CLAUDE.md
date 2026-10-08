@@ -595,6 +595,14 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   administrateur n'y lit pas une démonstration. Une liste vide (pays, formats,
   genres) veut dire « non précisé », jamais « tous ». Aucun `loading.tsx` ne
   couvre une fiche ni une page de projet : il ferait répondre 200 à une page absente.
+- Filtre par montant (lot OP1, sans IA, sans migration) : dans « Opportunités »,
+  une devise puis un montant minimal (`lireFiltreMontant`, `filtrerParMontant`,
+  `src/lib/opportunites.ts`). **Deux devises ne se comparent jamais** : le
+  catalogue ne porte aucun taux de change, ne pas en supposer un. Une
+  opportunité sans montant n'est jamais retenue par ce filtre ; seules les
+  devises dans lesquelles le catalogue visible dit un montant sont proposées.
+  Tenu à part de `lireFiltres`, appliqué sur les lignes lues, après les autres
+  filtres. Le montant reste hors de la compatibilité.
 - Compatibilité (lot L5b, sans IA) : onglet « Opportunités » du projet, ouvert à
   toute l'équipe ; règles dans `src/lib/compatibilite.ts`, rien n'est stocké.
   Trois critères — type de projet, pays, genre —, quatre états, **un décompte et

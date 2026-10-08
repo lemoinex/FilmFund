@@ -684,3 +684,103 @@ export function filtrerCatalogue<
     })
     .map(({ opportunite }) => opportunite);
 }
+
+/**
+ * Filtre par montant (lot OP1), tenu à part des autres : il ne vaut que pour
+ * une devise. Deux montants de devises différentes ne se comparent pas — le
+ * catalogue ne porte aucun taux de change, et en supposer un ferait dire à
+ * une source ce qu'elle ne dit pas.
+ */
+export type FiltreMontant = {
+  /** Code de devise à trois lettres ; null : le filtre est inactif. */
+  devise: string | null;
+  /** Montant qu'une opportunité doit pouvoir atteindre ; null : toute somme dite dans la devise. */
+  minimum: number | null;
+};
+
+/** Ce que l'écran dit du filtre par montant, sous le formulaire. */
+export const AIDE_FILTRE_MONTANT =
+  "Le filtre par montant ne compare que des sommes dites dans la même devise : choisissez-la d'abord. Une opportunité dont la source ne donne pas de montant n'y figure pas. Le montant affiché est celui que l'opportunité accorde, pas ce que votre projet obtiendrait.";
+
+/**
+ * Lit le filtre par montant d'une adresse. Comme les autres filtres, une
+ * valeur inconnue est ignorée plutôt que refusée. Un montant sans devise ne
+ * filtre rien : il ne voudrait rien dire.
+ */
+export function lireFiltreMontant(lire: (champ: string) => unknown): FiltreMontant {
+  const devise = texte(lire("devise")).trim().toUpperCase();
+  if (!/^[A-Z]{3}$/.test(devise)) {
+    return { devise: null, minimum: null };
+  }
+  const minimum = montant(lire("montant"));
+  return { devise, minimum: typeof minimum === "number" && minimum > 0 ? minimum : null };
+}
+
+/** Vrai si le filtre par montant restreint la liste. */
+export function filtreMontantActif(filtre: FiltreMontant): boolean {
+  return filtre.devise !== null;
+}
+
+/**
+ * Le plus haut montant qu'une opportunité dit accorder : son plafond, ou à
+ * défaut son plancher — « à partir de » ne dit pas jusqu'où. Null si la source
+ * ne donne ni montant ni devise.
+ */
+export function montantAtteint(opportunite: {
+  budget_min: number | null;
+  budget_max: number | null;
+  currency: string | null;
+}): number | null {
+  if (!opportunite.currency) {
+    return null;
+  }
+  return opportunite.budget_max ?? opportunite.budget_min;
+}
+
+/**
+ * Les opportunités que le filtre par montant retient, dans l'ordre reçu.
+ *
+ * Seules celles qui disent un montant dans la devise choisie : une opportunité
+ * sans montant veut dire « non fourni », pas « n'importe quelle somme ». Avec
+ * un minimum, il faut que le montant qu'elle dit accorder l'atteigne.
+ */
+export function filtrerParMontant<
+  Opportunite extends {
+    budget_min: number | null;
+    budget_max: number | null;
+    currency: string | null;
+  },
+>(catalogue: readonly Opportunite[], filtre: FiltreMontant): Opportunite[] {
+  if (filtre.devise === null) {
+    return [...catalogue];
+  }
+  return catalogue.filter((opportunite) => {
+    const atteint = montantAtteint(opportunite);
+    return (
+      atteint !== null &&
+      opportunite.currency === filtre.devise &&
+      (filtre.minimum === null || atteint >= filtre.minimum)
+    );
+  });
+}
+
+/**
+ * Les devises dans lesquelles une opportunité du catalogue dit un montant,
+ * triées : les seules que le filtre propose — une autre ne mènerait qu'à une
+ * liste vide.
+ */
+export function devisesDuCatalogue(
+  catalogue: readonly {
+    budget_min: number | null;
+    budget_max: number | null;
+    currency: string | null;
+  }[],
+): string[] {
+  const devises = new Set<string>();
+  for (const opportunite of catalogue) {
+    if (opportunite.currency && montantAtteint(opportunite) !== null) {
+      devises.add(opportunite.currency);
+    }
+  }
+  return [...devises].sort();
+}
