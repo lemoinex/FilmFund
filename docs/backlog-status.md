@@ -68,6 +68,7 @@ réels).
 | X1     | WEAVER : note de réalisation, pitch développé, pitch oral — base, profils, écran                                               | validé en recette | —             |
 | X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé en recette | —             |
 | X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé en recette | —             |
+| Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2102,3 +2103,49 @@ personnages proposés est vide.
 
 X2a et X2b sont validés en recette le 7 octobre 2026, avec des réserves : voir « Recette du
 lot X », plus haut.
+
+Lot Y1 : le plafond mensuel des dépenses d'IA a son écran, décidé le 8 octobre 2026. Le
+plafond existait depuis le lot I1 (`ai_settings`, 5 $ à la mise en service), journalisé à
+chaque changement, mais ne se lisait ni ne se changeait qu'en SQL. La recette du lot X l'a
+montré : à 4,72 $ dépensés sur 5 $, la prochaine rédaction était refusée, et rien à l'écran ne
+le disait à l'administration.
+
+La section « Plafond mensuel des dépenses » ouvre **Administration → Intégrations IA** : la
+dépense du mois, le plafond, ce qui reste, le jour de la remise à zéro — le mois se compte en
+UTC —, et un formulaire pour changer le plafond. Elle prévient quand il reste moins de 1 $, et
+quand le plafond est atteint. Elle dit aussi ce que ce plafond n'est pas : le crédit d'un compte
+chez son fournisseur se gère à part.
+
+La migration ne pose qu'une fonction, `depense_ia_administration()`, réservée aux
+administrateurs : elle rend la dépense du mois et le plafond, et rien d'autre.
+`depense_ia_du_mois()`, que le worker appelle avant chaque appel, reste fermée aux comptes ; la
+nouvelle fonction en rend le résultat, pour qu'il n'existe qu'un calcul. L'écriture passe par
+la politique déjà en place, sous la RLS, et par son déclencheur de journal : ni table, ni
+politique, ni droit du worker ne changent.
+
+**La saisie est bornée à 50 $**, choix de l'utilisateur : un garde-fou de l'écran contre une
+faute de frappe, pas une contrainte de la base. Conséquence assumée : si la dépense d'un mois
+dépasse 50 $, l'écran ne peut plus fixer un plafond qui rouvre les demandes ; la voie SQL de
+`docs/worker.md` le peut. La dépense affichée est arrondie au centime supérieur, pour ne pas
+montrer un reste que le worker, qui compte au micro-dollar, n'a déjà plus.
+
+Y1 est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur : 11 tests SQL et
+19 tests de l'API de plus ; suites complètes à 783 tests SQL et 1 304 tests de l'API.
+Vingt-cinq sabotages attrapés un par un, après deux retouches. Le premier échappé : relâcher la
+politique d'écriture du plafond ne changeait rien depuis l'API, un compte ordinaire ne lisant
+pas la ligne qu'il aurait dû modifier ; un test SQL lit désormais les politiques au catalogue.
+Le second n'était pas une faille — déplacer le contrôle de la saisie après la garde rejette
+toujours une saisie invalide avant toute écriture — et a été remplacé par le retrait du
+contrôle, qui tombe. Rendu réel sur un serveur de production local, 19 points sur 19, sous
+trois sessions — administrateur, compte ordinaire, visiteur : les trois états de la section,
+le journal après un changement, la page introuvable pour qui n'est pas administrateur.
+
+**Non couvert** : le formulaire n'a pas été envoyé depuis un navigateur — le changement a été
+fait par la requête que l'action envoie, sous la session d'un administrateur —, ni l'affichage
+à 375 px. **Le plafond de production n'a pas été touché : il est toujours à 5 $.**
+
+**Reste à faire** : la livraison — PR, CI, fusion, puis la migration
+`20261008010000_plafond_ia_ecran.sql`. Entre la fusion et la poussée, la section affiche que
+la dépense n'a pas pu être lue, sans formulaire ; les clés des fournisseurs restent
+accessibles. Puis une recette sans coût : relever le plafond depuis l'écran et relire le
+journal.

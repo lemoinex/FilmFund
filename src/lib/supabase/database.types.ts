@@ -3040,6 +3040,13 @@ export type Database = {
         Returns: undefined;
       };
       demander_veille: { Args: { p_question: string }; Returns: string };
+      depense_ia_administration: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          depense: number;
+          plafond: number;
+        }[];
+      };
       depense_ia_du_mois: { Args: Record<PropertyKey, never>; Returns: number };
       deplacer_plan: { Args: { p_plan_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
