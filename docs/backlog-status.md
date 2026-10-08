@@ -69,8 +69,8 @@ réels).
 | X2a    | ARC : personnages proposés — base, profil, agent                                                                               | validé en recette | —             |
 | X2b    | ARC : écran des personnages proposés, dans l'étape « Personnages » de l'assistant                                              | validé en recette | —             |
 | Y1     | Plafond mensuel des dépenses d'IA : lecture et changement depuis Intégrations IA (sans IA)                                     | validé en recette | —             |
-| Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | en production     | —             |
-| Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | en production     | —             |
+| Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | validé en recette | —             |
+| Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | validé en recette | —             |
 | W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
@@ -797,6 +797,55 @@ atteint » ; l'affichage à 375 px ; ce que voit un compte qui n'est pas adminis
 peut pas exister en mode privé.
 
 Le lot Y1 est livré.
+
+## Recette des lots Z1 et Z3, et ce qui reste de W2
+
+Le 8 octobre 2026, l'utilisateur a ouvert en production, sous sa session d'administrateur (mode
+privé actif), les trois écrans livrés le jour même, et en a transmis une capture chacun. Aucun
+coût : ce sont des lectures. Chaque capture a été comparée à ce que la base rend au même moment.
+
+**Coûts de l'IA (Z1)** — conforme, ligne à ligne.
+
+- En tête, octobre 2026 : 4,72 $ comptés, plafond 50,00 $, reste 45,28 $, et le lien « Changer
+  le plafond ».
+- Synthèse : « 70 appels, 4,72 $ comptés, dont 2,43 $ de réserves », suivie de ses deux notes —
+  4 appels sans issue connue, comptés à leur réserve ; 26 appels refusés par le fournisseur,
+  sans coût.
+- Sept agents, du plus coûteux au moins coûteux : BOARD 2,43 $, entièrement en réserves ;
+  WEAVER 0,83 $ ; SCRIPT 0,49 $ ; FIELD 0,25 $ ; ARC 0,17 $ ; SCOUT 0,15 $ ; FRAME 0,13 $.
+- La recherche de SCOUT se lit en requêtes — « Recherche (perplexity) », 2 requêtes —, sans
+  modèle ni jetons.
+
+Non couvert : le bas de la page — les agents suivants et la section « Mois précédents », qui ne
+peut dire que « Aucun appel enregistré avant ce mois », la plateforme datant d'octobre.
+
+**Statistiques (Z3)** — conforme.
+
+- 2 comptes, 2 administrateurs, aucun suspendu ; 2 studios au plan Studio.
+- 3 projets : 2 longs métrages et 1 court ; 2 à l'étape Idée, 1 en Écriture. 7 personnages,
+  2 scènes, 12 plans, 22 équipements, 2 candidatures, 1 membre d'équipe.
+- 13 documents, par type et par statut, tous nommés en français.
+- Demandes des trente derniers jours, par livrable et par issue : dont 16 pitchs — 4 réussis,
+  12 échoués — et 3 vignettes de storyboard, toutes échouées.
+
+Non couvert : la fin de la page — propositions par décision, exports, opportunités —, hors de
+la capture.
+
+**Alertes (W2)** — seul l'état vide a été vu, **W2 reste « en production »**.
+
+- La règle « Nouvelle opportunité » s'affiche avec son délai de quatorze jours et sa limite.
+- Aucune alerte, et c'est conforme : aucune opportunité n'a été vérifiée depuis le lot. Les
+  deux du catalogue l'étaient avant, donc sans date, et le journal d'administration n'a reçu
+  aucune écriture ce jour-là.
+- La capture a montré un oubli du lot : la phrase de l'état vide n'annonçait pas la sixième
+  nature. Elle dit désormais « … aucune opportunité à étudier bientôt close ni nouvellement
+  vérifiée », et un test la tient accordée aux six natures — vérifié en la retirant.
+
+**Reste à faire pour W2, sans coût** : faire passer une opportunité à « vérifiée » depuis
+« Catalogue et veille » — en vérifier une nouvelle, ou repasser l'une des deux existantes à
+« non vérifiée » puis à « vérifiée » —, et lire l'alerte dans la rubrique « Alertes » et le bloc
+« À traiter ». Les deux opportunités couvrent le Cameroun et le long métrage : l'alerte
+concernera « une maison hantée ».
 
 ## Audit de sécurité et de fiabilité du 5 octobre 2026
 

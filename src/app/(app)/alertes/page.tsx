@@ -120,7 +120,7 @@ export default async function AlertesPage() {
       ) : (
         <p className="border-app-line text-secondary mt-8 rounded-xl border border-dashed px-5 py-10 text-center text-sm leading-relaxed">
           {projets.length
-            ? "Aucune alerte : aucune étape en retard ni à venir, aucune candidature à déposer, aucune opportunité à étudier bientôt close."
+            ? "Aucune alerte : aucune étape en retard ni à venir, aucune candidature à déposer, aucune opportunité à étudier bientôt close ni nouvellement vérifiée."
             : "Aucune alerte : vous n'avez pas encore de projet."}
         </p>
       )}
