@@ -501,7 +501,19 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
-  comparaison de versions.
+  comparaison de versions. Lot ED, décisions du 8 octobre 2026 : **la mise en
+  forme se fera par marqueurs dans le texte** (`# Titre`, `- élément`,
+  `**gras**`, `*italique*`), jamais par un éditeur riche — le contenu d’un
+  document reste une chaîne de texte, que lisent tels quels les exports, les
+  agents, l’ajout d’une séquence et le repérage d’un passage ; **la sauvegarde
+  automatique enregistrera un brouillon en cours, sans créer de version**.
+- Comparaison de deux versions (lot ED1, sans IA, sans migration) : livrée —
+  `documents/[documentId]/comparaison?de=&a=`, calcul dans
+  `src/lib/comparaison.ts`. Toujours lue de la plus ancienne à la plus récente ;
+  ligne par ligne, puis mot par mot dans une ligne récrite ; une borne de
+  calcul, au-delà de laquelle la page le dit. Une lecture seule, ouverte à
+  toute l’équipe sous la RLS des versions. Un changement ne se signale jamais
+  par la seule couleur. Ne pas créer un second calcul : étendre celui-ci.
 - Actions : régénérer, améliorer, raccourcir, développer, corriger.
 - Toute génération crée une proposition puis une version ; aucun écrasement silencieux.
 
