@@ -38,7 +38,7 @@ const RUBRIQUES: Rubrique[] = [
   { libelle: "Storyboard", icone: StoryboardIcon, href: "/storyboard" },
   { libelle: "Opportunités", icone: AfricaIcon, href: "/opportunites" },
   { libelle: "Assistant IA", icone: SparkIcon },
-  { libelle: "Ressources", icone: QuillIcon },
+  { libelle: "Ressources", icone: QuillIcon, href: "/ressources" },
 ];
 
 /*
