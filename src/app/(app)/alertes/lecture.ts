@@ -61,10 +61,15 @@ export async function chargerAlertes(
       .lte("deadline", jourApres(jour, SEUILS_ALERTES.dossierIncomplet))
       .order("deadline")
       .limit(LIMITES_ALERTES.lignes),
-    supabase.from("projects").select("id, format, genre, countries").in("id", ids),
+    supabase
+      .from("projects")
+      .select("id, format, genre, countries, duration_minutes, stage")
+      .in("id", ids),
     supabase
       .from("funding_opportunities")
-      .select("id, name, organization, countries, formats, genres, deadline, status, verified_at")
+      .select(
+        "id, name, organization, countries, formats, genres, stages, duration_min_minutes, duration_max_minutes, deadline, status, verified_at",
+      )
       .in("status", STATUTS_VISIBLES)
       .gte("deadline", jour)
       .lte("deadline", jourApres(jour, SEUILS_ALERTES.opportuniteProche))
@@ -75,7 +80,9 @@ export async function chargerAlertes(
     // n'est pas une nouveauté.
     supabase
       .from("funding_opportunities")
-      .select("id, name, organization, countries, formats, genres, deadline, status, verified_at")
+      .select(
+        "id, name, organization, countries, formats, genres, stages, duration_min_minutes, duration_max_minutes, deadline, status, verified_at",
+      )
       .eq("status", "verifie")
       .gte("verified_at", `${jourApres(jour, -SEUILS_ALERTES.opportuniteNouvelle)}T00:00:00Z`)
       .order("verified_at", { ascending: false })

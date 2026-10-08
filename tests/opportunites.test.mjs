@@ -284,6 +284,74 @@ describe("Catalogue des opportunités", () => {
     assert.equal(reprise.updated_by, second.id);
   });
 
+  it("langue, durée et stade : l'administration les écrit, un compte les lit, la base tient les bornes", async () => {
+    const COLONNES = "languages, stages, duration_min_minutes, duration_max_minutes";
+    const lire = (client, id) =>
+      client.from("funding_opportunities").select(COLONNES).eq("id", id).single();
+
+    const precise = await ajouter("Précise", {
+      languages: ["fr", "en"],
+      stages: ["developpement", "ecriture"],
+      duration_min_minutes: 52,
+      duration_max_minutes: 90,
+    });
+    const { data: lue, error } = await lire(compte.client, precise.id);
+    assert.equal(error, null, error?.message);
+    assert.deepEqual(lue, {
+      languages: ["fr", "en"],
+      stages: ["developpement", "ecriture"],
+      duration_min_minutes: 52,
+      duration_max_minutes: 90,
+    });
+
+    // Sans rien dire, une opportunité ne précise rien : ni « toutes », ni « tout ».
+    const muette = await ajouter("Muette");
+    assert.deepEqual((await lire(administrateur.client, muette.id)).data, {
+      languages: [],
+      stages: [],
+      duration_min_minutes: null,
+      duration_max_minutes: null,
+    });
+
+    const modifier = (client, valeurs) =>
+      client.from("funding_opportunities").update(valeurs).eq("id", precise.id).select("id");
+
+    const { data: modifiee, error: refusAdmin } = await modifier(administrateur.client, {
+      duration_max_minutes: 120,
+      languages: ["pt"],
+    });
+    assert.equal(refusAdmin, null, refusAdmin?.message);
+    assert.equal(modifiee.length, 1);
+
+    for (const [raison, valeurs] of [
+      ["langue hors des cinq", { languages: ["sw"] }],
+      ["durée nulle", { duration_min_minutes: 0 }],
+      ["durée démesurée", { duration_max_minutes: 1001 }],
+      ["fourchette à l'envers", { duration_min_minutes: 121 }],
+      ["stade inconnu", { stages: ["tournage"] }],
+    ]) {
+      const { error: refus } = await modifier(administrateur.client, valeurs);
+      assert.ok(refus, `${raison} : la base doit refuser`);
+    }
+
+    // Un compte ne les écrit pas plus que le reste de la ligne.
+    const { data: parCompte } = await modifier(compte.client, { languages: ["es"] });
+    assert.deepEqual(parCompte ?? [], []);
+    assert.deepEqual((await lire(administrateur.client, precise.id)).data, {
+      languages: ["pt"],
+      stages: ["developpement", "ecriture"],
+      duration_min_minutes: 52,
+      duration_max_minutes: 120,
+    });
+
+    // Retirées : les tests suivants comptent les opportunités lisibles.
+    const { error: retrait } = await administrateur.client
+      .from("funding_opportunities")
+      .delete()
+      .in("id", [precise.id, muette.id]);
+    assert.equal(retrait, null, retrait?.message);
+  });
+
   it("la même opportunité ne s'ajoute pas deux fois, ni par un renommage", async () => {
     await ajouter("Unique");
 

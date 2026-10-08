@@ -4,9 +4,11 @@ import { GENRES } from "@/lib/fiche";
 import {
   CATEGORIES_OPPORTUNITE,
   ECHEANCES,
+  LANGUES_OPPORTUNITE,
   RECHERCHE_MAX,
   type FiltreMontant,
   type FiltresCatalogue,
+  type LangueOpportunite,
 } from "@/lib/opportunites";
 import { FORMATS } from "@/lib/projets";
 
@@ -47,19 +49,24 @@ function Choix({
  * tiennent dans l'adresse, qui se partage et se retrouve au retour arrière.
  *
  * `pays` ne propose que les pays qu'une opportunité lue nomme : en proposer
- * d'autres ne mènerait qu'à une liste vide. Il en va de même des devises.
+ * d'autres ne mènerait qu'à une liste vide. Il en va de même des devises et
+ * des langues.
  */
 export function FiltresOpportunites({
   filtres,
   montant,
+  langue,
   pays,
   devises,
+  langues,
   actifs,
 }: {
   filtres: FiltresCatalogue;
   montant: FiltreMontant;
+  langue: LangueOpportunite | null;
   pays: readonly (readonly [string, string])[];
   devises: readonly string[];
+  langues: readonly LangueOpportunite[];
   actifs: boolean;
 }) {
   return (
@@ -105,6 +112,14 @@ export function FiltresOpportunites({
           valeur={filtres.echeance}
           options={Object.entries(ECHEANCES)}
         />
+        {langues.length ? (
+          <Choix
+            nom="langue"
+            libelle="Langue demandée"
+            valeur={langue}
+            options={langues.map((code) => [code, LANGUES_OPPORTUNITE[code]] as const)}
+          />
+        ) : null}
       </div>
 
       {devises.length ? (

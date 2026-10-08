@@ -4,7 +4,7 @@
 
 begin;
 
-select plan(22);
+select plan(31);
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.funding_opportunities'::regclass),
@@ -157,6 +157,66 @@ select lives_ok(
   $$ insert into public.funding_opportunities (name, organization, category)
      values ('Fonds d''essai', 'Autre organisme', 'fonds') $$,
   'Le même nom chez un autre organisme est une autre opportunité'
+);
+
+-- Langue, durée et stade (lot OP2) : accordés à l'écriture comme le reste de
+-- la ligne, vides par défaut, et bornés.
+select ok(
+  (select bool_and(
+     has_column_privilege('authenticated', 'public.funding_opportunities', colonne, 'insert')
+     and has_column_privilege('authenticated', 'public.funding_opportunities', colonne, 'update')
+     and not has_column_privilege('anon', 'public.funding_opportunities', colonne, 'select')
+     and not has_column_privilege('filmfund_worker', 'public.funding_opportunities', colonne, 'select'))
+   from unnest(array['languages', 'stages', 'duration_min_minutes', 'duration_max_minutes']) as colonne),
+  'Langue, durée et stade s''écrivent comme le reste de la ligne ; ni visiteur ni worker ne les lisent'
+);
+
+select is(
+  (select array[languages::text, stages::text, coalesce(duration_min_minutes::text, 'nul'),
+                coalesce(duration_max_minutes::text, 'nul')]
+   from public.funding_opportunities where name = 'Fonds d''essai' and organization = 'Organisme'),
+  array['{}', '{}', 'nul', 'nul'],
+  'Sans rien dire, une opportunité ne précise ni langue, ni stade, ni durée'
+);
+
+prepare preciser(text, text[], public.project_stage[], integer, integer) as
+  insert into public.funding_opportunities
+    (name, organization, category, languages, stages, duration_min_minutes, duration_max_minutes)
+  values ($1, 'Organisme précis', 'fonds', $2, $3, $4, $5);
+
+select lives_ok(
+  $$ execute preciser('Complète', '{fr,en,pt,ar,es}', '{developpement,ecriture}', 52, 90) $$,
+  'Cinq langues, deux stades et une fourchette de durée entrent au catalogue'
+);
+
+select lives_ok(
+  $$ execute preciser('Une borne', '{}', '{}', null, 1000) $$,
+  'Une seule borne de durée suffit'
+);
+
+select throws_ok(
+  $$ execute preciser('Langue inconnue', '{sw}', '{}', null, null) $$,
+  '23514', null, 'Une langue hors des cinq est refusée'
+);
+
+select throws_ok(
+  $$ execute preciser('Langue nulle', array['fr', null], '{}', null, null) $$,
+  '23514', null, 'Une langue nulle dans la liste est refusée'
+);
+
+select throws_ok(
+  $$ execute preciser('Durée nulle', '{}', '{}', 0, null) $$,
+  '23514', null, 'Une durée de zéro minute est refusée'
+);
+
+select throws_ok(
+  $$ execute preciser('Durée démesurée', '{}', '{}', null, 1001) $$,
+  '23514', null, 'Une durée au-delà de celle d''un projet est refusée'
+);
+
+select throws_ok(
+  $$ execute preciser('Fourchette à l''envers', '{}', '{}', 90, 52) $$,
+  '23514', null, 'Une durée minimale au-dessus de la maximale est refusée'
 );
 
 select * from finish();

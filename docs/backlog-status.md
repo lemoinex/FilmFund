@@ -79,7 +79,8 @@ réels).
 | ED3    | Éditeur : sauvegarde automatique en brouillon, sans créer de version (sans IA)                                                 | en production     | —             |
 | RT1    | WEAVER : retouches d'un passage — améliorer, raccourcir, développer, corriger (base et worker)                                 | en production     | —             |
 | RT2    | WEAVER : écran des retouches, sous l'éditeur de tout document                                                                  | en production     | —             |
-| OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | validé localement | —             |
+| OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | en production     | —             |
+| OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2805,4 +2806,44 @@ retirées de la base locale.
 presque rien — il n'y changera rien de visible tant que des opportunités chiffrées n'auront
 pas été vérifiées.
 
-**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis OP2.
+OP1 est en production depuis le 8 octobre 2026 (PR 160, `7844a0c`), sans migration ; CI de
+`main` verte, déploiement Vercel terminé. L'écran n'a pas été ouvert sous session en
+production.
+
+Lot OP2 : la langue, la durée et le stade, que le catalogue ne portait pas. Une migration
+ajoute quatre colonnes à `funding_opportunities` — `languages`, `stages`,
+`duration_min_minutes`, `duration_max_minutes` —, vides ou nulles par défaut : « la source ne
+le précise pas », jamais « tout ». Les droits d'écriture du catalogue étant accordés colonne
+par colonne, ils le sont pour ces quatre-là ; aucune politique ne change. Décisions du
+8 octobre 2026 : cinq langues, liste fermée (français, anglais, portugais, arabe,
+espagnol) — en ajouter une demandera une migration ; la langue est un filtre et non un
+critère, les langues d'un projet étant un texte libre.
+
+**La compatibilité passe de trois à cinq critères** : la durée, comparée à une fourchette
+bornes comprises, et le stade, comparé à l'étape du projet. Le stade d'un projet est toujours
+renseigné : ce critère n'est jamais « non renseigné ». La règle « à étudier » ne change pas —
+au moins un critère rempli, aucun contredit —, mais elle porte sur cinq critères : **une
+opportunité dont le stade ou la durée contredit le projet sort du tableau de bord et des
+alertes**. Rien ne change pour une opportunité qui ne précise ni l'un ni l'autre, donc pour
+tout le catalogue saisi avant ce lot. La thématique et les exigences restent sur la fiche ;
+le montant reste hors de la compatibilité.
+
+Le filtre « Langue demandée » de la rubrique « Opportunités » est tenu à part des autres,
+comme celui du montant (`lireFiltreLangue`, `filtrerParLangue`), s'applique en dernier sur
+les lignes lues, et n'est proposé que pour les langues qu'une opportunité lue demande. Une
+opportunité qui ne dit rien de la langue n'y est jamais retenue. L'administration saisit les
+quatre champs dans le formulaire du catalogue ; la fiche d'une opportunité les montre, ou
+dit « Information non fournie. ».
+
+OP2 est validé localement le 8 octobre 2026, sans appel à un fournisseur : 29 tests de
+plus, suite complète de l'API à 1 574 tests, 882 tests SQL. Quarante-cinq sabotages attrapés
+un par un — trente-huit dans le code, sept à chaud dans la base locale, restaurée. Rendu réel
+sur un serveur de production local, 44 points sur 44, avec un projet et quatre opportunités
+d'essai posés puis retirés de la base locale.
+
+**Non couvert** : l'affichage à 375 px ; la saisie des quatre champs par le formulaire dans
+un navigateur — le rendu a lu les pages servies, il n'a pas envoyé le formulaire ; l'effet en
+production, où aucune opportunité ne renseigne encore ces champs.
+
+**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
+`--dry-run`, et vérification en production.

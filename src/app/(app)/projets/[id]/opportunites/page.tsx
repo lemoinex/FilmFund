@@ -24,7 +24,7 @@ import {
   montantEnClair,
   STATUTS_VISIBLES,
 } from "@/lib/opportunites";
-import { FORMATS } from "@/lib/projets";
+import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
 import { OngletsProjet } from "../onglets";
@@ -62,7 +62,7 @@ export default async function OpportunitesProjetPage({
   const [{ data: projet }, { data: budget }] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, title, format, genre, countries")
+      .select("id, title, format, genre, countries, duration_minutes, stage")
       .eq("id", id)
       .maybeSingle(),
     supabase.rpc("peut_gerer_budget", { p_project_id: id }),
@@ -77,7 +77,7 @@ export default async function OpportunitesProjetPage({
   const { data, error } = await supabase
     .from("funding_opportunities")
     .select(
-      "id, name, organization, category, description, countries, formats, genres, budget_min, budget_max, currency, deadline, status",
+      "id, name, organization, category, description, countries, formats, genres, stages, duration_min_minutes, duration_max_minutes, budget_min, budget_max, currency, deadline, status",
     )
     .in("status", STATUTS_VISIBLES)
     .order("updated_at", { ascending: false })
@@ -107,8 +107,16 @@ export default async function OpportunitesProjetPage({
     format: (code) => (FORMATS as Record<string, string>)[code] ?? code,
     pays: (code) => noms.of(code) ?? code,
     genre: (code) => (GENRES as Record<string, string>)[code] ?? code,
+    // La durée se dit en minutes : aucun code à nommer.
+    duree: (code) => code,
+    stade: (code) => (ETAPES as Record<string, string>)[code] ?? code,
   };
-  const ficheIncomplete = !projet.genre || !projet.countries.length;
+  // Le stade d'un projet est toujours renseigné : il ne manque jamais.
+  const manquants = [
+    projet.genre ? null : "son genre",
+    projet.countries.length ? null : "ses pays de production",
+    projet.duration_minutes === null ? "sa durée" : null,
+  ].filter((manquant) => manquant !== null);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
@@ -132,12 +140,13 @@ export default async function OpportunitesProjetPage({
         {LIMITES_COMPATIBILITE}
       </p>
 
-      {ficheIncomplete ? (
+      {manquants.length ? (
         <p className="text-secondary mt-4 text-sm leading-relaxed text-pretty">
-          La fiche de ce projet ne dit pas encore {!projet.genre ? "son genre" : ""}
-          {!projet.genre && !projet.countries.length ? " ni " : ""}
-          {!projet.countries.length ? "ses pays de production" : ""} : ces critères ne peuvent pas
-          être évalués.{" "}
+          La fiche de ce projet ne dit pas encore {manquants.join(", ni ")} :{" "}
+          {manquants.length > 1
+            ? "ces critères ne peuvent pas être évalués"
+            : "ce critère ne peut pas être évalué"}
+          .{" "}
           <Link
             href={`/projets/${id}/fiche`}
             className="text-gold hover:text-gold-bright underline-offset-2 hover:underline"

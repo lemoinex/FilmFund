@@ -7,14 +7,16 @@ import { GENRES } from "@/lib/fiche";
 import {
   CATEGORIES_OPPORTUNITE,
   cleOpportunite,
+  dureeEnClair,
   etapeVeille,
   jourCourant,
+  LANGUES_OPPORTUNITE,
   LIVRABLE_VEILLE,
   montantEnClair,
   STATUTS_OPPORTUNITE,
   statutPresente,
 } from "@/lib/opportunites";
-import { FORMATS } from "@/lib/projets";
+import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
 import { RafraichissementPropositions } from "../../projets/[id]/proposition";
@@ -64,7 +66,7 @@ export default async function OpportunitesPage({
   const { data } = await supabase
     .from("funding_opportunities")
     .select(
-      "id, name, organization, category, description, website, application_url, countries, formats, genres, budget_min, budget_max, currency, opens_on, deadline, requirements, source_url, collected_on, source_excerpt, status, updated_at",
+      "id, name, organization, category, description, website, application_url, countries, formats, genres, languages, stages, duration_min_minutes, duration_max_minutes, budget_min, budget_max, currency, opens_on, deadline, requirements, source_url, collected_on, source_excerpt, status, updated_at",
     )
     .order("updated_at", { ascending: false })
     .limit(LIMITE_OPPORTUNITES);
@@ -291,6 +293,28 @@ export default async function OpportunitesPage({
                         <dd className="mt-0.5">
                           {opportunite.genres.length
                             ? libelles(opportunite.genres, GENRES)
+                            : "Information non fournie."}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-secondary">Durée</dt>
+                        <dd className="mt-0.5">
+                          {dureeEnClair(opportunite) ?? "Information non fournie."}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-secondary">Stades d&apos;avancement</dt>
+                        <dd className="mt-0.5">
+                          {opportunite.stages.length
+                            ? libelles(opportunite.stages, ETAPES)
+                            : "Information non fournie."}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-secondary">Langues</dt>
+                        <dd className="mt-0.5">
+                          {opportunite.languages.length
+                            ? libelles(opportunite.languages, LANGUES_OPPORTUNITE)
                             : "Information non fournie."}
                         </dd>
                       </div>

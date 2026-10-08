@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { GENRES } from "@/lib/fiche";
 import { jourCourant, lireOpportunite } from "@/lib/opportunites";
-import { FORMATS } from "@/lib/projets";
+import { ETAPES, FORMATS } from "@/lib/projets";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
-import type { ProjectFormat } from "@/lib/supabase/types";
+import type { ProjectFormat, ProjectStage } from "@/lib/supabase/types";
 
 /*
  * Le rôle est vérifié ici, puis de nouveau par la RLS : seule
@@ -56,13 +56,17 @@ export async function enregistrerOpportunite(
     (champ) => formData.get(champ),
     (champ) => formData.getAll(champ),
     jourCourant(),
-    { formats: FORMATS, genres: GENRES },
+    { formats: FORMATS, genres: GENRES, etapes: ETAPES },
   );
   if ("erreur" in lecture) {
     return lecture;
   }
-  // Les formats ont été contrôlés contre le référentiel : ce sont ceux de la base.
-  const valeurs = { ...lecture.valeurs, formats: lecture.valeurs.formats as ProjectFormat[] };
+  // Formats et stades ont été contrôlés contre leur référentiel : ce sont ceux de la base.
+  const valeurs = {
+    ...lecture.valeurs,
+    formats: lecture.valeurs.formats as ProjectFormat[],
+    stages: lecture.valeurs.stages as ProjectStage[],
+  };
 
   const { data, error } = id
     ? await supabase

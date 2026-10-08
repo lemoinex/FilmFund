@@ -8,11 +8,13 @@ import { GENRES } from "@/lib/fiche";
 import {
   AIDES_STATUT,
   CATEGORIES_OPPORTUNITE,
+  DUREE_OPPORTUNITE,
+  LANGUES_OPPORTUNITE,
   LONGUEURS_OPPORTUNITE,
   STATUTS_OPPORTUNITE,
   type StatutOpportunite,
 } from "@/lib/opportunites";
-import { FORMATS } from "@/lib/projets";
+import { ETAPES, FORMATS } from "@/lib/projets";
 
 import { enregistrerOpportunite, type EtatOpportunite } from "./actions";
 
@@ -28,6 +30,10 @@ export type OpportuniteEditable = {
   countries: string[];
   formats: string[];
   genres: string[];
+  languages: string[];
+  stages: string[];
+  duration_min_minutes: number | null;
+  duration_max_minutes: number | null;
   budget_min: number | null;
   budget_max: number | null;
   currency: string | null;
@@ -241,6 +247,39 @@ export function FormulaireOpportunite({ opportunite }: { opportunite?: Opportuni
         choix={GENRES}
         coches={opportunite?.genres ?? []}
       />
+      <Cases
+        legende="Stades d'avancement admis"
+        name="stages"
+        prefixe={p}
+        choix={ETAPES}
+        coches={opportunite?.stages ?? []}
+      />
+      <Cases
+        legende="Langues demandées"
+        name="languages"
+        prefixe={p}
+        choix={LANGUES_OPPORTUNITE}
+        coches={opportunite?.languages ?? []}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field
+          label="Durée minimale"
+          name="duration_min_minutes"
+          id={`${p}-duration_min_minutes`}
+          inputMode="numeric"
+          aide={`En minutes, de ${DUREE_OPPORTUNITE.min} à ${DUREE_OPPORTUNITE.max}. Vide : non précisé.`}
+          defaultValue={opportunite?.duration_min_minutes?.toString()}
+        />
+        <Field
+          label="Durée maximale"
+          name="duration_max_minutes"
+          id={`${p}-duration_max_minutes`}
+          inputMode="numeric"
+          aide="En minutes. Vide : non précisé."
+          defaultValue={opportunite?.duration_max_minutes?.toString()}
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Field

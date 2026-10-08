@@ -5,14 +5,16 @@ import { notFound, redirect } from "next/navigation";
 import { GENRES } from "@/lib/fiche";
 import {
   CATEGORIES_OPPORTUNITE,
+  dureeEnClair,
   echeanceDe,
   jourCourant,
+  LANGUES_OPPORTUNITE,
   montantEnClair,
   STATUTS_OPPORTUNITE,
   STATUTS_VISIBLES,
   statutPresente,
 } from "@/lib/opportunites";
-import { FORMATS } from "@/lib/projets";
+import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -67,7 +69,7 @@ export default async function OpportunitePage({
   const { data: opportunite } = await supabase
     .from("funding_opportunities")
     .select(
-      "id, name, organization, category, description, website, application_url, countries, formats, genres, budget_min, budget_max, currency, opens_on, deadline, requirements, source_url, collected_on, source_excerpt, status",
+      "id, name, organization, category, description, website, application_url, countries, formats, genres, languages, stages, duration_min_minutes, duration_max_minutes, budget_min, budget_max, currency, opens_on, deadline, requirements, source_url, collected_on, source_excerpt, status",
     )
     .eq("id", opportuniteId)
     .in("status", STATUTS_VISIBLES)
@@ -163,6 +165,24 @@ export default async function OpportunitePage({
             <dt className="text-secondary text-xs">Genres</dt>
             <dd className="mt-0.5">
               {opportunite.genres.length ? libelles(opportunite.genres, GENRES) : NON_FOURNIE}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-secondary text-xs">Durée</dt>
+            <dd className="mt-0.5">{dureeEnClair(opportunite) ?? NON_FOURNIE}</dd>
+          </div>
+          <div>
+            <dt className="text-secondary text-xs">Stades d&apos;avancement</dt>
+            <dd className="mt-0.5">
+              {opportunite.stages.length ? libelles(opportunite.stages, ETAPES) : NON_FOURNIE}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-secondary text-xs">Langues</dt>
+            <dd className="mt-0.5">
+              {opportunite.languages.length
+                ? libelles(opportunite.languages, LANGUES_OPPORTUNITE)
+                : NON_FOURNIE}
             </dd>
           </div>
         </dl>
