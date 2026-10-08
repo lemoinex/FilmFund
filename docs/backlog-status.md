@@ -72,7 +72,8 @@ réels).
 | Z1     | Coûts de l'IA : douze mois, par agent, par profil et par modèle (sans IA)                                                      | validé en recette | —             |
 | Z3     | Statistiques d'usage : des comptages, sans nom, titre, contenu ni montant (sans IA)                                            | validé en recette | —             |
 | W2     | Alerte « nouvelle opportunité » : date de vérification en base, sixième nature (sans IA)                                       | en production     | —             |
-| AA1    | Rubrique « Ressources » : bibliothèque de guides et de checklists, contenus versionnés (sans IA)                               | validé localement | —             |
+| AA1    | Rubrique « Ressources » : bibliothèque de guides et de checklists, contenus versionnés (sans IA)                               | en production     | —             |
+| ED1    | Éditeur : comparaison de deux versions d'un document (sans IA)                                                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2491,3 +2492,59 @@ la justesse des cinq textes, qui ne se juge qu'à la lecture.
 
 **Reste à faire** : la livraison — PR, CI, fusion, sans migration —, puis la relecture des cinq
 brouillons par l'utilisateur, qui décidera lesquels publier.
+
+AA1 est en production depuis le 8 octobre 2026 : PR 153 fusionnée à 13h02 UTC (`ad57c64`), CI
+de `main` verte — la suite entière de l'API y est repassée avec le correctif du middleware —,
+sans migration. Sans session, la rubrique comme la page d'un brouillon renvoient à la
+connexion. Non vérifié : l'écran sous session. Les cinq brouillons attendent la relecture de
+l'utilisateur ; aucun n'est publié.
+
+Lot ED, l'éditeur de documents, premier écart relevé par l'audit. Il se découpe en trois : ED1,
+comparer deux versions ; ED2, la mise en forme ; ED3, la sauvegarde automatique. Deux
+décisions de l'utilisateur, le 8 octobre 2026, fixent les deux derniers :
+
+- **la mise en forme se fera par marqueurs dans le texte** — `# Titre`, `- élément`,
+  `**gras**`, `*italique*` —, pas par un éditeur riche. Le contenu d'un document reste une
+  chaîne de texte : les exports, le contexte des agents, l'ajout d'une séquence au scénario et
+  le repérage d'un passage pour les dialogues le lisent tel quel, et un format structuré les
+  aurait tous obligés à changer ;
+- **la sauvegarde automatique enregistrera un brouillon en cours, sans créer de version.** La
+  base crée aujourd'hui une version à chaque changement du titre ou du texte : sauvegarder
+  toutes les quelques secondes noierait l'historique. Une version naîtra du bouton
+  « Enregistrer ».
+
+Lot ED1 : une version se restaurait, mais ne se comparait pas. La page
+`documents/[documentId]/comparaison?de=3&a=5` montre ce qui a changé entre deux versions,
+**toujours de la plus ancienne à la plus récente**, d'où que l'on vienne : un ajout se lit
+comme un ajout. Le calcul (`src/lib/comparaison.ts`, sans dépendance) compare ligne par ligne ;
+autant de lignes retirées que de lignes ajoutées, à la suite, sont lues comme des lignes
+récrites et comparées mot par mot, sauf si elles n'ont aucun mot en commun. Ce que deux textes
+ont de commun au début et à la fin n'est pas calculé, si bien que deux longs textes qui
+diffèrent d'un paragraphe se comparent sans peine ; au-delà d'une borne, la page dit que les
+versions sont trop différentes pour être comparées ici.
+
+La page dit le titre, changé ou non, puis un bilan en une phrase, puis le texte : les lignes
+inchangées loin d'une modification sont repliées et comptées, trois restant de part et
+d'autre. **Un changement ne tient jamais à la seule couleur** : un retrait est un élément
+`del`, barré, précédé d'un « − » et annoncé « retiré » aux lecteurs d'écran ; un ajout, un
+élément `ins`, souligné, précédé d'un « + » et annoncé « ajouté ». Le texte comparé s'affiche
+comme du texte.
+
+Deux accès : dans l'historique, « Comparer à la précédente » sur chaque version sauf la
+première ; sur la page d'une version, « Comparer à la version actuelle », sauf si elle l'est.
+La page ne fait que lire, sous la RLS des versions : toute l'équipe du projet y accède,
+lecteurs compris ; elle n'écrit rien et n'offre aucune action. Une adresse mal formée, une
+version absente ou un projet inaccessible donnent la même page introuvable.
+
+ED1 est validé localement le 8 octobre 2026, sans aucun appel à un fournisseur ni migration :
+23 tests de plus, suite complète de l'API à 1 398 tests. Trente sabotages attrapés un par un,
+du premier coup. Rendu réel sur un serveur de production local, 25 points sur 25, sous quatre
+sessions — porteuse, lecteur, étranger, visiteur : une ligne récrite lue mot par mot, une
+ligne retirée et une ajoutée, vingt-cinq lignes repliées, un balisage affiché comme du texte,
+l'adresse inversée, un changement de titre seul, deux versions identiques, les deux accès,
+quatre adresses introuvables.
+
+**Non couvert** : l'affichage à 375 px ; deux versions réellement trop différentes, que seuls
+les tests du calcul éprouvent ; la lecture de la page avec un lecteur d'écran.
+
+**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis ED2, la mise en forme.

@@ -27,24 +27,39 @@ export default async function VersionPage({
 
   const supabase = await createClient();
 
-  const [{ data: version }, { data: document }, { data: peutEditer }, { data: equipe }] =
-    await Promise.all([
-      supabase
-        .from("project_document_versions")
-        .select("id, version_number, title, content, created_at, created_by, restored_from")
-        .eq("document_id", documentId)
-        .eq("project_id", id)
-        .eq("version_number", numeroVersion)
-        .maybeSingle(),
-      supabase
-        .from("project_documents")
-        .select("id, title, content")
-        .eq("id", documentId)
-        .eq("project_id", id)
-        .maybeSingle(),
-      supabase.rpc("peut_editer_contenu", { p_project_id: id }),
-      supabase.rpc("equipe_du_projet", { p_project_id: id }),
-    ]);
+  const [
+    { data: version },
+    { data: document },
+    { data: peutEditer },
+    { data: equipe },
+    { data: derniere },
+  ] = await Promise.all([
+    supabase
+      .from("project_document_versions")
+      .select("id, version_number, title, content, created_at, created_by, restored_from")
+      .eq("document_id", documentId)
+      .eq("project_id", id)
+      .eq("version_number", numeroVersion)
+      .maybeSingle(),
+    supabase
+      .from("project_documents")
+      .select("id, title, content")
+      .eq("id", documentId)
+      .eq("project_id", id)
+      .maybeSingle(),
+    supabase.rpc("peut_editer_contenu", { p_project_id: id }),
+    supabase.rpc("equipe_du_projet", { p_project_id: id }),
+    // Le numéro seul de la version la plus récente : c'est elle, le texte
+    // actuel du document, puisque chaque enregistrement en crée une.
+    supabase
+      .from("project_document_versions")
+      .select("version_number")
+      .eq("document_id", documentId)
+      .eq("project_id", id)
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   // Même 404 pour une version inexistante que pour celle d'un projet où
   // l'on n'a pas accès : rien n'est révélé.
@@ -80,6 +95,18 @@ export default async function VersionPage({
           {version.content || <span className="text-secondary">Cette version est vide.</span>}
         </div>
       </article>
+
+      {derniere && derniere.version_number !== version.version_number ? (
+        <p className="mt-8 text-sm">
+          <Link
+            href={`/projets/${id}/documents/${documentId}/comparaison?de=${version.version_number}&a=${derniere.version_number}`}
+            className="text-gold hover:text-gold-bright underline underline-offset-4 transition-colors"
+          >
+            Comparer à la version actuelle
+            <span className="sr-only"> (version {derniere.version_number})</span>
+          </Link>
+        </p>
+      ) : null}
 
       {actuelle ? (
         <p className="border-app-line text-secondary mt-12 rounded-xl border border-dashed p-5 text-sm">

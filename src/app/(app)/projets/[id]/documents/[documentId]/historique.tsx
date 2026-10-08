@@ -36,13 +36,17 @@ export async function HistoriqueVersions({
       </h2>
       <p className="text-secondary mt-2 text-sm leading-relaxed">
         Chaque enregistrement qui change le titre ou le texte crée une version. Aucune n&apos;est
-        jamais effacée ; restaurer une version en crée une nouvelle.
+        jamais effacée ; restaurer une version en crée une nouvelle. Chaque version se compare à
+        celle qui la précède.
       </p>
 
       {liste.length ? (
         <ol className="border-app-line mt-5 divide-y divide-[var(--app-line)] rounded-xl border">
           {liste.map((version, index) => {
             const auteur = auteurDeVersion(version.created_by, equipe ?? []);
+            // La liste va de la plus récente à la plus ancienne : la
+            // précédente est la suivante de la liste.
+            const precedente = liste[index + 1];
             return (
               <li
                 key={version.id}
@@ -66,6 +70,21 @@ export async function HistoriqueVersions({
                 <p className="text-secondary text-xs">
                   <Horodatage iso={version.created_at} />
                   {auteur ? ` · ${auteur}` : null}
+                  {precedente ? (
+                    <>
+                      {" · "}
+                      <Link
+                        href={`/projets/${projetId}/documents/${documentId}/comparaison?de=${precedente.version_number}&a=${version.version_number}`}
+                        className="hover:text-gold underline underline-offset-4 transition-colors"
+                      >
+                        Comparer à la précédente
+                        <span className="sr-only">
+                          {" "}
+                          : version {precedente.version_number} et version {version.version_number}
+                        </span>
+                      </Link>
+                    </>
+                  ) : null}
                 </p>
               </li>
             );
