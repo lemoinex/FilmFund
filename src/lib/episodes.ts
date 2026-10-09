@@ -136,3 +136,39 @@ export function messageEpisode(code: string | undefined): string {
       return "L'enregistrement a échoué. Réessayez dans un instant.";
   }
 }
+
+/**
+ * Le scénario d'un épisode (lot SE3a) : un document de type « scénario »,
+ * rattaché à son épisode. Un épisode en a un au plus, et un scénario sans
+ * épisode reste possible — c'est celui d'un film, ou d'une série commencée
+ * avant ce lot.
+ */
+
+/** « Scénario — épisode 3 » : le titre d'un scénario créé depuis son épisode. */
+export function titreScenarioEpisode(numero: number): string {
+  return `Scénario — épisode ${numero}`;
+}
+
+/** Codes que la base rend à un rattachement. */
+export const ERREURS_SCENARIO = {
+  refus: "42501",
+  dejaRattache: "23505",
+  autreProjet: "SE003",
+  pasUnScenario: "23514",
+} as const;
+
+/** Message lisible pour un rattachement refusé ; générique si le code est inconnu. */
+export function messageScenario(code: string | undefined): string {
+  switch (code) {
+    case ERREURS_SCENARIO.refus:
+      return "Vous n'avez pas le droit de modifier les documents de ce projet.";
+    case ERREURS_SCENARIO.dejaRattache:
+      return "Cet épisode a déjà son scénario : ouvrez-le depuis la page des épisodes, ou détachez-le d'abord.";
+    case ERREURS_SCENARIO.autreProjet:
+      return "Cet épisode n'est pas un épisode de ce projet.";
+    case ERREURS_SCENARIO.pasUnScenario:
+      return "Seul un scénario se rattache à un épisode : détachez ce document de son épisode avant de changer son type.";
+    default:
+      return "L'enregistrement a échoué. Réessayez dans un instant.";
+  }
+}

@@ -1462,6 +1462,7 @@ export type Database = {
           content: string;
           created_at: string;
           created_by: string | null;
+          episode_id: string | null;
           id: string;
           project_id: string;
           status: Database["public"]["Enums"]["document_status"];
@@ -1473,6 +1474,7 @@ export type Database = {
           content?: string;
           created_at?: string;
           created_by?: string | null;
+          episode_id?: string | null;
           id?: string;
           project_id: string;
           status?: Database["public"]["Enums"]["document_status"];
@@ -1484,6 +1486,7 @@ export type Database = {
           content?: string;
           created_at?: string;
           created_by?: string | null;
+          episode_id?: string | null;
           id?: string;
           project_id?: string;
           status?: Database["public"]["Enums"]["document_status"];
@@ -1497,6 +1500,13 @@ export type Database = {
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_documents_episode_id_fkey";
+            columns: ["episode_id"];
+            isOneToOne: false;
+            referencedRelation: "project_episodes";
             referencedColumns: ["id"];
           },
           {

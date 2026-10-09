@@ -8,6 +8,7 @@ import { TexteMisEnForme } from "@/components/texte-mis-en-forme";
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { brouillonAProposer, type Brouillon } from "@/lib/brouillons";
 import { compterMots, libelleMots, TYPES_DOCUMENT } from "@/lib/documents";
+import { estSerie, libelleEpisode, NUMERO_EPISODE } from "@/lib/episodes";
 import {
   estRetouche,
   etapeProposition,
@@ -25,6 +26,7 @@ import { EditeurDocument } from "../formulaires";
 import { BadgeStatut } from "../statut";
 import { Dialogues } from "./dialogues";
 import { HistoriqueVersions } from "./historique";
+import { RattachementEpisode, type EpisodeRattachable } from "./rattachement";
 import { Retouches } from "./retouches";
 
 export const metadata: Metadata = {
@@ -45,7 +47,9 @@ export default async function DocumentPage({
   const [{ data: document }, { data: peutEditer }] = await Promise.all([
     supabase
       .from("project_documents")
-      .select("id, type, status, title, content, updated_at, projects(id, title)")
+      .select(
+        "id, type, status, title, content, updated_at, episode_id, projects(id, title, format)",
+      )
       .eq("id", documentId)
       .eq("project_id", id)
       .maybeSingle(),
@@ -59,6 +63,12 @@ export default async function DocumentPage({
   }
 
   const projet = document.projects;
+
+  // L'épisode d'un scénario ne concerne qu'une série : rien n'est lu ailleurs.
+  const rattachement =
+    document.type === "scenario" && estSerie(projet.format)
+      ? await lireRattachement(supabase, projet.id, document.id, document.episode_id)
+      : null;
 
   // Une retouche se demande sur tout document, par qui peut l'écrire.
   const retouche = peutEditer
@@ -128,6 +138,15 @@ export default async function DocumentPage({
             />
           </div>
 
+          {rattachement ? (
+            <RattachementEpisode
+              projetId={projet.id}
+              documentId={document.id}
+              actuel={rattachement.actuel}
+              episodes={rattachement.episodes}
+            />
+          ) : null}
+
           {/* Un seul rafraîchissement pour les deux encarts : tant que l'un attend. */}
           <RafraichissementPropositions
             actif={[dialogues?.etape.etape, retouche?.etape.etape].some(
@@ -182,6 +201,17 @@ export default async function DocumentPage({
             {libelleMots(compterMots(document.content))} · modifié le{" "}
             {dateFr.format(new Date(document.updated_at))}
           </p>
+          {rattachement?.actuel ? (
+            <p className="text-secondary mt-3 text-xs">
+              Scénario de{" "}
+              <Link
+                href={`/projets/${projet.id}/episodes#episode-${rattachement.actuel.id}`}
+                className="text-gold hover:text-gold-bright underline-offset-2 hover:underline"
+              >
+                {libelleEpisode(rattachement.actuel.number)} : {rattachement.actuel.title}
+              </Link>
+            </p>
+          ) : null}
           <div className="border-app-line mt-8 border-t pt-8 text-[0.9375rem] leading-relaxed">
             {document.content ? (
               <TexteMisEnForme texte={document.content} type={document.type} />
@@ -195,6 +225,42 @@ export default async function DocumentPage({
       {peutEditer ? null : <HistoriqueVersions projetId={projet.id} documentId={document.id} />}
     </div>
   );
+}
+
+/**
+ * L'épisode auquel ce scénario est rattaché, et ceux auxquels il pourrait
+ * l'être : les épisodes de la série qui n'ont pas encore de scénario, et le
+ * sien. Deux lectures bornées, sous la RLS de l'appelant.
+ */
+async function lireRattachement(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+  documentId: string,
+  episodeId: string | null,
+): Promise<{ actuel: EpisodeRattachable | null; episodes: EpisodeRattachable[] }> {
+  const [{ data: episodes }, { data: pris }] = await Promise.all([
+    supabase
+      .from("project_episodes")
+      .select("id, number, title")
+      .eq("project_id", projetId)
+      .order("number")
+      .limit(NUMERO_EPISODE.max),
+    supabase
+      .from("project_documents")
+      .select("episode_id")
+      .eq("project_id", projetId)
+      .eq("type", "scenario")
+      .not("episode_id", "is", null)
+      .neq("id", documentId)
+      .limit(NUMERO_EPISODE.max),
+  ]);
+
+  const occupes = new Set((pris ?? []).map((document) => document.episode_id));
+  const tous = episodes ?? [];
+  return {
+    actuel: tous.find((episode) => episode.id === episodeId) ?? null,
+    episodes: tous.filter((episode) => !occupes.has(episode.id)),
+  };
 }
 
 /**

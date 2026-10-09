@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { ERREURS_EPISODE, messageEpisode, normaliserEpisode } from "@/lib/episodes";
+import {
+  ERREURS_EPISODE,
+  ERREURS_SCENARIO,
+  messageEpisode,
+  normaliserEpisode,
+  titreScenarioEpisode,
+} from "@/lib/episodes";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
@@ -102,4 +108,59 @@ export async function supprimerEpisode(formData: FormData) {
   await supabase.from("project_episodes").delete().eq("id", episodeId).eq("project_id", projetId);
 
   revaliderEpisodes(projetId);
+}
+
+/**
+ * Crée le scénario d'un épisode, en brouillon, et y mène. Si l'épisode en a
+ * déjà un — créé entre-temps par un autre membre —, c'est lui qui s'ouvre :
+ * la base n'en admet qu'un par épisode.
+ *
+ * Le titre vient du numéro lu en base, pas du navigateur. La RLS décide qui
+ * crée un document ; la base vérifie que l'épisode est bien de ce projet.
+ */
+export async function creerScenarioEpisode(formData: FormData) {
+  const projetId = String(formData.get("projet") ?? "");
+  const episodeId = String(formData.get("episode") ?? "");
+  if (!UUID.test(projetId) || !UUID.test(episodeId)) return;
+
+  const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) return;
+
+  // L'épisode de ce projet, sous la RLS : illisible, il ne reçoit rien.
+  const { data: episode } = await supabase
+    .from("project_episodes")
+    .select("number")
+    .eq("id", episodeId)
+    .eq("project_id", projetId)
+    .maybeSingle();
+  if (!episode) return;
+
+  const { data: cree, error } = await supabase
+    .from("project_documents")
+    .insert({
+      project_id: projetId,
+      type: "scenario",
+      title: titreScenarioEpisode(episode.number),
+      episode_id: episodeId,
+      created_by: garde.user.id,
+    })
+    .select("id")
+    .maybeSingle();
+
+  let documentId = cree?.id;
+  if (error?.code === ERREURS_SCENARIO.dejaRattache) {
+    const { data: existant } = await supabase
+      .from("project_documents")
+      .select("id")
+      .eq("project_id", projetId)
+      .eq("episode_id", episodeId)
+      .maybeSingle();
+    documentId = existant?.id;
+  }
+  if (!documentId) return;
+
+  revaliderEpisodes(projetId);
+  revalidatePath(`/projets/${projetId}/documents`);
+  redirect(`/projets/${projetId}/documents/${documentId}`);
 }

@@ -24,7 +24,7 @@ import { createClient } from "@/lib/supabase/server";
 import { OngletsProjet } from "../onglets";
 import { RafraichissementPropositions } from "../proposition";
 
-import { supprimerEpisode } from "./actions";
+import { creerScenarioEpisode, supprimerEpisode } from "./actions";
 import { EpisodesProposes } from "./episodes-proposes";
 import { FormulaireEpisode, type EpisodeEditable } from "./formulaire";
 
@@ -79,6 +79,21 @@ export default async function EpisodesPage({
   }
 
   const episodes: EpisodeEditable[] = data ?? [];
+
+  // Le scénario de chaque épisode, s'il en a un : un par épisode au plus,
+  // la base le garantit. Lus sous la RLS des documents, comme l'équipe les lit.
+  const { data: rattaches } = await supabase
+    .from("project_documents")
+    .select("id, episode_id")
+    .eq("project_id", id)
+    .eq("type", "scenario")
+    .not("episode_id", "is", null)
+    .limit(NUMERO_EPISODE.max);
+  const scenarios = new Map(
+    (rattaches ?? []).flatMap((document) =>
+      document.episode_id ? [[document.episode_id, document.id] as const] : [],
+    ),
+  );
   const edite = peutEditer === true;
   const propose = numeroSuivant(episodes.map((episode) => episode.number));
   const assistant = await lireAssistant(supabase, id, edite);
@@ -155,6 +170,31 @@ export default async function EpisodesPage({
                     </p>
                   ) : (
                     <p className="text-light-muted mt-3 text-sm">Résumé non fourni.</p>
+                  )}
+                  {scenarios.has(episode.id) ? (
+                    <p className="mt-4 text-sm">
+                      <Link
+                        href={`/projets/${id}/documents/${scenarios.get(episode.id)}`}
+                        className="text-gold hover:text-gold-bright underline-offset-2 hover:underline"
+                      >
+                        Ouvrir le scénario
+                        <span className="sr-only"> de {libelleEpisode(episode.number)}</span>
+                      </Link>
+                    </p>
+                  ) : edite ? (
+                    <form action={creerScenarioEpisode} className="mt-4">
+                      <input type="hidden" name="projet" value={id} />
+                      <input type="hidden" name="episode" value={episode.id} />
+                      <button
+                        type="submit"
+                        className="text-gold hover:text-gold-bright text-sm underline-offset-2 hover:underline"
+                      >
+                        Créer le scénario
+                        <span className="sr-only"> de {libelleEpisode(episode.number)}</span>
+                      </button>
+                    </form>
+                  ) : (
+                    <p className="text-light-muted mt-4 text-xs">Scénario non commencé.</p>
                   )}
                 </>
               )}

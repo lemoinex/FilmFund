@@ -84,6 +84,7 @@ réels).
 | SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | en production     | —             |
 | SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | en production     | —             |
 | SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | en production     | —             |
+| SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2995,4 +2996,48 @@ touche pas.
 **Non vu en production** : l'encart n'a pas été ouvert sous session, et aucune demande
 d'épisodes n'a été faite — ni devis, ni appel réel.
 
-**Reste à faire** : SE3, le scénario par épisode, à cadrer.
+Lot SE3, le scénario par épisode, cadré le 9 octobre 2026. La règle « un scénario par
+projet » n'était pas dans la base : `project_documents` n'a aucune unicité par type, et une
+équipe pouvait déjà créer plusieurs scénarios. C'était une convention des chemins d'IA —
+l'écriture d'une séquence et le découpage de FRAME visent « le scénario le plus récemment
+modifié » ; les dialogues et les retouches, eux, désignent leur document. Décisions : tous
+les épisodes peuvent avoir leur scénario, pas le pilote seulement ; le scénario qu'une série
+portait déjà reste « sans épisode », et ne se rattache qu'à la main ; deux lots — SE3a, le
+lien, sans IA ; SE3b, la séquence écrite dans le scénario de l'épisode désigné.
+
+**Limite connue, non traitée** : FRAME lit toujours le dernier scénario modifié du projet.
+Pour une série, ce peut être celui d'un autre épisode. Le corriger demande de relier les
+scènes du storyboard aux épisodes : un lot à part, non planifié.
+
+Lot SE3a : la colonne facultative `project_documents.episode_id`. La base tient trois
+règles, quel que soit le chemin : seul un scénario se rattache à un épisode ; un épisode a un
+scénario au plus ; l'épisode est celui du même projet. Retirer un épisode ne supprime pas son
+scénario — le lien disparaît, le texte reste. Rattacher ne crée aucune version. Aucune
+politique ne change ; le droit de modifier est accordé pour cette colonne.
+
+Depuis la page des épisodes, chaque épisode ouvre son scénario, ou le crée en brouillon —
+« Scénario — épisode N », titre tiré du numéro lu en base — pour qui écrit le projet ; un
+lecteur ouvre un scénario existant, sans pouvoir en créer. L'éditeur d'un scénario de série
+dit à quel épisode il est rattaché et permet de le changer ou de le détacher, en ne proposant
+que les épisodes sans scénario ; un lecteur y lit seulement de quel épisode il s'agit. Pour
+un film, ou pour un document qui n'est pas un scénario, rien ne s'affiche. Changer le type
+d'un scénario rattaché est refusé par la base, et l'écran dit pourquoi.
+
+SE3a est validé localement le 9 octobre 2026, sans appel à un fournisseur : 31 tests de
+plus, suite complète de l'API à 1 707 tests, 939 tests SQL (17 de plus). Quarante-huit
+sabotages attrapés un par un — trente-cinq dans le code, treize à chaud dans la base locale.
+Rendu réel sur un serveur de production local, 22 points sur 22 — porteur, lecteur,
+étranger ; scénario rattaché, sans épisode, d'un film ; épisode retiré —, données d'essai
+retirées.
+
+**Non couvert** : l'affichage à 375 px ; les clics dans un navigateur — créer un scénario
+depuis un épisode et enregistrer un rattachement sont éprouvés par l'API et par la lecture du
+code, pas par un envoi de formulaire.
+
+**À savoir jusqu'à SE3b** : avec un scénario par épisode, la demande de séquence à SCRIPT
+s'ajoute au scénario modifié en dernier, quel que soit son épisode. Le défaut existait dès
+qu'un projet portait deux scénarios ; ce lot le rend plus fréquent. L'encart de la séquence
+nomme le document visé avant d'agir.
+
+**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
+`--dry-run`, et vérification en production. Puis SE3b.
