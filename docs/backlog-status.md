@@ -83,7 +83,7 @@ réels).
 | OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | en production     | —             |
 | SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | en production     | —             |
 | SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | en production     | —             |
-| SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | validé localement | —             |
+| SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2988,5 +2988,11 @@ demande en file et la correction d'un épisode à l'écran. En production, un ad
 peut désormais déclencher un appel payant depuis l'encart, après devis et confirmation : son
 coût n'est pas mesuré.
 
-**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis SE3, le scénario par
-épisode, à cadrer.
+SE2b est en production depuis le 9 octobre 2026 (PR 168, `06bd13b`), sans migration ; CI de
+`main` verte, déploiement Vercel terminé. Le worker n'a pas été redéployé : le lot ne le
+touche pas.
+
+**Non vu en production** : l'encart n'a pas été ouvert sous session, et aucune demande
+d'épisodes n'a été faite — ni devis, ni appel réel.
+
+**Reste à faire** : SE3, le scénario par épisode, à cadrer.
