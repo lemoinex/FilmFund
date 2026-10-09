@@ -512,7 +512,22 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   qui a des épisodes ne quitte pas le format série** (`SE002`) — il faut les
   retirer d'abord, la base ne les supprime jamais d'elle-même. Les épisodes
   n'entrent ni dans les exports, ni dans le score de maturité : chacun demande
-  son lot. Le scénario reste un par projet.
+  son lot.
+- Scénario d'un épisode (lot SE3a, sans IA) : colonne facultative
+  `project_documents.episode_id`. La base tient trois règles : **seul un
+  scénario se rattache à un épisode**, un épisode a un scénario au plus, et
+  l'épisode est celui du même projet (`SE003`). Retirer un épisode ne
+  supprime pas son scénario : le lien disparaît, le texte reste, « sans
+  épisode ». Rattacher ne crée aucune version. Un scénario sans épisode reste
+  possible — celui d'un film, ou d'une série commencée avant ce lot : **ne pas
+  le rattacher d'office**. Chaque épisode ouvre ou crée son scénario depuis
+  la page des épisodes (`creerScenarioEpisode`, titre tiré du numéro lu en
+  base) ; l'éditeur d'un scénario de série dit son épisode et permet de le
+  changer (`rattachement.tsx`, `rattacherScenario`), en ne proposant que les
+  épisodes sans scénario. **Aucun chemin d'IA n'est touché** : l'écriture
+  d'une séquence et FRAME visent toujours le scénario le plus récemment
+  modifié du projet, quel que soit son épisode — c'est l'objet du lot SE3b
+  pour la séquence ; pour FRAME, la limite est connue et non traitée.
 - Épisodes proposés (lot SE2a, agent SCRIPT, action `episode_list`, profil
   `script.episodes@1`, table `ai_suggestion_episodes`) : base et worker
   livrés — sur le modèle des personnages proposés, acceptés ou écartés un à

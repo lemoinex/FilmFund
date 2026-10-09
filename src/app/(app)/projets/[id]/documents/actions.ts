@@ -10,6 +10,7 @@ import {
   TITRE_DOCUMENT_MAX,
   TYPES_DOCUMENT,
 } from "@/lib/documents";
+import { ERREURS_SCENARIO, messageScenario } from "@/lib/episodes";
 import { exigerAcces } from "@/lib/supabase/garde";
 import { createClient } from "@/lib/supabase/server";
 
@@ -118,7 +119,14 @@ export async function enregistrerDocument(
     .select("updated_at");
 
   if (error) {
-    return { erreur: "L'enregistrement a échoué. Réessayez dans un instant." };
+    // Un scénario rattaché à un épisode ne change pas de type : la base le
+    // refuse, et l'écran dit pourquoi plutôt qu'un échec sans motif.
+    return {
+      erreur:
+        error.code === ERREURS_SCENARIO.pasUnScenario && type !== "scenario"
+          ? messageScenario(error.code)
+          : "L'enregistrement a échoué. Réessayez dans un instant.",
+    };
   }
   if (!data?.length) {
     return { erreur: REFUS };
@@ -296,4 +304,56 @@ export async function supprimerDocument(formData: FormData) {
   revalidatePath("/tableau-de-bord");
   revalidatePath("/documents");
   redirect(`/projets/${projetId}/documents`);
+}
+
+export type EtatRattachement = { erreur: string } | { succes: string } | null;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Rattache un scénario à un épisode, ou l'en détache si aucun n'est choisi.
+ *
+ * La base a le dernier mot : seul un scénario se rattache, à un épisode de
+ * son projet, et un épisode n'a qu'un scénario. Ni le texte ni son historique
+ * ne changent : aucune version n'est créée.
+ */
+export async function rattacherScenario(
+  _etatPrecedent: EtatRattachement,
+  formData: FormData,
+): Promise<EtatRattachement> {
+  const projetId = String(formData.get("projet") ?? "");
+  const documentId = String(formData.get("document") ?? "");
+  const episodeId = String(formData.get("episode") ?? "");
+  if (!UUID.test(projetId) || !UUID.test(documentId) || (episodeId && !UUID.test(episodeId))) {
+    return { erreur: "Demande invalide." };
+  }
+
+  const supabase = await createClient();
+  const garde = await exigerAcces(supabase);
+  if ("erreur" in garde) {
+    return garde;
+  }
+
+  const { data, error } = await supabase
+    .from("project_documents")
+    .update({ episode_id: episodeId || null })
+    .eq("id", documentId)
+    .eq("project_id", projetId)
+    .select("id");
+
+  if (error) {
+    return { erreur: messageScenario(error.code) };
+  }
+  // Sans droit, la RLS ne touche aucune ligne et ne rend aucune erreur.
+  if (!data?.length) {
+    return { erreur: REFUS };
+  }
+
+  revalidatePath(`/projets/${projetId}/documents/${documentId}`);
+  revalidatePath(`/projets/${projetId}/episodes`);
+  return {
+    succes: episodeId
+      ? "Le scénario est rattaché à cet épisode."
+      : "Le scénario n'est plus rattaché à un épisode.",
+  };
 }
