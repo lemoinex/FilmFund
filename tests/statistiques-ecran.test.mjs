@@ -97,6 +97,7 @@ describe("Statistiques : lecture et rangement", () => {
 
   it("nomme un code connu, et laisse visible un code inconnu", () => {
     assert.equal(libelle(LIBELLES_ACTION, "character_list"), "Personnages");
+    assert.equal(libelle(LIBELLES_ACTION, "episode_list"), "Épisodes");
     assert.equal(libelle(LIBELLES_ACTION, "action_future"), "action_future");
     // Un code qui porte le nom d'une propriété d'objet ne trompe pas la table.
     assert.equal(libelle(LIBELLES_ACTION, "constructor"), "constructor");

@@ -265,6 +265,70 @@ export type Database = {
           },
         ];
       };
+      ai_suggestion_episodes: {
+        Row: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          episode_id: string | null;
+          id: string;
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          episode_id?: string | null;
+          id?: string;
+          position: number;
+          project_id: string;
+          state?: string;
+          suggestion_id: string;
+          summary: string;
+          title: string;
+        };
+        Update: {
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          episode_id?: string | null;
+          id?: string;
+          position?: number;
+          project_id?: string;
+          state?: string;
+          suggestion_id?: string;
+          summary?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestion_episodes_episode_id_fkey";
+            columns: ["episode_id"];
+            isOneToOne: false;
+            referencedRelation: "project_episodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_episodes_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_suggestion_episodes_suggestion_id_fkey";
+            columns: ["suggestion_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_suggestions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_suggestion_gear: {
         Row: {
           category: Database["public"]["Enums"]["gear_category"];
@@ -2616,6 +2680,7 @@ export type Database = {
           dialogue_per_scene: number;
           direction_note: number;
           dramatic_analysis: number;
+          episode_list: number;
           gear_list: number;
           id: string;
           intention_note: number;
@@ -2643,6 +2708,7 @@ export type Database = {
           dialogue_per_scene: number;
           direction_note: number;
           dramatic_analysis: number;
+          episode_list: number;
           gear_list: number;
           id?: string;
           intention_note: number;
@@ -2670,6 +2736,7 @@ export type Database = {
           dialogue_per_scene?: number;
           direction_note?: number;
           dramatic_analysis?: number;
+          episode_list?: number;
           gear_list?: number;
           id?: string;
           intention_note?: number;
@@ -2715,6 +2782,28 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "reservations";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      accepter_episode_propose: {
+        Args: { p_corrige?: Json; p_line_id: string };
+        Returns: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          episode_id: string | null;
+          id: string;
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+          title: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_episodes";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -2977,6 +3066,7 @@ export type Database = {
           dialogue_per_scene: number;
           direction_note: number;
           dramatic_analysis: number;
+          episode_list: number;
           gear_list: number;
           id: string;
           intention_note: number;
@@ -3006,6 +3096,7 @@ export type Database = {
       cle_fournisseur: { Args: { p_provider: string }; Returns: string };
       clore_proposition_budget: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_decoupage: { Args: { p_suggestion_id: string }; Returns: undefined };
+      clore_proposition_episodes: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_materiel: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_personnages: { Args: { p_suggestion_id: string }; Returns: undefined };
       clore_proposition_planning: { Args: { p_suggestion_id: string }; Returns: undefined };
@@ -3102,6 +3193,7 @@ export type Database = {
       contexte_budget: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_decoupage: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_dialogue: { Args: { p_attempt_id: string }; Returns: Json };
+      contexte_episodes: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_export: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_image: { Args: { p_attempt_id: string }; Returns: Json };
       contexte_materiel: { Args: { p_attempt_id: string }; Returns: Json };
@@ -3190,6 +3282,28 @@ export type Database = {
       deplacer_scene: { Args: { p_scene_id: string; p_vers_le_haut: boolean }; Returns: undefined };
       duree_bail_travail: { Args: Record<PropertyKey, never>; Returns: string };
       duree_validite_devis: { Args: Record<PropertyKey, never>; Returns: string };
+      ecarter_episode_propose: {
+        Args: { p_line_id: string };
+        Returns: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          episode_id: string | null;
+          id: string;
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+          title: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_episodes";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       ecarter_image_proposee: { Args: { p_image_id: string }; Returns: undefined };
       ecarter_jalon_propose: {
         Args: { p_line_id: string };
@@ -3401,6 +3515,28 @@ export type Database = {
         Returns: string;
       };
       empreinte_dossier: { Args: { p_params: Json; p_project_id: string }; Returns: string };
+      episode_a_decider: {
+        Args: { p_line_id: string };
+        Returns: {
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          episode_id: string | null;
+          id: string;
+          position: number;
+          project_id: string;
+          state: string;
+          suggestion_id: string;
+          summary: string;
+          title: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_suggestion_episodes";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       equipe_du_projet: {
         Args: { p_project_id: string };
         Returns: {
@@ -3525,6 +3661,10 @@ export type Database = {
       livrer_proposition: { Args: { p_attempt_id: string; p_content: string }; Returns: string };
       livrer_proposition_budget: { Args: { p_attempt_id: string; p_lines: Json }; Returns: string };
       livrer_proposition_decoupage: {
+        Args: { p_attempt_id: string; p_lines: Json };
+        Returns: string;
+      };
+      livrer_proposition_episodes: {
         Args: { p_attempt_id: string; p_lines: Json };
         Returns: string;
       };

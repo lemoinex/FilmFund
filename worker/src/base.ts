@@ -674,6 +674,63 @@ export async function livrerPropositionPersonnages(
   }
 }
 
+/** Épisode proposé, tel que le worker le dépose : contrôlé de nouveau par la base. */
+export type EpisodePropose = {
+  title: string;
+  summary: string;
+};
+
+/**
+ * Ce que SCRIPT lit pour proposer des épisodes : le projet, son concept, sa
+ * vision, ses personnages, les épisodes déjà saisis et la bible de série —
+ * chaîne vide s'il n'y en a pas. Ni scénario, ni autre document, ni budget,
+ * ni équipe.
+ */
+export type ContexteEpisodes = {
+  action: string;
+  projet: ContexteRedaction["projet"];
+  contexte: ContexteRedaction["contexte"];
+  vision: ContexteRedaction["vision"];
+  personnages: ContexteRedaction["personnages"];
+  episodes: { numero: number; titre: string; resume: string }[];
+  bible: string;
+};
+
+/**
+ * Contexte de la tâche d'épisodes en cours ; null si l'essai ne nous
+ * appartient plus ou si le projet n'existe plus.
+ */
+export async function lireContexteEpisodes(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteEpisodes | null> {
+  const { rows } = await base.query("select public.contexte_episodes($1) as contexte", [attemptId]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose les épisodes proposés et conclut l'essai. Faux : l'essai ne nous
+ * appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionEpisodes(
+  base: Base,
+  attemptId: string,
+  episodes: readonly EpisodePropose[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_episodes($1, $2::jsonb)", [
+      attemptId,
+      JSON.stringify(episodes),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}
+
 /**
  * Ce que BOARD lit pour dessiner une scène : la scène, ses premiers plans et
  * le genre du projet. Ni scénario, ni budget, ni équipe.

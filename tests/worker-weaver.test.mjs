@@ -42,6 +42,7 @@ import {
   PROFILS_IA,
   PROFILS_RETOUCHE,
   PROFILS_SCRIPT,
+  PROFILS_SCRIPT_EPISODES,
   PROFILS_VOICE,
   PROFILS_WEAVER,
 } from "../worker/src/ia/profils.ts";
@@ -553,6 +554,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_FRAME),
         ...Object.keys(PROFILS_GEAR),
         ...Object.keys(PROFILS_ARC_PERSONNAGES),
+        ...Object.keys(PROFILS_SCRIPT_EPISODES),
       ].sort(),
     );
     assert.deepEqual(clesRecues, ["sk-ant-factice-registre-aaaaaaaa"]);
@@ -594,6 +596,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_FRAME),
         ...Object.keys(PROFILS_GEAR),
         ...Object.keys(PROFILS_ARC_PERSONNAGES),
+        ...Object.keys(PROFILS_SCRIPT_EPISODES),
       ].sort(),
     );
 
@@ -1414,7 +1417,11 @@ describe("SCRIPT : traitement et bible", () => {
 
   it("le registre sert les deux agents dès qu'une clé est posée", async () => {
     const { fournisseur } = fournisseurFactice(reponseFactice("x"));
-    assert.deepEqual(Object.keys(executeursScript(base, fournisseur)), Object.keys(PROFILS_SCRIPT));
+    // Ses trois textes, puis ses épisodes, qui ne sont pas un texte.
+    assert.deepEqual(Object.keys(executeursScript(base, fournisseur)), [
+      ...Object.keys(PROFILS_SCRIPT),
+      ...Object.keys(PROFILS_SCRIPT_EPISODES),
+    ]);
     assert.deepEqual(Object.keys(PROFILS_SCRIPT), ["treatment", "bible", "screenplay"]);
   });
 });

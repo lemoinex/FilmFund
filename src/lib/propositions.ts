@@ -627,6 +627,28 @@ export function messageLotPersonnages(acceptes: number, demandes: number): strin
 }
 
 /**
+ * Les épisodes proposés (agent SCRIPT), pour une série. Tenus à part de
+ * `LIVRABLES_STRUCTURES`, comme les personnages. Sa borne est celle de la base
+ * et du profil ; un test vérifie qu'elles s'accordent.
+ */
+export const LIVRABLE_EPISODES = {
+  action: "episode_list",
+  titre: "Épisodes proposés par l'assistant",
+  bouton: "Proposer des épisodes",
+  description:
+    "L'assistant propose les épisodes qui manquent à la saison, à partir de la fiche du projet — pitch, synopsis, thème, enjeux, vision —, de ses personnages, des épisodes déjà saisis et de la bible de série si elle existe, transmis pour cela à notre fournisseur d'IA. Il n'en modifie aucun.",
+  /**
+   * Dit à chaque affichage des épisodes : ce que l'assistant ajoute pour leur
+   * donner corps ne vient pas de l'auteur, et un épisode accepté reçoit son
+   * numéro de la plateforme, pas de l'assistant.
+   */
+  avertissement:
+    "Propositions de l'assistant, d'après votre dossier : relisez chaque résumé avant de l'accepter. Un épisode accepté prend le numéro qui suit le dernier de la saison ; sa durée reste à saisir.",
+  /** Épisodes qu'une proposition peut porter : la borne de la base et du profil. */
+  lignesMax: 12,
+} as const;
+
+/**
  * La recherche documentaire (agent SCOUT). Un moteur de recherche collecte
  * des pages, l'assistant de texte en fait une synthèse : ses bornes sont
  * celles de la base, un test vérifie qu'elles s'accordent.

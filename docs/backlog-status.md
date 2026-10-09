@@ -82,6 +82,7 @@ réels).
 | OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | en production     | —             |
 | OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | en production     | —             |
 | SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | en production     | —             |
+| SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2911,4 +2912,35 @@ générique, et le message de la base n'est jamais rendu tel quel. Validé local
 tests de plus, six sabotages attrapés ; aucune page ne change, le message n'a pas été vu dans
 un navigateur.
 
-**Reste à faire** : SE2, les épisodes proposés par SCRIPT.
+Lot SE2a, les épisodes proposés par SCRIPT : la base et le worker, sans écran. Sixième
+livrable structuré, sur le modèle des personnages proposés par ARC (lot X2a) : une
+proposition parente, ses lignes dans `ai_suggestion_episodes`, acceptées ou écartées une à
+une par qui écrit les épisodes. Décisions du 9 octobre 2026 : 3 unités, comme une liste de
+personnages ; douze épisodes au plus par proposition ; la bible de série est lue.
+
+SCRIPT lit le projet, son concept, sa vision, ses personnages, les épisodes déjà saisis — cent
+au plus, le début de chaque résumé — et la bible la plus récente, brouillon compris, bornée à
+20 000 caractères. Seule la bible part parmi les documents : ni scénario, ni note, ni budget.
+**Il ne propose que des épisodes à ajouter** : une ligne proposée porte un titre et un résumé,
+sans numéro ni durée, et l'épisode accepté prend le numéro qui suit le plus grand — jamais un
+trou, jamais la place d'un autre. Un devis est refusé, avant toute dépense, pour un projet qui
+n'est pas une série, ou dont la saison a atteint son dernier numéro. Un projet sorti du format
+série ne reçoit plus d'épisode, même d'une proposition restée en attente.
+
+Le barème gagne une colonne, `episode_list` : la vitrine des tarifs dit son prix, et
+l'administration le saisit avec les autres depuis « Plans et quotas ».
+
+SE2a est validé localement le 9 octobre 2026, **sans aucun appel à un fournisseur** — le
+fournisseur des tests est factice, désigné comme tel : 29 tests de plus, suite complète de
+l'API à 1 655 tests, 922 tests SQL (16 de plus). Soixante-douze sabotages attrapés un par un — trente-deux
+dans le code, quarante à chaud dans la base locale. Un sabotage passait : rendre le contexte
+des épisodes à une tâche d'une autre action ne faisait tomber aucun test ; la vérification a
+été ajoutée au test SQL du lot.
+
+**Non couvert** : un appel réel — ni ce que valent les épisodes proposés, ni si SCRIPT s'en
+tient à la bible, ni son coût ; l'écran, qui fait l'objet du lot SE2b. L'agent entre en
+service en production dès la fusion, la clé Anthropic étant posée, mais rien ne permet encore
+de l'appeler depuis l'application.
+
+**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
+`--dry-run`, et vérification en production. Puis SE2b, l'écran.
