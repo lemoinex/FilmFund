@@ -376,8 +376,9 @@ describe("Ressources : pages et navigation", () => {
     const rubriques = navigation.slice(debut, navigation.indexOf("\n];", debut));
     assert.match(rubriques, /libelle: "Ressources", icone: \w+, href: "\/ressources"/);
     assert.equal(navigation.split('"/ressources"').length - 1, 1);
-    // Les autres rubriques sont inchangées : l'assistant reste annoncé, sans page.
-    assert.match(rubriques, /\{ libelle: "Assistant IA", icone: \w+ \},/);
+    // Depuis le lot AS1, l'assistant a sa page lui aussi : plus rien n'est annoncé sans lien.
+    assert.match(rubriques, /\{ libelle: "Assistant IA", icone: \w+, href: "\/assistant-ia" \},/);
+    assert.doesNotMatch(rubriques, /\{ libelle: "[^"]+", icone: \w+ \},/);
   });
 
   it("la spécification de la rubrique est versionnée", () => {
