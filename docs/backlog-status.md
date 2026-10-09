@@ -82,7 +82,7 @@ réels).
 | OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | en production     | —             |
 | OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | en production     | —             |
 | SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | en production     | —             |
-| SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | validé localement | —             |
+| SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2942,5 +2942,16 @@ tient à la bible, ni son coût ; l'écran, qui fait l'objet du lot SE2b. L'agen
 service en production dès la fusion, la clé Anthropic étant posée, mais rien ne permet encore
 de l'appeler depuis l'application.
 
-**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
-`--dry-run`, et vérification en production. Puis SE2b, l'écran.
+SE2a est en production depuis le 9 octobre 2026 (PR 166, `164aec4`) ; migration poussée par
+l'utilisateur le même jour, soixante-huit migrations en base. Vérifié en base par lecture
+seule : le barème compte une liste d'épisodes pour 3 unités, sans défaut, lisible de la
+vitrine ; la table a sa RLS, ses deux politiques dont celle du mode privé, ses deux
+déclencheurs, et ne s'écrit que par ses fonctions ; le contexte et le dépôt sont réservés au
+worker, la décision aux comptes ; `creer_devis` porte le cas des épisodes et tous les
+précédents. CI de `main` verte, déploiement Vercel terminé. Le worker a redémarré à 15h39 UTC
+sous le rôle `filmfund_worker` et annonce trente actions, dont `episode_list`.
+
+**Non vu en production** : aucune tâche d'épisodes, aucune proposition — il n'y a pas encore
+d'écran ; ni la vitrine des tarifs ni « Plans et quotas » n'ont été ouverts sous session.
+
+**Reste à faire** : SE2b, l'écran des épisodes proposés.
