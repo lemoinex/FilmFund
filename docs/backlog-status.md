@@ -85,7 +85,7 @@ réels).
 | SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | en production     | —             |
 | SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | en production     | —             |
 | SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | en production     | —             |
-| SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | validé localement | —             |
+| SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3090,5 +3090,18 @@ appel au fournisseur.
 
 **Limite inchangée** : FRAME lit toujours le dernier scénario modifié du projet.
 
-**Reste à faire** : pousser la migration `20261010120000_sequence_episode.sql` après fusion,
-puis vérifier les trois fonctions en production.
+SE3b est en production depuis le 9 octobre 2026 (PR 172, `3ffd3fe`) ; migration poussée par
+l'utilisateur le même jour, soixante-dix migrations en base. Vérifié en base par lecture
+seule : une seule définition de chacune des trois fonctions, au chemin de recherche fermé ;
+leurs droits, inchangés — devis et acceptation aux comptes, contexte au worker seul, rien
+pour un visiteur ; le contrôle de l'épisode au devis, le choix du scénario de l'épisode au
+contexte et à l'acceptation, le refus `SE004`. Avant la fusion comme après la poussée, aucune
+séquence n'était en file ni en cours, et aucune proposition de séquence n'attendait. CI de
+`main` verte, déploiement Vercel terminé. Worker redéployé sur ce commit à 23h18 UTC : il annonce trente actions, comme avant — le lot n'en ajoute aucune.
+
+**Non vu en production** : aucune page ouverte sous session, aucune demande de séquence —
+ni devis, ni appel réel. Des treize documents en base, aucun n'est rattaché à un épisode :
+rien n'a changé pour l'existant.
+
+Le lot SE3 est livré en entier. **Reste, hors lot** : la limite de FRAME, qui demande de
+relier les scènes du storyboard aux épisodes.
