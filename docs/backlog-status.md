@@ -81,7 +81,7 @@ réels).
 | RT2    | WEAVER : écran des retouches, sous l'éditeur de tout document                                                                  | en production     | —             |
 | OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | en production     | —             |
 | OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | en production     | —             |
-| SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | validé localement | —             |
+| SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2893,5 +2893,14 @@ l'assistant de création quand la base refuse un changement de format : il reste
 générique « L'enregistrement a échoué », son fichier n'étant pas de ce lot. Les épisodes
 n'entrent ni dans les exports, ni dans le contexte d'un agent, ni dans le score de maturité.
 
-**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
-`--dry-run`, et vérification en production. Puis SE2.
+SE1 est en production depuis le 9 octobre 2026 (PR 163, `02fd12f`) ; migration poussée par
+l'utilisateur le même jour, soixante-sept migrations en base. Vérifié en base par lecture
+seule : la RLS, les cinq politiques dont celle du mode privé, les trois déclencheurs de la
+table et le garde du format sur les projets, les cinq contraintes, les droits des comptes
+colonne par colonne, et rien de lisible pour un visiteur ni pour le worker. CI de `main`
+verte, déploiement Vercel terminé.
+
+**Non vu en production** : aucune page ouverte sous session, aucun épisode saisi.
+
+**Reste à faire** : SE2, les épisodes proposés par SCRIPT ; et, hors lot, le message de
+l'assistant de création quand la base refuse un changement de format.
