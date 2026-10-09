@@ -81,6 +81,7 @@ réels).
 | RT2    | WEAVER : écran des retouches, sous l'éditeur de tout document                                                                  | en production     | —             |
 | OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | en production     | —             |
 | OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | en production     | —             |
+| SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2855,3 +2856,42 @@ verte, déploiement Vercel terminé.
 catalogue ne précisent ni langue, ni durée, ni stade : le filtre « Langue demandée »
 n'apparaît pas et les décomptes restent ceux d'avant, tant que l'administration n'aura pas
 saisi ces champs.
+
+Lot SE, les séries. Les formats « série » et « web-série » existaient, avec la bible de série
+(lot J1), mais rien ne traitait une série autrement qu'un film : ni saison, ni épisodes, ni
+pilote. Décisions du 9 octobre 2026 : **une seule saison par projet** ; les séries avant
+l'assistant unifié ; trois lots — SE1, les épisodes saisis à la main ; SE2, les épisodes
+proposés par SCRIPT ; SE3, le scénario par épisode, qui touche la règle « un scénario par
+projet ».
+
+Lot SE1 : la table `project_episodes` — un numéro, un titre, un résumé, une durée
+facultative — et sa page, `projets/[id]/episodes`. L'épisode 1 se présente comme le pilote.
+Mêmes droits que les personnages : toute l'équipe lit, le porteur, les éditeurs et les
+administrateurs écrivent ; politique du mode privé, journal des interventions de
+l'administration, droits accordés colonne par colonne. La base tient trois règles, quel que
+soit le chemin : un épisode n'existe que dans un projet de série ou de web-série ; deux
+épisodes d'un projet n'ont pas le même numéro ; **un projet qui a des épisodes ne quitte pas
+le format série** — il faut les retirer d'abord, la base ne les supprime jamais d'elle-même.
+
+La page s'ouvre depuis la « Fiche » des seules séries, qui en donne le décompte, et se range
+sous cet onglet : la barre d'onglets du projet n'a pas changé. Pour un projet qui n'est pas
+une série, pour un projet illisible ou pour un identifiant mal formé, elle répond comme une
+page absente. Un lecteur y lit les épisodes sans formulaire ni bouton. Le formulaire d'ajout
+propose le numéro qui suit le plus grand.
+
+SE1 est validé localement le 9 octobre 2026, sans appel à un fournisseur : 50 tests de plus,
+suite complète de l'API à 1 624 tests, 906 tests SQL. Soixante-sept sabotages attrapés un par
+un — quarante-cinq dans le code, vingt-deux à chaud dans la base locale. Un sabotage sans
+effet a révélé un trou : aucun test n'éprouvait un nombre écrit autrement qu'en chiffres
+(`1e2`, `0x10`, `3.0`) ; les cas ont été ajoutés. Rendu réel sur un serveur de production
+local, 25 points sur 25 — porteur, lecteur, étranger, série vide, film —, données d'essai
+retirées.
+
+**Non couvert** : l'affichage à 375 px ; l'envoi des formulaires dans un navigateur — le
+rendu a lu les pages servies, les écritures sont éprouvées par l'API ; le message rendu par
+l'assistant de création quand la base refuse un changement de format : il reste le message
+générique « L'enregistrement a échoué », son fichier n'étant pas de ce lot. Les épisodes
+n'entrent ni dans les exports, ni dans le contexte d'un agent, ni dans le score de maturité.
+
+**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
+`--dry-run`, et vérification en production. Puis SE2.
