@@ -307,8 +307,17 @@ describe("Épisodes : la page", () => {
     assert.ok(!cles.includes("episodes"));
   });
 
-  it("aucun appel à un modèle, aucune écriture depuis la page", () => {
-    assert.doesNotMatch(page, /creer_devis|ai_suggestions|jobs|"use client"|"use server"/);
+  it("la page lit où en est une demande, mais n'en fait aucune et n'écrit rien", () => {
+    // Depuis le lot SE2b, elle lit la dernière demande d'épisodes pour monter
+    // l'encart : ni devis, ni réservation, ni décision ne partent d'ici.
+    assert.doesNotMatch(
+      page,
+      /creer_devis|accepter_devis|accepter_episode|ecarter_|annuler_travail|fetch\(|"use client"|"use server"/,
+    );
+    assert.deepEqual([...new Set([...page.matchAll(/\.rpc\("(\w+)"/g)].map((m) => m[1]))].sort(), [
+      "peut_editer_contenu",
+      "peut_gerer_budget",
+    ]);
     assert.doesNotMatch(page, /\.(insert|update|upsert|delete)\(/);
   });
 });

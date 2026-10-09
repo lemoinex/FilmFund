@@ -515,8 +515,8 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   son lot. Le scénario reste un par projet.
 - Épisodes proposés (lot SE2a, agent SCRIPT, action `episode_list`, profil
   `script.episodes@1`, table `ai_suggestion_episodes`) : base et worker
-  livrés, **sans écran** — sur le modèle des personnages proposés, acceptés
-  ou écartés un à un. SCRIPT lit le projet, son concept, sa vision, ses
+  livrés — sur le modèle des personnages proposés, acceptés ou écartés un à
+  un. SCRIPT lit le projet, son concept, sa vision, ses
   personnages, les épisodes déjà saisis et **la bible de série si elle
   existe**, seule parmi les documents ; ni scénario, ni budget. **Il ne
   propose que des épisodes à ajouter** : aucun chemin ne réécrit un épisode
@@ -529,6 +529,18 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   d'écrire sur une série documentaire ce que le dossier ne dit pas : ne pas
   les affaiblir. Tenu à part de `PROFILS_SCRIPT`, dont chaque entrée est un
   texte (`PROFILS_SCRIPT_EPISODES`, catalogue `LIVRABLE_EPISODES`).
+- Écran des épisodes proposés (lot SE2b, sans migration) : encart sur la page
+  des épisodes (`episodes/actions-ia.ts`, `episodes-proposes.tsx`). Il dit ce
+  qui part chez le fournisseur, bible comprise, avant tout envoi ; rien ne
+  part sans devis affiché ni confirmation. Le navigateur ne choisit ni
+  l'action, ni les paramètres du devis, ni le numéro d'un épisode. Un épisode
+  se corrige avant d'être accepté — titre et résumé, par la lecture d'un
+  épisode saisi. **La page se lit de toute l'équipe : un lecteur lit ce qui
+  est proposé, sans bouton, et ne voit ni tâche ni demande en cours**
+  (`peutDecider` vient de `peut_editer_contenu`, la fonction de la RLS). Un
+  titre déjà pris dans la saison est signalé, jamais refusé. « Tout
+  accepter » demande une confirmation, suit l'ordre de l'assistant et
+  s'arrête au premier refus, en disant combien sont entrés.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
   comparaison de versions. Lot ED, décisions du 8 octobre 2026 : **la mise en

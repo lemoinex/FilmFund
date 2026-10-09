@@ -83,6 +83,7 @@ réels).
 | OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | en production     | —             |
 | SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | en production     | —             |
 | SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | en production     | —             |
+| SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2954,4 +2955,38 @@ sous le rôle `filmfund_worker` et annonce trente actions, dont `episode_list`.
 **Non vu en production** : aucune tâche d'épisodes, aucune proposition — il n'y a pas encore
 d'écran ; ni la vitrine des tarifs ni « Plans et quotas » n'ont été ouverts sous session.
 
-**Reste à faire** : SE2b, l'écran des épisodes proposés.
+Lot SE2b, l'écran : l'encart « Épisodes proposés par l'assistant », sur la page des épisodes
+d'une série. Sans migration : il n'appelle que les fonctions livrées au lot SE2a. Sept
+actions serveur — devis, lancement, annulation, acceptation, écart, « tout accepter », « tout
+écarter » —, dont aucune n'écrit une table directement ni n'appelle un fournisseur.
+
+L'encart dit, avant tout envoi, ce qui part chez le fournisseur — bible de série comprise —,
+et rien ne part sans devis affiché ni confirmation. Le navigateur ne choisit ni l'action, ni
+les paramètres du devis, ni le numéro d'un épisode : la base le donne. Un épisode se corrige
+avant d'être accepté, titre et résumé, par la lecture d'un épisode saisi à la main. Un titre
+déjà pris dans la saison est signalé, jamais refusé. « Tout accepter » demande une
+confirmation, suit l'ordre de l'assistant — qui devient celui des numéros — et s'arrête au
+premier refus, en disant combien sont entrés. Le texte rendu par le modèle s'affiche comme du
+texte, jamais comme du balisage.
+
+**La page des épisodes se lit de toute l'équipe** : un lecteur y lit ce qui est proposé, sans
+aucun bouton, et ne voit ni tâche ni demande en cours — seulement une proposition qui attend
+la décision de l'équipe. Le droit de décider vient de `peut_editer_contenu`, la fonction que
+la RLS applique.
+
+SE2b est validé localement le 9 octobre 2026, sans appel à un fournisseur : 21 tests de
+plus, suite complète de l'API à 1 676 tests, 922 tests SQL. Quarante-sept sabotages attrapés
+un par un. Un sabotage passait : lire la demande avant le contrôle d'accès de la page ne
+faisait tomber aucun test ; le test a été renforcé. Rendu réel sur un serveur de production
+local, 30 points sur 30 — porteur, lecteur, étranger ; au repos, demande en file, proposition,
+après décision —, avec une proposition déposée par un fournisseur factice, données d'essai
+retirées.
+
+**Non couvert** : un appel réel ; l'affichage à 375 px ; les clics dans un navigateur — le
+rendu a lu les pages servies, les décisions sont éprouvées par l'API ; l'annulation d'une
+demande en file et la correction d'un épisode à l'écran. En production, un administrateur
+peut désormais déclencher un appel payant depuis l'encart, après devis et confirmation : son
+coût n'est pas mesuré.
+
+**Reste à faire** : la livraison — PR, CI, fusion, sans migration. Puis SE3, le scénario par
+épisode, à cadrer.
