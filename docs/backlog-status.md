@@ -80,7 +80,7 @@ réels).
 | RT1    | WEAVER : retouches d'un passage — améliorer, raccourcir, développer, corriger (base et worker)                                 | en production     | —             |
 | RT2    | WEAVER : écran des retouches, sous l'éditeur de tout document                                                                  | en production     | —             |
 | OP1    | Opportunités : filtre par montant, devise par devise (sans IA)                                                                 | en production     | —             |
-| OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | validé localement | —             |
+| OP2    | Opportunités : langue, durée et stade au catalogue ; compatibilité sur cinq critères (sans IA)                                 | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -2845,5 +2845,13 @@ d'essai posés puis retirés de la base locale.
 un navigateur — le rendu a lu les pages servies, il n'a pas envoyé le formulaire ; l'effet en
 production, où aucune opportunité ne renseigne encore ces champs.
 
-**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
-`--dry-run`, et vérification en production.
+OP2 est en production depuis le 9 octobre 2026 (PR 161, `445297e`) ; migration poussée par
+l'utilisateur le même jour, soixante-six migrations en base. Vérifié en base par lecture
+seule : les quatre colonnes, leurs défauts, les trois contraintes, les droits d'écriture des
+comptes sous la RLS, et rien de lisible pour un visiteur ni pour le worker. CI de `main`
+verte, déploiement Vercel terminé.
+
+**Non vu en production** : aucune page ouverte sous session. Les deux opportunités du
+catalogue ne précisent ni langue, ni durée, ni stade : le filtre « Langue demandée »
+n'apparaît pas et les décomptes restent ceux d'avant, tant que l'administration n'aura pas
+saisi ces champs.
