@@ -84,7 +84,7 @@ réels).
 | SE1    | Séries : épisodes d'un projet de série, saisie manuelle, une saison (sans IA)                                                  | en production     | —             |
 | SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | en production     | —             |
 | SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | en production     | —             |
-| SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | validé localement | —             |
+| SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3039,5 +3039,14 @@ s'ajoute au scénario modifié en dernier, quel que soit son épisode. Le défau
 qu'un projet portait deux scénarios ; ce lot le rend plus fréquent. L'encart de la séquence
 nomme le document visé avant d'agir.
 
-**Reste à faire** : la livraison — PR, CI, fusion, puis `supabase db push` précédé de
-`--dry-run`, et vérification en production. Puis SE3b.
+SE3a est en production depuis le 9 octobre 2026 (PR 170, `7020f7c`) ; migration poussée par
+l'utilisateur le même jour, soixante-neuf migrations en base. Vérifié en base par lecture
+seule : la colonne, facultative et sans défaut ; la contrainte, l'index unique et le
+déclencheur ; le lien qui se vide quand l'épisode est retiré ; les droits des comptes sous la
+RLS, et rien de lisible pour un visiteur ni pour le worker ; les cinq politiques des
+documents, inchangées. CI de `main` verte, déploiement Vercel terminé.
+
+**Non vu en production** : aucune page ouverte sous session. Des treize documents en base,
+aucun n'est rattaché à un épisode : rien n'a changé pour l'existant.
+
+**Reste à faire** : SE3b, la séquence écrite dans le scénario de l'épisode désigné.
