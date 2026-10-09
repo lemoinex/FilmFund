@@ -824,6 +824,34 @@ recommandations (« à améliorer ») sont configurables et traçables.
   ni groupe électrogène, et **ne rend aucun calcul** : une puissance proposée
   est une estimation, facultative, que l’écran présente comme telle.
 
+### Assistant IA
+
+- Point d'entrée (lot AS1, sans IA, sans migration) : livré — rubrique
+  `/assistant-ia`, qui mène à la page de chaque projet
+  (`projets/[id]/assistant-ia`), ouverte aussi depuis la « Synthèse » et
+  rangée sous cet onglet : la barre d'onglets du projet ne change pas.
+  Décisions du 10 octobre 2026 : **un annuaire, pas un douzième agent** — la
+  page dit ce que l'assistant sait faire, à quel prix, et mène à l'écran où
+  la demande se fait. **Elle ne lance rien** : ni action, ni devis, ni
+  bouton ; chaque demande garde son encart, son devis affiché et sa
+  confirmation. Ne pas y ajouter de demande en texte libre ni de routage par
+  un modèle sans décision : ce serait un appel payant de plus.
+- Le catalogue est `src/lib/assistant-ia.ts` : vingt-six demandes, rangées
+  par besoin, chacune avec son écran et la colonne du barème qui dit son
+  prix. `tests/assistant-ia.test.mjs` refuse qu'une action d'un livrable
+  (`propositions.ts`) ou qu'un prix du barème y manque : **ajouter un
+  livrable, c'est l'inscrire aussi ici**. La veille des opportunités, tâche
+  de l'administration, n'y figure pas.
+- **Aucun agent n'est nommé à l'écran** : l'équipe voit un assistant. Les
+  prix viennent du barème publié, jamais d'une valeur en dur, et la page dit
+  que le devis fait foi. Elle se lit de toute l'équipe ; les liens ne se
+  montrent qu'au porteur, aux éditeurs et aux administrateurs — la règle de
+  `peut_engager_unites`, que les comptes n'appellent pas — et la demande du
+  budget qu'à qui le gère (`peut_gerer_budget`). Les épisodes ne se
+  proposent qu'à une série.
+- Non livré : ce qui attend sur un projet — propositions non décidées,
+  demandes en cours — réuni sur cette page (lot AS2, à auditer).
+
 ### Ressources
 
 - Rubrique « Ressources » (lot AA1, sans IA, sans migration) : livrée —

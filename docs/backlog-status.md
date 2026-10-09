@@ -86,6 +86,7 @@ réels).
 | SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | en production     | —             |
 | SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | en production     | —             |
 | SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | en production     | —             |
+| AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3105,3 +3106,41 @@ rien n'a changé pour l'existant.
 
 Le lot SE3 est livré en entier. **Reste, hors lot** : la limite de FRAME, qui demande de
 relier les scènes du storyboard aux épisodes.
+
+Lot AS, l'Assistant IA, cadré le 10 octobre 2026. La rubrique était annoncée « Bientôt »
+depuis l'origine, sans page. Deux façons de la construire : un point d'entrée qui dit ce que
+l'assistant sait faire et mène au bon écran, sans IA ni coût ; ou une demande en texte libre
+routée vers l'agent, soit un appel payant de plus par demande, un profil et un budget à
+décider. Décisions : la première ; l'accès depuis un projet par un lien de la « Synthèse »,
+sans treizième onglet ; la rubrique du menu liste les projets et mène à la page de chacun ;
+aucun agent n'est nommé à l'écran ; deux lots — AS1, le point d'entrée ; AS2, ce qui attend
+sur un projet.
+
+Lot AS1 : la page « Assistant IA » d'un projet. Vingt-six demandes rangées en six besoins —
+présenter le projet, construire le récit, reprendre un texte, documenter, préparer le
+tournage, chiffrer —, chacune avec ce qu'elle produit, l'écran où elle se fait et son prix,
+lu au barème publié. La page ne lance rien : ni action, ni devis, ni bouton ; elle mène à
+l'encart existant, qui garde son devis et sa confirmation. Elle redit ce qui ne change pas :
+l'équipe garde la main, les calculs restent ceux de la plateforme. Toute l'équipe la lit ; un
+lecteur n'y trouve aucun lien, et la page lui dit pourquoi ; la demande du budget ne se montre
+qu'à qui le gère, celle des épisodes qu'à une série. Le catalogue est un module pur
+(`src/lib/assistant-ia.ts`) ; un test refuse qu'une action d'un livrable ou qu'un prix du
+barème y manque. La veille des opportunités, tâche de l'administration, n'y figure pas.
+
+AS1 est validé localement le 10 octobre 2026, sans migration ni appel à un fournisseur :
+21 tests de plus, suite complète de l'API à 1 754 tests, 952 tests SQL, inchangés.
+Vingt-quatre sabotages attrapés un par un. Rendu réel sur un serveur de production local,
+38 points sur 38 — porteur, lecteur, étranger, visiteur ; une série et un film ; les dix
+écrans de destination, la rubrique du menu, le lien de la Synthèse —, données d'essai
+retirées. Le rendu a trouvé un défaut que les tests ne voyaient pas : la page interrogeait
+`peut_engager_unites`, que les comptes n'appellent pas, et traitait le porteur en lecteur ;
+elle applique désormais la règle des autres pages.
+
+**Non couvert** : l'affichage à 375 px ; les clics dans un navigateur. L'ancre de la demande
+du budget n'existe que si l'encart est rendu : sur un projet sans budget, le lien ouvre la
+page du budget sans s'y positionner.
+
+**À savoir** : « Assistant IA » et « Assistant de création » sont deux écrans distincts, aux
+noms proches.
+
+**Reste à faire** : AS2, ce qui attend sur un projet, à auditer.

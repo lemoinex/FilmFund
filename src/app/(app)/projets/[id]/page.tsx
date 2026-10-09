@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+
+import { pageAssistant } from "@/lib/assistant-ia";
 import { notFound, redirect } from "next/navigation";
 
 import { BoutonConfirme } from "@/components/ui/confirmation";
@@ -120,6 +122,19 @@ export default async function ProjetPage({ params }: { params: Promise<{ id: str
 
       {/* Le score tient compte du budget : il se montre à qui le lit. */}
       {peutGererBudget ? <MaturiteDuDossier projetId={projet.id} /> : null}
+
+      {/* Toute l'équipe la lit : la page dit ce que l'assistant sait faire, sans rien lancer. */}
+      <p className="border-navy-line mt-8 flex flex-wrap items-baseline justify-between gap-3 rounded-xl border p-5 text-sm">
+        <span className="text-pretty">
+          Tout ce que l&apos;assistant sait faire pour ce projet, et où le lui demander.
+        </span>
+        <Link
+          href={pageAssistant(projet.id)}
+          className="text-light-muted hover:bg-navy-soft hover:text-light rounded-full px-3 py-1.5 text-xs transition-colors"
+        >
+          Assistant IA
+        </Link>
+      </p>
 
       <div className="mt-10">
         {/*
