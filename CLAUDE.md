@@ -499,6 +499,20 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   `LIVRABLE_PERSONNAGES`), ouvert au porteur et aux éditeurs ; un homonyme d’un
   personnage saisi est signalé, jamais refusé.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
+- Épisodes d'une série (lot SE1, sans IA) : livrés — table `project_episodes`,
+  règles dans `src/lib/episodes.ts`, page `projets/[id]/episodes/`, ouverte
+  depuis la « Fiche » des seules séries et rangée sous cet onglet : la barre
+  d'onglets du projet ne change pas. Décisions du 9 octobre 2026 : **une seule
+  saison par projet**, un épisode se repère par son numéro, et l'épisode 1 se
+  présente comme le pilote — ne pas créer de table de saisons sans décision.
+  Mêmes droits que les personnages : toute l'équipe lit, porteur, éditeurs et
+  administrateurs écrivent. La base tient trois règles, quel que soit le
+  chemin : un épisode n'existe que dans un projet de série ou de web-série
+  (`SE001`) ; deux épisodes d'un projet n'ont pas le même numéro ; **un projet
+  qui a des épisodes ne quitte pas le format série** (`SE002`) — il faut les
+  retirer d'abord, la base ne les supprime jamais d'elle-même. Les épisodes
+  n'entrent ni dans les exports, ni dans le contexte d'un agent, ni dans le
+  score de maturité : chacun demande son lot. Le scénario reste un par projet.
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
   comparaison de versions. Lot ED, décisions du 8 octobre 2026 : **la mise en

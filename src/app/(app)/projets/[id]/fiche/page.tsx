@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { Message } from "@/components/ui/form";
 import { etapeDe, type CleEtape } from "@/lib/assistant";
+import { decompteEpisodes, estSerie } from "@/lib/episodes";
 import { lireAcces } from "@/lib/equipes";
 import { dureeEnClair, GENRES, ROLES_PERSONNAGE } from "@/lib/fiche";
 import { listerPays } from "@/lib/profils";
@@ -52,6 +53,7 @@ export default async function FichePage({
     { data: estAdmin },
     { data: budget },
     { data: personnages },
+    { count: episodes },
   ] = await Promise.all([
     supabase
       .from("projects")
@@ -69,6 +71,11 @@ export default async function FichePage({
       .eq("project_id", id)
       .order("position")
       .order("created_at"),
+    // Nombre seul : les épisodes se lisent sur leur page. Zéro hors d'une série.
+    supabase
+      .from("project_episodes")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", id),
   ]);
 
   if (!projet) {
@@ -138,6 +145,26 @@ export default async function FichePage({
             <Ligne terme="Langues">{projet.languages}</Ligne>
           </dl>
         </Section>
+
+        {estSerie(projet.format) ? (
+          <section aria-labelledby="fiche-episodes" className="border-navy-line border-t pt-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 id="fiche-episodes" className="font-serif text-xl leading-tight">
+                Épisodes
+              </h2>
+              <Link
+                href={`/projets/${id}/episodes`}
+                className="text-light-muted hover:bg-navy-soft hover:text-light rounded-full px-3 py-1.5 text-xs transition-colors"
+              >
+                {peutEditer ? "Gérer" : "Voir"}
+                <span className="sr-only"> les épisodes</span>
+              </Link>
+            </div>
+            <p className="mt-4 leading-relaxed">
+              {episodes === null ? NON_FOURNI : `${decompteEpisodes(episodes)}.`}
+            </p>
+          </section>
+        ) : null}
 
         <Section cle="concept" modifier={modifier}>
           <dl className="space-y-5">
