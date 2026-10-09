@@ -85,6 +85,7 @@ réels).
 | SE2a   | SCRIPT : épisodes proposés pour une série — base, profil, agent                                                                | en production     | —             |
 | SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | en production     | —             |
 | SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | en production     | —             |
+| SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3049,4 +3050,45 @@ documents, inchangées. CI de `main` verte, déploiement Vercel terminé.
 **Non vu en production** : aucune page ouverte sous session. Des treize documents en base,
 aucun n'est rattaché à un épisode : rien n'a changé pour l'existant.
 
-**Reste à faire** : SE3b, la séquence écrite dans le scénario de l'épisode désigné.
+Lot SE3b : la séquence écrite dans le scénario de l'épisode désigné. Aucun schéma ne
+change ; une migration reprend trois fonctions pour un paramètre facultatif de la demande,
+`episode`. Le devis vérifie que l'épisode est un épisode du projet, avant toute réservation.
+Le contexte rend l'épisode, la saison — cent épisodes au plus, le début de chaque résumé — et
+la fin du scénario de cet épisode ; les scénarios des autres épisodes ne partent pas, même
+finalisés. L'acceptation ajoute la séquence au scénario de l'épisode, créé en brouillon et
+rattaché s'il n'existe pas. Sans épisode, la demande ne vise plus que les scénarios sans
+épisode : pour un film, rien ne change ; dans une série, elle ne s'ajoute plus jamais au
+scénario d'un épisode. Le profil de SCRIPT ne change pas (`script.scenario@1`), ni le prix.
+
+Si l'épisode est retiré entre la demande et l'appel, la base ne rend aucun contexte et rien
+ne part chez le fournisseur ; retiré avant l'acceptation, celle-ci est refusée (`SE004`) et
+rien n'est écrit ailleurs — la proposition reste lisible, à reporter à la main ou à écarter.
+
+L'encart se tient sous l'éditeur du scénario d'un épisode, pour qui écrit le projet ;
+appliquer reste au porteur et aux éditeurs. Il dit où la séquence s'ajouterait et ce qui part
+chez le fournisseur. Comme celui des dialogues, il refuse d'agir sur un document non
+enregistré et recharge la page après une acceptation : sans cela, l'éditeur réenregistrerait
+l'ancien texte par-dessus la séquence ajoutée. L'encart de l'onglet « Documents » ne suit que
+les demandes sans épisode, et ne nomme qu'un scénario sans épisode.
+
+SE3b est validé localement le 9 octobre 2026, sans appel à un fournisseur — le fournisseur
+des tests est factice : suite complète de l'API à 1 733 tests, 952 tests SQL (13 de plus).
+Trente-quatre sabotages attrapés un par un — dix-neuf dans le code, quinze à chaud dans la
+base locale. Rendu réel sur un serveur de production local, 27 points sur 27 — porteur,
+lecteur, étranger ; au repos, demande en file, proposition, après acceptation —, données
+d'essai retirées.
+
+**Non couvert** : l'affichage à 375 px ; les clics dans un navigateur — le refus d'agir sur
+un document non enregistré et le rechargement après acceptation sont éprouvés par la lecture
+du code, pas dans un navigateur ; ce que SCRIPT fait réellement de l'épisode et de la saison
+qu'il reçoit, qui ne se vérifie qu'en recette, avec le vrai fournisseur.
+
+**À savoir** : le contrôle du type de `episode` au devis double celui de sa forme — retiré
+seul, il ne change aucun refus ; il est gardé par prudence. Une tâche de séquence dont
+l'épisode a été retiré avant l'appel échoue puis suit le sort de tout échec connu, sans
+appel au fournisseur.
+
+**Limite inchangée** : FRAME lit toujours le dernier scénario modifié du projet.
+
+**Reste à faire** : pousser la migration `20261010120000_sequence_episode.sql` après fusion,
+puis vérifier les trois fonctions en production.

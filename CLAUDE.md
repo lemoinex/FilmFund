@@ -524,10 +524,25 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   la page des épisodes (`creerScenarioEpisode`, titre tiré du numéro lu en
   base) ; l'éditeur d'un scénario de série dit son épisode et permet de le
   changer (`rattachement.tsx`, `rattacherScenario`), en ne proposant que les
-  épisodes sans scénario. **Aucun chemin d'IA n'est touché** : l'écriture
-  d'une séquence et FRAME visent toujours le scénario le plus récemment
-  modifié du projet, quel que soit son épisode — c'est l'objet du lot SE3b
-  pour la séquence ; pour FRAME, la limite est connue et non traitée.
+  épisodes sans scénario. FRAME lit toujours le scénario le plus récemment
+  modifié du projet, quel que soit son épisode : limite connue, non traitée.
+- Séquence d'un épisode (lot SE3b, agent SCRIPT, profil inchangé
+  `script.scenario@1`, sans changement de schéma) : la demande de séquence
+  peut désigner un épisode (`params.episode`), que la base relit dans le
+  projet au devis, au contexte et à l'acceptation. La séquence s'ajoute alors
+  **au scénario de cet épisode, et à lui seul**, créé en brouillon et
+  rattaché s'il n'existe pas. **Sans épisode, la demande ne vise que les
+  scénarios sans épisode** — pour un film, rien ne change. SCRIPT reçoit
+  l'épisode, la saison (cent épisodes au plus, le début de chaque résumé) et
+  la fin de ce scénario ; les scénarios des autres épisodes ne partent pas,
+  même finalisés. Épisode retiré avant l'appel : rien ne part ; retiré avant
+  l'acceptation : elle est refusée (`SE004`), rien n'est écrit ailleurs.
+  Écran sous l'éditeur du scénario d'un épisode : l'encart commun
+  (`proposition.tsx`, `episodeId`) y refuse d'agir sur un document non
+  enregistré et recharge la page après une acceptation, comme les
+  dialogues ; l'encart de l'onglet « Documents » ne suit que les demandes
+  sans épisode. L'épisode vient de la page, jamais d'une saisie. Ne pas
+  créer un second chemin pour la séquence : étendre celui-ci.
 - Épisodes proposés (lot SE2a, agent SCRIPT, action `episode_list`, profil
   `script.episodes@1`, table `ai_suggestion_episodes`) : base et worker
   livrés — sur le modèle des personnages proposés, acceptés ou écartés un à

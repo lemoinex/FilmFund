@@ -146,11 +146,17 @@ export default async function DocumentsPage({
     peutDemander
       ? await Promise.all(
           actions.map(async (action) => {
-            const { data } = await supabase
+            let requete = supabase
               .from("project_documents")
               .select("id, title, content")
               .eq("project_id", id)
-              .eq("type", LIVRABLES_DOCUMENTS[action])
+              .eq("type", LIVRABLES_DOCUMENTS[action]);
+            // Une séquence demandée d'ici vise un scénario sans épisode, comme
+            // la base le choisit : celle d'un épisode se demande sous son scénario.
+            if (action === "screenplay") {
+              requete = requete.is("episode_id", null);
+            }
+            const { data } = await requete
               .order("updated_at", { ascending: false })
               .order("id")
               .limit(1)

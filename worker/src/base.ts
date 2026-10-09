@@ -227,6 +227,13 @@ export type ContexteRedaction = {
    * s'il n'existe pas encore ; absent des autres actions.
    */
   scenario?: { longueur: number; fin: string } | null;
+  /**
+   * Épisode dont la séquence est à écrire (lot SE3b) : présent quand la
+   * demande en désigne un, avec la saison où il se place. Le scénario donné
+   * plus haut est alors le sien.
+   */
+  episode?: { numero: number; titre: string; resume: string } | null;
+  saison?: { numero: number; titre: string; resume: string }[] | null;
 };
 
 /**

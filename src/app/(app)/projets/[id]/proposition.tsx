@@ -47,6 +47,12 @@ export function RafraichissementPropositions({ actif }: { actif: boolean }) {
   return null;
 }
 
+/** Champ de texte de l'éditeur d'un document, quand l'encart se tient sous lui. */
+const CHAMP_EDITEUR = "contenu";
+
+const NON_ENREGISTRE =
+  "Le document porte des modifications non enregistrées : enregistrez-le d'abord.";
+
 /**
  * Demande de rédaction à l'assistant : devis, confirmation, suivi, puis
  * proposition à comparer, modifier, appliquer ou écarter.
@@ -63,6 +69,8 @@ export function Proposition({
   precision,
   etape,
   peutAppliquer,
+  episodeId,
+  contenuEnregistre,
 }: {
   projetId: string;
   action: ActionIa;
@@ -72,6 +80,14 @@ export function Proposition({
   etape: EtapeProposition;
   /** Porteur et éditeurs : un administrateur hors de l'équipe peut demander et écarter, pas appliquer. */
   peutAppliquer: boolean;
+  /** Épisode dont on écrit une séquence ; absent, la demande n'en désigne aucun. */
+  episodeId?: string;
+  /**
+   * Donné quand l'encart se tient sous l'éditeur du document qu'il complète :
+   * il refuse alors d'agir sur un document non enregistré, et recharge la page
+   * après une acceptation — sans quoi l'éditeur réenregistrerait l'ancien texte.
+   */
+  contenuEnregistre?: string;
 }) {
   const livrable = LIVRABLES_IA[action];
   const router = useRouter();
@@ -108,10 +124,31 @@ export function Proposition({
     });
   }
 
+  /** Vrai si l'éditeur de la page affiche autre chose que ce que la base porte. */
+  function editeurModifie(): boolean {
+    if (contenuEnregistre === undefined) {
+      return false;
+    }
+    const champ = document.getElementById(CHAMP_EDITEUR);
+    return (
+      champ instanceof HTMLTextAreaElement &&
+      champ.value.replaceAll("\r\n", "\n") !== contenuEnregistre.replaceAll("\r\n", "\n")
+    );
+  }
+
   function obtenirDevis() {
     setErreur(null);
+    if (editeurModifie()) {
+      setErreur(NON_ENREGISTRE);
+      return;
+    }
     demarrer(async () => {
-      const resultat = await demanderDevis(projetId, action, consigne ? saisie : undefined);
+      const resultat = await demanderDevis(
+        projetId,
+        action,
+        consigne ? saisie : undefined,
+        episodeId,
+      );
       if ("erreur" in resultat) {
         setErreur(resultat.erreur);
       } else {
@@ -294,11 +331,17 @@ export function Proposition({
               <button
                 type="button"
                 disabled={enCours || !texte.trim()}
-                onClick={() =>
-                  executer(() =>
-                    appliquerProposition(projetId, action, proposition.propositionId, texte),
-                  )
-                }
+                onClick={() => {
+                  if (editeurModifie()) {
+                    setErreur(NON_ENREGISTRE);
+                    return;
+                  }
+                  executer(
+                    () => appliquerProposition(projetId, action, proposition.propositionId, texte),
+                    // Sous un éditeur, la page repart du texte enregistré.
+                    contenuEnregistre === undefined ? undefined : () => window.location.reload(),
+                  );
+                }}
                 className={BOUTON_PRINCIPAL}
               >
                 {enCours ? "Un instant…" : "Utiliser cette proposition"}

@@ -18,9 +18,10 @@ import {
   type ActionRetouche,
   type EtapeProposition,
 } from "@/lib/propositions";
+import { lireEtapeSequenceEpisode } from "@/lib/propositions-serveur";
 import { createClient } from "@/lib/supabase/server";
 
-import { RafraichissementPropositions } from "../../proposition";
+import { Proposition, RafraichissementPropositions } from "../../proposition";
 import { supprimerDocument } from "../actions";
 import { EditeurDocument } from "../formulaires";
 import { BadgeStatut } from "../statut";
@@ -36,6 +37,9 @@ export const metadata: Metadata = {
 
 const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
 
+/** Ce que l'encart d'une séquence montre du scénario : sa fin, où elle se raccordera. */
+const FIN_DU_SCENARIO = 2000;
+
 export default async function DocumentPage({
   params,
 }: {
@@ -44,7 +48,7 @@ export default async function DocumentPage({
   const { id, documentId } = await params;
   const supabase = await createClient();
 
-  const [{ data: document }, { data: peutEditer }] = await Promise.all([
+  const [{ data: document }, { data: peutEditer }, { data: acces }] = await Promise.all([
     supabase
       .from("project_documents")
       .select(
@@ -54,6 +58,7 @@ export default async function DocumentPage({
       .eq("project_id", id)
       .maybeSingle(),
     supabase.rpc("peut_editer_contenu", { p_project_id: id }),
+    supabase.rpc("acces_au_projet", { p_project_id: id }),
   ]);
 
   // La RLS rend zéro ligne pour un document inexistant comme pour celui
@@ -104,6 +109,13 @@ export default async function DocumentPage({
     derniereVersion = derniere?.version_number ?? 0;
   }
 
+  // La séquence d'un épisode se demande sous son scénario, par qui peut
+  // l'écrire. Appliquer reste au porteur et aux éditeurs, comme la base le veut.
+  const episode = peutEditer ? (rattachement?.actuel ?? null) : null;
+  const sequence = episode
+    ? await lireEtapeSequenceEpisode(supabase, projet.id, episode.id, true)
+    : null;
+
   // Les dialogues d'une scène ne se demandent que sur un scénario, par qui
   // peut l'écrire : rien n'est lu pour les autres.
   const dialogues =
@@ -149,10 +161,31 @@ export default async function DocumentPage({
 
           {/* Un seul rafraîchissement pour les deux encarts : tant que l'un attend. */}
           <RafraichissementPropositions
-            actif={[dialogues?.etape.etape, retouche?.etape.etape].some(
-              (etape) => etape === "en_attente" || etape === "en_cours",
-            )}
+            actif={
+              [dialogues?.etape.etape, retouche?.etape.etape].some(
+                (etape) => etape === "en_attente" || etape === "en_cours",
+              ) ||
+              sequence?.etape === "en_attente" ||
+              sequence?.etape === "en_cours"
+            }
           />
+
+          {episode && sequence ? (
+            <Proposition
+              projetId={projet.id}
+              action="screenplay"
+              episodeId={episode.id}
+              contenuEnregistre={document.content}
+              texteActuel={
+                document.content.length > FIN_DU_SCENARIO
+                  ? `[…] ${document.content.slice(-FIN_DU_SCENARIO)}`
+                  : document.content
+              }
+              precision={`La séquence s'ajouterait à la fin de ce scénario, celui de ${libelleEpisode(episode.number)}, sans rien y remplacer ; il en garderait une version. L'assistant reçoit cet épisode, la liste des épisodes de la saison et la fin de ce scénario ; les scénarios des autres épisodes ne lui sont pas transmis.`}
+              etape={sequence}
+              peutAppliquer={acces === "owner" || acces === "editor"}
+            />
+          ) : null}
 
           {retouche ? (
             <Retouches

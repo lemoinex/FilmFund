@@ -168,6 +168,14 @@ grand. Un titre rendu deux fois n'est gardé qu'une. Le devis est refusé hors d
 `executeursScript` sert donc deux familles de profils : ses textes (`PROFILS_SCRIPT`) et ses
 lignes (`PROFILS_SCRIPT_EPISODES`). Le worker annonce une action de plus à son démarrage.
 
+La séquence d'un épisode (lot SE3b) reste l'action `screenplay` et le profil
+`script.scenario@1` : aucune action de plus. Quand la demande désigne un épisode, le
+contexte rendu par la base porte deux champs de plus — `episode` (numéro, titre, résumé) et
+`saison` (cent épisodes au plus, le début de chaque résumé) —, que l'agent place avant la fin
+du scénario, lequel est alors celui de cet épisode. Les scénarios des autres épisodes ne
+partent pas. Si l'épisode a été retiré depuis la demande, la base ne rend aucun contexte :
+l'essai échoue sans appel au fournisseur.
+
 BOARD dessine la vignette d'une scène (lot K1, action `storyboard_image`, profil
 `board.vignette@1`). Il est le seul agent servi par OpenAI : la passerelle l'appelle par une
 requête HTTPS, sans SDK, vers une seule adresse. Sa clé se pose depuis Intégrations IA,
