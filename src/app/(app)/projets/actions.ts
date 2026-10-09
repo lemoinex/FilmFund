@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { ERREURS_EPISODE, messageEpisode } from "@/lib/episodes";
 import { estEtapeValide, estFormatValide } from "@/lib/projets";
 import { COMPARTIMENT_IMAGES } from "@/lib/images";
 import { LIMITE_DU_PLAN } from "@/lib/plans";
@@ -164,7 +165,14 @@ export async function mettreAJourProjet(
     .select("id");
 
   if (error) {
-    return { erreur: "L'enregistrement a échoué. Réessayez dans un instant." };
+    // Un projet qui a des épisodes ne quitte pas le format série : la base le
+    // refuse, et l'écran dit pourquoi plutôt qu'un échec sans motif.
+    return {
+      erreur:
+        error.code === ERREURS_EPISODE.formatAvecEpisodes
+          ? messageEpisode(error.code)
+          : "L'enregistrement a échoué. Réessayez dans un instant.",
+    };
   }
 
   /*

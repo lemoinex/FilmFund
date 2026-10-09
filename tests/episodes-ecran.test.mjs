@@ -440,3 +440,42 @@ describe("Épisodes : la fiche et le journal", () => {
     assert.match(phrase, /les épisodes du projet « Les Marées »/);
   });
 });
+
+describe("Épisodes : le format d'un projet qui en a", () => {
+  const ACTIONS = {
+    "l'assistant de création": "src/app/(app)/projets/[id]/assistant/actions.ts",
+    "le formulaire du projet": "src/app/(app)/projets/actions.ts",
+  };
+
+  it("les deux écrans qui changent le format disent pourquoi la base refuse", () => {
+    for (const [ecran, chemin] of Object.entries(ACTIONS)) {
+      const source = sansCommentaires(lire(chemin));
+      const ecriture = source.indexOf('.from("projects")\n    .update(');
+      assert.ok(ecriture > 0, `${ecran} : écriture du projet introuvable`);
+      const suite = source.slice(ecriture, ecriture + 700);
+      assert.match(
+        suite,
+        /if \(error\) \{\s+return \{\s+erreur:\s+error\.code === ERREURS_EPISODE\.formatAvecEpisodes\s*\? messageEpisode\(error\.code\)\s*: /,
+        ecran,
+      );
+      assert.match(
+        source,
+        /import \{ ERREURS_EPISODE, messageEpisode \} from "@\/lib\/episodes";/,
+        ecran,
+      );
+    }
+  });
+
+  it("tout autre refus garde le message générique : rien d'autre n'est révélé", () => {
+    for (const [ecran, chemin] of Object.entries(ACTIONS)) {
+      const source = sansCommentaires(lire(chemin));
+      // Le message de la base n'est jamais rendu tel quel.
+      assert.doesNotMatch(source, /error\.message|error\.details|error\.hint/, ecran);
+      assert.equal(source.match(/messageEpisode\(/g).length, 1, ecran);
+    }
+    assert.match(
+      messageEpisode(ERREURS_EPISODE.formatAvecEpisodes),
+      /retirez-les avant de changer son format/,
+    );
+  });
+});

@@ -2902,5 +2902,13 @@ verte, déploiement Vercel terminé.
 
 **Non vu en production** : aucune page ouverte sous session, aucun épisode saisi.
 
-**Reste à faire** : SE2, les épisodes proposés par SCRIPT ; et, hors lot, le message de
-l'assistant de création quand la base refuse un changement de format.
+Correctif du 9 octobre 2026, sans migration : le format d'un projet se modifie à deux
+endroits — l'étape « Informations » de l'assistant de création et le formulaire du projet —,
+et tous deux répondaient « L'enregistrement a échoué » quand la base refusait de sortir du
+format série un projet qui a des épisodes. Ils disent maintenant pourquoi : « Ce projet a des
+épisodes : retirez-les avant de changer son format. » Tout autre refus garde le message
+générique, et le message de la base n'est jamais rendu tel quel. Validé localement : deux
+tests de plus, six sabotages attrapés ; aucune page ne change, le message n'a pas été vu dans
+un navigateur.
+
+**Reste à faire** : SE2, les épisodes proposés par SCRIPT.
