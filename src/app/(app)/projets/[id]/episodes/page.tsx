@@ -13,11 +13,19 @@ import {
   numeroSuivant,
 } from "@/lib/episodes";
 import { FORMATS } from "@/lib/projets";
+import {
+  etapeProposition,
+  LIVRABLE_EPISODES,
+  type EpisodePropose,
+  type EtapeProposition,
+} from "@/lib/propositions";
 import { createClient } from "@/lib/supabase/server";
 
 import { OngletsProjet } from "../onglets";
+import { RafraichissementPropositions } from "../proposition";
 
 import { supprimerEpisode } from "./actions";
+import { EpisodesProposes } from "./episodes-proposes";
 import { FormulaireEpisode, type EpisodeEditable } from "./formulaire";
 
 export const metadata: Metadata = {
@@ -73,6 +81,10 @@ export default async function EpisodesPage({
   const episodes: EpisodeEditable[] = data ?? [];
   const edite = peutEditer === true;
   const propose = numeroSuivant(episodes.map((episode) => episode.number));
+  const assistant = await lireAssistant(supabase, id, edite);
+  // Qui écrit les épisodes voit toujours l'encart ; un lecteur, seulement
+  // quand une proposition attend la décision de l'équipe.
+  const montrerAssistant = edite || assistant.etape.etape === "proposition";
 
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
@@ -181,6 +193,82 @@ export default async function EpisodesPage({
           </div>
         </section>
       ) : null}
+
+      <RafraichissementPropositions
+        actif={assistant.etape.etape === "en_attente" || assistant.etape.etape === "en_cours"}
+      />
+      {montrerAssistant ? (
+        <EpisodesProposes
+          projetId={id}
+          etape={assistant.etape}
+          episodes={assistant.proposes}
+          titresExistants={episodes.map((episode) => episode.title)}
+          peutDecider={edite}
+        />
+      ) : null}
     </div>
   );
+}
+
+/**
+ * Où en est la dernière demande d'épisodes sur ce projet, et les lignes de sa
+ * proposition si elle attend encore une décision.
+ *
+ * Trois lectures bornées, sous la RLS de l'appelant. Qui écrit les épisodes
+ * suit la demande depuis sa tâche ; un lecteur ne lit que la dernière
+ * proposition — il n'a pas à voir une demande en cours, seulement ce qui est
+ * proposé à l'équipe.
+ */
+async function lireAssistant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projetId: string,
+  peutDecider: boolean,
+): Promise<{ etape: EtapeProposition; proposes: EpisodePropose[] }> {
+  let etape: EtapeProposition = { etape: "repos" };
+
+  if (peutDecider) {
+    const { data: tache } = await supabase
+      .from("jobs")
+      .select("id, state")
+      .eq("project_id", projetId)
+      .eq("action", LIVRABLE_EPISODES.action)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: proposition } = tache
+      ? await supabase
+          .from("ai_suggestions")
+          .select("id, content, state")
+          .eq("job_id", tache.id)
+          .maybeSingle()
+      : { data: null };
+    etape = etapeProposition(tache, proposition);
+  } else {
+    const { data: proposition } = await supabase
+      .from("ai_suggestions")
+      .select("id, content, state")
+      .eq("project_id", projetId)
+      .eq("action", LIVRABLE_EPISODES.action)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (proposition?.state === "proposed") {
+      etape = { etape: "proposition", propositionId: proposition.id, texte: proposition.content };
+    }
+  }
+
+  if (etape.etape !== "proposition") {
+    return { etape, proposes: [] };
+  }
+
+  const { data: proposes } = await supabase
+    .from("ai_suggestion_episodes")
+    .select("id, position, title, summary, state")
+    .eq("suggestion_id", etape.propositionId)
+    .order("position")
+    // Bornée comme la base borne le dépôt.
+    .limit(LIVRABLE_EPISODES.lignesMax);
+
+  return { etape, proposes: proposes ?? [] };
 }

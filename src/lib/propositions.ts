@@ -648,6 +648,47 @@ export const LIVRABLE_EPISODES = {
   lignesMax: 12,
 } as const;
 
+/** Épisode proposé, tel que l'écran le lit : un titre et un résumé, sans numéro ni durée. */
+export type EpisodePropose = {
+  id: string;
+  position: number;
+  title: string;
+  summary: string;
+  state: string;
+};
+
+/** Où en est une proposition d'épisodes : le même décompte que pour les personnages. */
+export function bilanEpisodes(episodes: readonly { state: string }[]): {
+  enAttente: number;
+  acceptes: number;
+  ecartes: number;
+} {
+  return bilanPersonnages(episodes);
+}
+
+/** « 1 épisode », « 12 épisodes ». */
+export function nombreEpisodes(nombre: number): string {
+  return `${NOMBRE.format(nombre)} ${nombre > 1 ? "épisodes" : "épisode"}`;
+}
+
+/**
+ * Ce que l'écran dit après « tout accepter » des épisodes, qui n'est pas
+ * atomique : si l'un est refusé en chemin — la saison a atteint son dernier
+ * numéro —, les précédents y sont déjà, et l'écran doit le dire plutôt que
+ * d'annoncer un échec.
+ */
+export function messageLotEpisodes(acceptes: number, demandes: number): string {
+  if (acceptes >= demandes) {
+    return `${nombreEpisodes(acceptes)} ${acceptes > 1 ? "ajoutés" : "ajouté"} à la saison.`;
+  }
+  if (acceptes === 0) {
+    return "Aucun épisode n'a pu être ajouté. Réessayez dans un instant.";
+  }
+  return `${nombreEpisodes(acceptes)} sur ${NOMBRE.format(demandes)} ${
+    acceptes > 1 ? "ajoutés" : "ajouté"
+  } à la saison ; les autres attendent toujours votre décision.`;
+}
+
 /**
  * La recherche documentaire (agent SCOUT). Un moteur de recherche collecte
  * des pages, l'assistant de texte en fait une synthèse : ses bornes sont
