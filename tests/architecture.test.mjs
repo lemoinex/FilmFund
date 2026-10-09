@@ -862,6 +862,7 @@ describe("Livrables des agents", () => {
       PROFILS_IA,
       PROFILS_RETOUCHE,
       PROFILS_SCRIPT,
+      PROFILS_SCRIPT_EPISODES,
       PROFILS_WEAVER,
     } = await import("../worker/src/ia/profils.ts");
     // Ni la base ni le fournisseur ne sont touchés : rien n'est appelé ici.
@@ -871,7 +872,11 @@ describe("Livrables des agents", () => {
       ...Object.keys(PROFILS_WEAVER),
       ...Object.keys(PROFILS_RETOUCHE),
     ]);
-    assert.deepEqual(Object.keys(executeursScript({}, vide)), Object.keys(PROFILS_SCRIPT));
+    // SCRIPT sert ses textes, puis ses épisodes, qui ne sont pas un texte.
+    assert.deepEqual(Object.keys(executeursScript({}, vide)), [
+      ...Object.keys(PROFILS_SCRIPT),
+      ...Object.keys(PROFILS_SCRIPT_EPISODES),
+    ]);
     // ARC sert ses textes, puis ses personnages, qui ne sont pas un texte.
     assert.deepEqual(Object.keys(executeursArc({}, vide)), [
       ...Object.keys(PROFILS_ARC),
@@ -2798,6 +2803,257 @@ describe("Personnages proposés par ARC", () => {
     assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursArc\(base, fournisseur\)/);
     assert.match(lire("src/lib/plans.ts"), /cle: "character_list"/);
     assert.match(lire("src/lib/offre.ts"), /bareme\.character_list/);
-    assert.match(lire("src/lib/offre.ts"), /dramatic_analysis, character_list, budget_plan/);
+    assert.match(
+      lire("src/lib/offre.ts"),
+      /dramatic_analysis, character_list, episode_list, budget_plan/,
+    );
+  });
+});
+
+/*
+ * SCRIPT (lot SE2a) : les épisodes proposés. Le profil, la base, le worker et
+ * l'écran décrivent les mêmes épisodes ; un écart ferait refuser un dépôt
+ * après un appel payé. Et aucun chemin ne réécrit un épisode existant.
+ */
+describe("Épisodes proposés par SCRIPT", () => {
+  const MIGRATION = "supabase/migrations/20261009180000_script_episodes.sql";
+  const RETOUCHES = "supabase/migrations/20261008180000_weaver_retouches.sql";
+  const PERSONNAGES = "supabase/migrations/20261007230000_arc_personnages.sql";
+  const EPISODES = "supabase/migrations/20261009120000_episodes.sql";
+  const corpsDans = (fichier, fonction) => {
+    const migration = lire(fichier);
+    const debut = migration.indexOf(`create or replace function public.${fonction}(`);
+    assert.ok(debut >= 0, `${fonction} introuvable`);
+    return migration.slice(debut, migration.indexOf("$$;", debut));
+  };
+  const corps = (fonction) => corpsDans(MIGRATION, fonction);
+
+  it("la base admet l'action de SCRIPT et la facture au barème, sans rien retirer aux autres", async () => {
+    const profils = await import("../worker/src/ia/profils.ts");
+    const migration = lire(MIGRATION);
+    const liste = /devis_action_connue check \(\s*action in \(([^)]+)\)/.exec(migration)?.[1] ?? "";
+    const enBase = [...liste.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    const avant = [
+      .../devis_action_connue check \(\s*action in \(([^)]+)\)/
+        .exec(lire(RETOUCHES))[1]
+        .matchAll(/'(\w+)'/g),
+    ].map((m) => m[1]);
+    const devis = corps("creer_devis");
+
+    for (const [action, profil] of Object.entries(profils.PROFILS_SCRIPT_EPISODES)) {
+      assert.ok(enBase.includes(action), action);
+      assert.ok(devis.includes(`v_quantite := v_bareme.${action};`), `devis de ${action}`);
+      assert.match(profil.id, /^script\.[a-z_]+@\d+$/, action);
+      assert.ok(!(action in profils.PROFILS_SCRIPT), action);
+      assert.ok(!(action in profils.PROFILS_IA), action);
+    }
+    // Une action de plus, et les autres dans le même ordre.
+    assert.deepEqual(
+      enBase.filter((action) => action !== "episode_list"),
+      avant,
+    );
+    assert.equal(enBase.length, avant.length + 1);
+    assert.match(migration, /add column episode_list integer not null default 3;/);
+    assert.match(migration, /alter column episode_list drop default;/);
+    assert.match(
+      migration,
+      /grant insert \(episode_list\) on table public\.text_unit_rate_versions to authenticated;/,
+    );
+    assert.match(
+      migration,
+      /grant select \(episode_list\) on table public\.text_unit_rate_versions to anon;/,
+    );
+  });
+
+  it("creer_devis n'a changé que d'un cas, le barème que d'une colonne, l'écartement que d'une table", () => {
+    // Retirer le cas ajouté doit rendre, au mot près, la fonction du lot RT1.
+    const ajout =
+      /    when 'episode_list' then\n(?: {6}.*\n)+? {6}v_quantite := v_bareme\.episode_list;\n/;
+    const devis = corps("creer_devis");
+    assert.match(devis, ajout);
+    assert.equal(devis.replace(ajout, ""), corpsDans(RETOUCHES, "creer_devis"));
+
+    const contrainte = (fichier) =>
+      /add constraint bareme_poids_positifs check \(([\s\S]*?)\n {2}\);/.exec(lire(fichier))[1];
+    assert.equal(
+      contrainte(MIGRATION).replace("    and episode_list >= 0\n", ""),
+      contrainte(RETOUCHES),
+    );
+
+    const neuvieme =
+      /\n\n {2}update public\.ai_suggestion_episodes\n {2}set state = 'dismissed', decided_by = new\.decided_by, decided_at = new\.decided_at\n {2}where suggestion_id = new\.id and state = 'proposed';/;
+    const ecart = corps("ecarter_lignes_restantes");
+    assert.match(ecart, neuvieme);
+    assert.equal(ecart.replace(neuvieme, ""), corpsDans(PERSONNAGES, "ecarter_lignes_restantes"));
+  });
+
+  it("le schéma ne connaît que le titre et le résumé : ni numéro, ni durée", async () => {
+    const { PROFIL_EPISODES } = await import("../worker/src/ia/profils.ts");
+    const ligne = PROFIL_EPISODES.schema.properties.lines.items;
+    assert.equal(PROFIL_EPISODES.schema.additionalProperties, false);
+    assert.equal(ligne.additionalProperties, false);
+    assert.deepEqual(Object.keys(ligne.properties), ["title", "summary"]);
+    assert.deepEqual(ligne.required, ["title", "summary"]);
+    assert.match(PROFIL_EPISODES.systeme, /Ne numérote pas les épisodes/);
+    assert.match(PROFIL_EPISODES.systeme, /Ne propose aucune durée/);
+    // La table non plus : le numéro naît à l'acceptation, la durée à la saisie.
+    const table = /create table public\.ai_suggestion_episodes \(([\s\S]*?)\n\);/.exec(
+      lire(MIGRATION),
+    )[1];
+    assert.doesNotMatch(table, /\bnumber\b|duration/);
+  });
+
+  it("les bornes du profil, du worker, de l'écran et de la base sont les mêmes", async () => {
+    const { PROFIL_EPISODES } = await import("../worker/src/ia/profils.ts");
+    const { LIVRABLE_EPISODES } = await import("../src/lib/propositions.ts");
+    const { LONGUEURS_EPISODE, NUMERO_EPISODE } = await import("../src/lib/episodes.ts");
+    const migration = lire(MIGRATION);
+    const agent = lire("worker/src/agents/script.ts");
+
+    assert.equal(LIVRABLE_EPISODES.lignesMax, PROFIL_EPISODES.lignesMax);
+    assert.equal(LIVRABLE_EPISODES.action, "episode_list");
+    assert.match(
+      migration,
+      new RegExp(`v_nombre not between 1 and ${PROFIL_EPISODES.lignesMax} then`),
+    );
+    assert.ok(PROFIL_EPISODES.systeme.includes(String(PROFIL_EPISODES.lignesMax)));
+
+    // Le titre et le résumé d'un épisode proposé tiennent dans ceux d'un
+    // épisode : mêmes longueurs, à la table, au dépôt, à l'acceptation.
+    const fois = (borne) =>
+      migration.match(new RegExp(`between 1 and ${borne}(?!\\d)`, "g"))?.length ?? 0;
+    assert.equal(fois(LONGUEURS_EPISODE.title), 3);
+    assert.equal(fois(LONGUEURS_EPISODE.summary), 2);
+    assert.ok(
+      migration.includes(`char_length(v_retenu ->> 'summary') <= ${LONGUEURS_EPISODE.summary}`),
+    );
+    assert.ok(agent.includes(`const TITRE_MAX = ${LONGUEURS_EPISODE.title};`));
+    assert.ok(agent.includes(`const RESUME_MAX = ${LONGUEURS_EPISODE.summary};`));
+    assert.ok(PROFIL_EPISODES.systeme.includes(`${LONGUEURS_EPISODE.title} caractères`));
+    assert.ok(PROFIL_EPISODES.systeme.includes(`jamais plus de ${LONGUEURS_EPISODE.summary}`));
+
+    // Le dernier numéro d'une saison : la borne de l'écran et de la table,
+    // tenue par la base à l'acceptation et au devis.
+    assert.match(lire(EPISODES), new RegExp(`number between 1 and ${NUMERO_EPISODE.max}\\)`));
+    assert.ok(
+      corps("accepter_episode_propose").includes(`if v_numero > ${NUMERO_EPISODE.max} then`),
+    );
+    assert.match(corps("creer_devis"), new RegExp(`\\) >= ${NUMERO_EPISODE.max} then`));
+  });
+
+  it("SCRIPT lit le concept, les personnages, les épisodes et la bible, jamais le scénario ni le budget", () => {
+    const contexte = corps("contexte_episodes");
+    assert.match(contexte, /and j\.action = 'episode_list'/);
+    assert.match(contexte, /from public\.project_characters c/);
+    assert.match(contexte, /from public\.project_episodes e/);
+    // Un seul type de document part : la bible.
+    assert.equal(contexte.match(/public\.project_documents/g).length, 1);
+    assert.match(contexte, /where d\.project_id = v_projet\.id and d\.type = 'bible'/);
+    assert.doesNotMatch(
+      contexte,
+      /budget|project_members|profiles|fundings|storyboard|scene_shots|scenario/,
+    );
+    // Trois lectures bornées : les personnages, les épisodes, la bible.
+    assert.deepEqual(contexte.match(/limit \d+/g), ["limit 50", "limit 100", "limit 1"]);
+    assert.match(contexte, /left\(d\.content, 20000\)/);
+  });
+
+  it("le contexte part dans l'ordre du dépôt : la donnée, puis l'objectif", () => {
+    const agent = lire("worker/src/agents/script.ts");
+    const rangs = [
+      '"<projet>"',
+      '"<contexte>"',
+      '"<personnages>"',
+      '"<episodes_deja_saisis>"',
+      '"<vision>"',
+      '"<bible_de_serie>"',
+      "return [...blocs, objectif]",
+    ].map((repere) => agent.indexOf(repere));
+    assert.ok(
+      rangs.every((rang, i) => rang >= 0 && (i === 0 || rang > rangs[i - 1])),
+      rangs.join(", "),
+    );
+  });
+
+  it("aucun chemin ne réécrit un épisode existant", () => {
+    const migration = lire(MIGRATION);
+    assert.doesNotMatch(
+      migration,
+      /update public\.project_episodes|delete from public\.project_episodes/,
+    );
+    assert.equal(migration.split("insert into public.project_episodes").length - 1, 1);
+    // L'épisode accepté prend le numéro qui suit le plus grand.
+    assert.match(corps("accepter_episode_propose"), /coalesce\(max\(e\.number\), 0\) \+ 1/);
+    assert.match(lire("worker/src/ia/profils.ts"), /Tu ne modifies aucun épisode existant/);
+  });
+
+  it("les épisodes proposés suivent les droits des épisodes et ne s'écrivent que par fonctions", () => {
+    const migration = lire(MIGRATION);
+    assert.match(
+      migration,
+      /on public\.ai_suggestion_episodes for select\s+to authenticated\s+using \(public\.acces_au_projet\(project_id\) is not null or \(select public\.is_admin\(\)\)\)/,
+    );
+    assert.match(migration, /on public\.ai_suggestion_episodes\s+as restrictive/);
+    assert.match(
+      migration,
+      /revoke all on table public\.ai_suggestion_episodes from anon, authenticated/,
+    );
+    assert.match(
+      corps("episode_a_decider"),
+      /\(public\.mode_prive\(\) and not public\.is_admin\(\)\)\s+or not coalesce\(public\.peut_editer_contenu\(v_ligne\.project_id\), false\)/,
+    );
+    for (const [, nom] of migration.matchAll(/create policy "([^"]+)"/g)) {
+      assert.ok(Buffer.byteLength(nom) <= 63, nom);
+    }
+    const accordes = [...migration.matchAll(/^grant [^;]+ to filmfund_worker;/gm)].map((m) => m[0]);
+    assert.deepEqual(accordes, [
+      "grant execute on function public.contexte_episodes(uuid) to filmfund_worker;",
+      "grant execute on function public.livrer_proposition_episodes(uuid, jsonb) to filmfund_worker;",
+    ]);
+    for (const signature of [
+      "controler_episode_propose()",
+      "contexte_episodes(uuid)",
+      "livrer_proposition_episodes(uuid, jsonb)",
+      "clore_proposition_episodes(uuid)",
+      "episode_a_decider(uuid)",
+      "accepter_episode_propose(uuid, jsonb)",
+      "ecarter_episode_propose(uuid)",
+    ]) {
+      assert.match(
+        migration,
+        new RegExp(
+          `revoke all on function public\\.${signature.replace(/[()]/g, "\\$&")}\\s+from public, anon, authenticated`,
+        ),
+        signature,
+      );
+    }
+  });
+
+  it("le registre sert SCRIPT, et le barème, la vitrine et les statistiques connaissent l'action", async () => {
+    const { executeursScript } = await import("../worker/src/agents/script.ts");
+    const { PROFILS_SCRIPT, PROFILS_SCRIPT_EPISODES } = await import("../worker/src/ia/profils.ts");
+    const { LIBELLES_ACTION } = await import("../src/lib/statistiques.ts");
+    const vide = async () => ({});
+    assert.deepEqual(Object.keys(executeursScript({}, vide)), [
+      ...Object.keys(PROFILS_SCRIPT),
+      ...Object.keys(PROFILS_SCRIPT_EPISODES),
+    ]);
+    assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursScript\(base, fournisseur\)/);
+    assert.match(lire("src/lib/plans.ts"), /cle: "episode_list"/);
+    assert.match(lire("src/lib/offre.ts"), /bareme\.episode_list/);
+    assert.match(lire("src/lib/offre.ts"), /character_list, episode_list, budget_plan/);
+    assert.equal(LIBELLES_ACTION.episode_list, "Épisodes");
+  });
+
+  it("l'écran dira ce qui part chez le fournisseur, et que rien n'est modifié", async () => {
+    const { LIVRABLE_EPISODES } = await import("../src/lib/propositions.ts");
+    assert.match(LIVRABLE_EPISODES.description, /pitch, synopsis, thème, enjeux, vision/);
+    assert.match(LIVRABLE_EPISODES.description, /épisodes déjà saisis/);
+    assert.match(LIVRABLE_EPISODES.description, /bible de série si elle existe/);
+    assert.match(LIVRABLE_EPISODES.description, /fournisseur d'IA/);
+    assert.match(LIVRABLE_EPISODES.description, /Il n'en modifie aucun/);
+    assert.match(LIVRABLE_EPISODES.avertissement, /relisez chaque résumé/);
+    assert.match(LIVRABLE_EPISODES.avertissement, /numéro qui suit le dernier/);
+    assert.match(LIVRABLE_EPISODES.avertissement, /durée reste à saisir/);
   });
 });

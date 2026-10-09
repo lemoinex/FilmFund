@@ -511,8 +511,24 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   (`SE001`) ; deux épisodes d'un projet n'ont pas le même numéro ; **un projet
   qui a des épisodes ne quitte pas le format série** (`SE002`) — il faut les
   retirer d'abord, la base ne les supprime jamais d'elle-même. Les épisodes
-  n'entrent ni dans les exports, ni dans le contexte d'un agent, ni dans le
-  score de maturité : chacun demande son lot. Le scénario reste un par projet.
+  n'entrent ni dans les exports, ni dans le score de maturité : chacun demande
+  son lot. Le scénario reste un par projet.
+- Épisodes proposés (lot SE2a, agent SCRIPT, action `episode_list`, profil
+  `script.episodes@1`, table `ai_suggestion_episodes`) : base et worker
+  livrés, **sans écran** — sur le modèle des personnages proposés, acceptés
+  ou écartés un à un. SCRIPT lit le projet, son concept, sa vision, ses
+  personnages, les épisodes déjà saisis et **la bible de série si elle
+  existe**, seule parmi les documents ; ni scénario, ni budget. **Il ne
+  propose que des épisodes à ajouter** : aucun chemin ne réécrit un épisode
+  existant, et un épisode accepté prend le numéro qui suit le plus grand —
+  jamais un trou, jamais la place d'un autre. Une ligne proposée porte un
+  titre et un résumé : **ni numéro, ni durée**. Douze au plus par
+  proposition, 3 unités. Un devis est refusé, avant toute dépense, pour un
+  projet qui n'est pas une série ou dont la saison n'a plus de numéro libre.
+  Ses consignes lui interdisent de contredire la bible, de numéroter, et
+  d'écrire sur une série documentaire ce que le dossier ne dit pas : ne pas
+  les affaiblir. Tenu à part de `PROFILS_SCRIPT`, dont chaque entrée est un
+  texte (`PROFILS_SCRIPT_EPISODES`, catalogue `LIVRABLE_EPISODES`).
 - Les documents restent cohérents avec les données de projet et entre eux.
 - Éditeur : texte, titres, listes, gras, italique, sauvegarde automatique,
   comparaison de versions. Lot ED, décisions du 8 octobre 2026 : **la mise en

@@ -40,18 +40,18 @@ select throws_ok(
   $$ insert into public.text_unit_rate_versions
        (logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note,
         direction_note, pitch_extended, pitch_oral,
-        dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research,
+        dramatic_analysis, character_list, episode_list, budget_plan, schedule_plan, shot_list, gear_list, research,
         cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage)
-     values (1, 1, 2, 3, 3, 3, -1, 2, 4, 3, 6, 3, 4, 5, 3, 3, 8, 10, 2, 1, 1) $$,
+     values (1, 1, 2, 3, 3, 3, -1, 2, 4, 3, 3, 6, 3, 4, 5, 3, 3, 8, 10, 2, 1, 1) $$,
   '23514', null, 'Un prix négatif pour un pitch est refusé'
 );
 
 select throws_ok(
   $$ insert into public.text_unit_rate_versions
        (logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note,
-        dramatic_analysis, character_list, budget_plan, schedule_plan, shot_list, gear_list, research,
+        dramatic_analysis, character_list, episode_list, budget_plan, schedule_plan, shot_list, gear_list, research,
         cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage)
-     values (1, 1, 2, 3, 3, 4, 3, 6, 3, 4, 5, 3, 3, 8, 10, 2, 1, 1) $$,
+     values (1, 1, 2, 3, 3, 4, 3, 3, 6, 3, 4, 5, 3, 3, 8, 10, 2, 1, 1) $$,
   '23502', null, 'Une version qui tait ces prix est refusée, au lieu de valoir un défaut'
 );
 

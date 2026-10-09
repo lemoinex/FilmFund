@@ -158,6 +158,16 @@ fois n'est gardé qu'une ; un homonyme d'un personnage saisi est laissé à la d
 l'équipe. `executeursArc` sert donc deux familles de profils : ses textes (`PROFILS_ARC`) et
 ses lignes (`PROFILS_ARC_PERSONNAGES`).
 
+SCRIPT propose les épisodes d'une série (lot SE2a, action `episode_list`, profil
+`script.episodes@1`), sur le même chemin. Sa demande vise le projet entier ; son contexte porte
+le concept, la vision, les personnages, les épisodes déjà saisis — cent au plus, le début de
+chaque résumé — et la bible de série la plus récente, brouillon compris, bornée à 20 000
+caractères ; ni scénario, ni autre document, ni budget. Une ligne rendue porte un titre et un
+résumé, sans numéro ni durée : la base donne à l'épisode accepté le numéro qui suit le plus
+grand. Un titre rendu deux fois n'est gardé qu'une. Le devis est refusé hors d'une série.
+`executeursScript` sert donc deux familles de profils : ses textes (`PROFILS_SCRIPT`) et ses
+lignes (`PROFILS_SCRIPT_EPISODES`). Le worker annonce une action de plus à son démarrage.
+
 BOARD dessine la vignette d'une scène (lot K1, action `storyboard_image`, profil
 `board.vignette@1`). Il est le seul agent servi par OpenAI : la passerelle l'appelle par une
 requête HTTPS, sans SDK, vers une seule adresse. Sa clé se pose depuis Intégrations IA,
