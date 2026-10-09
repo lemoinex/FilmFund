@@ -10,10 +10,13 @@ import {
   echeanceDe,
   filtreMontantActif,
   filtrerCatalogue,
+  filtrerParLangue,
   filtrerParMontant,
   filtresActifs,
   jourCourant,
+  languesDuCatalogue,
   LIMITE_CATALOGUE,
+  lireFiltreLangue,
   lireFiltreMontant,
   lireFiltres,
   montantEnClair,
@@ -55,7 +58,7 @@ export default async function OpportunitesPage({
   const { data, error } = await supabase
     .from("funding_opportunities")
     .select(
-      "id, name, organization, category, description, countries, formats, genres, budget_min, budget_max, currency, deadline, source_url, collected_on, status",
+      "id, name, organization, category, description, countries, formats, genres, languages, budget_min, budget_max, currency, deadline, source_url, collected_on, status",
     )
     .in("status", STATUTS_VISIBLES)
     .order("updated_at", { ascending: false })
@@ -72,6 +75,10 @@ export default async function OpportunitesPage({
   const actifs = filtresActifs(filtres) || filtreMontantActif(montant);
   // Les filtres trient ; celui du montant, qui garde l'ordre reçu, passe après.
   const retenues = filtrerParMontant(filtrerCatalogue(catalogue, filtres, aujourdhui), montant);
+  // Celui de la langue, tenu à part lui aussi, passe en dernier.
+  const langue = lireFiltreLangue((champ) => parametres[champ]);
+  const affichees = filtrerParLangue(retenues, langue);
+  const filtree = actifs || langue !== null;
 
   const noms = new Intl.DisplayNames("fr", { type: "region", fallback: "none" });
   const nomPays = (code: string) => noms.of(code) ?? code;
@@ -80,6 +87,7 @@ export default async function OpportunitesPage({
     .map((code) => [code, nomPays(code)] as const)
     .sort((a, b) => ordre.compare(a[1], b[1]));
   const devises = devisesDuCatalogue(catalogue);
+  const langues = languesDuCatalogue(catalogue);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
@@ -96,14 +104,16 @@ export default async function OpportunitesPage({
             <FiltresOpportunites
               filtres={filtres}
               montant={montant}
+              langue={langue}
               pays={pays}
               devises={devises}
-              actifs={actifs}
+              langues={langues}
+              actifs={filtree}
             />
             <p className="text-light mt-4 text-xs leading-relaxed text-pretty">
               Un filtre ne retient que les opportunités qui précisent ce que vous cherchez : celles
-              dont la source ne dit rien du pays, du type de projet ou du genre n&apos;y figurent
-              pas.
+              dont la source ne dit rien du pays, du type de projet, du genre ou de la langue
+              n&apos;y figurent pas.
             </p>
             {devises.length ? (
               <p
@@ -116,17 +126,17 @@ export default async function OpportunitesPage({
           </div>
 
           <p role="status" className="text-secondary mt-6 text-sm">
-            {retenues.length > 1
-              ? `${retenues.length} opportunités`
-              : retenues.length === 1
+            {affichees.length > 1
+              ? `${affichees.length} opportunités`
+              : affichees.length === 1
                 ? "Une opportunité"
                 : "Aucune opportunité"}
-            {actifs ? ` sur ${catalogue.length}, d'après vos filtres.` : "."}
+            {filtree ? ` sur ${catalogue.length}, d'après vos filtres.` : "."}
           </p>
 
-          {retenues.length ? (
+          {affichees.length ? (
             <ul className="mt-5 space-y-5">
-              {retenues.map((opportunite) => {
+              {affichees.map((opportunite) => {
                 const statut = statutPresente(opportunite, aujourdhui);
                 const expiree = echeanceDe(opportunite, aujourdhui) === "passee";
                 return (

@@ -605,10 +605,24 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   filtres. Le montant reste hors de la compatibilité.
 - Compatibilité (lot L5b, sans IA) : onglet « Opportunités » du projet, ouvert à
   toute l'équipe ; règles dans `src/lib/compatibilite.ts`, rien n'est stocké.
-  Trois critères — type de projet, pays, genre —, quatre états, **un décompte et
-  non une note** : ni pourcentage, ni score sur 100. Le montant n'est pas un
-  critère, et la comparaison ne lit ni budget ni financement. Ne pas créer un
-  second calcul : étendre celui-ci.
+  Cinq critères depuis le lot OP2 — type de projet, pays, genre, durée, stade
+  d'avancement —, quatre états, **un décompte et non une note** : ni
+  pourcentage, ni score sur 100. Le montant n'est pas un critère, et la
+  comparaison ne lit ni budget ni financement. Ne pas créer un second calcul :
+  étendre celui-ci.
+- Langue, durée et stade (lot OP2, sans IA) : quatre colonnes du catalogue —
+  `languages` (cinq langues, liste fermée : `LANGUES_OPPORTUNITE`, égale à
+  celle de la base), `stages`, `duration_min_minutes`, `duration_max_minutes`.
+  Vides ou nulles, elles veulent dire « non précisé », jamais « tout ». **La
+  durée se compare à une fourchette, bornes comprises ; le stade comparé est
+  l'étape du projet, toujours renseignée.** « À étudier » garde sa règle — au
+  moins un critère rempli, aucun contredit — sur cinq critères : un stade ou
+  une durée contredits écartent une opportunité du tableau de bord et des
+  alertes. **La langue est un filtre, pas un critère** : les langues d'un
+  projet sont un texte libre, ne pas les comparer. Filtre tenu à part de
+  `lireFiltres` (`lireFiltreLangue`, `filtrerParLangue`), appliqué en dernier,
+  proposé seulement si une opportunité lue demande une langue. Ajouter une
+  langue, c'est une migration. Thématique et exigences restent sur la fiche.
 - Candidature depuis une opportunité (lot U1, sans IA, sans migration) : le bouton
   « Préparer une candidature » de l'onglet « Opportunités » ouvre le formulaire
   des financements, prérempli (`preremplirCandidature`, `?opportunite=<id>`).

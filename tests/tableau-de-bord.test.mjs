@@ -44,15 +44,32 @@ const echeance = (titre, jour, nature = "etape") => ({
 const titres = (liste) => liste.map((e) => e.titre);
 
 describe("Tableau de bord : la règle « à étudier »", () => {
-  const PROJET = { format: "documentaire", genre: "societe", countries: ["CM"] };
+  const PROJET = {
+    format: "documentaire",
+    genre: "societe",
+    countries: ["CM"],
+    duration_minutes: 75,
+    stage: "developpement",
+  };
   const juge = (opportunite) =>
     estAEtudier(
-      calculerCompatibilite(PROJET, { formats: [], genres: [], countries: [], ...opportunite }),
+      calculerCompatibilite(PROJET, {
+        formats: [],
+        genres: [],
+        countries: [],
+        stages: [],
+        duration_min_minutes: null,
+        duration_max_minutes: null,
+        ...opportunite,
+      }),
     );
 
   it("au moins un critère rempli, aucun contredit", () => {
     assert.equal(juge({ formats: ["documentaire"] }), true);
     assert.equal(juge({ formats: ["documentaire"], countries: ["CM"], genres: ["societe"] }), true);
+    // La durée et le stade désignent une opportunité comme les trois autres (lot OP2).
+    assert.equal(juge({ stages: ["developpement"] }), true);
+    assert.equal(juge({ duration_min_minutes: 52, duration_max_minutes: 90 }), true);
   });
 
   it("une opportunité qui ne précise rien n'est pas « à étudier » : rien ne la désigne", () => {
@@ -64,9 +81,24 @@ describe("Tableau de bord : la règle « à étudier »", () => {
       juge({ formats: ["documentaire"], genres: ["societe"], countries: ["SN"] }),
       false,
     );
+    // Un stade ou une durée que le projet contredit l'écarte tout autant.
+    assert.equal(
+      juge({ formats: ["documentaire"], genres: ["societe"], stages: ["production"] }),
+      false,
+    );
+    assert.equal(juge({ formats: ["documentaire"], duration_max_minutes: 30 }), false);
+  });
+
+  it("le tableau de bord lit du projet et du catalogue ce que les cinq critères comparent", () => {
+    const page = lire(`${DOSSIER}/page.tsx`);
+    assert.match(page, /\.select\("format, genre, countries, duration_minutes, stage"\)/);
+    assert.match(page, /genres, stages, duration_min_minutes, duration_max_minutes,/);
   });
 
   it("la règle est dite, et ne promet rien", () => {
+    for (const critere of ["type de projet", "pays", "genre", "durée", "stade d'avancement"]) {
+      assert.ok(REGLE_A_ETUDIER.includes(critere), critere);
+    }
     assert.match(REGLE_A_ETUDIER, /au moins un critère rempli/);
     assert.match(REGLE_A_ETUDIER, /aucun contredit/);
     assert.match(REGLE_A_ETUDIER, /pas une garantie d'éligibilité/);

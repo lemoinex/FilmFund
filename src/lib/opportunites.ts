@@ -59,6 +59,23 @@ export const LONGUEURS_OPPORTUNITE = {
 } as const;
 
 export const MAX_PAYS_OPPORTUNITE = 60;
+
+/**
+ * Langues qu'une opportunité peut demander (lot OP2). Cinq, et aucune autre :
+ * une autre langue se dit dans les exigences. Mêmes codes qu'en base.
+ */
+export const LANGUES_OPPORTUNITE = {
+  fr: "Français",
+  en: "Anglais",
+  pt: "Portugais",
+  ar: "Arabe",
+  es: "Espagnol",
+} as const;
+
+export type LangueOpportunite = keyof typeof LANGUES_OPPORTUNITE;
+
+/** Bornes d'une durée demandée, en minutes : celles de la durée d'un projet. */
+export const DUREE_OPPORTUNITE = { min: 1, max: 1000 } as const;
 /** Montant le plus grand que la base range : douze chiffres avant la virgule. */
 export const MONTANT_MAX = 999_999_999_999;
 
@@ -73,6 +90,11 @@ export type ValeursOpportunite = {
   /** Codes des formats et des genres d'un projet, contrôlés contre leurs référentiels. */
   formats: string[];
   genres: string[];
+  /** Vides ou nulles : la source ne le précise pas. */
+  languages: LangueOpportunite[];
+  stages: string[];
+  duration_min_minutes: number | null;
+  duration_max_minutes: number | null;
   budget_min: number | null;
   budget_max: number | null;
   currency: string | null;
@@ -150,6 +172,19 @@ function montant(valeur: unknown): number | null | "invalide" {
   return nombre <= MONTANT_MAX ? nombre : "invalide";
 }
 
+/** Une durée en minutes entières, dans les bornes ; null si vide. */
+function minutes(valeur: unknown): number | null | "invalide" {
+  const brut = texte(valeur).trim();
+  if (!brut) {
+    return null;
+  }
+  if (!/^\d+$/.test(brut)) {
+    return "invalide";
+  }
+  const nombre = Number(brut);
+  return nombre >= DUREE_OPPORTUNITE.min && nombre <= DUREE_OPPORTUNITE.max ? nombre : "invalide";
+}
+
 /** « CM, ga ; CG » → ["CM", "GA", "CG"], sans doublon ; null si un code n'en est pas un. */
 export function lirePays(valeur: unknown): string[] | null {
   const codes = texte(valeur)
@@ -189,6 +224,7 @@ export function lireOpportunite(
   referentiels: {
     formats: Readonly<Record<string, string>>;
     genres: Readonly<Record<string, string>>;
+    etapes: Readonly<Record<string, string>>;
   },
 ): { valeurs: ValeursOpportunite } | { erreur: string } {
   const name = ligne(lire("name"));
@@ -258,6 +294,25 @@ export function lireOpportunite(
   if (formats === null || genres === null) {
     return { erreur: "Type de projet ou genre inconnu." };
   }
+  const languages = choix(lireTous("languages"), LANGUES_OPPORTUNITE);
+  const stages = choix(lireTous("stages"), referentiels.etapes);
+  if (languages === null || stages === null) {
+    return { erreur: "Langue ou stade d'avancement inconnu." };
+  }
+  const duration_min_minutes = minutes(lire("duration_min_minutes"));
+  const duration_max_minutes = minutes(lire("duration_max_minutes"));
+  if (duration_min_minutes === "invalide" || duration_max_minutes === "invalide") {
+    return {
+      erreur: `Une durée se donne en minutes entières, de ${DUREE_OPPORTUNITE.min} à ${DUREE_OPPORTUNITE.max}.`,
+    };
+  }
+  if (
+    duration_min_minutes !== null &&
+    duration_max_minutes !== null &&
+    duration_min_minutes > duration_max_minutes
+  ) {
+    return { erreur: "La durée minimale dépasse la durée maximale." };
+  }
 
   const budget_min = montant(lire("budget_min"));
   const budget_max = montant(lire("budget_max"));
@@ -308,6 +363,10 @@ export function lireOpportunite(
       countries,
       formats,
       genres,
+      languages,
+      stages,
+      duration_min_minutes,
+      duration_max_minutes,
       budget_min,
       budget_max,
       currency: devise || null,
@@ -363,6 +422,25 @@ export function montantEnClair(opportunite: {
   return min !== null
     ? `À partir de ${NOMBRE.format(min)} ${currency}`
     : `Jusqu'à ${NOMBRE.format(max as number)} ${currency}`;
+}
+
+/**
+ * « De 52 à 90 minutes », « Au moins 52 minutes », « Au plus 90 minutes » ;
+ * null si la source ne dit rien de la durée — à l'écran de dire « non fourni ».
+ */
+export function dureeEnClair(opportunite: {
+  duration_min_minutes: number | null;
+  duration_max_minutes: number | null;
+}): string | null {
+  const { duration_min_minutes: min, duration_max_minutes: max } = opportunite;
+  const enMinutes = (nombre: number) => `${nombre} minute${nombre > 1 ? "s" : ""}`;
+  if (min === null && max === null) {
+    return null;
+  }
+  if (min !== null && max !== null) {
+    return min === max ? enMinutes(min) : `De ${min} à ${enMinutes(max)}`;
+  }
+  return min !== null ? `Au moins ${enMinutes(min)}` : `Au plus ${enMinutes(max as number)}`;
 }
 
 /** Le jour courant en UTC, AAAA-MM-JJ : la base compte de même. */
@@ -783,4 +861,40 @@ export function devisesDuCatalogue(
     }
   }
   return [...devises].sort();
+}
+
+/**
+ * Filtre par langue (lot OP2), tenu à part des autres comme celui du montant.
+ * Une valeur inconnue est ignorée plutôt que refusée ; null : filtre inactif.
+ */
+export function lireFiltreLangue(lire: (champ: string) => unknown): LangueOpportunite | null {
+  const langue = texte(lire("langue")).trim().toLowerCase();
+  return Object.hasOwn(LANGUES_OPPORTUNITE, langue) ? (langue as LangueOpportunite) : null;
+}
+
+/**
+ * Les opportunités qui demandent la langue choisie, dans l'ordre reçu. Comme
+ * pour les pays, une liste vide veut dire « non précisé », pas « toutes les
+ * langues » : une opportunité qui ne dit rien de la langue n'est pas retenue.
+ */
+export function filtrerParLangue<Opportunite extends { languages: readonly string[] }>(
+  catalogue: readonly Opportunite[],
+  langue: LangueOpportunite | null,
+): Opportunite[] {
+  return langue === null
+    ? [...catalogue]
+    : catalogue.filter((opportunite) => opportunite.languages.includes(langue));
+}
+
+/**
+ * Les langues qu'une opportunité du catalogue demande, dans l'ordre du
+ * référentiel : les seules que le filtre propose.
+ */
+export function languesDuCatalogue(
+  catalogue: readonly { languages: readonly string[] }[],
+): LangueOpportunite[] {
+  const demandees = new Set(catalogue.flatMap((opportunite) => opportunite.languages));
+  return (Object.keys(LANGUES_OPPORTUNITE) as LangueOpportunite[]).filter((langue) =>
+    demandees.has(langue),
+  );
 }

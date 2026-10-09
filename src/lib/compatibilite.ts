@@ -1,10 +1,11 @@
 /**
- * Compatibilité d'une opportunité avec un projet (lot L5b), sans IA.
+ * Compatibilité d'une opportunité avec un projet (lots L5b et OP2), sans IA.
  *
  * Des règles lisibles, sur ce que le catalogue et le projet portent tous deux
- * dans un champ comparable : le type de projet, le pays et le genre. Rien
- * d'autre n'est jugé — ni la durée, ni le stade, ni la thématique, ni la
- * langue, ni les exigences, que le catalogue ne porte pas ainsi.
+ * dans un champ comparable : le type de projet, le pays, le genre, la durée
+ * et le stade d'avancement. Rien d'autre n'est jugé — ni la thématique, ni la
+ * langue, ni les exigences, ni le montant, que l'un des deux ne porte pas
+ * ainsi.
  *
  * Le résultat est un décompte, pas une note : « 2 critères remplis sur 3 »,
  * avec ce qui n'a pas pu être évalué. C'est une aide à la décision ; il ne
@@ -19,6 +20,8 @@ export const CRITERES_COMPATIBILITE = {
   format: "Type de projet",
   pays: "Pays",
   genre: "Genre",
+  duree: "Durée",
+  stade: "Stade d'avancement",
 } as const;
 
 export type CodeCritereCompatibilite = keyof typeof CRITERES_COMPATIBILITE;
@@ -44,7 +47,7 @@ export const ETATS_CRITERE: Readonly<Record<EtatCritere, string>> = {
 
 /** Ce que l'écran dit, une fois, de ce que le calcul ne regarde pas. */
 export const LIMITES_COMPATIBILITE =
-  "Ce décompte compare trois choses que le catalogue et votre projet disent tous deux : le type de projet, le pays et le genre. Il ne juge ni la durée, ni le stade d'avancement, ni la thématique, ni la langue, ni les exigences, qui se lisent sur la fiche de l'opportunité. C'est une aide pour trier, pas une garantie d'éligibilité : seule la source fait foi.";
+  "Ce décompte compare cinq choses que le catalogue et votre projet disent tous deux : le type de projet, le pays, le genre, la durée et le stade d'avancement. Il ne juge ni la thématique, ni la langue, ni les exigences, qui se lisent sur la fiche de l'opportunité. C'est une aide pour trier, pas une garantie d'éligibilité : seule la source fait foi.";
 
 /** Dit à côté du critère « Pays » : ce que la comparaison suppose. */
 export const RESERVE_PAYS =
@@ -54,13 +57,24 @@ export type ProjetCompare = {
   format: string;
   genre: string | null;
   countries: readonly string[];
+  /** Durée prévue, en minutes ; null si la fiche ne la dit pas. */
+  duration_minutes: number | null;
+  /** Étape actuelle du projet : toujours renseignée. */
+  stage: string;
 };
 
 export type OpportuniteComparee = {
   formats: readonly string[];
   genres: readonly string[];
   countries: readonly string[];
+  stages: readonly string[];
+  /** Fourchette de durée admise, en minutes ; une borne nulle n'est pas dite. */
+  duration_min_minutes: number | null;
+  duration_max_minutes: number | null;
 };
+
+/** Durée admise par une opportunité : l'une des deux bornes au moins est dite. */
+export type FourchetteDuree = { min: number | null; max: number | null };
 
 export type CritereCompare = {
   code: CodeCritereCompatibilite;
@@ -71,6 +85,12 @@ export type CritereCompare = {
   duProjet: string[];
   /** Codes communs : ce qui fait que le critère est rempli. */
   communs: string[];
+  /**
+   * Durée seulement : la fourchette demandée. Une durée ne se compare pas
+   * comme une liste de codes — `admis` reste alors vide, et `duProjet` porte
+   * la durée du projet, en minutes.
+   */
+  fourchette?: FourchetteDuree;
 };
 
 export type Compatibilite = {
@@ -102,10 +122,39 @@ function comparer(
 }
 
 /**
+ * La durée du projet tombe-t-elle dans la fourchette demandée ? Les bornes
+ * sont comprises : « de 52 à 90 minutes » admet 52 comme 90.
+ */
+function comparerDuree(fourchette: FourchetteDuree, duree: number | null): CritereCompare {
+  const precise = fourchette.min !== null || fourchette.max !== null;
+  const dedans =
+    duree !== null &&
+    (fourchette.min === null || duree >= fourchette.min) &&
+    (fourchette.max === null || duree <= fourchette.max);
+  const etat: EtatCritere = !precise
+    ? "non_precise"
+    : duree === null
+      ? "non_renseigne"
+      : dedans
+        ? "rempli"
+        : "non_rempli";
+  const duProjet = duree === null ? [] : [String(duree)];
+  return {
+    code: "duree",
+    etat,
+    admis: [],
+    duProjet,
+    communs: etat === "rempli" ? [...duProjet] : [],
+    ...(precise ? { fourchette: { ...fourchette } } : {}),
+  };
+}
+
+/**
  * Compare un projet à une opportunité, critère par critère.
  *
  * Pays : un seul pays de production commun suffit — une coproduction se
- * présente au titre de l'un de ses pays.
+ * présente au titre de l'un de ses pays. Stade : l'étape actuelle du projet,
+ * toujours renseignée — ce critère n'est jamais « non renseigné ».
  */
 export function calculerCompatibilite(
   projet: ProjetCompare,
@@ -115,6 +164,11 @@ export function calculerCompatibilite(
     comparer("format", opportunite.formats, projet.format ? [projet.format] : []),
     comparer("pays", opportunite.countries, projet.countries),
     comparer("genre", opportunite.genres, projet.genre ? [projet.genre] : []),
+    comparerDuree(
+      { min: opportunite.duration_min_minutes, max: opportunite.duration_max_minutes },
+      projet.duration_minutes,
+    ),
+    comparer("stade", opportunite.stages, projet.stage ? [projet.stage] : []),
   ];
   const remplis = criteres.filter((critere) => critere.etat === "rempli").length;
   const nonRemplis = criteres.filter((critere) => critere.etat === "non_rempli").length;
@@ -130,7 +184,7 @@ export function calculerCompatibilite(
 
 /**
  * Le décompte en une phrase : « 2 critères remplis sur 3 évalués, 1 non
- * évalué. » Aucun pourcentage : trois critères n'en font pas une mesure.
+ * évalué. » Aucun pourcentage : cinq critères n'en font pas une mesure.
  */
 export function decompteEnClair(compatibilite: Compatibilite): string {
   const { remplis, evalues, nonEvalues } = compatibilite;
@@ -150,11 +204,28 @@ export function decompteEnClair(compatibilite: Compatibilite): string {
   return `${base}${incertitude}.`;
 }
 
+const enMinutes = (nombre: number) => `${nombre} minute${nombre > 1 ? "s" : ""}`;
+
+/** « de 52 à 90 minutes », « au moins 52 minutes », « au plus 90 minutes ». */
+function fourchetteEnClair({ min, max }: FourchetteDuree): string {
+  if (min !== null && max !== null) {
+    return min === max ? enMinutes(min) : `de ${min} à ${enMinutes(max)}`;
+  }
+  return min !== null ? `au moins ${enMinutes(min)}` : `au plus ${enMinutes(max ?? 0)}`;
+}
+
 /**
  * La raison d'un critère, en clair. `nommer` rend le libellé d'un code — un
- * pays, un format, un genre —, tenu ailleurs.
+ * pays, un format, un genre, un stade —, tenu ailleurs ; la durée se dit en
+ * minutes, sans lui.
  */
 export function raisonCritere(critere: CritereCompare, nommer: (code: string) => string): string {
+  if (critere.fourchette) {
+    const demande = `Demandé : ${fourchetteEnClair(critere.fourchette)}.`;
+    return critere.etat === "non_renseigne"
+      ? `${demande} Votre projet ne le dit pas encore : complétez sa fiche.`
+      : `${demande} Votre projet : ${enMinutes(Number(critere.duProjet[0]))}.`;
+  }
   const liste = (codes: readonly string[]) => codes.map(nommer).join(", ");
   switch (critere.etat) {
     case "rempli":
@@ -195,7 +266,7 @@ export function classerParCompatibilite<Ligne extends { compatibilite: Compatibi
 
 /**
  * « À étudier » : au moins un critère rempli, aucun contredit. Ce n'est pas
- * « compatible » — trois critères ne font pas une éligibilité —, c'est ce qui
+ * « compatible » — cinq critères ne font pas une éligibilité —, c'est ce qui
  * mérite d'être ouvert en premier.
  */
 export function estAEtudier(compatibilite: Compatibilite): boolean {
@@ -204,4 +275,4 @@ export function estAEtudier(compatibilite: Compatibilite): boolean {
 
 /** La règle, dite là où le mot s'affiche. */
 export const REGLE_A_ETUDIER =
-  "« À étudier » : au moins un critère rempli parmi le type de projet, le pays et le genre, et aucun contredit par la fiche du projet. Ce n'est pas une garantie d'éligibilité : seule la source fait foi.";
+  "« À étudier » : au moins un critère rempli parmi le type de projet, le pays, le genre, la durée et le stade d'avancement, et aucun contredit par la fiche du projet. Ce n'est pas une garantie d'éligibilité : seule la source fait foi.";

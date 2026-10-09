@@ -1,5 +1,5 @@
 /**
- * Compatibilité d'une opportunité avec un projet (lot L5b) : les règles, le
+ * Compatibilité d'une opportunité avec un projet (lots L5b et OP2) : les règles, le
  * décompte, le classement, et ce que la page du projet lit et annonce.
  *
  * Importe directement les modules TypeScript (types retirés par Node).
@@ -30,17 +30,41 @@ const sansCommentaires = (source) =>
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
 
-const PROJET = { format: "documentaire", genre: "societe", countries: ["CM", "GA"] };
-const opportunite = (surcharge = {}) => ({ formats: [], genres: [], countries: [], ...surcharge });
+const PROJET = {
+  format: "documentaire",
+  genre: "societe",
+  countries: ["CM", "GA"],
+  duration_minutes: 75,
+  stage: "developpement",
+};
+const opportunite = (surcharge = {}) => ({
+  formats: [],
+  genres: [],
+  countries: [],
+  stages: [],
+  duration_min_minutes: null,
+  duration_max_minutes: null,
+  ...surcharge,
+});
+/** Tout ce qu'une opportunité peut demander, et que PROJET remplit. */
+const TOUT_REMPLI = {
+  formats: ["documentaire"],
+  countries: ["CM"],
+  genres: ["societe"],
+  duration_min_minutes: 52,
+  duration_max_minutes: 90,
+  stages: ["developpement"],
+};
 const etats = (compatibilite) =>
   Object.fromEntries(compatibilite.criteres.map((critere) => [critere.code, critere.etat]));
 
 describe("Compatibilité : les règles", () => {
-  it("trois critères, dans l'ordre de l'écran", () => {
-    assert.deepEqual(Object.keys(CRITERES_COMPATIBILITE), ["format", "pays", "genre"]);
+  it("cinq critères, dans l'ordre de l'écran", () => {
+    const ordre = ["format", "pays", "genre", "duree", "stade"];
+    assert.deepEqual(Object.keys(CRITERES_COMPATIBILITE), ordre);
     assert.deepEqual(
       calculerCompatibilite(PROJET, opportunite()).criteres.map((critere) => critere.code),
-      ["format", "pays", "genre"],
+      ordre,
     );
   });
 
@@ -51,24 +75,33 @@ describe("Compatibilité : les règles", () => {
       format: "non_precise",
       pays: "non_precise",
       genre: "non_precise",
+      duree: "non_precise",
+      stade: "non_precise",
     });
     assert.deepEqual(
       [resultat.remplis, resultat.nonRemplis, resultat.evalues, resultat.nonEvalues],
-      [0, 0, 0, 3],
+      [0, 0, 0, 5],
     );
   });
 
-  it("tout concorde : trois critères remplis", () => {
+  it("tout concorde : cinq critères remplis", () => {
     const resultat = calculerCompatibilite(
       PROJET,
       opportunite({
+        ...TOUT_REMPLI,
         formats: ["long_metrage", "documentaire"],
         countries: ["SN", "GA"],
-        genres: ["societe"],
+        stages: ["ecriture", "developpement"],
       }),
     );
-    assert.deepEqual(etats(resultat), { format: "rempli", pays: "rempli", genre: "rempli" });
-    assert.deepEqual([resultat.remplis, resultat.evalues, resultat.nonEvalues], [3, 3, 0]);
+    assert.deepEqual(etats(resultat), {
+      format: "rempli",
+      pays: "rempli",
+      genre: "rempli",
+      duree: "rempli",
+      stade: "rempli",
+    });
+    assert.deepEqual([resultat.remplis, resultat.evalues, resultat.nonEvalues], [5, 5, 0]);
   });
 
   it("un seul pays de production commun suffit, et il est nommé", () => {
@@ -83,47 +116,97 @@ describe("Compatibilité : les règles", () => {
   it("ce que l'opportunité demande et que le projet n'est pas : non rempli", () => {
     const resultat = calculerCompatibilite(
       PROJET,
-      opportunite({ formats: ["long_metrage"], countries: ["SN"], genres: ["drame"] }),
+      opportunite({
+        formats: ["long_metrage"],
+        countries: ["SN"],
+        genres: ["drame"],
+        duration_max_minutes: 30,
+        stages: ["production", "postproduction"],
+      }),
     );
     assert.deepEqual(etats(resultat), {
       format: "non_rempli",
       pays: "non_rempli",
       genre: "non_rempli",
+      duree: "non_rempli",
+      stade: "non_rempli",
     });
-    assert.deepEqual([resultat.remplis, resultat.nonRemplis, resultat.evalues], [0, 3, 3]);
+    assert.deepEqual([resultat.remplis, resultat.nonRemplis, resultat.evalues], [0, 5, 5]);
   });
 
-  it("un projet sans genre ni pays : non renseigné, jamais non rempli", () => {
+  it("un projet sans genre, ni pays, ni durée : non renseigné, jamais non rempli", () => {
     const resultat = calculerCompatibilite(
-      { format: "documentaire", genre: null, countries: [] },
-      opportunite({ formats: ["documentaire"], countries: ["CM"], genres: ["drame"] }),
+      { ...PROJET, genre: null, countries: [], duration_minutes: null },
+      opportunite({ ...TOUT_REMPLI, genres: ["drame"] }),
     );
     assert.deepEqual(etats(resultat), {
       format: "rempli",
       pays: "non_renseigne",
       genre: "non_renseigne",
+      duree: "non_renseigne",
+      stade: "rempli",
     });
-    assert.deepEqual([resultat.remplis, resultat.nonRemplis, resultat.nonEvalues], [1, 0, 2]);
+    assert.deepEqual([resultat.remplis, resultat.nonRemplis, resultat.nonEvalues], [2, 0, 3]);
   });
 
   it("si l'opportunité ne précise rien, peu importe ce que le projet ne dit pas", () => {
     const resultat = calculerCompatibilite(
-      { format: "documentaire", genre: null, countries: [] },
+      { ...PROJET, genre: null, countries: [], duration_minutes: null },
       opportunite(),
     );
     assert.equal(etats(resultat).genre, "non_precise");
+    assert.equal(etats(resultat).duree, "non_precise");
   });
 
-  it("le décompte se tient : remplis + non remplis + non évalués = trois", () => {
+  it("la durée se compare à une fourchette, bornes comprises", () => {
+    const duree = (minutes, min, max) =>
+      calculerCompatibilite(
+        { ...PROJET, duration_minutes: minutes },
+        opportunite({ duration_min_minutes: min, duration_max_minutes: max }),
+      ).criteres[3];
+    for (const [minutes, min, max, attendu] of [
+      [52, 52, 90, "rempli"],
+      [90, 52, 90, "rempli"],
+      [51, 52, 90, "non_rempli"],
+      [91, 52, 90, "non_rempli"],
+      // Une seule borne dite : l'autre côté reste ouvert.
+      [300, 52, null, "rempli"],
+      [51, 52, null, "non_rempli"],
+      [1, null, 30, "rempli"],
+      [31, null, 30, "non_rempli"],
+      [75, null, null, "non_precise"],
+      [null, 52, 90, "non_renseigne"],
+      [null, null, null, "non_precise"],
+    ]) {
+      assert.equal(duree(minutes, min, max).etat, attendu, `${minutes} dans [${min}, ${max}]`);
+    }
+    // La fourchette n'est portée que si la source en dit une.
+    assert.deepEqual(duree(75, 52, 90).fourchette, { min: 52, max: 90 });
+    assert.deepEqual(duree(75, 52, 90).communs, ["75"]);
+    assert.equal(duree(75, null, null).fourchette, undefined);
+    assert.deepEqual(duree(95, 52, 90).communs, []);
+  });
+
+  it("le stade comparé est l'étape du projet : un seul stade admis suffit", () => {
+    const stade = (stages) => calculerCompatibilite(PROJET, opportunite({ stages })).criteres[4];
+    assert.equal(stade(["idee", "developpement"]).etat, "rempli");
+    assert.deepEqual(stade(["idee", "developpement"]).communs, ["developpement"]);
+    assert.equal(stade(["production"]).etat, "non_rempli");
+    assert.equal(stade([]).etat, "non_precise");
+  });
+
+  it("le décompte se tient : remplis + non remplis + non évalués = cinq", () => {
     for (const cas of [
       opportunite(),
       opportunite({ formats: ["serie"] }),
       opportunite({ formats: ["documentaire"], countries: ["SN"] }),
       opportunite({ formats: ["documentaire"], countries: ["CM"], genres: ["societe"] }),
+      opportunite({ duration_min_minutes: 100, stages: ["developpement"] }),
+      opportunite(TOUT_REMPLI),
     ]) {
       const { remplis, nonRemplis, evalues, nonEvalues } = calculerCompatibilite(PROJET, cas);
       assert.equal(evalues, remplis + nonRemplis);
-      assert.equal(evalues + nonEvalues, 3);
+      assert.equal(evalues + nonEvalues, 5);
     }
   });
 
@@ -133,6 +216,9 @@ describe("Compatibilité : les règles", () => {
     resultat.criteres[1].admis.push("XX");
     assert.deepEqual(cas.countries, ["CM"]);
     assert.deepEqual(PROJET.countries, ["CM", "GA"]);
+    const stades = ["developpement"];
+    calculerCompatibilite(PROJET, opportunite({ stages: stades })).criteres[4].admis.push("idee");
+    assert.deepEqual(stades, ["developpement"]);
   });
 });
 
@@ -143,26 +229,27 @@ describe("Compatibilité : ce que l'écran en dit", () => {
     assert.equal(phrase(opportunite()), "Aucun critère n'a pu être évalué.");
     assert.equal(
       phrase(opportunite({ formats: ["documentaire"] })),
-      "1 critère rempli sur 1 évalué ; 2 critères non évalués.",
+      "1 critère rempli sur 1 évalué ; 4 critères non évalués.",
     );
     assert.equal(
       phrase(opportunite({ formats: ["documentaire"], countries: ["SN"] })),
-      "1 critère rempli sur 2 évalués ; 1 critère non évalué.",
+      "1 critère rempli sur 2 évalués ; 3 critères non évalués.",
     );
     assert.equal(
       phrase(opportunite({ formats: ["serie"], countries: ["SN"] })),
-      "0 critère rempli sur 2 évalués ; 1 critère non évalué.",
+      "0 critère rempli sur 2 évalués ; 3 critères non évalués.",
     );
     assert.equal(
-      phrase(opportunite({ formats: ["documentaire"], countries: ["CM"], genres: ["societe"] })),
-      "3 critères remplis sur 3 évalués.",
+      phrase(opportunite({ ...TOUT_REMPLI, stages: [] })),
+      "4 critères remplis sur 4 évalués ; 1 critère non évalué.",
     );
+    assert.equal(phrase(opportunite(TOUT_REMPLI)), "5 critères remplis sur 5 évalués.");
   });
 
   it("chaque état a son libellé et sa raison", () => {
     const nommer = (code) => `«${code}»`;
     const [format, pays, genre] = calculerCompatibilite(
-      { format: "documentaire", genre: null, countries: ["CM"] },
+      { ...PROJET, genre: null, countries: ["CM"] },
       opportunite({ formats: ["documentaire"], countries: ["SN", "CI"], genres: ["drame"] }),
     ).criteres;
     assert.equal(
@@ -184,10 +271,47 @@ describe("Compatibilité : ce que l'écran en dit", () => {
     ]);
   });
 
-  it("dit ce que le calcul ne regarde pas, et qu'il ne garantit rien", () => {
-    for (const mot of ["durée", "stade", "thématique", "langue", "exigences"]) {
-      assert.ok(LIMITES_COMPATIBILITE.includes(mot), mot);
+  it("la durée se dit en minutes, la fourchette comme la source la donne", () => {
+    const nommer = (code) => `«${code}»`;
+    const raison = (minutes, min, max) =>
+      raisonCritere(
+        calculerCompatibilite(
+          { ...PROJET, duration_minutes: minutes },
+          opportunite({ duration_min_minutes: min, duration_max_minutes: max }),
+        ).criteres[3],
+        nommer,
+      );
+    assert.equal(raison(75, 52, 90), "Demandé : de 52 à 90 minutes. Votre projet : 75 minutes.");
+    assert.equal(raison(95, 52, 90), "Demandé : de 52 à 90 minutes. Votre projet : 95 minutes.");
+    assert.equal(raison(75, 52, null), "Demandé : au moins 52 minutes. Votre projet : 75 minutes.");
+    assert.equal(raison(1, null, 30), "Demandé : au plus 30 minutes. Votre projet : 1 minute.");
+    assert.equal(raison(26, 26, 26), "Demandé : 26 minutes. Votre projet : 26 minutes.");
+    assert.equal(raison(1, 1, 1), "Demandé : 1 minute. Votre projet : 1 minute.");
+    assert.match(
+      raison(null, 52, 90),
+      /^Demandé : de 52 à 90 minutes\. Votre projet ne le dit pas/,
+    );
+    assert.match(raison(75, null, null), /Information non fournie\.$/);
+    // Le stade, lui, se nomme comme un code.
+    const [, , , , stade] = calculerCompatibilite(
+      PROJET,
+      opportunite({ stages: ["production"] }),
+    ).criteres;
+    assert.equal(
+      raisonCritere(stade, nommer),
+      "Demandé : «production». Votre projet : «developpement».",
+    );
+  });
+
+  it("dit ce que le calcul regarde, ce qu'il ne regarde pas, et qu'il ne garantit rien", () => {
+    const [compare, ignore] = LIMITES_COMPATIBILITE.split("Il ne juge");
+    for (const mot of ["type de projet", "pays", "genre", "durée", "stade d'avancement"]) {
+      assert.ok(compare.includes(mot), mot);
     }
+    for (const mot of ["thématique", "langue", "exigences"]) {
+      assert.ok(ignore.includes(mot), mot);
+    }
+    assert.match(compare, /cinq choses/);
     assert.match(LIMITES_COMPATIBILITE, /pas une garantie d'éligibilité/);
     assert.match(LIMITES_COMPATIBILITE, /seule la source fait foi/);
     assert.match(RESERVE_PAYS, /nationalité ou la résidence/);
@@ -207,8 +331,16 @@ describe("Compatibilité : le classement", () => {
         "trois remplis",
         opportunite({ formats: ["documentaire"], countries: ["CM"], genres: ["societe"] }),
       ),
+      // Quatre critères remplis, mais le stade est contredit : après l'inconnue.
+      ligne("stade contredit", opportunite({ ...TOUT_REMPLI, stages: ["production"] })),
     ];
-    assert.deepEqual(noms(lignes), ["trois remplis", "un rempli", "inconnue", "contredite"]);
+    assert.deepEqual(noms(lignes), [
+      "trois remplis",
+      "un rempli",
+      "inconnue",
+      "stade contredit",
+      "contredite",
+    ]);
   });
 
   it("à égalité, l'ordre reçu est gardé : la liste arrive triée par date limite", () => {
@@ -247,7 +379,12 @@ describe("Compatibilité : la page du projet", () => {
 
   it("la comparaison ne lit ni budget ni financement", () => {
     assert.doesNotMatch(page, /budget_lines|project_budgets|project_fundings|amount_/);
-    assert.match(page, /\.select\("id, title, format, genre, countries"\)/);
+    assert.match(
+      page,
+      /\.select\("id, title, format, genre, countries, duration_minutes, stage"\)/,
+    );
+    // Les langues du projet sont un texte libre : elles ne se comparent pas.
+    assert.doesNotMatch(page, /languages/);
   });
 
   it("le catalogue comparé est celui des équipes : jamais une démonstration", () => {
@@ -258,6 +395,28 @@ describe("Compatibilité : la page du projet", () => {
   it("une opportunité expirée n'est pas comparée, et la page le dit", () => {
     assert.match(page, /echeanceDe\(opportunite, aujourdhui\) !== "passee"/);
     assert.match(page, /expirée n'est pas comparée|expirées ne sont pas comparées/);
+  });
+
+  it("la page lit du catalogue ce que les cinq critères comparent", () => {
+    const colonnes = /from\("funding_opportunities"\)\s*\.select\(\s*"([^"]+)"/.exec(page)[1];
+    for (const colonne of [
+      "formats",
+      "countries",
+      "genres",
+      "stages",
+      "duration_min_minutes",
+      "duration_max_minutes",
+    ]) {
+      assert.ok(colonnes.split(", ").includes(colonne), colonne);
+    }
+  });
+
+  it("chaque critère a de quoi se nommer, et la fiche dit ce qui lui manque", () => {
+    for (const code of Object.keys(CRITERES_COMPATIBILITE)) {
+      assert.match(page, new RegExp(`^\\s+${code}: \\(code\\) =>`, "m"), code);
+    }
+    assert.match(page, /projet\.duration_minutes === null \? "sa durée" : null/);
+    assert.match(page, /stade: \(code\) => \(ETAPES as Record<string, string>\)\[code\] \?\? code/);
   });
 
   it("la page dit les limites du décompte et la réserve sur les pays", () => {

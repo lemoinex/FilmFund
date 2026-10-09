@@ -266,11 +266,15 @@ async function chargerAccueil(
       .gte("deadline", jour)
       .order("deadline")
       .limit(LIMITE_LECTURE_ECHEANCES),
-    supabase.from("projects").select("format, genre, countries").eq("id", projet.id).maybeSingle(),
+    supabase
+      .from("projects")
+      .select("format, genre, countries, duration_minutes, stage")
+      .eq("id", projet.id)
+      .maybeSingle(),
     supabase
       .from("funding_opportunities")
       .select(
-        "id, name, organization, category, description, countries, formats, genres, budget_min, budget_max, currency, deadline, status",
+        "id, name, organization, category, description, countries, formats, genres, stages, duration_min_minutes, duration_max_minutes, budget_min, budget_max, currency, deadline, status",
       )
       .in("status", STATUTS_VISIBLES)
       .order("updated_at", { ascending: false })

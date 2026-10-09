@@ -467,6 +467,12 @@ describe("Alertes : ce que la lecture rapatrie", () => {
     assert.match(lecture, /echeanceDe\(opportunite, jour\) !== "passee"/);
     // La règle « à étudier » est celle du lot L5b, pas une seconde.
     assert.match(lecture, /estAEtudier\(calculerCompatibilite\(fiche, opportunite\)\)/);
+    // Elle lit, des deux côtés, ce que ses cinq critères comparent (lot OP2).
+    assert.match(lecture, /\.select\("id, format, genre, countries, duration_minutes, stage"\)/);
+    assert.equal(
+      lecture.match(/genres, stages, duration_min_minutes, duration_max_minutes, deadline/g).length,
+      2,
+    );
   });
 
   it("chaque lecture est bornée, et la borne se dit", () => {
@@ -485,7 +491,10 @@ describe("Alertes : ce que la lecture rapatrie", () => {
     assert.equal(requetes.length, 2);
     const recentes = requetes[1];
     // « Vérifiée » seulement : ni expirée, ni démonstration, ni en attente.
-    assert.match(recentes, /^\s*\.select\("[^"]*verified_at"\)\s*\.eq\("status", "verifie"\)/);
+    assert.match(
+      recentes,
+      /^\s*\.select\(\s*"[^"]*verified_at",?\s*\)\s*\.eq\("status", "verifie"\)/,
+    );
     assert.match(
       recentes,
       /\.gte\("verified_at", `\$\{jourApres\(jour, -SEUILS_ALERTES\.opportuniteNouvelle\)\}T00:00:00Z`\)/,

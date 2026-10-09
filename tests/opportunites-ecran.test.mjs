@@ -24,7 +24,7 @@ import {
   STATUTS_OPPORTUNITE,
   statutPresente,
 } from "../src/lib/opportunites.ts";
-import { FORMATS } from "../src/lib/projets.ts";
+import { ETAPES, FORMATS } from "../src/lib/projets.ts";
 
 const DOSSIER = "src/app/(app)/administration/opportunites";
 const MIGRATION = "supabase/migrations/20261006230000_opportunites.sql";
@@ -36,7 +36,7 @@ const sansCommentaires = (source) =>
     .replace(/^\s*\/\/.*$/gm, "");
 
 const AUJOURDHUI = "2026-10-06";
-const REFERENTIELS = { formats: FORMATS, genres: GENRES };
+const REFERENTIELS = { formats: FORMATS, genres: GENRES, etapes: ETAPES };
 
 /** Un formulaire complet et valide, que chaque test décline. */
 const SAISIE = {
@@ -49,6 +49,10 @@ const SAISIE = {
   countries: "cm, GA ; cg",
   formats: ["documentaire", "long_metrage"],
   genres: ["drame"],
+  languages: ["en", "fr"],
+  stages: ["ecriture", "developpement"],
+  duration_min_minutes: "52",
+  duration_max_minutes: "90",
   budget_min: "5 000 000",
   budget_max: "20 000 000",
   currency: "xaf",
@@ -85,6 +89,10 @@ describe("Opportunités : lecture du formulaire", () => {
         // Dans l'ordre du référentiel, quel que soit celui des cases cochées.
         formats: ["long_metrage", "documentaire"],
         genres: ["drame"],
+        languages: ["fr", "en"],
+        stages: ["developpement", "ecriture"],
+        duration_min_minutes: 52,
+        duration_max_minutes: 90,
         budget_min: 5000000,
         budget_max: 20000000,
         currency: "XAF",
@@ -107,6 +115,10 @@ describe("Opportunités : lecture du formulaire", () => {
       countries: "",
       formats: [],
       genres: [],
+      languages: [],
+      stages: [],
+      duration_min_minutes: "",
+      duration_max_minutes: "",
       budget_min: "",
       budget_max: "",
       currency: "",
@@ -123,6 +135,8 @@ describe("Opportunités : lecture du formulaire", () => {
       [null, null, null, null, null],
     );
     assert.deepEqual([valeurs.countries, valeurs.formats, valeurs.genres], [[], [], []]);
+    assert.deepEqual([valeurs.languages, valeurs.stages], [[], []]);
+    assert.deepEqual([valeurs.duration_min_minutes, valeurs.duration_max_minutes], [null, null]);
     assert.equal(valeurs.status, "non_verifie");
   });
 
@@ -165,6 +179,18 @@ describe("Opportunités : lecture du formulaire", () => {
       ["pays en toutes lettres", { countries: "Cameroun" }, /Pays éligibles/],
       ["format inconnu", { formats: ["clip"] }, /Type de projet ou genre inconnu/],
       ["genre inconnu", { genres: ["western"] }, /Type de projet ou genre inconnu/],
+      ["langue hors des cinq", { languages: ["sw"] }, /Langue ou stade d'avancement inconnu/],
+      ["langue en toutes lettres", { languages: ["Français"] }, /Langue ou stade/],
+      ["stade inconnu", { stages: ["tournage"] }, /Langue ou stade d'avancement inconnu/],
+      ["durée décimale", { duration_min_minutes: "52,5" }, /minutes entières, de 1 à 1000/],
+      ["durée nulle", { duration_min_minutes: "0" }, /minutes entières, de 1 à 1000/],
+      ["durée démesurée", { duration_max_minutes: "1001" }, /minutes entières, de 1 à 1000/],
+      ["durée négative", { duration_max_minutes: "-5" }, /minutes entières/],
+      [
+        "durée minimale au-dessus de la maximale",
+        { duration_min_minutes: "120" },
+        /durée minimale dépasse la durée maximale/,
+      ],
       ["montant décimal", { budget_min: "5000,50" }, /nombres entiers/],
       ["montant négatif", { budget_max: "-5" }, /nombres entiers/],
       ["montant démesuré", { budget_max: "9".repeat(13) }, /nombres entiers/],
@@ -333,14 +359,14 @@ describe("Opportunités : actions serveur", () => {
   it("chaque valeur passe par la lecture commune ; ni auteur ni date ne viennent du formulaire", () => {
     assert.match(
       source,
-      /lireOpportunite\(\s+\(champ\) => formData\.get\(champ\),\s+\(champ\) => formData\.getAll\(champ\),\s+jourCourant\(\),\s+\{ formats: FORMATS, genres: GENRES \},\s+\)/,
+      /lireOpportunite\(\s+\(champ\) => formData\.get\(champ\),\s+\(champ\) => formData\.getAll\(champ\),\s+jourCourant\(\),\s+\{ formats: FORMATS, genres: GENRES, etapes: ETAPES \},\s+\)/,
     );
     assert.match(source, /\.update\(valeurs\)\s+\.eq\("id", id\)/);
     assert.match(source, /\.insert\(valeurs\)/);
     // Ce qui s'écrit est ce que la lecture a rendu, et rien d'autre du formulaire.
     assert.match(
       source,
-      /const valeurs = \{ \.\.\.lecture\.valeurs, formats: lecture\.valeurs\.formats as ProjectFormat\[\] \};/,
+      /const valeurs = \{\s+\.\.\.lecture\.valeurs,\s+formats: lecture\.valeurs\.formats as ProjectFormat\[\],\s+stages: lecture\.valeurs\.stages as ProjectStage\[\],\s+\};/,
     );
     assert.doesNotMatch(source, /fromEntries|\.(insert|update)\(formData/);
     assert.doesNotMatch(source, /created_by|updated_by|created_at|updated_at/);
