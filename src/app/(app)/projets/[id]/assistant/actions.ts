@@ -11,6 +11,7 @@ import {
   lireTitre,
   type CleEtape,
 } from "@/lib/assistant";
+import { ERREURS_EPISODE, messageEpisode } from "@/lib/episodes";
 import {
   MAX_PERSONNAGES,
   normaliserFiche,
@@ -148,7 +149,14 @@ export async function enregistrerEtape(
     .eq("id", projetId)
     .select("id");
 
-  if (error) return { erreur: ECHEC };
+  if (error) {
+    // Un projet qui a des épisodes ne quitte pas le format série : la base le
+    // refuse, et l'écran dit pourquoi plutôt qu'un échec sans motif.
+    return {
+      erreur:
+        error.code === ERREURS_EPISODE.formatAvecEpisodes ? messageEpisode(error.code) : ECHEC,
+    };
+  }
   // La RLS ne lève pas d'erreur sur une modification interdite : elle ne
   // touche aucune ligne. Sans ce contrôle, la saisie serait perdue en silence.
   if (!data?.length) return { erreur: REFUS };
