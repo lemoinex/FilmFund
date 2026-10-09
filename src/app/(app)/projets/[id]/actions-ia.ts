@@ -67,8 +67,14 @@ export async function demanderDevis(
   projetId: string,
   action: string,
   consigne?: string,
+  episodeId?: string,
 ): Promise<{ devis: Devis } | Echec> {
   if (!UUID.test(projetId) || !estActionIa(action)) {
+    return DEMANDE_INVALIDE;
+  }
+  // Seule une séquence de scénario désigne un épisode ; la base vérifie qu'il
+  // est bien de ce projet.
+  if (episodeId !== undefined && (action !== "screenplay" || !UUID.test(episodeId))) {
     return DEMANDE_INVALIDE;
   }
 
@@ -76,7 +82,8 @@ export async function demanderDevis(
   // le fournisseur, et n'a pas à se glisser dans une autre demande. Une
   // séquence par demande : le nombre n'est pas choisi par le navigateur.
   const attendue = consigneDe(action);
-  let parametres: { sequences: number; sequence: string } | Record<string, never> = {};
+  let parametres:
+    { sequences: number; sequence: string; episode?: string } | Record<string, never> = {};
   if (attendue) {
     const texte = lireConsigne(consigne, attendue.longueurMax);
     if (!texte) {
@@ -84,7 +91,11 @@ export async function demanderDevis(
         erreur: `${attendue.libelle} : de 1 à ${attendue.longueurMax} caractères sont attendus.`,
       };
     }
-    parametres = { sequences: 1, sequence: texte };
+    parametres = {
+      sequences: 1,
+      sequence: texte,
+      ...(episodeId ? { episode: episodeId } : {}),
+    };
   }
 
   const acces = await session();

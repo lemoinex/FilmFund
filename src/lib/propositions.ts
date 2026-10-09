@@ -22,6 +22,7 @@ export const ERREURS_BASE = {
   propositionDejaTraitee: "PR001",
   passageChange: "PR002",
   listePleine: "PR003",
+  episodeRetire: "SE004",
 } as const;
 
 /**
@@ -1174,6 +1175,8 @@ export function etapeProposition(tache: TacheVue, proposition: PropositionVue): 
 /** Message lisible pour une erreur de la base ; générique si elle est inconnue. */
 export function messageErreur(code: string | undefined): string {
   switch (code) {
+    case ERREURS_BASE.episodeRetire:
+      return "L'épisode de cette séquence a été retiré : elle ne peut plus s'ajouter à son scénario. Reportez-la à la main, ou écartez-la.";
     case ERREURS_BASE.quota:
       return "Le quota d'unités texte de ce studio est épuisé pour la période en cours.";
     case ERREURS_BASE.devisPerime:

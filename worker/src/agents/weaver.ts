@@ -140,7 +140,33 @@ export function composerContexte(contexte: ContexteRedaction, objectif: string):
   // Une séquence de scénario, et elle seule, porte deux blocs de plus : les
   // autres livrables gardent le message pour lequel leur profil a été écrit.
   if (contexte.sequence !== undefined) {
-    const { scenario } = contexte;
+    const { scenario, episode } = contexte;
+    // La séquence d'un épisode : la saison, puis l'épisode, avant son scénario.
+    if (episode) {
+      blocs.push(
+        [
+          "<saison>",
+          ...(contexte.saison?.length
+            ? contexte.saison.map((autre) =>
+                [
+                  `- Épisode ${autre.numero} : ${autre.titre}`,
+                  autre.resume.trim() ? `  ${autre.resume.trim()}` : null,
+                ]
+                  .filter(Boolean)
+                  .join("\n"),
+              )
+            : [ABSENT]),
+          "</saison>",
+        ].join("\n"),
+        [
+          "<episode_a_ecrire>",
+          `Épisode ${episode.numero} : ${episode.titre}`,
+          champ("Résumé", episode.resume),
+          "Le scénario ci-dessous est celui de cet épisode, et de lui seul.",
+          "</episode_a_ecrire>",
+        ].join("\n"),
+      );
+    }
     blocs.push(
       [
         "<scenario_deja_ecrit>",

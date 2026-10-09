@@ -34,11 +34,17 @@ export async function lireEtapes(
 
   const taches = await Promise.all(
     actions.map(async (action) => {
-      const { data } = await client
+      let requete = client
         .from("jobs")
         .select("id, state")
         .eq("project_id", projetId)
-        .eq("action", action)
+        .eq("action", action);
+      // La séquence d'un épisode a son encart, sous son scénario : ici, seules
+      // les demandes sans épisode.
+      if (action === "screenplay") {
+        requete = requete.is("params->>episode", null);
+      }
+      const { data } = await requete
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -69,4 +75,38 @@ export function attenteEnCours(etapes: Iterable<EtapeProposition>): boolean {
     }
   }
   return false;
+}
+
+/**
+ * Où en est la dernière demande de séquence pour cet épisode (lot SE3b). Deux
+ * lectures d'une ligne, sous la RLS de l'appelant. Au repos si l'appelant n'a
+ * pas le droit d'engager les unités du studio.
+ */
+export async function lireEtapeSequenceEpisode(
+  client: Client,
+  projetId: string,
+  episodeId: string,
+  peutDemander: boolean,
+): Promise<EtapeProposition> {
+  if (!peutDemander) {
+    return REPOS;
+  }
+  const { data: tache } = await client
+    .from("jobs")
+    .select("id, state")
+    .eq("project_id", projetId)
+    .eq("action", "screenplay")
+    .eq("params->>episode", episodeId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: proposition } = tache
+    ? await client
+        .from("ai_suggestions")
+        .select("id, content, state")
+        .eq("job_id", tache.id)
+        .maybeSingle()
+    : { data: null };
+  return etapeProposition(tache, proposition);
 }

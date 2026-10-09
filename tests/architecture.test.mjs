@@ -924,7 +924,11 @@ describe("Livrables des agents", () => {
     // Le navigateur ne choisit pas le nombre de séquences, et seul un
     // livrable qui en demande une reçoit une consigne.
     const actions = lire("src/app/(app)/projets/[id]/actions-ia.ts");
-    assert.match(actions, /parametres = \{ sequences: 1, sequence: texte \}/);
+    // Une séquence peut désigner son épisode (lot SE3b) : rien d'autre ne s'y ajoute.
+    assert.match(
+      actions,
+      /parametres = \{\s*sequences: 1,\s*sequence: texte,\s*\.\.\.\(episodeId \? \{ episode: episodeId \} : \{\}\),\s*\};/,
+    );
     assert.match(actions, /lireConsigne\(consigne, attendue\.longueurMax\)/);
     for (const action of ["logline", "treatment", "bible", "dramatic_analysis"]) {
       assert.equal(consigneDe(action), null, action);
