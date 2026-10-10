@@ -88,7 +88,7 @@ réels).
 | SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | en production     | —             |
 | AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | en production     | —             |
 | AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | en production     | —             |
-| SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | validé localement | —             |
+| SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3239,5 +3239,16 @@ contenu d'un PDF, dont seuls la signature et le nombre de pages sont vérifiés 
 présentation. Un dossier reste borné à 5 Mo : une saison de scénarios finalisés peut s'en
 approcher, et le refus existant le dit.
 
-**Reste à faire** : pousser la migration `20261010180000_exports_episodes.sql` après fusion,
-puis vérifier les deux fonctions en production. Ensuite SE5, FRAME par épisode, à planifier.
+SE4 est en production depuis le 10 octobre 2026 (PR 178, `607a1b7`) ; migration poussée par
+l'utilisateur le même jour, soixante et onze migrations en base. Vérifié en base par lecture
+seule : une seule définition de chacune des deux fonctions, sous les droits de l'appelant,
+stables, au chemin de recherche fermé ; leurs droits, inchangés — les comptes, ni visiteur ni
+worker ; la section `episodes` admise ; la lecture de la saison bornée, les scénarios rangés
+par épisode. Pour les sept dossiers disponibles, l'empreinte que la base calcule est la même
+avant et après la poussée : aucun ne sera refait pour rien. Aucun export n'était en file ni
+en cours. CI de `main` verte, déploiement Vercel terminé, worker redéployé sur ce commit.
+
+**Non vu en production** : aucun dossier de série fabriqué — la base ne compte aucun
+épisode —, et l'écran du dossier n'a pas été ouvert sous session.
+
+**Reste à faire** : SE5, FRAME par épisode, à planifier.
