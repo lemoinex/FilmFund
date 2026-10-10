@@ -90,6 +90,7 @@ réels).
 | AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | en production     | —             |
 | SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | en production     | —             |
 | SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | en production     | —             |
+| Z4     | Administration : les administrateurs lisent les équipes de projet ; le comptage « membres d'équipe » redevient juste           | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3314,3 +3315,39 @@ la base ne compte aucun épisode, et aucun appel réel n'a été fait.
 Les limites des séries auditées le 10 octobre sont traitées, sauf le score de maturité,
 laissé tel quel par décision. **Reste, hors lot** : le test des statistiques, intermittent sur
 une base locale chargée.
+
+Le test des statistiques, audité le 10 octobre 2026. Sa lenteur tenait au seul volume de la
+base locale : `statistiques_usage()` s'exécute sous les droits de l'appelant, dans le délai de
+huit secondes des comptes, et chaque comptage y paie la RLS ligne par ligne — 5,4 secondes au
+repos sur une base qui portait près de 40 000 comptes et 24 000 projets d'essai, davantage
+pendant une suite. La base locale a été remise à zéro depuis les migrations, sur accord. La
+lecture n'est pas réécrite : elle ralentira avec la plateforme, à revoir alors.
+
+L'audit a trouvé un défaut sans rapport avec le volume. `project_members` n'avait qu'une règle
+de lecture, celle des membres : un administrateur n'y lisait que les équipes dont il fait
+partie. Le comptage « membres d'équipe » des statistiques ne comptait donc pas la plateforme
+— le défaut même que le lot Z3 voulait éviter —, et la règle « les administrateurs ont accès
+à tout » n'était pas tenue pour cette table. En production, la table ne portait qu'une
+adhésion, celle d'un administrateur : aucun écart n'était visible.
+
+Lot Z4 : une règle de lecture de plus sur `project_members`, pour les administrateurs,
+écrite comme celle des projets. Rien d'autre ne change : ni l'écriture, ni la règle des
+membres, ni le mode privé. Un administrateur lisait déjà l'équipe de tout projet, par
+`equipe_du_projet()` ; aucun écran ne change. Un test SQL compare désormais, pour chacune des
+quinze tables que lisent les statistiques, ce qui existe et ce qu'un administrateur lit, et
+refuse qu'une table lue par la fonction manque à sa liste.
+
+Z4 est validé localement le 10 octobre 2026, sur la base remise à zéro : 7 tests de
+plus, suite complète de l'API à 1 826 tests, 1 005 tests SQL (12 de plus). Six
+sabotages à chaud attrapés un par un. Le test SQL supposait d'abord une base vide et aurait
+échoué en CI, où il tourne après la suite de l'API : corrigé avant le commit, et les sabotages
+rejoués avec le test corrigé.
+
+**Non couvert** : la rubrique Statistiques vue sous session. Aucun fichier de l'application
+ni du worker ne change.
+
+**À savoir** : un administrateur hors équipe ne change ni ne retire un membre par cette
+table — la règle ne donne que la lecture, comme avant pour l'écriture.
+
+**Reste à faire** : pousser la migration `20261011000000_admin_lit_equipes.sql`, puis
+vérifier la règle en production. Elle ne fait qu'ajouter : l'ordre avec la fusion est libre.
