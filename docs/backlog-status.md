@@ -88,6 +88,7 @@ réels).
 | SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | en production     | —             |
 | AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | en production     | —             |
 | AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | en production     | —             |
+| SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3199,3 +3200,44 @@ Aucune page de l'Assistant IA n'a été ouverte sous session.
 
 **Reste à faire** : rien de planifié pour l'Assistant IA. Un compteur sur la rubrique du menu
 a été écarté de ce lot ; la demande en texte libre, routée vers un agent, reste non décidée.
+
+Limites des séries, auditées le 10 octobre 2026. Trois endroits ne tenaient pas compte des
+épisodes. Le dossier exporté : la saison n'y figurait pas, et les scénarios d'épisode y
+entraient rangés par date de création — l'épisode 3 pouvait précéder l'épisode 1. FRAME : son
+contexte lit le scénario le plus récemment modifié, et une scène du storyboard n'a aucun lien
+avec un épisode. Le score de maturité : il compte les documents par type, un scénario
+d'épisode y compte déjà comme un scénario. Décisions : SE4, les épisodes dans le dossier,
+d'abord ; SE5, FRAME par épisode, ensuite — il demande une colonne sur la scène et un champ
+dans son formulaire ; le score de maturité n'est pas touché.
+
+Lot SE4 : une migration sans schéma reprend `parametres_export`, qui admet une huitième
+section, `episodes`, et `contenu_dossier`, qui rend la saison — numéro, titre, durée, résumé
+entier, dans l'ordre des numéros — et le numéro d'épisode de chaque scénario rattaché. Les
+scénarios se rangent sans épisode d'abord, puis par numéro. Dans le dossier, la saison ouvre
+après la fiche, l'épisode 1 s'y dit « pilote », et un scénario d'épisode est annoncé
+« Scénario · Épisode N » d'après le lien du document, non d'après son titre. Dans le ZIP, un
+classeur `episodes.xlsx`. L'écran ne propose la section qu'aux séries, cochée d'office quand
+la saison a des épisodes.
+
+Un document sans épisode garde exactement la forme qu'il avait : l'empreinte d'un dossier
+déjà fabriqué ne change pas, et aucun n'est refait pour rien. La base admet la section pour
+tout projet : un film n'a pas d'épisodes, la section est vide et omise sans mention. La
+saison part entière — sa lecture est bornée à cinq cents épisodes, la borne d'un numéro.
+
+SE4 est validé localement le 10 octobre 2026, sans appel à un fournisseur : 15 tests de
+plus, suite complète de l'API à 1 792 tests, 973 tests SQL (21 de plus). Trente et un
+sabotages attrapés un par un — dix-huit dans le code, treize à chaud dans la base locale. Les
+trois formats sont réellement fabriqués par le worker local, pour une série et pour un film,
+puis relus dans leur XML. Rendu réel de l'écran du dossier, 11 points sur 11 — série avec et
+sans épisode, film, lecteur —, données d'essai retirées.
+
+**Non couvert** : l'ouverture des fichiers dans un traitement de texte ou un tableur ; le
+contenu d'un PDF, dont seuls la signature et le nombre de pages sont vérifiés ; l'affichage à
+375 px ; les clics dans un navigateur.
+
+**À savoir** : dans le ZIP, la saison a son classeur et n'est pas redite dans le fichier de
+présentation. Un dossier reste borné à 5 Mo : une saison de scénarios finalisés peut s'en
+approcher, et le refus existant le dit.
+
+**Reste à faire** : pousser la migration `20261010180000_exports_episodes.sql` après fusion,
+puis vérifier les deux fonctions en production. Ensuite SE5, FRAME par épisode, à planifier.

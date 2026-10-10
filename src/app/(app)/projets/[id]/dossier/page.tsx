@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ORDRE_TYPES, TYPES_DOCUMENT } from "@/lib/documents";
+import { estSerie } from "@/lib/episodes";
 import {
   ACTIONS_EXPORT,
   detailFiche,
@@ -16,6 +17,7 @@ import {
   premierDuMois,
   SECTIONS,
   SECTIONS_D_OUVERTURE,
+  SECTIONS_DE_SERIE,
   type SectionExport,
 } from "@/lib/exports";
 import { createClient } from "@/lib/supabase/server";
@@ -62,13 +64,14 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     { count: personnages },
     { count: plans },
     { count: equipements },
+    { count: episodes },
     { data: tache },
     { data: exportsDisponibles },
   ] = await Promise.all([
     supabase
       .from("projects")
       .select(
-        "id, title, logline, synopsis, genre, countries, languages, duration_minutes, short_synopsis, theme, stakes, artistic_vision, goals, audience",
+        "id, title, format, logline, synopsis, genre, countries, languages, duration_minutes, short_synopsis, theme, stakes, artistic_vision, goals, audience",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -90,6 +93,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       .eq("project_id", id),
     supabase.from("scene_shots").select("id", { count: "exact", head: true }).eq("project_id", id),
     supabase.from("project_gear").select("id", { count: "exact", head: true }).eq("project_id", id),
+    supabase
+      .from("project_episodes")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", id),
     supabase
       .from("jobs")
       .select("id, state, reason")
@@ -128,6 +135,12 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
           ? "Le pitch et le synopsis"
           : "Ni pitch ni synopsis pour l'instant",
       disponible: Boolean(projet.logline.trim() || projet.synopsis.trim()),
+    },
+    episodes: {
+      detail: episodes
+        ? `${compte(episodes, "épisode", "épisodes", "")} : numéro, titre, durée et résumé`
+        : "Aucun épisode pour l'instant",
+      disponible: (episodes ?? 0) > 0,
     },
     fiche_projet: {
       detail: fiche ?? "La fiche est encore vide",
@@ -173,7 +186,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     ...contenuDes[code],
   });
   const options: OptionExport[] = [
-    ...SECTIONS_D_OUVERTURE.map(section),
+    // La saison ne se propose qu'à une série : un autre format n'a pas d'épisodes.
+    ...SECTIONS_D_OUVERTURE.filter(
+      (code) => !SECTIONS_DE_SERIE.includes(code) || estSerie(projet.format),
+    ).map(section),
     ...ORDRE_TYPES.map((type): OptionExport => {
       const nombre = (finalises ?? []).filter((document) => document.type === type).length;
       return {

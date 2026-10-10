@@ -48,7 +48,10 @@ export type ContenuDossier = {
     public: string;
     personnages: { nom: string; role: string; description: string }[];
   };
-  documents?: { type: string; titre: string; contenu: string }[];
+  /** La saison d'une série, dans l'ordre de ses numéros ; vide pour un autre format. */
+  episodes?: { numero: number; titre: string; duree: number | null; resume: string }[];
+  /** `episode` : le numéro de l'épisode dont un scénario est celui ; absent sinon. */
+  documents?: { type: string; titre: string; contenu: string; episode?: number }[];
   /** Nul : le budget du projet n'a pas été ouvert. */
   budget?: {
     devise: string;
@@ -126,6 +129,7 @@ export type Bloc =
 export type OrigineSection =
   | "synthese"
   | "fiche_projet"
+  | "episodes"
   | "document"
   | "budget"
   | "financements"
@@ -514,6 +518,43 @@ function sectionMateriel(materiel: NonNullable<ContenuDossier["materiel"]>): Con
   };
 }
 
+/** « 1 — pilote », « 2 » : le premier épisode se présente comme le pilote, comme à l'écran. */
+function numeroEpisode(numero: number): string {
+  return numero === 1 ? "1 — pilote" : String(numero);
+}
+
+/**
+ * La saison : un épisode par ligne. Les résumés sont du texte de l'équipe,
+ * rendu tel quel ; aucun n'est tronqué.
+ */
+function sectionEpisodes(episodes: NonNullable<ContenuDossier["episodes"]>): Contenu | null {
+  if (!episodes.length) {
+    return null;
+  }
+  return {
+    titre: "Épisodes",
+    blocs: [
+      {
+        type: "tableau",
+        colonnes: [
+          { titre: "Épisode", largeur: 0.14 },
+          { titre: "Titre", largeur: 0.26 },
+          { titre: "Durée", largeur: 0.12, alignement: "droite" },
+          { titre: "Résumé", largeur: 0.48 },
+        ],
+        lignes: episodes.map((episode) => ({
+          cellules: [
+            numeroEpisode(Number(episode.numero)),
+            episode.titre,
+            episode.duree === null ? ABSENT : `${Number(episode.duree)} min`,
+            episode.resume.trim() || ABSENT,
+          ],
+        })),
+      },
+    ],
+  };
+}
+
 /**
  * Plan du dossier. Une section demandée mais vide est omise, sans mention :
  * un dossier envoyé à un fonds n'a pas à dire ce qui lui manque. C'est à
@@ -533,10 +574,18 @@ export function composerDossier(contenu: ContenuDossier, etabliLe: Date): Dossie
   if (contenu.fiche_projet) {
     ajouter("fiche_projet", sectionFiche(contenu.fiche_projet));
   }
+  if (contenu.episodes) {
+    ajouter("episodes", sectionEpisodes(contenu.episodes));
+  }
   for (const document of contenu.documents ?? []) {
     if (document.contenu.trim()) {
       ajouter("document", {
-        surTitre: libelle(TYPES_DOCUMENT, document.type),
+        // Le scénario d'un épisode dit lequel : le numéro vient de la base,
+        // pas du titre du document, que l'équipe peut changer.
+        surTitre:
+          typeof document.episode === "number"
+            ? `${libelle(TYPES_DOCUMENT, document.type)} · Épisode ${document.episode}`
+            : libelle(TYPES_DOCUMENT, document.type),
         titre: document.titre,
         // Seul le texte d'un document porte des marqueurs, et pas celui d'un
         // scénario : les champs de la fiche restent du texte brut.
