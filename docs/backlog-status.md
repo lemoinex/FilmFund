@@ -89,7 +89,7 @@ réels).
 | AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | en production     | —             |
 | AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | en production     | —             |
 | SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | en production     | —             |
-| SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | validé localement | —             |
+| SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3293,5 +3293,24 @@ compte plus de 24 000 projets et près de 40 000 comptes d'essai, accumulés par
 part — purger la base locale, ou alléger la lecture ; la base de la CI, neuve à chaque
 passage, n'est pas concernée.
 
-**Reste à faire** : pousser la migration `20261010220000_scenes_episodes.sql` après fusion,
-puis vérifier la colonne, sa règle et la fonction en production.
+SE5 est en production depuis le 10 octobre 2026 (PR 180, `64b9aa4`), soixante-douze
+migrations en base. **La migration a été poussée avant la fusion**, à l'inverse de l'ordre
+habituel : la page du storyboard lit la colonne nouvelle avec chaque scène, et le code
+déployé avant elle aurait affiché tous les storyboards vides jusqu'à la poussée. La migration
+ne fait qu'ajouter — le code d'avant l'ignore —, ce qui rendait l'ordre inverse sûr. À
+retenir : quand le code lit une colonne nouvelle, la migration passe d'abord.
+
+Vérifié en base par lecture seule : la colonne, facultative et sans défaut ; le lien qui se
+vide quand l'épisode est retiré ; le déclencheur, dont la fonction ne s'appelle pas
+directement ; le droit d'écrire la colonne pour les comptes, rien de lisible pour un visiteur
+ni pour le worker ; le contexte du découpage au worker seul ; les cinq politiques des scènes,
+inchangées. Deux scènes en base, aucune rattachée ; aucun découpage en file ni en cours. La CI
+de la PR, sur une base neuve, passe en entier : le test des statistiques qui tombait en local
+y passe. CI de `main` verte, déploiement Vercel terminé, worker redéployé sur ce commit.
+
+**Non vu en production** : le storyboard sous session, et FRAME sur la scène d'un épisode —
+la base ne compte aucun épisode, et aucun appel réel n'a été fait.
+
+Les limites des séries auditées le 10 octobre sont traitées, sauf le score de maturité,
+laissé tel quel par décision. **Reste, hors lot** : le test des statistiques, intermittent sur
+une base locale chargée.
