@@ -87,6 +87,7 @@ réels).
 | SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | en production     | —             |
 | SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | en production     | —             |
 | AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | en production     | —             |
+| AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3146,8 +3147,47 @@ noms proches.
 AS1 est en production depuis le 9 octobre 2026 à 23h55 UTC (PR 174, `06ccbb2`), sans
 migration. CI de `main` verte, déploiement Vercel terminé ; le worker n'est pas concerné.
 
-**Non vu en production** : aucune page ouverte, ni sous session ni sans. L'adresse du
-déploiement est derrière la connexion Vercel, et l'adresse publique du site n'est pas écrite
-dans le dépôt : ni le menu, ni la page d'un projet, ni le lien de la Synthèse n'ont été vus.
+Vu en production le 10 octobre 2026, sans session, à l'adresse publique du site : un
+visiteur est renvoyé à la connexion sur `/assistant-ia` comme sur la page d'un projet,
+identifiant mal formé compris. **Non vu** : les pages sous session — le menu, la page d'un
+projet, le lien de la Synthèse.
 
-**Reste à faire** : AS2, ce qui attend sur un projet, à auditer.
+Lot AS2 : ce qui attend sur un projet, en tête de sa page « Assistant IA » — les
+propositions à décider, puis les demandes en file, en cours ou à rapprocher, chacune avec sa
+date, ce qu'elle vise et un lien vers son écran. Rien n'est stocké, rien ne se décide depuis
+la page : ni « lu », ni compteur, ni bouton.
+
+L'audit a écarté la lecture des onze tables de propositions. Chaque écran ne montre que la
+dernière demande de sa cible — l'action, ou la scène, le document, l'épisode : une proposition
+plus ancienne, jamais décidée, reste « proposée » en base sans qu'aucun écran ne l'ouvre. La
+page applique donc la règle des écrans, et non l'état de la base : la dernière tâche de chaque
+cible, puis l'existence de sa proposition. Deux lectures bornées — les cent dernières tâches
+du projet, au-delà desquelles la page le dit —, et jusqu'à trois de plus pour nommer les
+cibles. Des tâches, seuls l'action, l'état, la date et la cible sont lus, jamais le reste des
+paramètres ; des propositions, leur existence, jamais leur contenu.
+
+Un lecteur ne lit que les propositions que leur écran lui montre — épisodes, matériel,
+jalons, plans, vignette, recherche —, jamais une demande en cours. La proposition de budget ne
+se montre qu'à qui le gère : la base en laisse lire le parent à toute l'équipe, c'est la page
+qui la tait. Une demande dont la cible a été retirée reste listée, sans lien, et la page dit
+pourquoi. Un échec ou une annulation ne sont pas listés : l'encart les dit déjà.
+
+AS2 est validé localement le 10 octobre 2026, sans migration ni appel à un fournisseur — le
+fournisseur des tests est factice : 23 tests de plus, suite complète de l'API à 1 777 tests,
+952 tests SQL, inchangés. Vingt-huit sabotages attrapés un par un. Rendu réel sur un serveur
+de production local, 28 points sur 28 — porteur, lecteur, étranger ; rien n'attend, demande en
+file, proposition, épisodes proposés, séquence d'un épisode, scénario détaché, demande
+annulée —, données d'essai retirées.
+
+**Non couvert** : l'affichage à 375 px ; les clics dans un navigateur. Au rendu, le découpage,
+la vignette, les dialogues et les retouches ne sont éprouvés que par les règles, pas par une
+vraie demande. La lecture contre la base rejoue les requêtes de la page, dont un test vérifie
+qu'elles sont bien les siennes : le fichier de la page importe des alias que Node ne résout
+pas.
+
+**À savoir** : la lecture des tâches par projet n'a pas d'index — comme celles des écrans
+existants. Sans effet à l'échelle actuelle ; à revoir avec le volume. Un administrateur hors
+de l'équipe lit ce qui attend, comme il lit le projet.
+
+**Reste à faire** : rien de planifié pour l'Assistant IA. Un compteur sur la rubrique du menu
+a été écarté de ce lot ; la demande en texte libre, routée vers un agent, reste non décidée.

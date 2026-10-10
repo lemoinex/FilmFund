@@ -4,8 +4,11 @@ import { notFound } from "next/navigation";
 
 import {
   besoinsDuProjet,
+  decompteAttentes,
   decompteDemandes,
   destinationAssistant,
+  NATURES_ATTENTE,
+  TACHES_LUES_MAX,
   type TarifAssistant,
 } from "@/lib/assistant-ia";
 import { estSerie } from "@/lib/episodes";
@@ -16,12 +19,16 @@ import { createClient } from "@/lib/supabase/server";
 
 import { OngletsProjet } from "../onglets";
 
+import { chargerAttentes } from "./lecture";
+
 export const metadata: Metadata = {
   title: "Assistant IA — filmfundAfrica",
   robots: { index: false, follow: false },
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
 
 /** Colonnes du barème publié : une par prix que la page affiche. */
 const COLONNES_BAREME =
@@ -82,6 +89,11 @@ export default async function AssistantIaPage({ params }: { params: Promise<{ id
   const peutDemander = acces === "owner" || acces === "editor" || estAdmin === true;
   const gereBudget = budget === true;
   const besoins = besoinsDuProjet({ serie: estSerie(projet.format), budget: gereBudget });
+  // Lu après le contrôle d'accès, sous la RLS de l'appelant.
+  const { attentes, borneAtteinte } = await chargerAttentes(supabase, id, {
+    peutDemander,
+    budget: gereBudget,
+  });
 
   const prix = (tarif: TarifAssistant): string => {
     if (tarif === "image") {
@@ -110,7 +122,57 @@ export default async function AssistantIaPage({ params }: { params: Promise<{ id
 
       <OngletsProjet projetId={id} actif="projet" budget={gereBudget} />
 
-      <p role="status" className="text-light-muted mt-8 text-sm">
+      <section aria-labelledby="assistant-attente" className="mt-8">
+        <h2 id="assistant-attente" className="font-serif text-xl leading-tight">
+          Ce qui attend
+        </h2>
+        <p role="status" className="text-light-muted mt-2 text-sm">
+          {decompteAttentes(attentes)}.
+        </p>
+        {attentes.length ? (
+          <ul className="mt-5 space-y-3">
+            {attentes.map((attente) => (
+              <li key={attente.id} className="border-navy-line rounded-xl border p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <h3 className="font-medium break-words">{attente.libelle}</h3>
+                  <span
+                    className={`text-xs ${attente.nature === "proposition" ? "text-gold" : "text-light-muted"}`}
+                  >
+                    {NATURES_ATTENTE[attente.nature]}
+                  </span>
+                </div>
+                <p className="text-light-muted mt-2 text-xs leading-relaxed break-words">
+                  {attente.cible ? `${attente.cible} · ` : ""}
+                  Demandée le {dateFr.format(new Date(attente.depuis))}
+                </p>
+                {attente.chemin === null ? (
+                  <p className="text-light-muted mt-2 text-xs leading-relaxed text-pretty">
+                    Ce qu&apos;elle visait n&apos;est plus en place : aucun écran ne l&apos;ouvre
+                    plus.
+                  </p>
+                ) : (
+                  <Link
+                    href={`/projets/${id}${attente.chemin}`}
+                    className="text-light-muted hover:bg-navy-soft hover:text-light mt-3 inline-flex rounded-full px-3 py-1.5 text-xs transition-colors"
+                  >
+                    Ouvrir
+                    <span className="sr-only"> : {attente.libelle}</span>
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="text-light-muted mt-4 text-xs leading-relaxed text-pretty">
+          Chaque écran ne garde que sa dernière demande : une proposition plus ancienne, jamais
+          décidée, n&apos;apparaît pas ici. Rien ne se décide depuis cette page.
+          {borneAtteinte
+            ? ` Seules les ${TACHES_LUES_MAX} dernières demandes du projet sont lues : la liste peut être incomplète.`
+            : ""}
+        </p>
+      </section>
+
+      <p role="status" className="text-light-muted border-navy-line mt-10 border-t pt-8 text-sm">
         {decompteDemandes(besoins)} possibles pour ce projet.
       </p>
 

@@ -51,6 +51,12 @@ export type DemandeAssistant = {
   tarif: TarifAssistant;
   /** `serie` : projets de série seulement ; `budget` : à qui gère le budget seulement. */
   reserve?: "serie" | "budget";
+  /**
+   * Vrai si l'écran de la demande montre à un lecteur ce qui y est proposé.
+   * Ailleurs, l'encart ne se rend qu'à qui peut demander : y mener un lecteur
+   * ne lui montrerait rien.
+   */
+  lecteur?: true;
 };
 
 export type BesoinAssistant = {
@@ -181,6 +187,7 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Page des épisodes, depuis la « Fiche »",
         chemin: "/episodes#assistant-episodes",
         tarif: "episode_list",
+        lecteur: true,
         reserve: "serie",
       },
       {
@@ -255,6 +262,7 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Onglet « Recherche »",
         chemin: "/recherche#demande-recherche",
         tarif: "research",
+        lecteur: true,
       },
       {
         action: "cultural_context",
@@ -264,6 +272,7 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Onglet « Recherche », choix « Où chercher »",
         chemin: "/recherche#demande-recherche",
         tarif: "cultural_context",
+        lecteur: true,
       },
     ],
   },
@@ -279,6 +288,7 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Onglet « Storyboard », volet « Découpage » de la scène",
         chemin: "/storyboard",
         tarif: "shot_list",
+        lecteur: true,
       },
       {
         action: "storyboard_image",
@@ -287,6 +297,7 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Onglet « Storyboard », carte de la scène",
         chemin: "/storyboard",
         tarif: "image",
+        lecteur: true,
       },
       {
         action: "gear_list",
@@ -296,6 +307,7 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Onglet « Matériel »",
         chemin: "/materiel#assistant-materiel",
         tarif: "gear_list",
+        lecteur: true,
       },
       {
         action: "schedule_plan",
@@ -305,6 +317,7 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Onglet « Planning »",
         chemin: "/planning#assistant-planning",
         tarif: "schedule_plan",
+        lecteur: true,
       },
     ],
   },
@@ -357,4 +370,220 @@ export function pageAssistant(projetId: string): string {
 export function decompteDemandes(besoins: readonly BesoinAssistant[]): string {
   const nombre = besoins.reduce((total, besoin) => total + besoin.demandes.length, 0);
   return `${nombre} demande${nombre > 1 ? "s" : ""}`;
+}
+
+/*
+ * Ce qui attend sur un projet (lot AS2) : les propositions que l'équipe n'a
+ * pas décidées et les demandes qui ne sont pas terminées. Rien n'est stocké :
+ * la liste se calcule à la lecture, et une entrée disparaît avec sa cause.
+ */
+
+/** Tâches lues pour un projet, des plus récentes aux plus anciennes : la borne de la lecture. */
+export const TACHES_LUES_MAX = 100;
+
+/** Une tâche telle que la page la lit : son action, son état et sa cible — jamais son texte. */
+export type TacheLue = {
+  id: string;
+  action: string;
+  state: string;
+  created_at: string;
+  scene: string | null;
+  document: string | null;
+  episode: string | null;
+};
+
+/** Ce que la lecture sait des cibles encore en place, par identifiant. */
+export type CiblesLues = {
+  /** Scènes du storyboard : leur titre. */
+  scenes: ReadonlyMap<string, string>;
+  /** Documents : leur titre. */
+  documents: ReadonlyMap<string, string>;
+  /** Scénario rattaché à un épisode : son identifiant et son titre, par épisode. */
+  scenarios: ReadonlyMap<string, { id: string; titre: string }>;
+};
+
+export type NatureAttente = "proposition" | "en_file" | "en_cours" | "a_rapprocher";
+
+export type Attente = {
+  /** Identifiant de la tâche : la clé de l'entrée. */
+  id: string;
+  action: string;
+  libelle: string;
+  nature: NatureAttente;
+  /** Date de la demande. */
+  depuis: string;
+  /** La scène ou le document visés, nommés ; nul si la demande vise le projet. */
+  cible: string | null;
+  /** Chemin sous le projet de l'écran qui la porte ; nul si la cible a été retirée. */
+  chemin: string | null;
+};
+
+/** Ce que chaque nature veut dire, dit à l'équipe. */
+export const NATURES_ATTENTE: Readonly<Record<NatureAttente, string>> = {
+  proposition: "À décider",
+  en_file: "En file",
+  en_cours: "En cours de rédaction",
+  a_rapprocher: "À rapprocher : l'issue de la demande n'est pas connue",
+};
+
+const DEMANDES_PAR_ACTION: ReadonlyMap<string, DemandeAssistant> = new Map(
+  BESOINS_ASSISTANT.flatMap((besoin) => besoin.demandes).map((demande) => [
+    demande.action,
+    demande,
+  ]),
+);
+
+/** Les actions que l'assistant d'un projet sait exécuter : celles que la lecture retient. */
+export const ACTIONS_ASSISTANT: readonly string[] = [...DEMANDES_PAR_ACTION.keys()];
+
+const ACTIONS_RECHERCHE: readonly string[] = ["research", "cultural_context"];
+const ACTIONS_RETOUCHE: readonly string[] = [
+  "text_improve",
+  "text_shorten",
+  "text_expand",
+  "text_correct",
+];
+const ACTIONS_SCENE: readonly string[] = ["shot_list", "storyboard_image"];
+
+/**
+ * Ce qu'une tâche vise, tel que son écran le distingue : chaque écran ne
+ * montre que la dernière demande de sa cible. Les deux recherches partagent
+ * leur écran, les quatre retouches celui de leur document.
+ */
+export function cibleDe(tache: TacheLue): string {
+  if (ACTIONS_RECHERCHE.includes(tache.action)) {
+    return "recherche";
+  }
+  if (ACTIONS_RETOUCHE.includes(tache.action)) {
+    return `retouche:${tache.document ?? ""}`;
+  }
+  if (tache.action === "dialogue") {
+    return `dialogue:${tache.document ?? ""}`;
+  }
+  if (ACTIONS_SCENE.includes(tache.action)) {
+    return `${tache.action}:${tache.scene ?? ""}`;
+  }
+  if (tache.action === "screenplay") {
+    return `screenplay:${tache.episode ?? ""}`;
+  }
+  return tache.action;
+}
+
+/**
+ * La dernière tâche de chaque cible. Les tâches arrivent des plus récentes
+ * aux plus anciennes ; une action hors du catalogue est ignorée. Une demande
+ * annulée ou échouée cache celles qui la précèdent, comme sur son écran.
+ */
+export function dernieresParCible(taches: readonly TacheLue[]): TacheLue[] {
+  const vues = new Set<string>();
+  const dernieres: TacheLue[] = [];
+  for (const tache of taches) {
+    if (!DEMANDES_PAR_ACTION.has(tache.action)) {
+      continue;
+    }
+    const cible = cibleDe(tache);
+    if (!vues.has(cible)) {
+      vues.add(cible);
+      dernieres.push(tache);
+    }
+  }
+  return dernieres;
+}
+
+function natureDe(tache: TacheLue, proposees: ReadonlySet<string>): NatureAttente | null {
+  switch (tache.state) {
+    case "queued":
+      return "en_file";
+    case "running":
+      return "en_cours";
+    case "awaiting_reconciliation":
+      return "a_rapprocher";
+    case "succeeded":
+      return proposees.has(tache.id) ? "proposition" : null;
+    default:
+      return null;
+  }
+}
+
+/** Où une attente s'ouvre, et ce qu'elle vise ; chemin nul si la cible n'est plus là. */
+function lieuDe(
+  tache: TacheLue,
+  demande: DemandeAssistant,
+  cibles: CiblesLues,
+): { cible: string | null; chemin: string | null } {
+  if (ACTIONS_SCENE.includes(tache.action)) {
+    const titre = tache.scene ? cibles.scenes.get(tache.scene) : undefined;
+    return titre === undefined
+      ? { cible: "Scène retirée", chemin: null }
+      : { cible: titre.trim() || "Scène sans titre", chemin: `/storyboard#scene-${tache.scene}` };
+  }
+  if (tache.action === "dialogue" || ACTIONS_RETOUCHE.includes(tache.action)) {
+    const titre = tache.document ? cibles.documents.get(tache.document) : undefined;
+    const ancre = tache.action === "dialogue" ? "assistant-dialogues" : "assistant-retouches";
+    return titre === undefined
+      ? { cible: "Document retiré", chemin: null }
+      : { cible: titre, chemin: `/documents/${tache.document}#${ancre}` };
+  }
+  if (tache.action === "screenplay" && tache.episode) {
+    const scenario = cibles.scenarios.get(tache.episode);
+    return scenario
+      ? { cible: scenario.titre, chemin: `/documents/${scenario.id}#assistant-screenplay` }
+      : { cible: "Épisode retiré, ou scénario détaché", chemin: null };
+  }
+  return { cible: null, chemin: demande.chemin };
+}
+
+/**
+ * Ce qui attend sur un projet, pour qui le regarde : les propositions à
+ * décider d'abord, puis les demandes en cours, des plus récentes aux plus
+ * anciennes.
+ *
+ * Un lecteur ne lit que les propositions, et seulement celles que leur écran
+ * lui montre : il ne voit ni tâche ni demande en cours. La demande du budget
+ * ne se montre qu'à qui le gère.
+ */
+export function ceQuiAttend(
+  taches: readonly TacheLue[],
+  proposees: ReadonlySet<string>,
+  cibles: CiblesLues,
+  contexte: { peutDemander: boolean; budget: boolean },
+): Attente[] {
+  const attentes: Attente[] = [];
+  for (const tache of dernieresParCible(taches)) {
+    const demande = DEMANDES_PAR_ACTION.get(tache.action);
+    const nature = natureDe(tache, proposees);
+    if (!demande || !nature) {
+      continue;
+    }
+    if (demande.reserve === "budget" && !contexte.budget) {
+      continue;
+    }
+    if (!contexte.peutDemander && !(nature === "proposition" && demande.lecteur)) {
+      continue;
+    }
+    attentes.push({
+      id: tache.id,
+      action: tache.action,
+      libelle: demande.libelle,
+      nature,
+      depuis: tache.created_at,
+      ...lieuDe(tache, demande, cibles),
+    });
+  }
+  // Les propositions d'abord ; l'ordre de lecture — les plus récentes en tête — est gardé.
+  return [
+    ...attentes.filter((attente) => attente.nature === "proposition"),
+    ...attentes.filter((attente) => attente.nature !== "proposition"),
+  ];
+}
+
+/** « 2 propositions à décider », « 1 demande en cours » : le décompte de ce qui attend. */
+export function decompteAttentes(attentes: readonly Attente[]): string {
+  const propositions = attentes.filter((attente) => attente.nature === "proposition").length;
+  const demandes = attentes.length - propositions;
+  const parties = [
+    propositions ? `${propositions} proposition${propositions > 1 ? "s" : ""} à décider` : null,
+    demandes ? `${demandes} demande${demandes > 1 ? "s" : ""} en cours` : null,
+  ].filter(Boolean);
+  return parties.length ? parties.join(", ") : "Rien n'attend sur ce projet";
 }

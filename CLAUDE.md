@@ -849,8 +849,28 @@ recommandations (« à améliorer ») sont configurables et traçables.
   `peut_engager_unites`, que les comptes n'appellent pas — et la demande du
   budget qu'à qui le gère (`peut_gerer_budget`). Les épisodes ne se
   proposent qu'à une série.
-- Non livré : ce qui attend sur un projet — propositions non décidées,
-  demandes en cours — réuni sur cette page (lot AS2, à auditer).
+- Ce qui attend (lot AS2, sans IA, sans migration) : livré, en tête de la
+  page du projet — les propositions à décider, puis les demandes en file, en
+  cours ou à rapprocher. **Calculé à la lecture, jamais stocké** : ni « lu »,
+  ni compteur, et rien ne se décide depuis la page ; chaque entrée mène à son
+  écran. Règles dans `src/lib/assistant-ia.ts` (`ceQuiAttend`), lecture
+  bornée dans `assistant-ia/lecture.ts` : les cent dernières tâches du
+  projet, puis l'existence de leurs propositions.
+- **La règle est celle des écrans : la dernière demande de chaque cible** —
+  l'action, ou la scène, le document, l'épisode (`cibleDe`). Une demande plus
+  récente, même annulée, cache la proposition qui la précède : ne pas lister
+  toutes les propositions « proposées » de la base, aucun écran n'ouvrirait
+  les plus anciennes. Le parent (`ai_suggestions`) dit seul si quelque chose
+  attend : ne pas lire les tables de lignes.
+- La lecture ne rapatrie des tâches que l'action, l'état, la date et la
+  cible — **jamais le reste des paramètres**, qui porte ce que l'équipe a
+  écrit — et des propositions que leur existence, jamais leur contenu. Une
+  cible retirée ne donne aucun lien. **Un lecteur ne lit que les propositions
+  que leur écran lui montre** (`lecteur` au catalogue : épisodes, matériel,
+  jalons, plans, vignette, recherche), jamais une demande en cours ; la
+  proposition de budget ne se montre qu'à qui le gère, bien que la base en
+  laisse lire le parent à toute l'équipe. Ne pas créer un second calcul, ni
+  de table, ni de compteur dans la coque : étendre celui-ci.
 
 ### Ressources
 
