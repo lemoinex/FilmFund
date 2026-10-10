@@ -86,7 +86,7 @@ réels).
 | SE2b   | SCRIPT : écran des épisodes proposés, sur la page des épisodes                                                                 | en production     | —             |
 | SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | en production     | —             |
 | SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | en production     | —             |
-| AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | validé localement | —             |
+| AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3142,5 +3142,12 @@ page du budget sans s'y positionner.
 
 **À savoir** : « Assistant IA » et « Assistant de création » sont deux écrans distincts, aux
 noms proches.
+
+AS1 est en production depuis le 9 octobre 2026 à 23h55 UTC (PR 174, `06ccbb2`), sans
+migration. CI de `main` verte, déploiement Vercel terminé ; le worker n'est pas concerné.
+
+**Non vu en production** : aucune page ouverte, ni sous session ni sans. L'adresse du
+déploiement est derrière la connexion Vercel, et l'adresse publique du site n'est pas écrite
+dans le dépôt : ni le menu, ni la page d'un projet, ni le lien de la Synthèse n'ont été vus.
 
 **Reste à faire** : AS2, ce qui attend sur un projet, à auditer.
