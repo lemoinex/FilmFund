@@ -196,6 +196,23 @@ describe("Pages introuvables", () => {
     assert.ok(rubriques.includes("/tableau-de-bord"));
     assert.deepEqual(gardees, rubriques);
   });
+
+  it("la garde est branchée par le fichier que Next 16 attend, et par lui seul", () => {
+    // Next 16 a renommé la convention : un `middleware.ts` y est déprécié, et
+    // deux fichiers d'entrée feraient douter de celui qui garde. Un fichier
+    // mal nommé ne serait pas exécuté du tout, et rien ne serait gardé.
+    const entrees = SOURCES.filter((f) => /^src\/(middleware|proxy)\.(ts|js|mjs)$/.test(f));
+    assert.deepEqual(entrees, ["src/proxy.ts"]);
+
+    const entree = sansCommentaires(lire("src/proxy.ts"));
+    assert.match(entree, /export async function proxy\(/);
+    assert.match(entree, /return updateSession\(request\)/);
+    // Le réglage du runtime y est refusé par Next : le proxy tourne sous Node.js.
+    assert.doesNotMatch(entree, /\bruntime\b/);
+    // Le filtre laisse passer toutes les pages : seuls les fichiers statiques sont écartés.
+    assert.match(entree, /matcher:\s*\[/);
+    assert.match(entree, /_next\/static\|_next\/image/);
+  });
 });
 
 /*
