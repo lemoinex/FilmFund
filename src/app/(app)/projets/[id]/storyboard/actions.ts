@@ -11,6 +11,7 @@ import {
   FOCALE_MM,
   PLANS_PAR_SCENE_MAX,
 } from "@/lib/decoupage";
+import { ERREUR_EPISODE_DE_SCENE, MESSAGE_EPISODE_DE_SCENE } from "@/lib/episodes";
 import { lireEntier } from "@/lib/materiel-calculs";
 import {
   DESCRIPTION_SCENE_MAX,
@@ -48,7 +49,11 @@ type SceneValidee = {
   time_of_day: SceneTime;
   shot: ShotType | null;
   description: string;
+  /** Absent : le formulaire ne proposait pas d'épisode, et le rattachement n'est pas touché. */
+  episode_id?: string | null;
 };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function validerScene(formData: FormData): { erreur: string } | { scene: SceneValidee } {
   const titre = String(formData.get("titre") ?? "").trim();
@@ -75,6 +80,14 @@ function validerScene(formData: FormData): { erreur: string } | { scene: SceneVa
   if (!estDecor(decor) || !estMoment(moment)) {
     return { erreur: "Décor ou moment inconnu." };
   }
+  // L'épisode n'est proposé qu'aux séries : un formulaire qui ne le porte pas
+  // laisse le rattachement tel qu'il est. Vide : aucun épisode. La base
+  // vérifie qu'il est bien de ce projet.
+  const episode = formData.get("episode");
+  if (episode !== null && episode !== "" && !UUID.test(String(episode))) {
+    return { erreur: "Épisode inconnu." };
+  }
+
   // Le cadrage est facultatif : une chaîne vide signifie « non précisé ».
   if (cadrage && !estCadrage(cadrage)) {
     return { erreur: "Cadrage inconnu." };
@@ -88,6 +101,7 @@ function validerScene(formData: FormData): { erreur: string } | { scene: SceneVa
       time_of_day: moment,
       shot: cadrage && estCadrage(cadrage) ? cadrage : null,
       description,
+      ...(episode === null ? {} : { episode_id: episode === "" ? null : String(episode) }),
     },
   };
 }
@@ -137,6 +151,9 @@ export async function ajouterScene(
       revalidatePath("/storyboard");
       return null;
     }
+    if (error.code === ERREUR_EPISODE_DE_SCENE) {
+      return { erreur: MESSAGE_EPISODE_DE_SCENE };
+    }
     if (error.code !== "23505") {
       return { erreur: error.code === "42501" ? REFUS : "L'ajout de la scène a échoué." };
     }
@@ -173,6 +190,9 @@ export async function modifierScene(
     .eq("project_id", projetId)
     .select("id");
 
+  if (error?.code === ERREUR_EPISODE_DE_SCENE) {
+    return { erreur: MESSAGE_EPISODE_DE_SCENE };
+  }
   if (error || !data?.length) {
     return { erreur: error ? "L'enregistrement a échoué." : REFUS };
   }

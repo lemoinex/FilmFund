@@ -56,7 +56,7 @@ function entete(scene: { decor: string; lieu: string; moment: string; titre: str
  * scénario entier.
  */
 export function composerContexteDecoupage(contexte: ContexteDecoupage, objectif: string): string {
-  const { projet, vision, scene, avant, plans } = contexte;
+  const { projet, vision, scene, avant, plans, episode } = contexte;
   const blocs = [
     [
       "<projet>",
@@ -79,9 +79,27 @@ export function composerContexteDecoupage(contexte: ContexteDecoupage, objectif:
       "</contexte>",
     ].join("\n"),
     ["<vision>", champ("Vision artistique", vision.artistique), "</vision>"].join("\n"),
-    ["<scenario>", contexte.scenario.trim() || "(aucun scénario enregistré)", "</scenario>"].join(
-      "\n",
-    ),
+    // La scène d'un épisode : l'épisode d'abord, puis son scénario — le sien,
+    // jamais celui d'un autre. Sans épisode, le message garde sa forme.
+    ...(episode
+      ? [
+          [
+            "<episode>",
+            `Épisode ${episode.numero} : ${episode.titre}`,
+            champ("Résumé", episode.resume),
+            "Le scénario et les scènes précédentes ci-dessous sont ceux de cet épisode, et de lui seul.",
+            "</episode>",
+          ].join("\n"),
+        ]
+      : []),
+    [
+      "<scenario>",
+      contexte.scenario.trim() ||
+        (episode
+          ? "(cet épisode n'a pas encore de scénario enregistré)"
+          : "(aucun scénario enregistré)"),
+      "</scenario>",
+    ].join("\n"),
     [
       "<scenes_precedentes>",
       ...(avant.length ? avant.map((precedente) => `- ${entete(precedente)}`) : ["(aucune)"]),

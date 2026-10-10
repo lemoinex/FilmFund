@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { AIDE_EPISODE_DE_SCENE, libelleEpisode } from "@/lib/episodes";
 import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 import {
   CADRAGES,
@@ -28,7 +29,12 @@ export type SceneEditable = {
   time_of_day: SceneTime;
   shot: ShotType | null;
   description: string;
+  /** Épisode dont la scène fait partie ; nul si elle n'est rattachée à aucun. */
+  episode_id: string | null;
 };
+
+/** Épisode qu'une scène peut désigner, tel que le formulaire le propose. */
+export type EpisodeDeScene = { id: string; number: number; title: string };
 
 /**
  * Ajout ou modification d'une scène.
@@ -38,7 +44,16 @@ export type SceneEditable = {
  * suivante. À la modification, l'action redirige vers le storyboard et le
  * formulaire disparaît : la réinitialisation n'a pas le temps de tromper.
  */
-export function FormulaireScene({ projetId, scene }: { projetId: string; scene?: SceneEditable }) {
+export function FormulaireScene({
+  projetId,
+  scene,
+  episodes = [],
+}: {
+  projetId: string;
+  scene?: SceneEditable;
+  /** Épisodes du projet ; vide pour un projet qui n'est pas une série, et le champ n'est pas rendu. */
+  episodes?: readonly EpisodeDeScene[];
+}) {
   const [etat, action, enCours] = useActionState<EtatScene, FormData>(
     scene ? modifierScene : ajouterScene,
     null,
@@ -113,6 +128,34 @@ export function FormulaireScene({ projetId, scene }: { projetId: string; scene?:
           </select>
         </div>
       </div>
+
+      {episodes.length ? (
+        <div>
+          <label htmlFor={`${p}-episode`} className="mb-2 block text-sm font-medium">
+            Épisode <span className="text-secondary font-normal">(facultatif)</span>
+          </label>
+          <select
+            id={`${p}-episode`}
+            name="episode"
+            defaultValue={scene?.episode_id ?? ""}
+            aria-describedby={`${p}-episode-aide`}
+            className={CLASSES_CHAMP}
+          >
+            <option value="">Aucun épisode</option>
+            {episodes.map((episode) => (
+              <option key={episode.id} value={episode.id}>
+                {libelleEpisode(episode.number)} : {episode.title}
+              </option>
+            ))}
+          </select>
+          <p
+            id={`${p}-episode-aide`}
+            className="text-secondary mt-2 text-xs leading-relaxed text-pretty"
+          >
+            {AIDE_EPISODE_DE_SCENE}
+          </p>
+        </div>
+      ) : null}
 
       <div>
         <label htmlFor={`${p}-cadrage`} className="mb-2 block text-sm font-medium">

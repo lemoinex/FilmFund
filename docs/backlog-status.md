@@ -89,6 +89,7 @@ réels).
 | AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | en production     | —             |
 | AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | en production     | —             |
 | SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | en production     | —             |
+| SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3251,4 +3252,46 @@ en cours. CI de `main` verte, déploiement Vercel terminé, worker redéployé s
 **Non vu en production** : aucun dossier de série fabriqué — la base ne compte aucun
 épisode —, et l'écran du dossier n'a pas été ouvert sous session.
 
-**Reste à faire** : SE5, FRAME par épisode, à planifier.
+Lot SE5 : la scène d'un épisode. Une migration ajoute la colonne facultative
+`storyboard_scenes.episode_id`, jamais remplie d'office, et la règle que la base tient —
+l'épisode est celui du même projet (`SE005`). Retirer un épisode ne supprime aucune scène : le
+lien se vide. Aucune politique ne change ; le droit d'écrire est accordé pour la colonne. La
+migration reprend aussi `contexte_decoupage`.
+
+Trois règles, alignées sur l'écriture d'une séquence (lot SE3b). La scène d'un épisode lit le
+scénario de cet épisode, et aucun autre. Si cet épisode n'a pas de scénario, FRAME n'en reçoit
+aucun, plutôt que celui d'un autre épisode ; l'écran le dit avant la demande, scène par scène.
+Une scène sans épisode ne lit que le scénario sans épisode. Pour la scène d'un épisode, les
+scènes précédentes transmises sont celles du même épisode. Sans épisode, le contexte garde
+exactement sa forme : pour un film, rien ne change. Le profil de FRAME ne change pas
+(`frame.decoupage@1`), ni le prix.
+
+À l'écran : le formulaire d'une scène propose l'épisode, pour les séries seulement, avec ce
+que l'assistant lira ; la carte de la scène dit son épisode ; un lecteur le lit sans pouvoir
+le changer. Un formulaire qui ne porte pas le champ ne touche pas au rattachement.
+
+SE5 est validé localement le 10 octobre 2026, sans appel à un fournisseur — le fournisseur
+des tests est factice : 27 tests de plus, suite complète de l'API à 1 819 tests,
+993 tests SQL (20 de plus). Trente-trois sabotages attrapés un par un — vingt dans
+le code, treize à chaud dans la base locale. Rendu réel du storyboard sur un serveur de
+production local, 17 points sur 17 — porteur et lecteur ; une série et un film ; les trois
+avertissements, scène par scène —, données d'essai retirées.
+
+**Non couvert** : l'affichage à 375 px ; les clics dans un navigateur — l'envoi du formulaire
+d'une scène est éprouvé par l'API et par la lecture du code ; ce que FRAME fait réellement de
+l'épisode qu'il reçoit, qui ne se vérifie qu'en recette.
+
+**À savoir** : dans une série, une scène sans épisode perd le scénario d'épisode que FRAME
+lisait jusqu'ici par hasard — aucun cas en production. BOARD, GEAR et les exports lisent les
+scènes sans leur épisode : inchangé, hors lot.
+
+**Un test hors lot tombe par intermittence en local** : `tests/statistiques-ecran.test.mjs`,
+« un administrateur lit des comptages », sur un délai d'exécution dépassé (`57014`). Il a
+échoué une fois dans la suite complète, puis une fois sur trois rejoué seul. La base locale
+compte plus de 24 000 projets et près de 40 000 comptes d'essai, accumulés par les suites :
+`statistiques_usage()` y frôle la borne. Ce lot ne touche pas cette fonction. À traiter à
+part — purger la base locale, ou alléger la lecture ; la base de la CI, neuve à chaque
+passage, n'est pas concernée.
+
+**Reste à faire** : pousser la migration `20261010220000_scenes_episodes.sql` après fusion,
+puis vérifier la colonne, sa règle et la fonction en production.

@@ -249,7 +249,9 @@ describe("Plans proposés : page du storyboard", () => {
 
   it("l'encart affiche l'avertissement dès que des plans sont montrés, et dit quand le scénario manque", () => {
     assert.match(encart, /\{LIVRABLE_DECOUPAGE\.avertissement\}/);
-    assert.match(encart, /scenarioPresent \? null : ` \$\{LIVRABLE_DECOUPAGE\.sansScenario\}`/);
+    // Depuis le lot SE5, la page dit ce qui manque, scène par scène : le
+    // scénario du projet, ou celui de l'épisode de la scène.
+    assert.match(encart, /\{sansScenario \? ` \$\{sansScenario\}` : null\}/);
     assert.match(encart, /Rien n&apos;entre dans le découpage sans accord, plan par\s+plan\./);
   });
 

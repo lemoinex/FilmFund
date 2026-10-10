@@ -523,8 +523,13 @@ export type ContexteDecoupage = {
     description: string;
     duree: number | null;
   }[];
-  /** Le scénario enregistré ; vide si le projet n'en a pas. */
+  /**
+   * Le scénario enregistré : celui de l'épisode de la scène si elle en a un,
+   * sinon le scénario sans épisode ; vide s'il n'y en a pas.
+   */
   scenario: string;
+  /** L'épisode de la scène (lot SE5) ; absent si elle n'est rattachée à aucun. */
+  episode?: { numero: number; titre: string; resume: string } | null;
 };
 
 /**

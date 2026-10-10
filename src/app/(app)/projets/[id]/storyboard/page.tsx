@@ -8,6 +8,7 @@ import { StoryboardIcon } from "@/components/icons";
 import { BoutonConfirme } from "@/components/ui/confirmation";
 import { EnvoiImage } from "@/components/ui/envoi-image";
 import { PLANS_PAR_SCENE_MAX } from "@/lib/decoupage";
+import { episodeDeScene, estSerie, NUMERO_EPISODE, SANS_SCENARIO_D_EPISODE } from "@/lib/episodes";
 import {
   etapeProposition,
   LIVRABLE_DECOUPAGE,
@@ -22,7 +23,7 @@ import { definirImageScene, retirerImageScene } from "../images/actions";
 import { OngletsProjet } from "../onglets";
 import { RafraichissementPropositions } from "../proposition";
 import { deplacerScene, supprimerScene } from "./actions";
-import { FormulaireScene, type SceneEditable } from "./formulaire";
+import { FormulaireScene, type EpisodeDeScene, type SceneEditable } from "./formulaire";
 import type { PlanEditable } from "./formulaire-plan";
 import { lireVignettes, VIGNETTE_AU_REPOS, type VignetteScene } from "./lecture-vignettes";
 import { PlansScene } from "./plans";
@@ -56,12 +57,14 @@ export default async function StoryboardPage({
     { data: scenes },
     { data: plans },
   ] = await Promise.all([
-    supabase.from("projects").select("id, title").eq("id", id).maybeSingle(),
+    supabase.from("projects").select("id, title, format").eq("id", id).maybeSingle(),
     supabase.rpc("peut_editer_contenu", { p_project_id: id }),
     supabase.rpc("peut_gerer_budget", { p_project_id: id }),
     supabase
       .from("storyboard_scenes")
-      .select("id, title, setting, location, time_of_day, shot, description, image_path")
+      .select(
+        "id, title, setting, location, time_of_day, shot, description, image_path, episode_id",
+      )
       .eq("project_id", id)
       .order("position"),
     supabase
@@ -77,6 +80,18 @@ export default async function StoryboardPage({
 
   const liste = scenes ?? [];
   const peutDecider = peutEditer === true;
+  // Les épisodes qu'une scène peut désigner : pour une série seulement. Lus
+  // sous la RLS, comme toute l'équipe les lit.
+  const { data: saison } = estSerie(projet.format)
+    ? await supabase
+        .from("project_episodes")
+        .select("id, number, title")
+        .eq("project_id", projet.id)
+        .order("number")
+        .limit(NUMERO_EPISODE.max)
+    : { data: [] };
+  const episodes: EpisodeDeScene[] = saison ?? [];
+  const episodesParId = new Map(episodes.map((episode) => [episode.id, episode]));
   const assistant = await lireAssistant(supabase, projet.id, peutDecider);
   const vignettes = await lireVignettes(supabase, projet.id, peutDecider);
   // Une seule boucle de rafraîchissement pour la page : un découpage ou une
@@ -131,7 +146,7 @@ export default async function StoryboardPage({
               {scene.id === sceneEnModification && peutEditer ? (
                 <div className="p-5">
                   <p className="text-gold mb-4 text-sm">Scène {numeroScene(index)}</p>
-                  <FormulaireScene projetId={projet.id} scene={scene} />
+                  <FormulaireScene projetId={projet.id} scene={scene} episodes={episodes} />
                 </div>
               ) : (
                 <Planche
@@ -146,7 +161,16 @@ export default async function StoryboardPage({
                   planEnModification={planEnModification}
                   decoupageOuvert={decoupageOuvert === scene.id}
                   assistant={assistant.parScene.get(scene.id) ?? REPOS}
-                  scenarioPresent={assistant.scenarioPresent}
+                  episode={scene.episode_id ? (episodesParId.get(scene.episode_id) ?? null) : null}
+                  sansScenario={
+                    scene.episode_id
+                      ? assistant.scenarios.episodes.has(scene.episode_id)
+                        ? null
+                        : SANS_SCENARIO_D_EPISODE
+                      : assistant.scenarios.sansEpisode
+                        ? null
+                        : LIVRABLE_DECOUPAGE.sansScenario
+                  }
                   vignette={vignettes.get(scene.id) ?? VIGNETTE_AU_REPOS}
                 />
               )}
@@ -177,7 +201,7 @@ export default async function StoryboardPage({
             Elle prend place à la fin du storyboard ; les flèches la déplacent ensuite.
           </p>
           <div className="mt-6">
-            <FormulaireScene projetId={projet.id} />
+            <FormulaireScene projetId={projet.id} episodes={episodes} />
           </div>
         </section>
       ) : null}
@@ -186,6 +210,9 @@ export default async function StoryboardPage({
 }
 
 type AssistantScene = { etape: EtapeProposition; plans: PlanPropose[] };
+
+/** Ce que le projet a de scénarios : un sans épisode, et ceux de quels épisodes. */
+type ScenariosDuProjet = { sansEpisode: boolean; episodes: ReadonlySet<string> };
 
 const REPOS: AssistantScene = { etape: { etape: "repos" }, plans: [] };
 
@@ -205,18 +232,26 @@ async function lireAssistant(
   supabase: Awaited<ReturnType<typeof createClient>>,
   projetId: string,
   peutDecider: boolean,
-): Promise<{ parScene: Map<string, AssistantScene>; scenarioPresent: boolean }> {
+): Promise<{ parScene: Map<string, AssistantScene>; scenarios: ScenariosDuProjet }> {
   const parScene = new Map<string, AssistantScene>();
   /** Proposition en attente → scène, pour y ranger ses plans. */
   const scenes = new Map<string, string | null>();
 
-  const { data: scenario } = await supabase
+  // Les scénarios du projet, par épisode : un par épisode au plus, la base
+  // le garantit. De quoi dire, scène par scène, celui que l'assistant lira.
+  const { data: documents } = await supabase
     .from("project_documents")
-    .select("id")
+    .select("episode_id")
     .eq("project_id", projetId)
     .eq("type", "scenario")
-    .limit(1)
-    .maybeSingle();
+    .order("episode_id", { ascending: true, nullsFirst: true })
+    .limit(NUMERO_EPISODE.max + 1);
+  const scenarios: ScenariosDuProjet = {
+    sansEpisode: (documents ?? []).some((document) => document.episode_id === null),
+    episodes: new Set(
+      (documents ?? []).flatMap((document) => (document.episode_id ? [document.episode_id] : [])),
+    ),
+  };
 
   if (peutDecider) {
     const { data: taches } = await supabase
@@ -273,7 +308,7 @@ async function lireAssistant(
   }
 
   if (!scenes.size) {
-    return { parScene, scenarioPresent: Boolean(scenario) };
+    return { parScene, scenarios };
   }
 
   const { data: plans } = await supabase
@@ -308,7 +343,7 @@ async function lireAssistant(
     }
   }
 
-  return { parScene, scenarioPresent: Boolean(scenario) };
+  return { parScene, scenarios };
 }
 
 function Planche({
@@ -323,7 +358,8 @@ function Planche({
   planEnModification,
   decoupageOuvert,
   assistant,
-  scenarioPresent,
+  episode,
+  sansScenario,
   vignette,
 }: {
   projetId: string;
@@ -337,7 +373,9 @@ function Planche({
   planEnModification?: string;
   decoupageOuvert: boolean;
   assistant: AssistantScene;
-  scenarioPresent: boolean;
+  /** L'épisode de la scène, s'il est rattaché et lisible. */
+  episode: EpisodeDeScene | null;
+  sansScenario: string | null;
   vignette: VignetteScene;
 }) {
   const numero = numeroScene(index);
@@ -394,6 +432,7 @@ function Planche({
           {enteteScene(scene)}
         </p>
         <h2 className="mt-2 font-serif text-lg leading-snug text-pretty">{scene.title}</h2>
+        {episode ? <p className="text-gold mt-1 text-xs">{episodeDeScene(episode)}</p> : null}
         {scene.shot ? <p className="sr-only">Cadrage : {CADRAGES[scene.shot]}</p> : null}
         {scene.description ? (
           <p className="text-secondary mt-2 flex-1 text-sm leading-relaxed text-pretty whitespace-pre-line">
@@ -432,7 +471,7 @@ function Planche({
                 etape={assistant.etape}
                 plans={assistant.plans}
                 peutDecider={peutEditer}
-                scenarioPresent={scenarioPresent}
+                sansScenario={sansScenario}
               />
             ) : null
           }
