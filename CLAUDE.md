@@ -194,6 +194,9 @@ Livraison : branche, PR, CI verte, fusion, puis `supabase db push` précédé de
   `supabase/tests/mode_prive.test.sql` le vérifie.
 - **Les administrateurs ont accès à tout** : toute table nouvelle leur donne
   lecture et écriture via `public.is_admin()`.
+- **Toute clé étrangère a un index qui commence par sa première colonne**, créé
+  dans la migration de sa table (lot DU3) ;
+  `supabase/tests/cles_etrangeres_indexees.test.sql` le vérifie.
 - Ne jamais désactiver RLS globalement ni contourner RLS sans validation.
 - **Supabase accorde l’exécution de toute nouvelle fonction à `anon` et
   `authenticated`.** Une fonction `security definer` retire ces droits nommément
@@ -222,6 +225,14 @@ Livraison : branche, PR, CI verte, fusion, puis `supabase db push` précédé de
 - HTML sémantique, WCAG AA, focus clavier visible, reduced motion, équivalent
   accessible pour tout texte porté par une image ou une icône.
 - Landing : noir / ivoire / or. Application authentifiée : bleu nuit / ivoire / or.
+- Garde des routes (lot DU1) : le fichier d'entrée est `src/proxy.ts`, la
+  convention de Next 16 ; la garde reste dans `src/lib/supabase/middleware.ts`.
+  Ne pas recréer de `src/middleware.ts`.
+- Politique de sécurité de contenu (lot DU2) : dans `next.config.ts`, tenue par
+  `tests/en-tetes-securite.test.mjs`. Le navigateur ne charge rien hors de
+  l'application et du projet Supabase : une police, un script ou une image
+  d'une autre origine demande d'y ajouter cette origine, donc une décision.
+  Les scripts en ligne restent admis, par décision du 10 octobre 2026.
 
 Une fonction est terminée si elle inclut : interface responsive, validation,
 données réelles ou mock explicitement limité, contrôle d’accès serveur/RLS si
