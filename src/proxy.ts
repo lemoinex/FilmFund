@@ -2,7 +2,12 @@ import type { NextRequest } from "next/server";
 
 import { updateSession } from "@/lib/supabase/middleware";
 
-export async function middleware(request: NextRequest) {
+/*
+ * Next 16 appelle « proxy » ce qu'il appelait « middleware », et l'exécute
+ * sous Node.js. La garde elle-même n'a pas bougé : elle reste dans
+ * `lib/supabase/middleware.ts`, que les tests lisent par ce chemin.
+ */
+export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
