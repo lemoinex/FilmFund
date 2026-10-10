@@ -90,7 +90,7 @@ réels).
 | AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | en production     | —             |
 | SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | en production     | —             |
 | SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | en production     | —             |
-| Z4     | Administration : les administrateurs lisent les équipes de projet ; le comptage « membres d'équipe » redevient juste           | validé localement | —             |
+| Z4     | Administration : les administrateurs lisent les équipes de projet ; le comptage « membres d'équipe » redevient juste           | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3349,5 +3349,13 @@ ni du worker ne change.
 **À savoir** : un administrateur hors équipe ne change ni ne retire un membre par cette
 table — la règle ne donne que la lecture, comme avant pour l'écriture.
 
-**Reste à faire** : pousser la migration `20261011000000_admin_lit_equipes.sql`, puis
-vérifier la règle en production. Elle ne fait qu'ajouter : l'ordre avec la fusion est libre.
+Z4 est en production depuis le 10 octobre 2026 (PR 182, `6f1dfb9`) ; migration poussée par
+l'utilisateur le même jour, soixante-treize migrations en base. Vérifié en base par lecture
+seule : les cinq règles de la table — la nouvelle, de lecture, pour les comptes, tenue par
+`is_admin()` ; les quatre autres inchangées, mode privé compris ; ni visiteur ni worker ne
+lisent la table. Sous une session simulée puis annulée, l'administrateur membre d'aucune
+équipe lit l'adhésion qui existe en base, et le comptage « membres d'équipe » des
+statistiques vaut 1 — il valait zéro. La CI de la PR passe en entier, le test SQL sur une
+base déjà peuplée par la suite de l'API. CI de `main` verte ; aucun code à redéployer.
+
+**Non vu en production** : la rubrique Statistiques sous session.
