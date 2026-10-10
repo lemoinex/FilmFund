@@ -87,7 +87,7 @@ réels).
 | SE3a   | Séries : le scénario d'un épisode, rattaché à la main (sans IA)                                                                | en production     | —             |
 | SE3b   | SCRIPT : la séquence écrite dans le scénario de l'épisode désigné                                                              | en production     | —             |
 | AS1    | Assistant IA : ce que l'assistant sait faire pour un projet, et où le lui demander (sans IA)                                   | en production     | —             |
-| AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | validé localement | —             |
+| AS2    | Assistant IA : ce qui attend sur un projet — propositions à décider, demandes en cours (sans IA)                               | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3188,6 +3188,14 @@ pas.
 **À savoir** : la lecture des tâches par projet n'a pas d'index — comme celles des écrans
 existants. Sans effet à l'échelle actuelle ; à revoir avec le volume. Un administrateur hors
 de l'équipe lit ce qui attend, comme il lit le projet.
+
+AS2 est en production depuis le 10 octobre 2026 à 00h42 UTC (PR 176, `35b5dac`), sans
+migration. CI de `main` verte, déploiement Vercel terminé. Vu sans session à l'adresse
+publique du site : la vitrine répond, et les deux routes de l'assistant renvoient toujours à
+la connexion.
+
+**Non vu en production** : la section « Ce qui attend », qui n'existe que sous session.
+Aucune page de l'Assistant IA n'a été ouverte sous session.
 
 **Reste à faire** : rien de planifié pour l'Assistant IA. Un compteur sur la rubrique du menu
 a été écarté de ce lot ; la demande en texte libre, routée vers un agent, reste non décidée.
