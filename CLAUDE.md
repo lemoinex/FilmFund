@@ -511,8 +511,8 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   (`SE001`) ; deux épisodes d'un projet n'ont pas le même numéro ; **un projet
   qui a des épisodes ne quitte pas le format série** (`SE002`) — il faut les
   retirer d'abord, la base ne les supprime jamais d'elle-même. Les épisodes
-  n'entrent ni dans les exports, ni dans le score de maturité : chacun demande
-  son lot.
+  entrent dans les exports depuis le lot SE4 ; ils n'entrent pas dans le score
+  de maturité, et il a été décidé le 10 octobre 2026 de ne pas y toucher.
 - Scénario d'un épisode (lot SE3a, sans IA) : colonne facultative
   `project_documents.episode_id`. La base tient trois règles : **seul un
   scénario se rattache à un épisode**, un épisode a un scénario au plus, et
@@ -904,6 +904,18 @@ recommandations (« à améliorer ») sont configurables et traçables.
   `materiel`) : les plans de chaque scène, et le matériel par catégorie, dans les
   trois formats ; deux classeurs de plus dans le ZIP. **Aucun calcul électrique
   n’entre dans un dossier** : ni charge, ni intensité, ni groupe conseillé.
+- Épisodes dans le dossier (lot SE4, section `episodes`) : livrés dans les
+  trois formats. La saison — numéro, titre, durée, résumé entier — ouvre le
+  dossier après la fiche ; l'épisode 1 s'y dit « pilote ». Le scénario d'un
+  épisode dit lequel (« Scénario · Épisode N »), **d'après le lien du document
+  et non d'après son titre**, et les scénarios se rangent sans épisode
+  d'abord, puis par numéro. Un classeur de plus dans le ZIP (`episodes.xlsx`).
+  La base admet la section pour tout projet — un film n'a pas d'épisodes, la
+  section est vide et omise — ; l'écran ne la propose qu'aux séries
+  (`SECTIONS_DE_SERIE`). **Un document sans épisode garde exactement sa
+  forme** : l'empreinte d'un dossier déjà fabriqué ne change pas, ne pas
+  ajouter de clé à tous les documents. La saison part entière : sa lecture
+  est bornée à cinq cents épisodes, la borne d'un numéro.
 - ZIP du projet (lot M5, action `zip_export`) : livré. Un fichier Word par texte
   (présentation, puis un par document finalisé), un classeur Excel par tableau
   (budget, plan de financement, planning), où nombres et dates restent des nombres

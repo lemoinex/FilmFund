@@ -452,6 +452,11 @@ Décision 8, prise le 2 octobre 2026 ; le Word s'y ajoute le 3 octobre 2026, la 
   tâche qu'il tient (`contexte_export`). Seuls les documents **finalisés** y entrent. Ni
   image, ni note interne d'une candidature, ni montant réalisé du budget, ni identité des
   membres.
+- **Épisodes d'une série** (lot SE4) : la section `episodes` remet la saison — numéro,
+  titre, durée, résumé —, que le plan du dossier place après la fiche ; l'archive en tire un
+  classeur, `episodes.xlsx`, où numéros et durées restent des nombres. Un scénario rattaché à
+  un épisode arrive avec son numéro, lu par la base : le worker l'annonce au-dessus de son
+  titre et ne déduit rien du titre lui-même. Aucune action de plus.
 - **Aucun fournisseur, aucun coût** : le fichier est fabriqué en mémoire. Rien ne s'inscrit
   au registre des dépenses d'IA.
 - **Quota** : un export Word ou ZIP consomme la même unité qu'un PDF

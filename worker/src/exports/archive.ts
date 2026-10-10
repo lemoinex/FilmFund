@@ -150,6 +150,25 @@ function feuillePlanning(planning: NonNullable<ContenuDossier["planning"]>): Feu
   };
 }
 
+/** La saison : numéro et durée restent des nombres, pour trier et sommer. */
+function feuilleEpisodes(episodes: NonNullable<ContenuDossier["episodes"]>): FeuilleXlsx {
+  return {
+    nom: "Épisodes",
+    colonnes: [
+      { titre: "Épisode", largeur: 10 },
+      { titre: "Titre", largeur: 40 },
+      { titre: "Durée (min)", largeur: 12 },
+      { titre: "Résumé", largeur: 80 },
+    ],
+    lignes: episodes.map((episode) => [
+      nombre(Number(episode.numero)),
+      texte(episode.titre),
+      episode.duree === null ? null : nombre(Number(episode.duree)),
+      texte(episode.resume),
+    ]),
+  };
+}
+
 /** Une ligne par plan : la scène est redite sur chacune, pour trier et filtrer. */
 function feuilleDecoupage(decoupage: NonNullable<ContenuDossier["decoupage"]>): FeuilleXlsx {
   return {
@@ -235,7 +254,10 @@ function pieces(dossier: Dossier, contenu: ContenuDossier): Piece[] {
     liste.push({ chemin: `documents/${nom}.docx`, fabriquer: word([section]) });
   });
 
-  const { budget, financements, planning, decoupage, materiel } = contenu;
+  const { episodes, budget, financements, planning, decoupage, materiel } = contenu;
+  if (episodes && retenues("episodes").length) {
+    liste.push({ chemin: "episodes.xlsx", fabriquer: () => rendreXlsx(feuilleEpisodes(episodes)) });
+  }
   if (budget && retenues("budget").length) {
     liste.push({ chemin: "budget.xlsx", fabriquer: () => rendreXlsx(feuilleBudget(budget)) });
   }

@@ -67,14 +67,16 @@ describe("Exports PDF : demande", () => {
     assert.deepEqual(ORDRE_SECTIONS, [
       "synthese",
       "fiche_projet",
+      "episodes",
       "budget",
       "financements",
       "planning",
       "decoupage",
       "materiel",
     ]);
-    // Ce qui présente le projet ouvre le dossier, avant les documents.
-    assert.deepEqual(SECTIONS_D_OUVERTURE, ["synthese", "fiche_projet"]);
+    // Ce qui présente le projet — et, pour une série, sa saison — ouvre le
+    // dossier, avant les documents.
+    assert.deepEqual(SECTIONS_D_OUVERTURE, ["synthese", "fiche_projet", "episodes"]);
   });
 
   it("admet le découpage et le matériel, et les range comme la base", () => {

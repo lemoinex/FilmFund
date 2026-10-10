@@ -15,6 +15,7 @@
 export const SECTIONS = {
   synthese: { libelle: "Synthèse" },
   fiche_projet: { libelle: "Fiche du projet" },
+  episodes: { libelle: "Épisodes" },
   budget: { libelle: "Budget prévisionnel" },
   financements: { libelle: "Plan de financement" },
   planning: { libelle: "Planning" },
@@ -28,10 +29,17 @@ export const ORDRE_SECTIONS = Object.keys(SECTIONS) as SectionExport[];
 
 /**
  * Sections qui ouvrent le dossier, avant les documents : ce qui présente le
- * projet. Les tableaux — budget, financements, planning, découpage,
- * matériel — le ferment.
+ * projet — et, pour une série, sa saison. Les tableaux — budget,
+ * financements, planning, découpage, matériel — le ferment.
  */
-export const SECTIONS_D_OUVERTURE: readonly SectionExport[] = ["synthese", "fiche_projet"];
+export const SECTIONS_D_OUVERTURE: readonly SectionExport[] = [
+  "synthese",
+  "fiche_projet",
+  "episodes",
+];
+
+/** Sections qu'un projet ne se voit proposer que s'il est une série. */
+export const SECTIONS_DE_SERIE: readonly SectionExport[] = ["episodes"];
 
 /**
  * Formats d'un dossier. Le format est l'action même de la tâche — la base
