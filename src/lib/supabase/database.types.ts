@@ -2522,6 +2522,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           description: string;
+          episode_id: string | null;
           id: string;
           image_path: string | null;
           location: string;
@@ -2537,6 +2538,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           description?: string;
+          episode_id?: string | null;
           id?: string;
           image_path?: string | null;
           location?: string;
@@ -2552,6 +2554,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           description?: string;
+          episode_id?: string | null;
           id?: string;
           image_path?: string | null;
           location?: string;
@@ -2569,6 +2572,13 @@ export type Database = {
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "storyboard_scenes_episode_id_fkey";
+            columns: ["episode_id"];
+            isOneToOne: false;
+            referencedRelation: "project_episodes";
             referencedColumns: ["id"];
           },
           {

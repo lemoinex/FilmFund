@@ -524,8 +524,23 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   la page des épisodes (`creerScenarioEpisode`, titre tiré du numéro lu en
   base) ; l'éditeur d'un scénario de série dit son épisode et permet de le
   changer (`rattachement.tsx`, `rattacherScenario`), en ne proposant que les
-  épisodes sans scénario. FRAME lit toujours le scénario le plus récemment
-  modifié du projet, quel que soit son épisode : limite connue, non traitée.
+  épisodes sans scénario.
+- Scène d'un épisode (lot SE5, agent FRAME, profil inchangé
+  `frame.decoupage@1`) : colonne facultative `storyboard_scenes.episode_id`,
+  **jamais remplie d'office**. La base refuse l'épisode d'un autre projet
+  (`SE005`) ; retirer un épisode ne supprime aucune scène, le lien se vide.
+  Aucune politique ne change : la scène se lit de toute l'équipe et s'écrit
+  par qui écrit le storyboard. Le formulaire d'une scène propose l'épisode aux
+  séries seulement ; un formulaire qui ne porte pas le champ ne touche pas au
+  rattachement. FRAME lit, comme la séquence depuis le lot SE3b, **le scénario
+  de l'épisode de la scène, et aucun autre** : si cet épisode n'a pas de
+  scénario, il n'en reçoit aucun — jamais celui d'un autre épisode —, et
+  l'écran le dit avant la demande, scène par scène. Une scène sans épisode ne
+  lit que le scénario sans épisode. Pour la scène d'un épisode, les scènes
+  précédentes transmises sont celles du même épisode. **Sans épisode, le
+  contexte garde exactement sa forme** : pour un film, rien ne change. BOARD,
+  GEAR et les exports lisent les scènes sans leur épisode : ne pas l'y ajouter
+  sans décision.
 - Séquence d'un épisode (lot SE3b, agent SCRIPT, profil inchangé
   `script.scenario@1`, sans changement de schéma) : la demande de séquence
   peut désigner un épisode (`params.episode`), que la base relit dans le

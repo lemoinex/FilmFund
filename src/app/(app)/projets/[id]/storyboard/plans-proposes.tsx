@@ -66,7 +66,7 @@ export function DecoupagePropose({
   etape,
   plans,
   peutDecider,
-  scenarioPresent,
+  sansScenario,
 }: {
   projetId: string;
   sceneId: string;
@@ -76,7 +76,8 @@ export function DecoupagePropose({
   plans: PlanPropose[];
   /** Qui écrit le storyboard : porteur, éditeurs, administrateurs. */
   peutDecider: boolean;
-  scenarioPresent: boolean;
+  /** Ce que l'assistant n'a pas pour travailler, dit avant la demande ; nul s'il a son scénario. */
+  sansScenario: string | null;
 }) {
   const router = useRouter();
   const [enCours, demarrer] = useTransition();
@@ -137,7 +138,7 @@ export function DecoupagePropose({
         <p className="text-secondary mt-2 text-xs leading-relaxed text-pretty">
           {LIVRABLE_DECOUPAGE.description} Rien n&apos;entre dans le découpage sans accord, plan par
           plan.
-          {scenarioPresent ? null : ` ${LIVRABLE_DECOUPAGE.sansScenario}`}
+          {sansScenario ? ` ${sansScenario}` : null}
         </p>
       ) : null}
 

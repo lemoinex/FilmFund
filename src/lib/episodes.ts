@@ -172,3 +172,30 @@ export function messageScenario(code: string | undefined): string {
       return "L'enregistrement a échoué. Réessayez dans un instant.";
   }
 }
+
+/*
+ * La scène d'un épisode (lot SE5) : une scène du storyboard peut dire de quel
+ * épisode elle fait partie. L'assistant de découpage lit alors le scénario de
+ * cet épisode, et aucun autre.
+ */
+
+/** Refus de la base quand l'épisode désigné n'est pas un épisode du projet de la scène. */
+export const ERREUR_EPISODE_DE_SCENE = "SE005";
+
+export const MESSAGE_EPISODE_DE_SCENE = "Cet épisode n'est pas un épisode de ce projet.";
+
+/** Dit sous le choix de l'épisode, dans le formulaire d'une scène. */
+export const AIDE_EPISODE_DE_SCENE =
+  "L'assistant de découpage lit le scénario de cet épisode, et lui seul. Sans épisode, il lit le scénario qui n'est rattaché à aucun épisode.";
+
+/**
+ * Dit avant une demande de découpage, quand la scène est celle d'un épisode
+ * qui n'a pas encore de scénario : l'assistant ne se rabat sur aucun autre.
+ */
+export const SANS_SCENARIO_D_EPISODE =
+  "L'épisode de cette scène n'a pas de scénario enregistré : l'assistant travaillera d'après la description de la scène et le concept, jamais d'après le scénario d'un autre épisode.";
+
+/** « Épisode 2 : La dette » — l'épisode d'une scène, tel que sa carte le dit. */
+export function episodeDeScene(episode: { number: number; title: string }): string {
+  return `${libelleEpisode(episode.number)} : ${episode.title}`;
+}

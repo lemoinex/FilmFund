@@ -147,6 +147,13 @@ FRAME propose le découpage technique d'une scène (lot J3c-2a, action `shot_lis
 contexte porte le scénario enregistré en entier, ce qui en fait l'appel dont l'entrée est la
 plus longue. Si la scène a été supprimée avant l'appel, rien n'est envoyé.
 
+Depuis le lot SE5, une scène peut dire son épisode. Le contexte porte alors un champ de plus,
+`episode` (numéro, titre, résumé), que l'agent annonce avant le scénario ; ce scénario est
+celui de l'épisode, et les scènes précédentes celles du même épisode. Si l'épisode n'a pas de
+scénario, le champ `scenario` est vide et le message le dit : l'agent ne reçoit jamais celui
+d'un autre épisode. Sans épisode, le contexte et le message gardent leur forme. Aucune action
+de plus, et le profil ne change pas.
+
 GEAR propose une liste de matériel (lot J3c-3, action `gear_list`, profil `gear.materiel@1`),
 sur le même chemin. Sa demande vise le projet entier ; son contexte porte le storyboard, le
 découpage résumé et le matériel déjà saisi, sans scénario ni budget. Il ne rend aucun calcul.
