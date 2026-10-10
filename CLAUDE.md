@@ -1005,6 +1005,15 @@ recommandations (« à améliorer ») sont configurables et traçables.
   de comptes un comptage peut désigner quelqu’un : ne pas le présenter comme
   anonyme sans cette réserve. Ne pas créer une seconde lecture : étendre
   celle-ci.
+- Lecture des équipes par l’administration (lot Z4) : `project_members` a sa
+  règle de lecture pour les administrateurs. Sans elle, le comptage « membres
+  d’équipe » ne comptait que les équipes de qui le lisait. **Une lecture sous
+  les droits de l’appelant n’est juste que si un administrateur lit en entier
+  chaque table qu’elle compte** : `supabase/tests/admin_lit_equipes.test.sql`
+  le vérifie table par table, et refuse qu’une table lue par
+  `statistiques_usage()` manque à sa liste. Ajouter une table à cette
+  lecture, c’est l’y inscrire. La règle ne donne que la lecture : un
+  administrateur hors équipe ne change ni ne retire un membre par cette table.
 - Écartés le 8 octobre 2026, sans nouvelle demande : la vue des studios et
   abonnements, les alertes par e-mail.
 
