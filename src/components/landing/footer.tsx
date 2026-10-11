@@ -17,6 +17,7 @@ const NAV_LINKS = [
 const LEGAL_LINKS = [
   { href: "/mentions-legales", label: "Mentions légales" },
   { href: "/confidentialite", label: "Politique de confidentialité" },
+  { href: "/politique-de-contenu", label: "Politique de contenu" },
 ];
 
 /*
