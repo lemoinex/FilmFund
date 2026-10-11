@@ -66,6 +66,8 @@ select is_empty(
         'ecarter_materiel_propose',
         'accepter_personnage_propose',
         'ecarter_personnage_propose',
+        'accepter_champ_propose',
+        'ecarter_champ_propose',
         'accepter_episode_propose',
         'ecarter_episode_propose',
         'accepter_image_proposee',

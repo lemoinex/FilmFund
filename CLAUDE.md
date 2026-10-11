@@ -525,8 +525,24 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   endroits, que `tests/fiche-personnage.test.mjs` tient égaux. Pour un
   documentaire, l'écran dit avant la saisie que la fiche décrit une personne
   réelle et part chez l'assistant : ne pas retirer cet avertissement.
-  L'assistant ne remplit pas la fiche : c'est le lot PF3, cadré le 11 octobre
-  2026 et non livré.
+- Fiche d'un personnage proposée (lot PF3a, agent ARC, action
+  `character_sheet`, profil `arc.fiche_personnage@1`, table
+  `ai_suggestion_character_fields`) : base et worker livrés, **sans écran ni
+  appel réel**. Sur le modèle des propositions structurées, mais une ligne
+  est **un champ** de la fiche d'**un personnage existant**, désigné par la
+  demande (`params.character`) et relu par la base au devis, au contexte, au
+  dépôt et à l'acceptation. **Aucun chemin n'écrase un champ** : ARC ne
+  propose que pour les champs vides, un champ rempli pendant l'appel n'est
+  pas déposé, et l'acceptation refuse un champ qui ne l'est plus (`PF002`) ;
+  personnage retiré, rien ne s'accepte (`PF001`). **Jamais pour un
+  documentaire** : le devis est refusé avant toute dépense — ne pas lever ce
+  refus sans décision. ARC lit le projet, tous les personnages avec leurs
+  fiches et les scénarios enregistrés, deux cent mille caractères au plus en
+  tout ; ni budget, ni équipe. Ses consignes lui interdisent d'inventer et
+  préfèrent un champ laissé vide : ne pas les affaiblir. 2 unités. Tenu à
+  part de `PROFILS_ARC_PERSONNAGES` (`PROFILS_ARC_FICHE`). Le catalogue de
+  l'Assistant IA ne l'annonce pas tant que l'écran n'existe pas (lot PF3b) :
+  l'y inscrire avec son encart, et retirer alors l'exception du test.
 - Fiches des personnages dans le dossier (lot PF2, sans IA, section
   `fiches_personnages`) : une section **à part** de la fiche du projet, que
   **l'écran laisse décochée** (`SECTIONS_NON_COCHEES`) — un dossier part chez

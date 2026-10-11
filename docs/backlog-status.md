@@ -97,6 +97,7 @@ réels).
 | NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | en production     | —             |
 | PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | en production     | —             |
 | PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | en production     | —             |
+| PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3602,3 +3603,38 @@ vide pour tous les projets, et la case reste grisée tant qu'aucun champ n'est r
 
 **Non vu en production** : la case à l'écran, et un dossier réellement fabriqué avec la
 section — il faut d'abord qu'un personnage ait une fiche.
+
+PF3, l'assistant propose la fiche d'un personnage, cadré le 11 octobre 2026. Décisions de
+l'utilisateur : compléter **un personnage existant** plutôt que proposer des personnages neufs
+avec leur fiche ; **les seuls champs vides** ; **refus pour un documentaire** ; ARC lit le
+projet, tous les personnages avec leurs fiches **et le scénario** ; le prix laissé à
+l'assistant, fixé à **2 unités**. Deux lots : PF3a, base et worker ; PF3b, l'écran.
+
+PF3a : l'action `character_sheet`, le profil `arc.fiche_personnage@1`, la table
+`ai_suggestion_character_fields`. Sur le modèle des propositions structurées, mais une ligne y
+est **un champ** de la fiche, et la demande désigne son personnage, relu par la base au devis,
+au contexte, au dépôt et à l'acceptation. Le devis est refusé avant toute dépense pour un
+documentaire, pour un personnage d'un autre projet, et quand la fiche n'a plus de champ vide.
+**Aucun chemin n'écrase un champ** : ARC ne reçoit que les champs vides ; un champ rempli
+pendant l'appel n'est pas déposé ; à l'acceptation, le champ doit être encore vide, sinon rien
+n'est écrit (`PF002`). Personnage retiré : le lien se vide, plus rien ne s'accepte (`PF001`).
+Fiche complétée pendant l'attente : rien ne part chez le fournisseur.
+
+Le scénario lu est celui de tous les documents de ce type, sans épisode d'abord puis par
+numéro, deux cent mille caractères au plus en tout ; au-delà il est coupé, et le message le dit
+à l'agent. Les consignes interdisent d'inventer un événement, un lieu, une époque ou un lien de
+parenté, et préfèrent un champ laissé vide. Le profil, nouveau, écrit « FilmFund Africa ».
+
+`creer_devis` et `ecarter_lignes_restantes` reçoivent chacune un seul bloc, dans leur
+définition en place. Le catalogue de l'Assistant IA ne l'annonce pas encore : une demande que
+l'équipe ne peut pas faire à l'écran ne s'y montre pas ; elle y entrera avec son encart, au lot
+PF3b, et le test du catalogue porte cette exception nommément.
+
+PF3a est validé localement le 11 octobre 2026 : une vraie tâche menée jusqu'au dépôt par le
+worker local, **fournisseur factice** ; les droits entre porteur, éditeur, lecteur et compte
+étranger ; quatre sabotages attrapés — le devis acceptant un documentaire, un champ rempli
+écrasé à l'acceptation, un champ rempli déposé, le prix absent de la vitrine.
+
+**Non couvert** : aucun appel réel. Rien ne dit ce que l'agent écrit d'un personnage, ni s'il
+s'abstient d'inventer, ni ce qu'un long scénario coûte : c'est une recette, dans un budget à
+autoriser — un dollar proposé. Pas d'écran : rien ne se demande encore depuis l'application.

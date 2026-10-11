@@ -32,7 +32,7 @@ const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "
 
 /** Colonnes du barème publié : une par prix que la page affiche. */
 const COLONNES_BAREME =
-  "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, character_list, episode_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage";
+  "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, character_list, character_sheet, episode_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage";
 
 /** Ce qu'un prix compte, quand il ne compte pas une demande entière. */
 const PAR: Partial<Record<TarifAssistant, string>> = {

@@ -35,6 +35,7 @@ import {
   PROFIL_SYNOPSIS_STANDARD,
   PROFIL_TRAITEMENT,
   PROFILS_ARC,
+  PROFILS_ARC_FICHE,
   PROFILS_ARC_PERSONNAGES,
   PROFILS_FIELD,
   PROFILS_FRAME,
@@ -554,6 +555,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_FRAME),
         ...Object.keys(PROFILS_GEAR),
         ...Object.keys(PROFILS_ARC_PERSONNAGES),
+        ...Object.keys(PROFILS_ARC_FICHE),
         ...Object.keys(PROFILS_SCRIPT_EPISODES),
       ].sort(),
     );
@@ -596,6 +598,7 @@ describe("Registre des agents : la clé vient du coffre", () => {
         ...Object.keys(PROFILS_FRAME),
         ...Object.keys(PROFILS_GEAR),
         ...Object.keys(PROFILS_ARC_PERSONNAGES),
+        ...Object.keys(PROFILS_ARC_FICHE),
         ...Object.keys(PROFILS_SCRIPT_EPISODES),
       ].sort(),
     );
@@ -1541,6 +1544,7 @@ describe("ARC : analyse dramaturgique", () => {
     assert.deepEqual(Object.keys(executeursArc(base, fournisseur)), [
       ...Object.keys(PROFILS_ARC),
       ...Object.keys(PROFILS_ARC_PERSONNAGES),
+      ...Object.keys(PROFILS_ARC_FICHE),
     ]);
     assert.deepEqual(Object.keys(PROFILS_ARC), ["dramatic_analysis"]);
   });
