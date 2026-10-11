@@ -509,6 +509,24 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   (`assistant/actions-ia.ts`, `personnages-proposes.tsx`, catalogue
   `LIVRABLE_PERSONNAGES`), ouvert au porteur et aux éditeurs ; un homonyme d’un
   personnage saisi est signalé, jamais refusé.
+- Fiche détaillée d'un personnage (lot PF1, sans appel réel) : huit colonnes
+  facultatives de `project_characters` — âge, occupation, apparence physique,
+  objectif, obstacle, arc, traits, liens —, à côté de la description, qui
+  reste. Décisions du 11 octobre 2026 : **l'arc est un texte, pas une
+  structure** — ne pas créer de table d'arcs sans décision — ; les agents
+  lisent la fiche ; le score de maturité n'en tient pas compte. Mêmes droits
+  que les personnages, aucune politique nouvelle. La liste des champs est
+  `CHAMPS_FICHE_PERSONNAGE` (`src/lib/fiche.ts`), leurs bornes celles de la
+  base. **Un agent lit un personnage par une seule fonction de la base,
+  `personnage_pour_agent`, et le worker l'écrit par une seule fonction,
+  `ecrirePersonnage` (`worker/src/agents/personnage.ts`) : un champ vide
+  n'est ni transmis ni écrit, et un personnage sans fiche détaillée part
+  exactement comme avant.** Ajouter un champ, c'est l'ajouter aux trois
+  endroits, que `tests/fiche-personnage.test.mjs` tient égaux. Pour un
+  documentaire, l'écran dit avant la saisie que la fiche décrit une personne
+  réelle et part chez l'assistant : ne pas retirer cet avertissement. Les
+  exports ne lisent pas la fiche détaillée, et l'assistant ne la remplit
+  pas : ce sont d'autres lots (PF2, PF3), non décidés.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Épisodes d'une série (lot SE1, sans IA) : livrés — table `project_episodes`,
   règles dans `src/lib/episodes.ts`, page `projets/[id]/episodes/`, ouverte

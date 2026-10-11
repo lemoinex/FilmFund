@@ -14,6 +14,7 @@
  * autres lisent `contexte_redaction`, qui porte la fiche du projet, ses
  * personnages, sa vision et ses documents finalisés.
  */
+import { ecrirePersonnage } from "./personnage.ts";
 import {
   codeDe,
   confirmerCout,
@@ -102,14 +103,7 @@ export function composerContexte(contexte: ContexteRedaction, objectif: string):
     [
       "<personnages>",
       ...(personnages.length
-        ? personnages.map((personnage) =>
-            [
-              `- ${personnage.nom} (${lisible(personnage.role)})`,
-              personnage.description.trim() ? `  ${personnage.description.trim()}` : null,
-            ]
-              .filter(Boolean)
-              .join("\n"),
-          )
+        ? personnages.map((personnage) => ecrirePersonnage(personnage))
         : [ABSENT]),
       "</personnages>",
     ].join("\n"),

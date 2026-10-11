@@ -213,6 +213,105 @@ export function normaliserFiche(
   return { fiche };
 }
 
+/**
+ * Fiche détaillée d'un personnage (lot PF1) : huit champs facultatifs, à côté
+ * de la description. Les bornes sont celles de la base ; l'âge et
+ * l'occupation tiennent sur une ligne, les autres admettent des retours à la
+ * ligne. L'ordre est celui de l'écran, et celui où un agent les lit.
+ */
+export const CHAMPS_FICHE_PERSONNAGE = [
+  { cle: "age", libelle: "Âge", max: 60, ligne: true, aide: "« La quarantaine », « 17 ans »." },
+  {
+    cle: "occupation",
+    libelle: "Occupation",
+    max: 160,
+    ligne: true,
+    aide: "Son métier, son statut, sa place parmi les siens.",
+  },
+  {
+    cle: "appearance",
+    libelle: "Apparence physique",
+    max: 600,
+    ligne: false,
+    aide: "Ce qu'on voit de lui à l'image.",
+  },
+  { cle: "goal", libelle: "Objectif", max: 600, ligne: false, aide: "Ce qu'il veut." },
+  {
+    cle: "obstacle",
+    libelle: "Obstacle",
+    max: 600,
+    ligne: false,
+    aide: "Ce qui s'y oppose, en lui ou hors de lui.",
+  },
+  { cle: "arc", libelle: "Arc", max: 800, ligne: false, aide: "D'où il part, où il arrive." },
+  {
+    cle: "traits",
+    libelle: "Traits",
+    max: 600,
+    ligne: false,
+    aide: "Son caractère, sa manière d'être et de parler.",
+  },
+  {
+    cle: "relations",
+    libelle: "Liens",
+    max: 600,
+    ligne: false,
+    aide: "Ce qui le lie aux autres personnages.",
+  },
+] as const;
+
+export type ChampFichePersonnage = (typeof CHAMPS_FICHE_PERSONNAGE)[number]["cle"];
+
+export type FichePersonnage = Record<ChampFichePersonnage, string>;
+
+/**
+ * Dit avant la saisie, pour un documentaire : la fiche décrit une personne
+ * réelle, et ce qui s'y écrit part chez l'assistant avec le reste du dossier.
+ */
+export const AVERTISSEMENT_PERSONNE_REELLE =
+  "Dans un documentaire, un personnage est une personne réelle. Ce que vous écrivez ici d'elle est transmis à l'assistant avec le reste du dossier, à chaque demande : n'y mettez que ce qu'elle a accepté de voir écrit.";
+
+/**
+ * La fiche détaillée d'un personnage, ramenée à ce que la base attend. Un
+ * champ absent de la saisie vaut vide : le formulaire les porte tous.
+ */
+export function normaliserFichePersonnage(
+  saisie: Readonly<Record<string, unknown>>,
+): { fiche: FichePersonnage } | { erreur: string } {
+  const fiche = {} as FichePersonnage;
+  for (const { cle, libelle, max, ligne } of CHAMPS_FICHE_PERSONNAGE) {
+    const valeur = saisie[cle] ?? "";
+    if (typeof valeur !== "string") {
+      return { erreur: `${libelle} : valeur non autorisée.` };
+    }
+    const texte = ligne
+      ? valeur.replace(/\s+/g, " ").trim()
+      : valeur.replace(/\r\n?/g, "\n").trim();
+    // Une ligne : aucun caractère de contrôle. Un texte long : le seul retour à la ligne.
+    const interdits = ligne
+      ? /[\u0000-\u001f\u007f-\u009f]/
+      : /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/;
+    if (interdits.test(texte)) {
+      return { erreur: `${libelle} contient des caractères non autorisés.` };
+    }
+    if (compter(texte) > max) {
+      return { erreur: `${libelle} ne peut pas dépasser ${max} caractères.` };
+    }
+    fiche[cle] = texte;
+  }
+  return { fiche };
+}
+
+/** Les champs remplis d'une fiche détaillée, dans l'ordre de l'écran. */
+export function fichePersonnageRemplie(
+  personnage: Readonly<Partial<Record<ChampFichePersonnage, string | null>>>,
+): { cle: ChampFichePersonnage; libelle: string; valeur: string }[] {
+  return CHAMPS_FICHE_PERSONNAGE.flatMap(({ cle, libelle }) => {
+    const valeur = personnage[cle]?.trim();
+    return valeur ? [{ cle, libelle, valeur }] : [];
+  });
+}
+
 export type SaisiePersonnage = { name: string; role: RolePersonnage; description: string };
 
 /** Un personnage, ramené à ce que la base attend. */

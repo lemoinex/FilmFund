@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { BoutonConfirme } from "@/components/ui/confirmation";
+import { FicheDetaillee } from "@/components/ui/fiche-personnage";
 import { estEtape, etapeDe, etapePrecedente, etapeSuivante, type CleEtape } from "@/lib/assistant";
 import { lireAcces } from "@/lib/equipes";
 import { MAX_PERSONNAGES, ROLES_PERSONNAGE } from "@/lib/fiche";
@@ -97,6 +98,7 @@ export default async function EtapeAssistant({
         {etape === "personnages" ? (
           <Personnages
             projetId={id}
+            documentaire={projet.format === "documentaire"}
             enModification={enModification}
             suivante={adresse(etapeSuivante(etape))}
             precedente={adresse(precedente)}
@@ -119,11 +121,13 @@ export default async function EtapeAssistant({
 
 async function Personnages({
   projetId,
+  documentaire,
   enModification,
   suivante,
   precedente,
 }: {
   projetId: string;
+  documentaire: boolean;
   enModification?: string;
   suivante: string;
   precedente: string;
@@ -131,7 +135,9 @@ async function Personnages({
   const supabase = await createClient();
   const { data } = await supabase
     .from("project_characters")
-    .select("id, name, role, description")
+    .select(
+      "id, name, role, description, age, occupation, appearance, goal, obstacle, arc, traits, relations",
+    )
     .eq("project_id", projetId)
     .order("position")
     .order("created_at");
@@ -149,7 +155,11 @@ async function Personnages({
               className="border-navy-line scroll-mt-8 rounded-xl border p-5"
             >
               {personnage.id === enModification ? (
-                <FormulairePersonnage projetId={projetId} personnage={personnage} />
+                <FormulairePersonnage
+                  projetId={projetId}
+                  personnage={personnage}
+                  documentaire={documentaire}
+                />
               ) : (
                 <Personnage projetId={projetId} personnage={personnage} />
               )}
@@ -169,7 +179,7 @@ async function Personnages({
         </h2>
         {personnages.length < MAX_PERSONNAGES ? (
           <div className="mt-6">
-            <FormulairePersonnage projetId={projetId} />
+            <FormulairePersonnage projetId={projetId} documentaire={documentaire} />
           </div>
         ) : (
           <p className="text-light-muted mt-3 text-sm">
@@ -278,6 +288,7 @@ function Personnage({
           {personnage.description}
         </p>
       ) : null}
+      <FicheDetaillee personnage={personnage} />
       <div className="border-navy-line mt-4 flex flex-wrap items-center justify-end gap-1 border-t pt-3">
         <Link
           href={`/projets/${projetId}/assistant/personnages?personnage=${personnage.id}#personnage-${personnage.id}`}

@@ -16,6 +16,7 @@
  * seules : le contexte qu'il lit, et la lecture de sa réponse, contrôlée ici
  * avant de l'être encore par la base.
  */
+import { ecrirePersonnage } from "./personnage.ts";
 import {
   lireContexteEpisodes,
   livrerPropositionEpisodes,
@@ -86,14 +87,7 @@ export function composerContexteEpisodes(contexte: ContexteEpisodes, objectif: s
     [
       "<personnages>",
       ...(personnages.length
-        ? personnages.map((personnage) =>
-            [
-              `- ${personnage.nom} (${lisible(personnage.role)})`,
-              personnage.description.trim() ? `  ${personnage.description.trim()}` : null,
-            ]
-              .filter(Boolean)
-              .join("\n"),
-          )
+        ? personnages.map((personnage) => ecrirePersonnage(personnage))
         : ["(aucun)"]),
       "</personnages>",
     ].join("\n"),

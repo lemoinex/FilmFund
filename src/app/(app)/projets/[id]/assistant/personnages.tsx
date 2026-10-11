@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useActionState, useRef } from "react";
 
 import { Field, Message, SubmitButton } from "@/components/ui/form";
-import { LONGUEURS_PERSONNAGE, ROLES_PERSONNAGE } from "@/lib/fiche";
+import {
+  AVERTISSEMENT_PERSONNE_REELLE,
+  CHAMPS_FICHE_PERSONNAGE,
+  fichePersonnageRemplie,
+  LONGUEURS_PERSONNAGE,
+  ROLES_PERSONNAGE,
+  type FichePersonnage,
+} from "@/lib/fiche";
 import { useMessageFormulaire } from "@/lib/use-message-formulaire";
 
 import { ajouterPersonnage, modifierPersonnage, type EtatPersonnage } from "./actions";
@@ -17,7 +24,7 @@ export type PersonnageEditable = {
   name: string;
   role: string;
   description: string;
-};
+} & FichePersonnage;
 
 /**
  * Ajout ou modification d'un personnage.
@@ -29,9 +36,12 @@ export type PersonnageEditable = {
 export function FormulairePersonnage({
   projetId,
   personnage,
+  documentaire = false,
 }: {
   projetId: string;
   personnage?: PersonnageEditable;
+  /** Un documentaire : ses personnages sont des personnes réelles, et l'écran le dit. */
+  documentaire?: boolean;
 }) {
   const [etat, action, enCours] = useActionState<EtatPersonnage, FormData>(
     personnage ? modifierPersonnage : ajouterPersonnage,
@@ -98,6 +108,61 @@ export function FormulairePersonnage({
           {LONGUEURS_PERSONNAGE.description} caractères maximum.
         </p>
       </div>
+
+      {/* Replié tant que rien n'y est saisi : la description suffit toujours. */}
+      <details
+        open={personnage ? fichePersonnageRemplie(personnage).length > 0 : false}
+        className="border-navy-line group rounded-lg border"
+      >
+        <summary className="hover:bg-navy-soft focus-visible:outline-gold cursor-pointer rounded-lg px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2">
+          Fiche détaillée <span className="text-light-muted font-normal">(facultatif)</span>
+        </summary>
+        <div className="border-navy-line space-y-5 border-t px-4 py-5">
+          <p className="text-light-muted text-xs leading-relaxed">
+            Huit repères à remplir à votre rythme. L&apos;assistant lit ceux qui sont remplis quand
+            il écrit pour ce projet ; un champ laissé vide ne lui est pas transmis.
+          </p>
+          {documentaire ? (
+            <p
+              role="note"
+              className="border-gold/40 bg-gold/10 rounded-lg border px-4 py-3 text-sm leading-relaxed"
+            >
+              {AVERTISSEMENT_PERSONNE_REELLE}
+            </p>
+          ) : null}
+          {CHAMPS_FICHE_PERSONNAGE.map(({ cle, libelle, max, ligne, aide }) => (
+            <div key={cle}>
+              <label htmlFor={`${p}-${cle}`} className="mb-2 block text-sm font-medium">
+                {libelle}
+              </label>
+              {ligne ? (
+                <input
+                  id={`${p}-${cle}`}
+                  name={cle}
+                  type="text"
+                  maxLength={max}
+                  defaultValue={personnage?.[cle]}
+                  aria-describedby={`${p}-${cle}-aide`}
+                  className={CHAMP}
+                />
+              ) : (
+                <textarea
+                  id={`${p}-${cle}`}
+                  name={cle}
+                  rows={3}
+                  maxLength={max}
+                  defaultValue={personnage?.[cle]}
+                  aria-describedby={`${p}-${cle}-aide`}
+                  className={`${CHAMP} resize-y leading-relaxed`}
+                />
+              )}
+              <p id={`${p}-${cle}-aide`} className="text-light-muted mt-2 text-xs">
+                {aide} {max} caractères maximum.
+              </p>
+            </div>
+          ))}
+        </div>
+      </details>
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="w-full sm:w-auto sm:min-w-56">
