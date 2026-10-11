@@ -99,6 +99,44 @@ réels).
 | PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | en production     | —             |
 | PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | en production     | —             |
 | PF3b   | ARC : fiche d'un personnage proposée — écran sous chaque personnage, inscription à l'Assistant IA (sans migration)             | en production     | —             |
+| PC1    | Politique de contenu et de protection des comptes : page légale publique, liée depuis les pages légales (sans IA)              | en production     | —             |
+
+## Version 1
+
+Le 11 octobre 2026, l'utilisateur arrête le développement : l'état du tableau ci-dessus est la
+**version 1**, repérée par l'étiquette Git `v1.0.0`, signée, posée sur `c4e972e`. Les mises à
+jour et les modules à venir relèvent d'une **version avancée**.
+
+**L'application n'est pas à l'arrêt** : elle reste en service, utilisée par ses deux
+administrateurs, sous le mode privé. Un défaut rencontré à l'usage est un correctif de la
+version 1, pas un module de la version avancée ; une mise à jour de sécurité d'une dépendance
+non plus.
+
+À cette date : quatre-vingt-treize lots, dont cinquante-trois validés en recette, trente-sept
+en production et trois bloqués — les paiements (N), l'interface des quotas et incidents (O), la
+recette avant ouverture commerciale (P). Soixante-dix-sept migrations en base.
+
+Le dernier, PC1, est entré le même jour, après l'étiquette : la page « Politique de contenu et
+de protection des comptes » (PR 200, `95b1a6f`, sans migration), à `/politique-de-contenu`,
+liée depuis le pied de la vitrine, les pages de connexion, l'inscription et la page 404. Le
+texte fourni par l'utilisateur a été ramené à ce que la plateforme fait : retirer un contenu,
+suspendre un compte, réexamen à l'adresse de contact. **Il ne promet ni le refus des mots de
+passe divulgués, ni la révocation de sessions, ni une notification des changements**, qui ne
+sont pas en service ; `tests/politique-de-contenu.test.mjs` refuse leur retour — y ajouter un
+engagement, c'est d'abord livrer la protection qu'il décrit. Vérifié sur le site public après
+la fusion : la page répond, porte son titre, sa date et son adresse, et la vitrine comme la
+connexion y mènent. Non fait : une relecture par un conseil juridique. La politique de
+confidentialité, elle, dit encore que le site n'a ni compte ni prestataire en service : à
+reprendre.
+
+**La version 1 est construite, pas éprouvée en entier.** Hors PC1, les trente-six lots « en production »
+n'ont pas été vus sous session, ou n'ont fait aucun appel réel, ou ne peuvent pas s'exercer à
+deux administrateurs — la suspension d'un compte, le changement de rôle, un éditeur et un
+lecteur réels. BOARD n'a produit aucune vignette : le compte OpenAI est sans crédits.
+
+Restent à décider avant l'ouverture publique : le prestataire de paiement, le service d'envoi
+d'e-mails, les scripts en ligne de la politique de sécurité de contenu, la protection contre les
+mots de passe compromis, la levée du mode privé.
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
