@@ -258,8 +258,9 @@ de passe — reçoivent un bouton « Afficher » (`src/components/ui/champ-mot-d
 `tests/champ-mot-de-passe.test.mjs`). La saisie reste masquée par défaut ; affichée, elle
 n'est ni mise en majuscule ni corrigée par le clavier. Le champ de la clé d'un fournisseur
 garde son masque, sans bouton. En production : la page de connexion du site public porte le
-bouton. **Non vu à l'écran**, ni dans un navigateur ni sur un téléphone ; l'utilisateur n'a
-pas encore confirmé qu'il se connecte.
+bouton. Le même soir, l'utilisateur confirme qu'il se connecte depuis l'application Android :
+**c'est la première connexion réelle depuis l'application installée.** Il n'a rien dit de
+l'aspect du bouton, qui n'a été relu dans aucun navigateur.
 
 À cette occasion, un test s'est montré instable sur la CI de `main` : « deux envois
 simultanés ne se partagent pas les derniers octets » (`tests/limite-stockage.test.mjs`) a
