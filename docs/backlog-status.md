@@ -91,6 +91,9 @@ réels).
 | SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | en production     | —             |
 | SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | en production     | —             |
 | Z4     | Administration : les administrateurs lisent les équipes de projet ; le comptage « membres d'équipe » redevient juste           | en production     | —             |
+| DU1    | Durcissement : la garde des routes passe de `middleware` à `proxy`, la convention de Next 16 (sans IA)                         | en production     | —             |
+| DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | validé localement | —             |
+| DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3359,3 +3362,68 @@ statistiques vaut 1 — il valait zéro. La CI de la PR passe en entier, le test
 base déjà peuplée par la suite de l'API. CI de `main` verte ; aucun code à redéployer.
 
 **Non vu en production** : la rubrique Statistiques sous session.
+
+Lot DU, durcissement, cadré et approuvé le 10 octobre 2026 : trois constats de l'audit du
+5 octobre, laissés en l'état ce jour-là, traités avant la levée du mode privé. Sans IA, sans
+dépendance nouvelle, sans politique RLS touchée. Trois tranches, pour qu'une régression soit
+attribuable.
+
+DU1 : Next 16 a renommé la convention `middleware` en `proxy` et l'exécute sous Node.js.
+`src/middleware.ts` devient `src/proxy.ts`, sa fonction `proxy` ; le filtre des routes ne
+change pas. **La garde elle-même n'a pas bougé** : elle reste dans
+`src/lib/supabase/middleware.ts`, que cinq tests lisent par ce chemin. Un test d'architecture
+exige désormais un seul fichier d'entrée, du nom que Next attend : mal nommé, il ne serait
+pas exécuté, et rien ne serait gardé.
+
+DU2 : la politique de contenu ne disait que `frame-ancestors 'none'`. Elle dit dix
+directives : tout vient de l'application, sauf les images et les appels vers le projet
+Supabase, dont l'origine est tirée de `NEXT_PUBLIC_SUPABASE_URL` ; ni objet embarqué, ni
+formulaire posté ailleurs, ni balise `<base>`. **Décidé avec l'utilisateur : les scripts en
+ligne restent admis** (`'unsafe-inline'`) — les admettre un à un, par jeton, rendrait toutes
+les pages dynamiques, vitrine comprise. La politique ferme donc les origines étrangères, pas
+un script écrit dans la page : à rouvrir avant la levée du mode privé. Sans adresse lisible,
+elle n'ouvre rien de plus. En développement seulement, deux permissions pour le rechargement
+à chaud. La politique vit dans `next.config.ts`, tenue par `tests/en-tetes-securite.test.mjs`.
+
+DU3 : vingt-neuf clés étrangères n'avaient aucun index de leur côté — quatorze « qui a
+créé », huit « ce qu'une ligne proposée est devenue », quatre studios, trois versions du
+catalogue. L'audit en comptait vingt-deux ; des tables sont nées depuis. Une migration
+additive, vingt-neuf index. Un test SQL refuse désormais toute clé étrangère de `public` sans
+index commençant par sa première colonne, et s'éprouve lui-même : un index retiré, il nomme
+la clé. **Une table nouvelle indexe donc ses clés étrangères.**
+
+Le lot est validé localement le 11 octobre 2026 : lint, typage, format et build ; suite
+complète de l'API à 1 835 tests (9 de plus), 1 009 tests SQL (4 de plus). Trois sabotages à
+chaud attrapés un par un — la fonction renommée `middleware`, `object-src` retiré, une
+origine étrangère ajoutée —, et l'épreuve intégrée du test SQL. Sur l'application construite
+et démarrée : les quatre en-têtes servis sur une page, une redirection et un fichier
+statique ; sans session, `/tableau-de-bord`, `/profil`, `/administration/couts` et une action
+postée renvoient à la connexion avec leur destination, une adresse inexistante répond 404.
+Dans un navigateur, la vitrine et la page de connexion chargent polices, styles et images
+sans rien de bloqué, console vide.
+
+Les tests ne voient pas ce qu'un navigateur refuse : le parcours sous session a été fait par
+l'utilisateur le 10 octobre 2026, sur la prévisualisation de la PR 184, console ouverte. Cinq
+points lui étaient demandés — couvertures du tableau de bord, photo de profil et dépôt d'une
+photo, couverture d'un projet et dépôt d'une image, image d'une scène du storyboard,
+téléchargement d'un export — : il a déclaré que tout fonctionne. La console n'a montré qu'un
+blocage, attendu : `https://vercel.live/_next-live/feedback/feedback.js`, la barre d'outils
+que Vercel injecte dans ses prévisualisations, servie d'une autre origine et absente de la
+production. Aucune capture n'accompagne ce parcours ; la vignette proposée par BOARD n'en
+faisait pas partie.
+
+DU3 est en production depuis le 10 octobre 2026 (PR 185, `890c279`) ; migration poussée par
+l'utilisateur le même jour, après un essai à blanc qui n'annonçait qu'elle. Vérifié en base
+par lecture seule : soixante-quatorze migrations, quatre-vingt-onze clés étrangères dans
+`public`, **aucune sans index** — elles étaient vingt-neuf —, aucun index invalide.
+
+DU1 est en production depuis le 10 octobre 2026 (PR 186, `e77d073`), CI de `main` verte.
+Avant la fusion, sur la prévisualisation, où le proxy tourne chez Vercel sous Node.js :
+`/tableau-de-bord` et `/administration/couts` renvoient sans session à la connexion, avec
+leur destination. Après, sur le site public, une fois le déploiement de production prêt : les
+mêmes, `/profil` et une action postée sur `/projets` renvoient à la connexion ; une adresse
+inexistante répond 404 ; la vitrine répond 200. **Non vu en production** : la garde sous
+session — la session qui tient d'une page à l'autre, une page d'administration qui s'ouvre.
+
+**Reste de l'audit, hors lot** : la protection contre les mots de passe compromis, à activer
+dans Supabase Auth par l'utilisateur ; les scripts en ligne, ci-dessus.
