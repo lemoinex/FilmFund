@@ -224,8 +224,7 @@ l'interroge. Il n'est pas dans le dépôt ; à fermer.
 IN1 est en production depuis le 11 octobre 2026 (PR 205, `dff633f`) : sur le site public, le
 manifest et les icônes répondent, et `/api/version` rend le commit fusionné — le domaine sert
 bien ce déploiement. Le même jour, avec l'accord de l'utilisateur, un APK a été fabriqué et
-signé sur son poste, hors du dépôt (`C:Users
-ilmfund-android`) : Java 17, SDK Android 36,
+signé sur son poste, hors du dépôt (`C:/Users/12/filmfund-android`) : Java 17, SDK Android 36,
 Bubblewrap 1.27, une clé de distribution valable jusqu'en 2054. Sa signature est vérifiée, il
 ne demande aucune permission, et l'empreinte de son certificat est posée dans les variables de
 production de Vercel. La configuration de l'enveloppe, d'abord écrite à la main, est désormais
@@ -240,6 +239,39 @@ connexion, page 404, barre latérale de l'application (`src/components/logo.tsx`
 (`src/app/favicon.ico`, `src/app/icon.png`). Le clap reste l'icône du menu « Mes projets » et
 l'image d'un projet sans couverture. Les icônes d'installation gardent le logo complet, avec
 son texte. Non vu dans un navigateur : l'aperçu remis était une reconstitution.
+
+### Première installation sur un téléphone, et un correctif
+
+Le 11 octobre 2026 au soir, l'utilisateur a installé l'APK sur un téléphone. La page de
+connexion s'y ouvre sans barre d'adresse : l'association entre l'application et le site est
+donc reconnue par l'appareil. **C'est la première installation Android constatée** ;
+l'installation sur Windows ne l'est toujours pas.
+
+La connexion y a d'abord été refusée. Le journal du service de connexion porte trois refus
+« identifiants invalides » à l'heure de l'essai : la saisie était fausse, l'application
+n'était pas en cause. Mais rien ne permettait de le voir, la saisie restant masquée et un
+clavier de téléphone y glissant volontiers une majuscule ou un espace.
+
+Correctif de la version 1 (PR 208, `b2d0535`, sans migration ni dépendance) : les champs de
+mot de passe des trois formulaires d'authentification — connexion, inscription, nouveau mot
+de passe — reçoivent un bouton « Afficher » (`src/components/ui/champ-mot-de-passe.tsx`,
+`tests/champ-mot-de-passe.test.mjs`). La saisie reste masquée par défaut ; affichée, elle
+n'est ni mise en majuscule ni corrigée par le clavier. Le champ de la clé d'un fournisseur
+garde son masque, sans bouton. En production : la page de connexion du site public porte le
+bouton. **Non vu à l'écran**, ni dans un navigateur ni sur un téléphone ; l'utilisateur n'a
+pas encore confirmé qu'il se connecte.
+
+À cette occasion, un test s'est montré instable sur la CI de `main` : « deux envois
+simultanés ne se partagent pas les derniers octets » (`tests/limite-stockage.test.mjs`) a
+échoué, puis réussi à la relance sans changement. Il supposait que la première des deux
+inscriptions passait toujours d'abord ; sur une machine chargée, l'autre peut la devancer,
+et la protection refuse alors la première — ce qui est juste. Le test tient désormais ce qui
+compte : une seule des deux aboutit, quelle qu'elle soit.
+
+Essai d'un paquet MSIX pour Windows, le même jour : le paquet fabriqué par le service
+PWABuilder n'est pas signé, donc Windows refuse de l'installer. Il n'est pas dans le dépôt et
+rien n'a été installé. Un installateur de ce type demande le Microsoft Store ou un certificat
+de signature : à décider avec l'ouverture au public.
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
