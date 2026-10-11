@@ -377,3 +377,35 @@ describe("Android : la configuration de l'enveloppe", () => {
     }
   });
 });
+
+describe("Marque : le symbole du site", () => {
+  it("le symbole de l'en-tête et l'icône d'onglet existent, à leur taille", () => {
+    assert.equal(dimensions("public/images/logo-symbole.png"), "256x256");
+    assert.equal(dimensions("src/app/icon.png"), "96x96");
+  });
+
+  it("l'icône d'onglet est un fichier .ico à trois tailles", () => {
+    const ico = readFileSync(new URL("src/app/favicon.ico", racine));
+    assert.equal(ico.readUInt16LE(0), 0);
+    assert.equal(ico.readUInt16LE(2), 1);
+    assert.equal(ico.readUInt16LE(4), 3);
+    assert.deepEqual(
+      [0, 1, 2].map((rang) => ico.readUInt8(6 + 16 * rang)),
+      [16, 32, 48],
+    );
+  });
+
+  it("le symbole accompagne le nom partout où la marque s'affiche, sans le redire", () => {
+    assert.match(lire("src/components/logo.tsx"), /src="\/images\/logo-symbole\.png" alt=""/);
+    for (const chemin of [
+      "src/app/(app)/layout.tsx",
+      "src/app/(auth)/layout.tsx",
+      "src/app/not-found.tsx",
+      "src/components/landing/footer.tsx",
+      "src/components/landing/navbar.tsx",
+      "src/components/landing/dashboard-mockup.tsx",
+    ]) {
+      assert.match(lire(chemin), /<LogoFilmFund className="size-\d" \/>/, chemin);
+    }
+  });
+});

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ClapperIcon } from "@/components/icons";
+import { LogoFilmFund } from "@/components/logo";
 
 /*
  * Ancres absolues : le pied de page est aussi monte sur les pages legales.
@@ -33,7 +33,7 @@ export function Footer() {
       <div className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
           <Link href="/#accueil" className="flex items-center gap-2.5 text-base tracking-tight">
-            <ClapperIcon className="text-gold size-6" />
+            <LogoFilmFund className="size-6" />
             <span className="font-medium">
               filmfund<span className="text-gold font-semibold">Africa</span>
             </span>
