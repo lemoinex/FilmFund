@@ -97,7 +97,7 @@ réels).
 | NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | en production     | —             |
 | PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | en production     | —             |
 | PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | en production     | —             |
-| PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | validé localement | —             |
+| PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3638,3 +3638,20 @@ worker local, **fournisseur factice** ; les droits entre porteur, éditeur, lect
 **Non couvert** : aucun appel réel. Rien ne dit ce que l'agent écrit d'un personnage, ni s'il
 s'abstient d'inventer, ni ce qu'un long scénario coûte : c'est une recette, dans un budget à
 autoriser — un dollar proposé. Pas d'écran : rien ne se demande encore depuis l'application.
+
+PF3a est en production depuis le 11 octobre 2026 (PR 195, `86c2e00`). **La migration a été
+poussée avant la fusion**, par l'utilisateur, après un essai à blanc qui n'annonçait qu'elle :
+la vitrine lit la nouvelle colonne du barème. Soixante-dix-sept migrations en base.
+
+Vérifié en base par lecture seule, avant la fusion : 2 unités sur chaque version du barème,
+sans valeur par défaut ; l'action admise par les devis ; la table sous RLS, ses deux
+politiques, vide ; aucune écriture pour les comptes, aucune lecture pour un visiteur ni pour
+le worker ; les comptes acceptent et écartent, le worker lit le contexte et dépose, six
+fonctions restent internes ; `creer_devis` et `ecarter_lignes_restantes` portent leur bloc
+nouveau, les cas existants intacts ; aucune clé étrangère sans index.
+
+CI de la PR et CI de `main` vertes. Sur le site public, la vitrine annonce le prix de la fiche
+d'un personnage, et `/projets` renvoie sans session à la connexion.
+
+**Non vu en production** : le redémarrage du worker ; tout appel réel. Sans écran, rien ne
+déclenche encore cette action depuis l'application : c'est le lot PF3b.
