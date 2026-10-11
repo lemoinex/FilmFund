@@ -58,10 +58,14 @@ export default function InscriptionPage() {
         En créant un compte, vous acceptez les{" "}
         <Link href="/mentions-legales" className="underline underline-offset-2">
           mentions légales
-        </Link>{" "}
-        et la{" "}
+        </Link>
+        , la{" "}
         <Link href="/confidentialite" className="underline underline-offset-2">
           politique de confidentialité
+        </Link>{" "}
+        et la{" "}
+        <Link href="/politique-de-contenu" className="underline underline-offset-2">
+          politique de contenu
         </Link>
         .
       </p>

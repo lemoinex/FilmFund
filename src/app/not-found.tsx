@@ -72,6 +72,9 @@ export default function NotFound() {
           <Link href="/confidentialite" className="hover:text-light transition-colors">
             Politique de confidentialité
           </Link>
+          <Link href="/politique-de-contenu" className="hover:text-light transition-colors">
+            Politique de contenu
+          </Link>
         </div>
       </footer>
     </div>

@@ -26,7 +26,7 @@ export type LegalSectionContent = {
 };
 
 export type LegalDocument = {
-  slug: "mentions-legales" | "confidentialite";
+  slug: "mentions-legales" | "confidentialite" | "politique-de-contenu";
   title: string;
   description: string;
   /** Date de dernière mise à jour, ou null tant qu'elle n'est pas arrêtée. */
@@ -619,9 +619,140 @@ const CONFIDENTIALITE: LegalDocument = {
   ],
 };
 
+/** Adresse des signalements et des demandes de réexamen, publiée par décision du 11 octobre 2026. */
+export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
+
+/*
+ * Ce texte n'annonce que ce que la plateforme fait : retirer un contenu et
+ * suspendre un compte. Il ne promet ni le refus des mots de passe divulgués,
+ * ni une notification des changements — rien de cela n'est en service. Y
+ * ajouter un engagement, c'est d'abord livrer la protection qu'il décrit.
+ */
+const POLITIQUE_CONTENU: LegalDocument = {
+  slug: "politique-de-contenu",
+  title: "Politique de contenu et de protection des comptes",
+  description:
+    "Politique de contenu de FilmFund Africa : contenus interdits, responsabilité des utilisateurs, signalement, modération et protection des comptes.",
+  updatedAt: "11 octobre 2026",
+  sections: [
+    {
+      id: "objet",
+      title: "1. Objet",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "La présente politique définit les règles applicables aux contenus créés, importés ou partagés sur FilmFund Africa, ainsi que les mesures destinées à protéger les comptes des utilisateurs.",
+        },
+        {
+          type: "paragraph",
+          text: "Elle s'applique aux projets, documents, images, fichiers et autres contenus que les utilisateurs créent, importent ou partagent sur la plateforme. Ces contenus ne sont pas publics : ils sont accessibles à l'équipe du projet et aux administrateurs de la plateforme.",
+        },
+        {
+          type: "fields",
+          fields: [
+            { label: "Date d'entrée en vigueur", value: "11 octobre 2026" },
+            { label: "Service concerné", value: "FilmFund Africa" },
+            { label: "Contact", value: CONTACT_POLITIQUE_CONTENU },
+          ],
+        },
+      ],
+    },
+    {
+      id: "contenus-interdits",
+      title: "2. Contenus interdits",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Les utilisateurs ne doivent pas créer, importer ou partager :",
+        },
+        {
+          type: "list",
+          items: [
+            "des contenus constituant des menaces, du harcèlement ou une incitation à la violence ;",
+            "des contenus d'exploitation sexuelle, notamment impliquant des mineurs ;",
+            "des données personnelles, identifiants ou informations confidentielles de tiers sans autorisation ;",
+            "des contenus portant atteinte aux droits de propriété intellectuelle ;",
+            "des logiciels malveillants, tentatives d'hameçonnage, escroqueries ou liens destinés à compromettre les utilisateurs ;",
+            "des messages publicitaires non sollicités ou des contenus visant à perturber le fonctionnement du service ;",
+            "des contenus interdits par la législation applicable.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "responsabilite",
+      title: "3. Responsabilité des utilisateurs",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Chaque utilisateur doit disposer des droits ou autorisations nécessaires pour les contenus qu'il crée, importe ou partage. Il s'engage à ne pas usurper l'identité d'un tiers et à ne pas utiliser le service pour contourner les dispositifs de sécurité.",
+        },
+      ],
+    },
+    {
+      id: "signalement",
+      title: "4. Signalement et modération",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Tout contenu susceptible de contrevenir à cette politique peut être signalé à l'adresse suivante :",
+        },
+        { type: "fields", fields: [{ value: CONTACT_POLITIQUE_CONTENU }] },
+        {
+          type: "paragraph",
+          text: "Après examen, FilmFund Africa peut retirer un contenu ou suspendre un compte. La mesure retenue tient compte de la gravité des faits, de leur répétition et des risques pour les autres utilisateurs.",
+        },
+        {
+          type: "paragraph",
+          text: "L'utilisateur concerné peut demander un réexamen en écrivant à la même adresse. Une mesure immédiate peut être prise lorsqu'un contenu présente un risque urgent pour la sécurité des personnes ou du service.",
+        },
+      ],
+    },
+    {
+      id: "mots-de-passe",
+      title: "5. Protection des mots de passe",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Les utilisateurs doivent choisir un mot de passe unique pour ce service et ne jamais le communiquer à un tiers.",
+        },
+        {
+          type: "paragraph",
+          text: "FilmFund Africa ne demande jamais aux utilisateurs de transmettre leur mot de passe par courriel ou par messagerie.",
+        },
+      ],
+    },
+    {
+      id: "compromission",
+      title: "6. Suspicion de compromission",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Lorsqu'une compromission est détectée ou raisonnablement suspectée, FilmFund Africa peut suspendre l'accès du compte concerné. L'utilisateur choisit alors un nouveau mot de passe depuis le lien « Mot de passe oublié » de la page de connexion.",
+        },
+        {
+          type: "paragraph",
+          text: "Un utilisateur constatant une activité inhabituelle doit la signaler à l'adresse indiquée à la section 4.",
+        },
+      ],
+    },
+    {
+      id: "evolution",
+      title: "7. Évolution de la politique",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Cette politique peut être mise à jour pour tenir compte de l'évolution du service, des risques de sécurité et des obligations applicables. La date de dernière mise à jour figure en tête de page.",
+        },
+      ],
+    },
+  ],
+};
+
 const DOCUMENTS: Record<LegalDocument["slug"], LegalDocument> = {
   "mentions-legales": MENTIONS_LEGALES,
   confidentialite: CONFIDENTIALITE,
+  "politique-de-contenu": POLITIQUE_CONTENU,
 };
 
 /**
