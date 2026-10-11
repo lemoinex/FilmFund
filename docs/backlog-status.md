@@ -100,7 +100,7 @@ réels).
 | PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | en production     | —             |
 | PF3b   | ARC : fiche d'un personnage proposée — écran sous chaque personnage, inscription à l'Assistant IA (sans migration)             | en production     | —             |
 | PC1    | Politique de contenu et de protection des comptes : page légale publique, liée depuis les pages légales (sans IA)              | en production     | —             |
-| IN1    | Application installable (Windows par le navigateur, enveloppe Android préparée) et actualisation sûre du code et des données   | validé localement | —             |
+| IN1    | Application installable (Windows par le navigateur, enveloppe Android préparée) et actualisation sûre du code et des données   | en production     | —             |
 
 ## Version 1
 
@@ -220,6 +220,18 @@ application est réellement distribuée.
 Trouvé en chemin : un ancien serveur de test resté ouvert sur le port 3111 du poste, qui
 partage le dossier de build et y réécrit la page d'accueil avec son ancien code quand on
 l'interroge. Il n'est pas dans le dépôt ; à fermer.
+
+IN1 est en production depuis le 11 octobre 2026 (PR 205, `dff633f`) : sur le site public, le
+manifest et les icônes répondent, et `/api/version` rend le commit fusionné — le domaine sert
+bien ce déploiement. Le même jour, avec l'accord de l'utilisateur, un APK a été fabriqué et
+signé sur son poste, hors du dépôt (`C:Users
+ilmfund-android`) : Java 17, SDK Android 36,
+Bubblewrap 1.27, une clé de distribution valable jusqu'en 2054. Sa signature est vérifiée, il
+ne demande aucune permission, et l'empreinte de son certificat est posée dans les variables de
+production de Vercel. La configuration de l'enveloppe, d'abord écrite à la main, est désormais
+celle que l'outil compile. **Reste la validation sur appareil** : aucune installation n'a été
+faite, ni sur Windows ni sur Android. **La clé et son mot de passe sont à sauvegarder hors du
+poste** : les perdre interdit toute mise à jour de l'application.
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 

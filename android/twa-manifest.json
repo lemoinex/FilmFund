@@ -12,7 +12,6 @@
   "webManifestUrl": "https://filmfund.vercel.app/manifest.webmanifest",
   "iconUrl": "https://filmfund.vercel.app/icons/icon-512.png",
   "maskableIconUrl": "https://filmfund.vercel.app/icons/icon-maskable-512.png",
-  "appVersionName": "1.0.0",
   "appVersionCode": 1,
   "enableNotifications": false,
   "fallbackType": "customtabs",
@@ -22,5 +21,21 @@
     "path": "./filmfund.keystore",
     "alias": "filmfund"
   },
-  "generatorApp": "bubblewrap-cli"
+  "generatorApp": "bubblewrap-cli",
+  "appVersion": "1.0.0",
+  "splashScreenFadeOutDuration": 300,
+  "themeColorDark": "#10141c",
+  "navigationColorDark": "#10141c",
+  "navigationDividerColor": "#10141c",
+  "navigationDividerColorDark": "#10141c",
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 24,
+  "fullScopeUrl": "https://filmfund.vercel.app/",
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "alphaDependencies": {
+    "enabled": false
+  }
 }
