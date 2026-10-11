@@ -26,7 +26,7 @@ import { FormulaireOpportunite, type OpportuniteEditable } from "./formulaire";
 import { DecisionOpportunite, DemandeVeille } from "./veille";
 
 export const metadata: Metadata = {
-  title: "Opportunités — filmfundAfrica",
+  title: "Opportunités — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

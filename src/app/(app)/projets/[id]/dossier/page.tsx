@@ -26,7 +26,7 @@ import { OngletsProjet } from "../onglets";
 import { SelectionExport, type OptionExport } from "./selection";
 
 export const metadata: Metadata = {
-  title: "Dossier — filmfundAfrica",
+  title: "Dossier — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

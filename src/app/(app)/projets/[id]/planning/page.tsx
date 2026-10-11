@@ -33,7 +33,7 @@ import { FormulaireEtape, type EtapeEditable } from "./formulaire";
 import { JalonsProposes } from "./jalons-proposes";
 
 export const metadata: Metadata = {
-  title: "Planning — filmfundAfrica",
+  title: "Planning — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

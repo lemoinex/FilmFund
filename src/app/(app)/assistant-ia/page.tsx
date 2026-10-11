@@ -9,7 +9,7 @@ import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Assistant IA — filmfundAfrica",
+  title: "Assistant IA — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

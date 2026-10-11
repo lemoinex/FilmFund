@@ -63,7 +63,9 @@ export function Footer() {
               ))}
             </ul>
           </nav>
-          <p className="text-light-muted text-sm">© {year} filmfundAfrica. Tous droits réservés.</p>
+          <p className="text-light-muted text-sm">
+            © {year} FilmFund Africa. Tous droits réservés.
+          </p>
         </div>
       </div>
     </footer>

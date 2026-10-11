@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BadgeStatut } from "../projets/[id]/documents/statut";
 
 export const metadata: Metadata = {
-  title: "Documents — filmfundAfrica",
+  title: "Documents — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

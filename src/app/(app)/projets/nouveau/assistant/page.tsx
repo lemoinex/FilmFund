@@ -7,7 +7,7 @@ import { listerPays } from "@/lib/profils";
 import { BarreEtapes, FormulaireEtape, type ValeursProjet } from "../../[id]/assistant/formulaires";
 
 export const metadata: Metadata = {
-  title: "Assistant de création — filmfundAfrica",
+  title: "Assistant de création — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

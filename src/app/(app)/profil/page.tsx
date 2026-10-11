@@ -10,7 +10,7 @@ import { FormulaireProfil } from "./formulaire";
 import { Avatar, EnvoiPhoto } from "./photo";
 
 export const metadata: Metadata = {
-  title: "Mon profil — filmfundAfrica",
+  title: "Mon profil — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

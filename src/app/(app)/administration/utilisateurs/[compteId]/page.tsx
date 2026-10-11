@@ -18,7 +18,7 @@ import { FormulaireRole } from "../formulaire-role";
 import { FormulaireRetablissement, FormulaireSuspension } from "../formulaire-suspension";
 
 export const metadata: Metadata = {
-  title: "Compte — filmfundAfrica",
+  title: "Compte — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

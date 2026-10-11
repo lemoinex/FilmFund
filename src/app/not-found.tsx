@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ClapperIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
-  title: "Page introuvable — filmfundAfrica",
+  title: "Page introuvable — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

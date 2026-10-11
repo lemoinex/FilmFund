@@ -17,7 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 import { auteurDeVersion } from "../versions/auteur";
 
 export const metadata: Metadata = {
-  title: "Comparer deux versions — filmfundAfrica",
+  title: "Comparer deux versions — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

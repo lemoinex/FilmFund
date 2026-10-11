@@ -343,8 +343,8 @@ export async function rendreDocx(contenu: Dossier): Promise<Buffer> {
   const dossier = assainir(contenu);
   const document = new Document({
     title: dossier.titre,
-    creator: "filmfundAfrica",
-    lastModifiedBy: "filmfundAfrica",
+    creator: "FilmFund Africa",
+    lastModifiedBy: "FilmFund Africa",
     styles: {
       default: {
         document: {

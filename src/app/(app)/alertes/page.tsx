@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { chargerAlertes } from "./lecture";
 
 export const metadata: Metadata = {
-  title: "Alertes — filmfundAfrica",
+  title: "Alertes — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

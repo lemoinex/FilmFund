@@ -216,6 +216,50 @@ describe("Pages introuvables", () => {
 });
 
 /*
+ * Nom de la plateforme. Décidé le 11 octobre 2026 : elle s'écrit
+ * « FilmFund Africa » dans tout texte lu — écran, titre d'onglet, propriétés
+ * d'un fichier exporté. L'ancienne graphie, « filmfundAfrica », ne doit pas
+ * revenir par un copier-coller.
+ *
+ * Deux exceptions, décidées le même jour. Le logo reste un dessin : « filmfund »
+ * suivi de « Africa » en doré. Les consignes des agents gardent l'ancienne
+ * graphie : personne ne les lit, et les changer publierait une version de
+ * chaque profil sans qu'aucun appel réel l'ait validée.
+ */
+describe("Nom de la plateforme", () => {
+  const ANCIENNE_GRAPHIE = /filmfundAfrica/;
+  const PROFILS = "worker/src/ia/profils.ts";
+
+  it("aucun texte de l'application ni des exports ne garde l'ancienne graphie", () => {
+    const fautifs = SOURCES.filter((f) => f !== PROFILS && ANCIENNE_GRAPHIE.test(lire(f)));
+    assert.deepEqual(fautifs, []);
+  });
+
+  it("le nom s'écrit bien quelque part : la règle a quelque chose à garder", () => {
+    assert.match(lire("src/app/layout.tsx"), /title: "FilmFund Africa — /);
+    assert.match(lire("worker/src/exports/pdf.ts"), /Creator: "FilmFund Africa"/);
+  });
+
+  it("le logo reste un dessin, aux six endroits où il se montre", () => {
+    const logos = SOURCES.filter((f) => /filmfund<span className="text-gold/.test(lire(f))).sort();
+    assert.deepEqual(logos, [
+      "src/app/(app)/layout.tsx",
+      "src/app/(auth)/layout.tsx",
+      "src/app/not-found.tsx",
+      "src/components/landing/dashboard-mockup.tsx",
+      "src/components/landing/footer.tsx",
+      "src/components/landing/navbar.tsx",
+    ]);
+  });
+
+  it("les consignes des agents ne changent pas sans version nouvelle", () => {
+    // Douze profils disent encore l'ancienne graphie. Les corriger, c'est
+    // publier une version de chacun : ce compte tombera ce jour-là, exprès.
+    assert.equal(lire(PROFILS).match(/filmfundAfrica/g)?.length, 12);
+  });
+});
+
+/*
  * Libellés du dossier PDF. Railway ne déploie que `worker/` : le worker ne
  * peut pas importer les libellés de l'application, il en tient une copie. Un
  * dossier ne doit pas nommer un poste autrement que l'écran.

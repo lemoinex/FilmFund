@@ -22,7 +22,7 @@ import { FormulairePersonnage, type PersonnageEditable } from "../personnages";
 import { PersonnagesProposes } from "../personnages-proposes";
 
 export const metadata: Metadata = {
-  title: "Assistant de création — filmfundAfrica",
+  title: "Assistant de création — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

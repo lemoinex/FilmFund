@@ -5,7 +5,7 @@ import { auteurDe, descriptionDe, type Annuaire } from "@/lib/journal-administra
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Journal d'administration — filmfundAfrica",
+  title: "Journal d'administration — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

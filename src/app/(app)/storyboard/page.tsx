@@ -8,7 +8,7 @@ import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Storyboard — filmfundAfrica",
+  title: "Storyboard — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

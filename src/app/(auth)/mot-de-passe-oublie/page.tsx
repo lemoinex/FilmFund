@@ -4,8 +4,8 @@ import Link from "next/link";
 import { FormulaireDemande } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Mot de passe oublié — filmfundAfrica",
-  description: "Recevez un lien pour réinitialiser votre mot de passe filmfundAfrica.",
+  title: "Mot de passe oublié — FilmFund Africa",
+  description: "Recevez un lien pour réinitialiser votre mot de passe FilmFund Africa.",
   robots: { index: false, follow: false },
 };
 

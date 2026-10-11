@@ -5,7 +5,7 @@ import { MESSAGE_COMPTE_SUSPENDU } from "@/lib/comptes";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Compte suspendu — filmfundAfrica",
+  title: "Compte suspendu — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

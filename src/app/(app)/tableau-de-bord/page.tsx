@@ -58,7 +58,7 @@ import { InvitationsRecues } from "./invitations";
 import { OpportunitesAEtudier, type OpportuniteAEtudier } from "./opportunites";
 
 export const metadata: Metadata = {
-  title: "Tableau de bord — filmfundAfrica",
+  title: "Tableau de bord — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

@@ -22,7 +22,7 @@ import { OngletsProjet } from "../onglets";
 import { chargerAttentes } from "./lecture";
 
 export const metadata: Metadata = {
-  title: "Assistant IA — filmfundAfrica",
+  title: "Assistant IA — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

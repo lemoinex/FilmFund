@@ -22,7 +22,7 @@ import { supprimerSource } from "./actions";
 import { DecisionSource, DemandeRecherche, EcarterSourcesRestantes } from "./recherche";
 
 export const metadata: Metadata = {
-  title: "Recherche — filmfundAfrica",
+  title: "Recherche — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

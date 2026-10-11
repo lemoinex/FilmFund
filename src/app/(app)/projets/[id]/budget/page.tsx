@@ -15,7 +15,7 @@ import { FormulaireDevise, FormulaireLigne } from "./formulaires";
 import { LignesProposees } from "./lignes-proposees";
 
 export const metadata: Metadata = {
-  title: "Budget — filmfundAfrica",
+  title: "Budget — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

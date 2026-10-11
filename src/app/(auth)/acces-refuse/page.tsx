@@ -5,7 +5,7 @@ import { MESSAGE_ACCES_RESERVE } from "@/lib/acces-prive";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Accès réservé — filmfundAfrica",
+  title: "Accès réservé — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

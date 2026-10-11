@@ -343,7 +343,7 @@ export function rendrePdf(dossier: Dossier): Promise<{ fichier: Buffer; pages: n
       bufferPages: true,
       lang: "fr-FR",
       displayTitle: true,
-      info: { Title: dossier.titre, Creator: "filmfundAfrica", Producer: "filmfundAfrica" },
+      info: { Title: dossier.titre, Creator: "FilmFund Africa", Producer: "FilmFund Africa" },
     });
 
     const morceaux: Buffer[] = [];

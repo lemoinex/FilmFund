@@ -31,7 +31,7 @@ import { DecoupagePropose } from "./plans-proposes";
 import { VignetteProposee } from "./vignette-proposee";
 
 export const metadata: Metadata = {
-  title: "Storyboard — filmfundAfrica",
+  title: "Storyboard — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

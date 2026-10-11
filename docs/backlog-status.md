@@ -94,6 +94,7 @@ réels).
 | DU1    | Durcissement : la garde des routes passe de `middleware` à `proxy`, la convention de Next 16 (sans IA)                         | en production     | —             |
 | DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | en production     | —             |
 | DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
+| NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3439,3 +3440,32 @@ politique — le parcours de l'utilisateur a porté sur la prévisualisation.
 Le lot DU est livré en entier. Restent de l'audit du 5 octobre : la protection contre les
 mots de passe compromis, à activer dans Supabase Auth par l'utilisateur, et les scripts en
 ligne, à rouvrir avant la levée du mode privé.
+
+Lot NP1, nom de la plateforme, décidé le 11 octobre 2026 en relisant les brouillons de la
+rubrique « Ressources » : **la plateforme s'écrit « FilmFund Africa »**. Le site mêlait deux
+graphies — « filmfundAfrica » presque partout, « FilmFund Africa » dans le corps des mentions
+légales et de la politique de confidentialité.
+
+Soixante-quinze lignes dans soixante et un fichiers : titres d'onglet, vitrine, pied de page,
+pages d'authentification, descriptions des pages légales, rubrique « Ressources », et l'auteur
+inscrit dans les propriétés des exports PDF et Word. Aucune logique ne change ; ni migration,
+ni droit, ni appel d'IA.
+
+Deux exceptions, décidées avec l'utilisateur. **Le logo reste un dessin** : « filmfund » suivi
+de « Africa » en doré, aux six endroits où il se montre. **Les consignes des douze agents
+gardent l'ancienne graphie** : personne ne les lit, et les corriger publierait une version de
+chaque profil sans qu'aucun appel réel l'ait validée. Les identifiants techniques ne sont pas
+des textes et ne changent pas : le rôle `filmfund_worker`, le nom du paquet, l'adresse du site.
+
+Un test d'architecture refuse le retour de l'ancienne graphie hors des consignes, tient la
+liste des six logos, et compte les douze consignes : les corriger un jour le fera tomber,
+exprès.
+
+NP1 est validé localement le 11 octobre 2026 : lint, typage, format et build ; suite complète
+de l'API à 1 839 tests (4 de plus), 1 009 tests SQL. Un sabotage attrapé — l'ancienne graphie
+remise dans une page. Sur l'application construite et démarrée, six pages publiques relues :
+vitrine, connexion, mot de passe oublié, mentions légales, confidentialité, page introuvable —
+chacune porte le nouveau nom dans son titre, plus aucune occurrence de l'ancien, et son logo.
+
+**Non couvert** : les pages sous session, dont seul le titre d'onglet change ; les propriétés
+d'un export réellement fabriqué.

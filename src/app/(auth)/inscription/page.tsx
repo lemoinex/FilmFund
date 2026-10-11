@@ -7,8 +7,8 @@ import { MESSAGE_INSCRIPTIONS_FERMEES, modePriveActif } from "@/lib/acces-prive"
 import { FormulaireInscription } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Créer un compte — filmfundAfrica",
-  description: "Créez votre espace de travail filmfundAfrica.",
+  title: "Créer un compte — FilmFund Africa",
+  description: "Créez votre espace de travail FilmFund Africa.",
   robots: { index: false, follow: false },
 };
 

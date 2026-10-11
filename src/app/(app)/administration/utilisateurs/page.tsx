@@ -16,7 +16,7 @@ import { TYPES_PROFIL } from "@/lib/profils";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Utilisateurs — filmfundAfrica",
+  title: "Utilisateurs — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

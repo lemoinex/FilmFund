@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { chargerScores, EtiquetteMaturite } from "./[id]/maturite";
 
 export const metadata: Metadata = {
-  title: "Mes projets — filmfundAfrica",
+  title: "Mes projets — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

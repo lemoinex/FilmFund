@@ -6,7 +6,7 @@ import { getLegalDocument } from "@/lib/legal-content";
 const document = getLegalDocument("mentions-legales");
 
 export const metadata: Metadata = {
-  title: `${document.title} — filmfundAfrica`,
+  title: `${document.title} — FilmFund Africa`,
   description: document.description,
   // Document encore incomplet : pas d'indexation tant qu'il n'est pas finalise.
   robots: { index: false, follow: true },

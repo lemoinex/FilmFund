@@ -18,7 +18,7 @@ import { bilanPlafond, enDollars as enDollarsDuPlafond } from "@/lib/plafond-ia"
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Coûts de l'IA — filmfundAfrica",
+  title: "Coûts de l'IA — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

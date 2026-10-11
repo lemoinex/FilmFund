@@ -16,7 +16,7 @@ import { FormulaireNouveauDocument } from "./formulaires";
 import { BadgeStatut } from "./statut";
 
 export const metadata: Metadata = {
-  title: "Documents — filmfundAfrica",
+  title: "Documents — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 
