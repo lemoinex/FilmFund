@@ -25,7 +25,8 @@ export const FOURNISSEURS: readonly Fournisseur[] = [
   {
     code: "anthropic",
     nom: "Anthropic",
-    usage: "Assistant d'écriture : proposition de pitch.",
+    usage:
+      "Écriture et analyse : pitchs, synopsis, notes, traitement, scénario, dialogues, analyse dramaturgique, personnages, découpage, budget, planning, matériel, et la synthèse des recherches.",
     employe: true,
   },
   {
