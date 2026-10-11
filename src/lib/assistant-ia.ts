@@ -23,6 +23,7 @@ export type TarifAssistant =
   | "pitch_oral"
   | "dramatic_analysis"
   | "character_list"
+  | "character_sheet"
   | "episode_list"
   | "budget_plan"
   | "schedule_plan"
@@ -49,8 +50,11 @@ export type DemandeAssistant = {
   /** Chemin sous le projet, ancre comprise, de l'écran où la demande se fait. */
   chemin: string;
   tarif: TarifAssistant;
-  /** `serie` : projets de série seulement ; `budget` : à qui gère le budget seulement. */
-  reserve?: "serie" | "budget";
+  /**
+   * `serie` : projets de série seulement ; `budget` : à qui gère le budget
+   * seulement ; `fiction` : jamais pour un documentaire.
+   */
+  reserve?: "serie" | "budget" | "fiction";
   /**
    * Vrai si l'écran de la demande montre à un lecteur ce qui y est proposé.
    * Ailleurs, l'encart ne se rend qu'à qui peut demander : y mener un lecteur
@@ -154,6 +158,16 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
         lieu: "Assistant de création, étape « Personnages »",
         chemin: "/assistant/personnages#assistant-personnages",
         tarif: "character_list",
+      },
+      {
+        action: "character_sheet",
+        libelle: "Fiche d'un personnage",
+        effet:
+          "Les champs encore vides de sa fiche, acceptés ou écartés un à un ; aucun champ rempli n'est remplacé.",
+        lieu: "Assistant de création, étape « Personnages », sous le personnage",
+        chemin: "/assistant/personnages",
+        tarif: "character_sheet",
+        reserve: "fiction",
       },
       {
         action: "dramatic_analysis",
@@ -344,14 +358,21 @@ export const BESOINS_ASSISTANT: readonly BesoinAssistant[] = [
  * Les besoins tels qu'un projet les montre : sans ce qui ne le concerne pas.
  * Une entrée réservée au budget ne se montre qu'à qui le gère — la proposer à
  * un autre ne mènerait qu'à une page introuvable ; un besoin vidé disparaît.
+ * La fiche d'un personnage ne s'annonce pas à un documentaire : la base en
+ * refuse le devis, ses personnages sont des personnes réelles.
  */
-export function besoinsDuProjet(contexte: { serie: boolean; budget: boolean }): BesoinAssistant[] {
+export function besoinsDuProjet(contexte: {
+  serie: boolean;
+  budget: boolean;
+  documentaire: boolean;
+}): BesoinAssistant[] {
   return BESOINS_ASSISTANT.map((besoin) => ({
     ...besoin,
     demandes: besoin.demandes.filter(
       (demande) =>
         (demande.reserve !== "serie" || contexte.serie) &&
-        (demande.reserve !== "budget" || contexte.budget),
+        (demande.reserve !== "budget" || contexte.budget) &&
+        (demande.reserve !== "fiction" || !contexte.documentaire),
     ),
   })).filter((besoin) => besoin.demandes.length > 0);
 }
@@ -366,7 +387,7 @@ export function pageAssistant(projetId: string): string {
   return `/projets/${projetId}/assistant-ia`;
 }
 
-/** « 26 demandes » : le décompte de ce que la page liste. */
+/** « 27 demandes » : le décompte de ce que la page liste. */
 export function decompteDemandes(besoins: readonly BesoinAssistant[]): string {
   const nombre = besoins.reduce((total, besoin) => total + besoin.demandes.length, 0);
   return `${nombre} demande${nombre > 1 ? "s" : ""}`;
@@ -390,10 +411,13 @@ export type TacheLue = {
   scene: string | null;
   document: string | null;
   episode: string | null;
+  personnage: string | null;
 };
 
 /** Ce que la lecture sait des cibles encore en place, par identifiant. */
 export type CiblesLues = {
+  /** Personnages : leur nom. */
+  personnages: ReadonlyMap<string, string>;
   /** Scènes du storyboard : leur titre. */
   scenes: ReadonlyMap<string, string>;
   /** Documents : leur titre. */
@@ -412,7 +436,7 @@ export type Attente = {
   nature: NatureAttente;
   /** Date de la demande. */
   depuis: string;
-  /** La scène ou le document visés, nommés ; nul si la demande vise le projet. */
+  /** La scène, le document ou le personnage visés, nommés ; nul si la demande vise le projet. */
   cible: string | null;
   /** Chemin sous le projet de l'écran qui la porte ; nul si la cible a été retirée. */
   chemin: string | null;
@@ -448,7 +472,8 @@ const ACTIONS_SCENE: readonly string[] = ["shot_list", "storyboard_image"];
 /**
  * Ce qu'une tâche vise, tel que son écran le distingue : chaque écran ne
  * montre que la dernière demande de sa cible. Les deux recherches partagent
- * leur écran, les quatre retouches celui de leur document.
+ * leur écran, les quatre retouches celui de leur document ; une fiche est
+ * celle d'un personnage.
  */
 export function cibleDe(tache: TacheLue): string {
   if (ACTIONS_RECHERCHE.includes(tache.action)) {
@@ -465,6 +490,9 @@ export function cibleDe(tache: TacheLue): string {
   }
   if (tache.action === "screenplay") {
     return `screenplay:${tache.episode ?? ""}`;
+  }
+  if (tache.action === "character_sheet") {
+    return `character_sheet:${tache.personnage ?? ""}`;
   }
   return tache.action;
 }
@@ -529,6 +557,12 @@ function lieuDe(
     return scenario
       ? { cible: scenario.titre, chemin: `/documents/${scenario.id}#assistant-screenplay` }
       : { cible: "Épisode retiré, ou scénario détaché", chemin: null };
+  }
+  if (tache.action === "character_sheet") {
+    const nom = tache.personnage ? cibles.personnages.get(tache.personnage) : undefined;
+    return nom === undefined
+      ? { cible: "Personnage retiré", chemin: null }
+      : { cible: nom, chemin: `${demande.chemin}#personnage-${tache.personnage}` };
   }
   return { cible: null, chemin: demande.chemin };
 }

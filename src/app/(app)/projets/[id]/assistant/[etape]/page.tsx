@@ -6,10 +6,16 @@ import { BoutonConfirme } from "@/components/ui/confirmation";
 import { FicheDetaillee } from "@/components/ui/fiche-personnage";
 import { estEtape, etapeDe, etapePrecedente, etapeSuivante, type CleEtape } from "@/lib/assistant";
 import { lireAcces } from "@/lib/equipes";
-import { MAX_PERSONNAGES, ROLES_PERSONNAGE } from "@/lib/fiche";
+import {
+  CHAMPS_FICHE_PERSONNAGE,
+  fichePersonnageRemplie,
+  MAX_PERSONNAGES,
+  ROLES_PERSONNAGE,
+} from "@/lib/fiche";
 import { listerPays } from "@/lib/profils";
 import {
   etapeProposition,
+  LIVRABLE_FICHE_PERSONNAGE,
   LIVRABLE_PERSONNAGES,
   type EtapeProposition,
   type PersonnagePropose,
@@ -18,7 +24,9 @@ import { createClient } from "@/lib/supabase/server";
 
 import { RafraichissementPropositions } from "../../proposition";
 import { supprimerPersonnage } from "../actions";
+import { FicheProposee } from "../fiche-proposee";
 import { BarreEtapes, FormulaireEtape } from "../formulaires";
+import { lireFiches, type FicheVue } from "../lecture-fiches";
 import { FormulairePersonnage, type PersonnageEditable } from "../personnages";
 import { PersonnagesProposes } from "../personnages-proposes";
 
@@ -143,9 +151,15 @@ async function Personnages({
     .order("created_at");
   const personnages: PersonnageEditable[] = data ?? [];
   const assistant = await lireAssistant(supabase, projetId);
+  const fiches = documentaire ? new Map<string, FicheVue>() : await lireFiches(supabase, projetId);
 
   return (
     <>
+      {documentaire && personnages.length ? (
+        <p className="text-light-muted mb-4 text-xs leading-relaxed text-pretty">
+          {LIVRABLE_FICHE_PERSONNAGE.refusDocumentaire}
+        </p>
+      ) : null}
       {personnages.length ? (
         <ol className="space-y-4">
           {personnages.map((personnage) => (
@@ -161,7 +175,19 @@ async function Personnages({
                   documentaire={documentaire}
                 />
               ) : (
-                <Personnage projetId={projetId} personnage={personnage} />
+                <>
+                  <Personnage projetId={projetId} personnage={personnage} />
+                  {/* La fiche ne se propose ni pour un documentaire, ni pour une fiche complète. */}
+                  {!documentaire && aUneDemande(personnage, fiches.get(personnage.id)) ? (
+                    <FicheProposee
+                      projetId={projetId}
+                      personnageId={personnage.id}
+                      nom={personnage.name}
+                      etape={fiches.get(personnage.id)?.etape ?? { etape: "repos" }}
+                      champs={fiches.get(personnage.id)?.champs ?? []}
+                    />
+                  ) : null}
+                </>
               )}
             </li>
           ))}
@@ -256,6 +282,12 @@ async function lireAssistant(
     .limit(LIVRABLE_PERSONNAGES.lignesMax);
 
   return { etape, proposes: proposes ?? [] };
+}
+
+/** L'encart se montre s'il reste un champ à proposer, ou si une demande est en cours. */
+function aUneDemande(personnage: PersonnageEditable, fiche: FicheVue | undefined): boolean {
+  const vide = fichePersonnageRemplie(personnage).length < CHAMPS_FICHE_PERSONNAGE.length;
+  return vide || (fiche !== undefined && fiche.etape.etape !== "repos");
 }
 
 function Personnage({

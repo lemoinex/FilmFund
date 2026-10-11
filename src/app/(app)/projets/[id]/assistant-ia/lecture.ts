@@ -24,7 +24,8 @@ const uniques = (valeurs: (string | null)[]): string[] => [
  * Ce qui attend sur un projet, lu sous la RLS de l'appelant.
  *
  * Des tâches, la page ne lit que l'action, l'état, la date et la cible — la
- * scène, le document ou l'épisode : jamais le reste des paramètres, qui porte
+ * scène, le document, l'épisode ou le personnage : jamais le reste des
+ * paramètres, qui porte
  * ce que l'équipe a écrit. Des propositions, elle ne lit que l'existence :
  * jamais leur contenu. Les cibles ne sont relues que si une tâche en désigne.
  */
@@ -36,7 +37,7 @@ export async function chargerAttentes(
   const { data } = await supabase
     .from("jobs")
     .select(
-      "id, action, state, created_at, scene:params->>scene, document:params->>document, episode:params->>episode",
+      "id, action, state, created_at, scene:params->>scene, document:params->>document, episode:params->>episode, personnage:params->>character",
     )
     .eq("project_id", projetId)
     .in("action", ACTIONS_ASSISTANT)
@@ -52,12 +53,14 @@ export async function chargerAttentes(
   const episodes = uniques(
     dernieres.map((tache) => (tache.action === "screenplay" ? tache.episode : null)),
   );
+  const personnages = uniques(dernieres.map((tache) => tache.personnage));
 
   const [
     { data: propositions },
     { data: scenesLues },
     { data: documentsLus },
     { data: scenariosLus },
+    { data: personnagesLus },
   ] = await Promise.all([
     reussies.length
       ? supabase
@@ -92,12 +95,22 @@ export async function chargerAttentes(
           .eq("type", "scenario")
           .in("episode_id", episodes)
       : { data: [] },
+    personnages.length
+      ? supabase
+          .from("project_characters")
+          .select("id, name")
+          .eq("project_id", projetId)
+          .in("id", personnages)
+      : { data: [] },
   ]);
 
   const attentes = ceQuiAttend(
     taches,
     new Set((propositions ?? []).map((proposition) => proposition.job_id)),
     {
+      personnages: new Map(
+        (personnagesLus ?? []).map((personnage) => [personnage.id, personnage.name]),
+      ),
       scenes: new Map((scenesLues ?? []).map((scene) => [scene.id, scene.title])),
       documents: new Map((documentsLus ?? []).map((document) => [document.id, document.title])),
       scenarios: new Map(

@@ -88,7 +88,11 @@ export default async function AssistantIaPage({ params }: { params: Promise<{ id
   const acces = lireAcces(accesBrut);
   const peutDemander = acces === "owner" || acces === "editor" || estAdmin === true;
   const gereBudget = budget === true;
-  const besoins = besoinsDuProjet({ serie: estSerie(projet.format), budget: gereBudget });
+  const besoins = besoinsDuProjet({
+    serie: estSerie(projet.format),
+    budget: gereBudget,
+    documentaire: projet.format === "documentaire",
+  });
   // Lu après le contrôle d'accès, sous la RLS de l'appelant.
   const { attentes, borneAtteinte } = await chargerAttentes(supabase, id, {
     peutDemander,

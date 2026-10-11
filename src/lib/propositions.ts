@@ -559,6 +559,38 @@ export const LIVRABLE_PERSONNAGES = {
   lignesMax: 12,
 } as const;
 
+/**
+ * La fiche d'un personnage proposée (agent ARC, lot PF3). Tenue à part de
+ * `LIVRABLE_PERSONNAGES` : celle-ci complète un personnage existant, pour ses
+ * seuls champs vides, et n'en ajoute aucun.
+ */
+export const LIVRABLE_FICHE_PERSONNAGE = {
+  action: "character_sheet",
+  titre: "Fiche proposée par l'assistant",
+  bouton: "Proposer sa fiche",
+  /** Dit avant tout envoi : ce qui part chez le fournisseur, scénario compris. */
+  description:
+    "L'assistant propose un texte pour les champs encore vides de la fiche de ce personnage. Il lit pour cela la fiche du projet, tous les personnages avec leurs fiches, et le scénario enregistré, transmis à notre fournisseur d'IA. Il ne modifie aucun champ déjà rempli.",
+  /** Dit à chaque affichage des champs proposés. */
+  avertissement:
+    "Propositions de l'assistant, d'après votre dossier et votre scénario : relisez chaque champ avant de l'accepter. Ce qu'il écrit n'est pas un fait.",
+  /** Un documentaire : la demande n'existe pas, et l'écran dit pourquoi. */
+  refusDocumentaire:
+    "La fiche d'un personnage ne se propose pas pour un documentaire : ses personnages sont des personnes réelles.",
+  /** Champs qu'une proposition peut porter : ceux de la fiche. */
+  lignesMax: 8,
+} as const;
+
+/** Champ de fiche proposé, tel que l'écran le lit. */
+export type ChampFichePropose = {
+  id: string;
+  position: number;
+  field: string;
+  value: string;
+  state: string;
+  character_id: string | null;
+};
+
 /** Personnage proposé, tel que l'écran le lit. */
 export type PersonnagePropose = {
   id: string;
