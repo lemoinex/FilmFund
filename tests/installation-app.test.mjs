@@ -356,6 +356,10 @@ describe("Android : la configuration de l'enveloppe", () => {
     assert.equal(enveloppe.name, NOM_APPLICATION);
     assert.equal(enveloppe.startUrl, DEPART_APPLICATION);
     assert.equal(enveloppe.themeColor, COULEUR_APPLICATION);
+    // Trois réglages que l'outil exige : sans eux, le projet Android ne se compile pas.
+    assert.equal(enveloppe.appVersion, "1.0.0");
+    assert.equal(enveloppe.minSdkVersion, 24);
+    assert.equal(enveloppe.splashScreenFadeOutDuration, 300);
     assert.equal(enveloppe.webManifestUrl, "https://filmfund.vercel.app/manifest.webmanifest");
   });
 

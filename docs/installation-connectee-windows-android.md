@@ -1,8 +1,16 @@
 # Application installable et connectée — Windows et Android
 
-Lot IN1, 11 octobre 2026. **Périmètre local terminé ; activation et validation externes
-restantes** : rien de ce qui suit n'est déployé, aucun paquet Android n'est compilé, aucune
-installation n'a été faite sur un appareil.
+Lot IN1, 11 octobre 2026.
+
+**État** : le site est installable sur Windows, en production ; un APK signé est fabriqué et
+son empreinte est posée sur le site. **Aucune installation n'a encore été faite sur un
+appareil**, ni sur Windows ni sur Android : c'est la validation qui reste.
+
+| Moyen d'accès             | État                                                                  |
+| ------------------------- | --------------------------------------------------------------------- |
+| Lien dans le navigateur   | en service                                                            |
+| Icône Windows             | en production (PR 205) ; à installer depuis Edge ou Chrome            |
+| Application Android (APK) | fabriquée et signée le 11 octobre 2026 ; à installer sur un téléphone |
 
 ## 1. Architecture retenue
 
@@ -81,14 +89,17 @@ Une _Trusted Web Activity_ affiche le site en plein écran dans Chrome, sans bar
 | Version         | `1.0.0`, code `1`                                  |
 | Couleur         | `#10141c`                                          |
 | Permissions     | aucune ; notifications désactivées                 |
+| Android minimal | 7.0 (niveau 24), exigé par la bibliothèque TWA     |
 | Sans validation | repli sur un onglet personnalisé (barre d'adresse) |
 
 **L'identifiant du paquet ne se change plus après une première distribution** : un autre
 identifiant serait une autre application. À confirmer avant tout build distribué.
 
-`twa-manifest.json` a été écrit à la main, d'après le format de Bubblewrap : **il n'a pas été
-validé par l'outil**, absent de ce poste. `bubblewrap init` le régénère ; s'en servir comme
-relevé des réponses à donner.
+`twa-manifest.json` est **validé par l'outil** : le projet Android se génère et se compile à
+partir de lui (Bubblewrap 1.27, 11 octobre 2026). La première version, écrite à la main,
+omettait trois réglages que l'outil exige — `appVersion`, `splashScreenFadeOutDuration`,
+`minSdkVersion` à 24 ; ils y sont. Le chemin de la clé y reste un exemple : la vraie clé vit
+hors du dépôt.
 
 ### Commandes, à lancer sur un poste équipé
 
@@ -130,7 +141,14 @@ certificat qui le signe. Ici, ce n'est pas un fichier : c'est une route
   fichier attendu. Une seule valeur mal formée, et aucune n'est retenue.
 - Une empreinte est publique : ce n'est pas un secret. Elle doit seulement être vraie.
 
-État : **aucune empreinte n'existe**, donc aucune association. Pour finaliser :
+État : l'empreinte du certificat de distribution est posée dans les variables de production
+de Vercel depuis le 11 octobre 2026. Elle est publique :
+
+```text
+0B:68:48:5D:64:2D:46:54:79:18:8C:A0:DC:EC:8A:16:80:03:74:8E:6C:98:66:B6:1B:13:0C:EC:8F:F9:59:8E
+```
+
+Pour une autre clé, ou si Google Play re-signe l'application :
 
 1. compiler l'enveloppe et relever l'empreinte (`bubblewrap build`, ou
    `keytool -list -v -keystore filmfund.keystore`) ;
@@ -241,8 +259,8 @@ doit donc rester compatible avec la version précédente le temps que les fenêt
 
 ## 9. Ce qui reste non confirmé
 
-- **Domaine, déploiement et commit** : ce lot n'a pas rattaché le domaine au déploiement qui le
-  sert. Après la mise en production, `/api/version` le dira : il doit rendre le commit fusionné.
+- **Domaine, déploiement et commit** : confirmé le 11 octobre 2026. Après la fusion de la
+  PR 205, `/api/version` a rendu le commit de fusion sur `https://filmfund.vercel.app`.
 - **L'installation réelle** sur Windows et sur Android.
 - **Le rechargement automatique dans un navigateur** : la règle est testée, l'annonce « version
   disponible » a été vue pendant une saisie, mais le rechargement lui-même n'a pas été observé —
@@ -290,9 +308,9 @@ Sans migration, sans dépendance nouvelle, sans appel à un fournisseur d'IA.
 | Règles, sans navigateur     | `tests/installation-app.test.mjs` : 35 tests ; 21 sabotages attrapés, un par un                                                                                                                                                                                       |
 | Serveur local de production | manifest 200 `application/manifest+json` ; `/api/version` 200 `no-store` ; association 404 sans empreinte, 200 avec une empreinte d'essai ; cinq icônes 200 ; lien du manifest, couleur et icône présents sur trois pages ; `/tableau-de-bord` renvoie à la connexion |
 | Navigateur réel             | manifest lu ; zéro service worker, zéro cache ; après un changement de version pendant une saisie, la page n'est pas rechargée et l'annonce s'affiche                                                                                                                 |
-| Build Android               | **non fait** : aucun outil sur ce poste                                                                                                                                                                                                                               |
+| Build Android               | APK et AAB fabriqués et signés ; signature vérifiée (`apksigner`), paquet, version et permissions relus (`aapt2`)                                                                                                                                                     |
 | Appareil                    | **non fait**                                                                                                                                                                                                                                                          |
-| Production                  | **non fait** : rien n'est déployé                                                                                                                                                                                                                                     |
+| Production                  | manifest, icônes et `/api/version` relus sur le site ; la version rendue est le commit fusionné                                                                                                                                                                       |
 
 Scénarios d'actualisation de la mission :
 
@@ -312,16 +330,70 @@ l'application installée.
 
 ## 13. Livrables
 
-| Livrable                         | Préparé | Compilé    | Testé                                   | Déployé ou publié | Blocage ou action restante                    |
-| -------------------------------- | ------- | ---------- | --------------------------------------- | ----------------- | --------------------------------------------- |
-| Manifest et icônes               | oui     | build Next | serveur local, navigateur               | non               | fusion et déploiement                         |
-| Bouton d'installation            | oui     | build Next | par ses règles ; non vu à l'écran       | non               | à voir sous session après déploiement         |
-| Installation Windows             | oui     | sans objet | non                                     | non               | installer depuis Edge après déploiement       |
-| Adresse de version               | oui     | build Next | serveur local                           | non               | vérifier qu'elle rend un commit en production |
-| Rechargement sûr                 | oui     | build Next | règles ; annonce vue dans un navigateur | non               | rechargement automatique à observer           |
-| Relecture des données            | oui     | build Next | règles                                  | non               | à observer sous session                       |
-| Temps réel                       | non     | sans objet | sans objet                              | non               | décision ; migration de la publication        |
-| Configuration de l'enveloppe TWA | oui     | non        | cohérence avec le site                  | non               | poste équipé : JDK, SDK, Bubblewrap           |
-| APK                              | non     | non        | non                                     | non               | outils absents ; clé de signature à décider   |
-| Association site-application     | oui     | build Next | serveur local, empreinte d'essai        | non               | empreinte réelle dans `ANDROID_CERT_SHA256`   |
-| Publication en boutique          | non     | sans objet | sans objet                              | non               | hors périmètre                                |
+| Livrable                         | Préparé | Compilé    | Testé                                   | Déployé ou publié | Blocage ou action restante                        |
+| -------------------------------- | ------- | ---------- | --------------------------------------- | ----------------- | ------------------------------------------------- |
+| Manifest et icônes               | oui     | build Next | serveur local, navigateur, production   | oui (PR 205)      | —                                                 |
+| Bouton d'installation            | oui     | build Next | par ses règles ; non vu à l'écran       | non               | à voir sous session après déploiement             |
+| Installation Windows             | oui     | sans objet | non                                     | non               | installer depuis Edge après déploiement           |
+| Adresse de version               | oui     | build Next | serveur local, production               | oui (PR 205)      | — : elle rend le commit fusionné                  |
+| Rechargement sûr                 | oui     | build Next | règles ; annonce vue dans un navigateur | non               | rechargement automatique à observer               |
+| Relecture des données            | oui     | build Next | règles                                  | non               | à observer sous session                           |
+| Temps réel                       | non     | sans objet | sans objet                              | non               | décision ; migration de la publication            |
+| Configuration de l'enveloppe TWA | oui     | oui        | génération et compilation du projet     | sans objet        | —                                                 |
+| APK                              | oui     | oui, signé | signature et contenu ; pas sur appareil | non               | installer sur un téléphone                        |
+| Association site-application     | oui     | build Next | serveur local ; à relire en production  | empreinte posée   | vérifier 200 après déploiement, puis sur appareil |
+| Publication en boutique          | non     | sans objet | sans objet                              | non               | hors périmètre                                    |
+
+## 14. Fabrication de l'APK, le 11 octobre 2026
+
+Faite sur le poste de l'éditeur, avec son accord, dans `C:\Users\12\filmfund-android` —
+**hors du dépôt**.
+
+| Élément              | Emplacement                               | Remarque                                    |
+| -------------------- | ----------------------------------------- | ------------------------------------------- |
+| APK à installer      | `FilmFund-Africa-1.0.0.apk`               | 2,8 Mo, version 1.0.0 (code 1)              |
+| Paquet pour boutique | `twa\app-release-bundle.aab`              | non publié                                  |
+| Clé de signature     | `cle\filmfund.keystore`, alias `filmfund` | RSA 2048, valable jusqu'en 2054             |
+| Mot de passe         | `cle\mot-de-passe.txt`                    | tiré au hasard, jamais affiché ni versionné |
+| Outils               | `jdk-17`, `sdk`, `twa\node_modules`       | Java 17, SDK Android 36, Bubblewrap 1.27    |
+
+**La clé et son mot de passe sont à sauvegarder ailleurs que sur ce poste.** Les perdre, c'est
+ne plus pouvoir publier de mise à jour de l'application sous le même identifiant.
+
+L'APK ne demande aucune permission au téléphone. Sa signature porte l'empreinte posée sur le
+site ; vérifié par `apksigner verify --print-certs`.
+
+### Ce que le poste a demandé
+
+- **Java 17** : l'outil le veut ; celui d'Android Studio (version 25) ne convient pas.
+- **Certificats** : Java refusait le certificat présenté par le réseau du poste, que Windows
+  accepte. Réglé sans rien désactiver, en faisant lire à Java le magasin de Windows :
+  `JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStoreType=Windows-ROOT`.
+- **Gestionnaire du SDK** : Bubblewrap le cherche dans `<sdk>\bin` ; une copie de
+  `cmdline-tools\latest\bin` et `lib` y est posée.
+- **Lanceur** : `gradlew.bat` n'était pas trouvé ; le dossier du projet est ajouté au `PATH`.
+
+### Refaire un APK
+
+```bash
+cd /c/Users/12/filmfund-android/twa
+export PATH="$PWD:/c/Users/12/filmfund-android/jdk-17/bin:$PATH"
+export JAVA_TOOL_OPTIONS="-Djavax.net.ssl.trustStoreType=Windows-ROOT"
+export BUBBLEWRAP_KEYSTORE_PASSWORD="$(cat ../cle/mot-de-passe.txt)"
+export BUBBLEWRAP_KEY_PASSWORD="$BUBBLEWRAP_KEYSTORE_PASSWORD"
+npx bubblewrap update --skipVersionUpgrade   # après un changement de twa-manifest.json
+npx bubblewrap build --skipPwaValidation
+```
+
+Chaque nouvel APK distribué demande d'augmenter `appVersionCode` dans `twa-manifest.json`.
+
+### Installer sur un téléphone
+
+1. Copier `FilmFund-Africa-1.0.0.apk` sur le téléphone (câble, e-mail, lien privé).
+2. L'ouvrir ; autoriser l'installation depuis cette source si Android le demande.
+3. Lancer « FilmFund ». Avec Chrome à jour et l'association validée, l'application s'ouvre
+   en plein écran, sans barre d'adresse. Sinon elle s'ouvre avec une barre d'adresse : le
+   service marche, mais l'association est à revoir.
+
+Hors boutique, Android peut afficher un avertissement à l'installation : c'est attendu pour un
+APK remis de la main à la main.
