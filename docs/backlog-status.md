@@ -98,7 +98,7 @@ réels).
 | PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | en production     | —             |
 | PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | en production     | —             |
 | PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | en production     | —             |
-| PF3b   | ARC : fiche d'un personnage proposée — écran sous chaque personnage, inscription à l'Assistant IA (sans migration)             | validé localement | —             |
+| PF3b   | ARC : fiche d'un personnage proposée — écran sous chaque personnage, inscription à l'Assistant IA (sans migration)             | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3691,3 +3691,13 @@ parcours du devis à l'acceptation, ni le mobile, ni un lecteur d'écran. Un adm
 équipe voit l'entrée de l'annuaire, mais l'assistant de création lui répond comme une page
 absente : c'est déjà le cas des personnages à ajouter, et ce lot n'y touche pas. La recette
 demande un budget à autoriser — un dollar proposé.
+
+PF3b est en production depuis le 11 octobre 2026 (PR 197, `7c6271b`). Sans migration :
+soixante-dix-sept migrations en base, comme avant.
+
+CI de la PR et CI de `main` vertes. Sur le site public, la vitrine répond et `/projets` renvoie
+sans session à la connexion : le lot n'ajoute rien de visible sans connexion, ces deux
+contrôles disent seulement que le déploiement n'a rien cassé.
+
+**Non vu en production** : l'encart sous session ; le parcours du devis à l'acceptation ; tout
+appel réel. PF3a et PF3b restent « en production », pas « validé en recette ».
