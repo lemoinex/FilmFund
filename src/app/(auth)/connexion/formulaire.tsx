@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { PasswordField } from "@/components/ui/champ-mot-de-passe";
 import { Field, Message, SubmitButton } from "@/components/ui/form";
 import { connexion, type EtatFormulaire } from "../actions";
 
@@ -22,13 +23,7 @@ export function FormulaireConnexion({ suite }: { suite?: string }) {
         required
         placeholder="vous@exemple.com"
       />
-      <Field
-        label="Mot de passe"
-        name="motDePasse"
-        type="password"
-        autoComplete="current-password"
-        required
-      />
+      <PasswordField label="Mot de passe" name="motDePasse" autoComplete="current-password" />
 
       <SubmitButton enCours={enCours}>Se connecter</SubmitButton>
     </form>

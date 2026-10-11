@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { PasswordField } from "@/components/ui/champ-mot-de-passe";
 import { Field, Message, SubmitButton } from "@/components/ui/form";
 import { inscription, type EtatFormulaire } from "../actions";
 
@@ -28,12 +29,10 @@ export function FormulaireInscription() {
         required
         placeholder="vous@exemple.com"
       />
-      <Field
+      <PasswordField
         label="Mot de passe"
         name="motDePasse"
-        type="password"
         autoComplete="new-password"
-        required
         aide="Au moins 8 caractères, mêlant lettres et chiffres."
       />
 
