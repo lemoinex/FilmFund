@@ -71,24 +71,35 @@ describe("Limite de stockage", () => {
     const projet = await creerProjet(compte, "Projet disputé");
 
     // Deux inscriptions de 60 Mo, comme l'API les ferait : chacune tient
-    // seule dans les 100 Mo du plan, pas les deux. La première garde son
-    // verrou deux secondes ; la seconde arrive pendant ce temps.
-    const inscription = (nom, attente) => `
+    // seule dans les 100 Mo du plan, pas les deux. Celle qui passe d'abord
+    // garde son verrou deux secondes ; l'autre arrive pendant ce temps.
+    //
+    // Laquelle passe d'abord n'est pas tenu : sur une machine chargée,
+    // l'ouverture d'une session peut prendre plus que l'avance donnée à la
+    // première. Ce qui est tenu, c'est qu'une seule aboutit.
+    const ATTENTE_SOUS_VERROU = 2;
+    const inscription = (nom) => `
       begin;
       insert into storage.objects (bucket_id, name, owner_id, metadata)
       values ('${COMPARTIMENT}', '${projet.id}/scenes/${nom}', '${compte.id}', '{"size": ${60 * 1048576}}');
-      select pg_sleep(${attente});
+      select pg_sleep(${ATTENTE_SOUS_VERROU});
       commit;
     `;
-    const premiere = executerSqlLocal(inscription("premiere.png", 2));
+    const NOMS = ["premiere.png", "seconde.png"];
+    const premiere = executerSqlLocal(inscription(NOMS[0]));
     await new Promise((r) => setTimeout(r, 500));
-    const seconde = executerSqlLocal(inscription("seconde.png", 0));
-    const [a, b] = await Promise.all([premiere, seconde]);
+    const seconde = executerSqlLocal(inscription(NOMS[1]));
+    const issues = await Promise.all([premiere, seconde]);
 
-    assert.equal(a.code, 0, `la première inscription doit aboutir : ${a.erreurs}`);
-    assert.notEqual(b.code, 0, "la seconde doit être refusée");
-    assert.match(b.erreurs, /ne permet pas de stocker davantage/);
-    assert.deepEqual(await fichiers(compte, `${projet.id}/scenes`), ["premiere.png"]);
+    const abouties = NOMS.filter((_, rang) => issues[rang].code === 0);
+    const refusees = issues.filter((issue) => issue.code !== 0);
+    assert.equal(
+      abouties.length,
+      1,
+      `une seule inscription doit aboutir : ${issues.map((issue) => issue.erreurs).join(" | ")}`,
+    );
+    assert.match(refusees[0].erreurs, /ne permet pas de stocker davantage/);
+    assert.deepEqual(await fichiers(compte, `${projet.id}/scenes`), abouties);
   });
 
   it("au-delà de la limite, après un passage à un plan inférieur, l'existant reste consultable et supprimable", async () => {
