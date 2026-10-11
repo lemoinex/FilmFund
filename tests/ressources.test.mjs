@@ -112,18 +112,19 @@ describe("Ressources : la bibliothèque du dépôt", () => {
         assert.equal(ressource.misAJourLe, null, ressource.slug);
       }
     }
-    // Les cinq contenus de départ attendent une validation : la publication
-    // est une décision, pas un effet du lot.
-    const brouillons = RESSOURCES.filter((r) => r.statut === "brouillon").map((r) => r.slug);
-    for (const slug of [
+    // Les cinq contenus de départ ont été relus et publiés le 11 octobre 2026,
+    // sur décision de l'utilisateur. Cette liste est celle de ce qui a été
+    // validé : un contenu qui s'y ajoute sans relecture ferait tomber ce test.
+    const publies = RESSOURCES.filter((r) => r.statut === "publie")
+      .map((r) => r.slug)
+      .sort();
+    assert.deepEqual(publies, [
+      "checklist-de-preproduction",
+      "pieces-d-un-dossier-de-candidature",
+      "preparer-une-note-d-intention",
       "rediger-une-logline",
       "structurer-un-synopsis",
-      "preparer-une-note-d-intention",
-      "pieces-d-un-dossier-de-candidature",
-      "checklist-de-preproduction",
-    ]) {
-      assert.ok(brouillons.includes(slug), slug);
-    }
+    ]);
   });
 
   it("le contenu n'est que du texte : ni balise, ni syntaxe, ni section vide ou en double", () => {
@@ -183,11 +184,22 @@ describe("Ressources : ce qu'un lecteur voit", () => {
     assert.equal(trouverRessource("../a-publie", true, liste), null);
   });
 
-  it("au départ, un compte ordinaire ne voit rien : aucun contenu n'est publié d'office", () => {
-    assert.deepEqual(ressourcesVisibles(false), []);
+  it("un compte ordinaire voit ce qui est publié dans la bibliothèque, et rien d'autre", () => {
+    // Les cinq contenus de départ sont publiés depuis le 11 octobre 2026 : un
+    // compte les voit, par la liste comme par leur adresse. Ce qui resterait
+    // en brouillon ne se montre qu'à l'administration.
+    const publies = RESSOURCES.filter((r) => r.statut === "publie");
+    assert.equal(publies.length, 5);
+    assert.deepEqual(
+      ressourcesVisibles(false)
+        .map((r) => r.slug)
+        .sort(),
+      publies.map((r) => r.slug).sort(),
+    );
     assert.equal(ressourcesVisibles(true).length, RESSOURCES.length);
     for (const ressource of RESSOURCES) {
-      assert.equal(trouverRessource(ressource.slug, false), null, ressource.slug);
+      const vue = trouverRessource(ressource.slug, false);
+      assert.equal(vue?.slug ?? null, ressource.statut === "publie" ? ressource.slug : null);
     }
   });
 

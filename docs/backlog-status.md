@@ -94,7 +94,7 @@ réels).
 | DU1    | Durcissement : la garde des routes passe de `middleware` à `proxy`, la convention de Next 16 (sans IA)                         | en production     | —             |
 | DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | en production     | —             |
 | DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
-| NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | validé localement | —             |
+| NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3469,3 +3469,27 @@ chacune porte le nouveau nom dans son titre, plus aucune occurrence de l'ancien,
 
 **Non couvert** : les pages sous session, dont seul le titre d'onglet change ; les propriétés
 d'un export réellement fabriqué.
+
+Publication des ressources, décidée le 11 octobre 2026 : **les cinq contenus de la rubrique
+« Ressources » sont publiés**, datés de ce jour. L'utilisateur les a relus en entier et a
+choisi de les publier tels quels, une fois le nom de la plateforme corrigé (lot NP1). Les
+points de droit des deux checklists — cession de droits, option, autorisations pour les
+mineurs, assurances — partent tels qu'il les a lus : écrits en termes généraux, sans source
+professionnelle, ce que l'écran rappelle sous le titre de la rubrique.
+
+Aucune logique ne change : cinq statuts, cinq dates, un commentaire. Le test qui exigeait
+cinq brouillons tient désormais la liste de ce qui a été validé — un contenu qui s'y
+ajouterait sans relecture le ferait tomber — et vérifie qu'un compte ordinaire voit ce qui est
+publié, par la liste comme par son adresse, et rien d'autre. Un contenu nouveau naît toujours
+en brouillon. Deux sabotages attrapés : un contenu repassé en brouillon, un contenu publié
+sans date.
+
+Tant que le mode privé tient, seuls les administrateurs entrent dans l'application : la
+publication ne se verra d'un autre compte qu'à l'ouverture. La catégorie « Utilisation de
+FilmFund Africa » n'a toujours aucun contenu.
+
+NP1 est en production depuis le 11 octobre 2026 (PR 188, `6858c89`), CI de la PR verte. Sur le
+site public, une minute après la fusion : la vitrine, la connexion et les mentions légales
+portent le nouveau nom dans leur titre, sans aucune occurrence de l'ancien, logo en place ;
+`/tableau-de-bord` renvoie toujours sans session à la connexion. **Non vu en production** : les
+pages sous session, et les propriétés d'un export réellement fabriqué.
