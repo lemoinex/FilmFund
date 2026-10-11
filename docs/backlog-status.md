@@ -155,6 +155,28 @@ public après chaque fusion : les deux pages portent le nouveau texte, et les ph
 n'y sont plus. Non fait : une relecture par un conseil juridique, à prévoir avant l'ouverture
 publique ; aucune page n'a été vue dans un navigateur.
 
+Le même jour, l'utilisateur a remis un document complet — mentions légales, conditions
+générales d'utilisation, politique de confidentialité —, repris dans les pages légales. Une
+quatrième page naît : les **conditions générales d'utilisation**, à `/conditions-utilisation`,
+liée aux mêmes endroits que les trois autres. Ce que le document fournit est publié, par
+décision de l'utilisateur : l'éditeur — FilmFund Africa, startup en cours de création,
+représentée par NGOOH Cédric Hervé —, son siège à Yaoundé, le directeur de la publication,
+les deux administrateurs nommés avec leur adresse, un numéro de téléphone, le droit
+camerounais et les tribunaux de Yaoundé. La base de données et les fichiers sont dits en
+Irlande, **vérifié sur le projet Supabase** ; rien n'est dit de la région des autres
+traitements.
+
+**Sept engagements du document ont été retirés, avec son accord, faute de rien derrière dans
+l'application** : les applications Android et Windows ; le mode maintenance et l'arrêt
+d'urgence de l'IA ; la vitrine modifiable par l'administration ; la double authentification ;
+la notification des changements ; la suppression des contenus à la clôture d'un compte ; les
+clés des fournisseurs en variables d'environnement — elles sont au coffre de la base.
+`tests/conditions-utilisation.test.mjs` refuse leur retour dans les quatre pages. Restent des
+champs à compléter, visibles comme tels : l'adresse précise, les durées de conservation, le
+délai de réponse, l'autorité de protection, la répartition des rôles entre administrateurs ;
+les deux lois camerounaises citées portent la mention « à faire valider par un juriste », que
+personne n'a levée. Dix-neuf sabotages attrapés.
+
 **La version 1 est construite, pas éprouvée en entier.** Hors PC1, les trente-six lots « en production »
 n'ont pas été vus sous session, ou n'ont fait aucun appel réel, ou ne peuvent pas s'exercer à
 deux administrateurs — la suspension d'un compte, le changement de rôle, un éditeur et un

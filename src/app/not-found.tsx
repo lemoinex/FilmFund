@@ -69,6 +69,9 @@ export default function NotFound() {
           <Link href="/mentions-legales" className="hover:text-light transition-colors">
             Mentions légales
           </Link>
+          <Link href="/conditions-utilisation" className="hover:text-light transition-colors">
+            Conditions d&apos;utilisation
+          </Link>
           <Link href="/confidentialite" className="hover:text-light transition-colors">
             Politique de confidentialité
           </Link>
