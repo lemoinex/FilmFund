@@ -43,6 +43,13 @@ export type LegalDocument = {
  * donc sûr à stocker en base et à afficher sans risque d'injection HTML.
  */
 
+/**
+ * Adresse publiée par décision du 11 octobre 2026 : signalements et réexamens
+ * de la politique de contenu, contact et exercice des droits de la politique
+ * de confidentialité. Les mentions légales gardent leurs champs à compléter.
+ */
+export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
+
 const MENTIONS_LEGALES: LegalDocument = {
   slug: "mentions-legales",
   title: "Mentions légales",
@@ -269,7 +276,7 @@ const CONFIDENTIALITE: LegalDocument = {
   title: "Politique de confidentialité",
   description:
     "Politique de confidentialité de FilmFund Africa : données traitées, finalités, destinataires, conservation, sécurité et droits des personnes.",
-  updatedAt: null,
+  updatedAt: "11 octobre 2026",
   sections: [
     {
       id: "objet",
@@ -277,15 +284,15 @@ const CONFIDENTIALITE: LegalDocument = {
       blocks: [
         {
           type: "paragraph",
-          text: "La présente politique décrit la manière dont FilmFund Africa traite les données à caractère personnel dans le cadre de son site de présentation et, à terme, de sa plateforme de développement de projets cinématographiques et audiovisuels.",
+          text: "La présente politique décrit la manière dont FilmFund Africa traite les données à caractère personnel dans le cadre de son site de présentation et de sa plateforme de développement de projets cinématographiques et audiovisuels.",
         },
         {
           type: "paragraph",
-          text: "**En l'état actuel, le site est un site de présentation.** Il ne comporte ni création de compte, ni formulaire, ni espace de dépôt de fichiers, ni outil de mesure d'audience, ni traceur publicitaire. Aucune donnée n'y est collectée auprès des visiteurs en dehors des informations techniques strictement nécessaires à l'affichage des pages, décrites à la section 4.",
+          text: "**La plateforme est en service, en accès privé.** L'inscription est fermée : seuls les comptes ouverts par l'éditeur peuvent se connecter. Le site de présentation reste consultable sans compte ; il ne comporte ni formulaire, ni outil de mesure d'audience, ni traceur publicitaire.",
         },
         {
           type: "paragraph",
-          text: "Les traitements décrits aux sections 5 et suivantes concernent les fonctionnalités de la plateforme lorsqu'elles seront ouvertes. La présente politique sera mise à jour, et sa date de dernière mise à jour modifiée, avant toute mise en service de ces fonctionnalités.",
+          text: "Les sections 4 et 7 concernent tous les visiteurs. Les sections 5 et suivantes concernent les titulaires d'un compte.",
         },
       ],
     },
@@ -302,7 +309,7 @@ const CONFIDENTIALITE: LegalDocument = {
           fields: [
             { value: "[DÉNOMINATION LÉGALE / NOM DE L'ENTREPRENEUR]" },
             { label: "Adresse", value: "[À COMPLÉTER]" },
-            { label: "E-mail de contact", value: "[À COMPLÉTER]" },
+            { label: "E-mail de contact", value: CONTACT_POLITIQUE_CONTENU },
             {
               label: "Délégué à la protection des données, le cas échéant",
               value: "[À COMPLÉTER OU SANS OBJET]",
@@ -332,13 +339,13 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "Ces éléments doivent être déterminés avec un conseil juridique et renseignés avant la mise en production.",
+          text: "Ces éléments restent à déterminer avec un conseil juridique.",
         },
       ],
     },
     {
       id: "donnees-actuelles",
-      title: "4. Données traitées aujourd'hui",
+      title: "4. Données traitées lors de la consultation du site",
       blocks: [
         {
           type: "paragraph",
@@ -365,20 +372,21 @@ const CONFIDENTIALITE: LegalDocument = {
     },
     {
       id: "donnees-plateforme",
-      title: "5. Données traitées lorsque la plateforme sera ouverte",
+      title: "5. Données traitées pour les titulaires d'un compte",
       blocks: [
         {
           type: "paragraph",
-          text: "Lorsque les fonctionnalités de la plateforme seront accessibles, les catégories de données suivantes seront susceptibles d'être traitées :",
+          text: "Pour les titulaires d'un compte, les catégories de données suivantes sont traitées :",
         },
         {
           type: "list",
           items: [
-            "données de compte : identifiants de connexion, adresse e-mail, nom ou pseudonyme, préférences ;",
-            "données de profil professionnel renseignées volontairement : fonction, société, pays et ville d'activité, photo ;",
-            "contenus de projet créés ou importés : synopsis, documents de développement, storyboards, budgets, plannings, fichiers joints ;",
-            "données relatives aux équipes et collaborateurs invités par l'utilisateur ;",
-            "données d'usage du service nécessaires à son fonctionnement et à sa sécurité.",
+            "données de compte : adresse e-mail, mot de passe conservé sous forme non lisible par le prestataire d'authentification, nom affiché ;",
+            "données de profil renseignées volontairement : prénom, nom, pays, ville, profession, type de profil, photo ;",
+            "contenus de projet créés ou importés : fiche du projet, personnages, documents et leurs versions, storyboard et images, budget, financements, planning, matériel, fichiers joints ;",
+            "données relatives aux équipes : membres d'un projet, rôles et invitations ;",
+            "demandes adressées à l'assistant IA : la demande, la proposition reçue, la décision prise et les unités consommées ;",
+            "journal des actions d'administration et données d'usage nécessaires au fonctionnement et à la sécurité du service.",
           ],
         },
         {
@@ -397,7 +405,7 @@ const CONFIDENTIALITE: LegalDocument = {
       blocks: [
         {
           type: "paragraph",
-          text: "Les traitements envisagés poursuivront les finalités suivantes :",
+          text: "Les traitements poursuivent les finalités suivantes :",
         },
         {
           type: "list",
@@ -430,6 +438,10 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
+          text: "Les seuls cookies déposés sont ceux strictement nécessaires à la connexion et au maintien de la session des titulaires d'un compte.",
+        },
+        {
+          type: "paragraph",
           text: "Si de tels outils devaient être mis en place, cette politique serait mise à jour au préalable et un mécanisme de recueil du consentement serait proposé lorsque la réglementation applicable l'exige.",
         },
       ],
@@ -444,7 +456,7 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "**Accès interne.** Les comptes disposant du rôle d'administrateur au sein de FilmFund Africa peuvent consulter les profils et les projets de l'ensemble des utilisateurs, et supprimer un projet. Cet accès sert à l'assistance, à la modération des contenus signalés et au traitement des demandes d'effacement. Il est limité aux personnes désignées par l'éditeur. Un administrateur ne peut pas modifier le contenu d'un projet dont il n'est pas le porteur.",
+          text: "**Accès interne.** Les comptes disposant du rôle d'administrateur au sein de FilmFund Africa peuvent consulter les comptes, les profils et les projets de l'ensemble des utilisateurs, y intervenir, suspendre un compte et supprimer un projet. Cet accès sert à l'assistance, à la modération des contenus signalés et au traitement des demandes d'effacement. Il est limité aux personnes désignées par l'éditeur, et les actions d'administration sont journalisées.",
         },
         {
           type: "fields",
@@ -457,29 +469,41 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "Les prestataires d'infrastructure suivants sont **envisagés** pour l'hébergement et le fonctionnement du service. À la date de la présente politique, **aucun d'eux n'est configuré ni en service** :",
+          text: "**Hébergement.** Les prestataires d'infrastructure suivants sont en service :",
         },
         {
           type: "list",
           items: [
-            "Vercel Inc., pour l'hébergement et le déploiement de l'interface web (prévu) ;",
-            "Supabase Inc., pour la base de données, l'authentification et le stockage de fichiers (prévu) ;",
-            "Railway Corp., pour d'éventuels services applicatifs, traitements asynchrones ou tâches planifiées (prévu).",
-          ],
-        },
-        {
-          type: "fields",
-          fields: [
-            {
-              label: "Prestataires effectivement mis en œuvre",
-              value: "[À COMPLÉTER AVANT MISE EN PRODUCTION]",
-            },
-            { label: "Localisation de l'hébergement et des données", value: "[À COMPLÉTER]" },
+            "Vercel Inc., pour l'hébergement et le déploiement de l'interface web ;",
+            "Supabase Inc., pour la base de données, l'authentification et le stockage de fichiers ;",
+            "Railway Corp., pour les traitements asynchrones : fabrication des dossiers exportés et demandes à l'assistant IA.",
           ],
         },
         {
           type: "paragraph",
-          text: "Cette section doit être mise à jour dès qu'un prestataire est réellement configuré, en indiquant sa qualité de sous-traitant, les données concernées et les garanties contractuelles applicables.",
+          text: "**Assistant IA.** Lorsqu'un utilisateur demande une proposition à l'assistant, les éléments du projet nécessaires à cette demande sont transmis à un fournisseur de modèles d'intelligence artificielle, qui les traite pour produire la réponse. Rien n'est transmis sans une demande de l'utilisateur, confirmée après l'affichage de son devis. Les fournisseurs en service sont :",
+        },
+        {
+          type: "list",
+          items: [
+            "Anthropic, pour la rédaction et l'analyse de textes : il reçoit les éléments du projet utiles à la demande ;",
+            "OpenAI, pour les images du storyboard : il reçoit la description de la scène à dessiner et de ses plans ;",
+            "Perplexity, pour la recherche documentaire : il reçoit la seule question posée.",
+          ],
+        },
+        {
+          type: "paragraph",
+          text: "Les conditions de traitement propres à chacun de ces fournisseurs s'appliquent aux éléments qu'il reçoit.",
+        },
+        {
+          type: "fields",
+          fields: [
+            { label: "Localisation de l'hébergement et des données", value: "[À COMPLÉTER]" },
+            {
+              label: "Qualité de sous-traitant et garanties contractuelles",
+              value: "[À COMPLÉTER AVEC UN CONSEIL JURIDIQUE]",
+            },
+          ],
         },
       ],
     },
@@ -519,7 +543,11 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "Aucune durée n'est annoncée tant qu'elle n'a pas été arrêtée : une durée affichée engage le responsable du traitement.",
+          text: "Une durée est déjà appliquée par la plateforme : un dossier exporté est supprimé trente jours après sa fabrication.",
+        },
+        {
+          type: "paragraph",
+          text: "Aucune autre durée n'est annoncée tant qu'elle n'a pas été arrêtée : une durée affichée engage le responsable du traitement.",
         },
       ],
     },
@@ -537,9 +565,18 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "Aucune certification de sécurité n'est revendiquée. Les mesures effectivement mises en place seront décrites ici lorsqu'elles auront été définies et appliquées :",
+          text: "Aucune certification de sécurité n'est revendiquée. Les mesures en place sont les suivantes :",
         },
-        { type: "fields", fields: [{ value: "[À COMPLÉTER]" }] },
+        {
+          type: "list",
+          items: [
+            "l'accès à la plateforme est réservé aux comptes autorisés, et les échanges avec le site sont chiffrés ;",
+            "les données d'un projet ne sont accessibles qu'à son équipe et aux administrateurs, par des règles appliquées dans la base de données ;",
+            "les fichiers sont conservés dans un espace de stockage privé, sans adresse publique ;",
+            "les clés d'accès aux fournisseurs d'intelligence artificielle sont conservées chiffrées ;",
+            "les actions d'administration sont journalisées.",
+          ],
+        },
       ],
     },
     {
@@ -566,7 +603,7 @@ const CONFIDENTIALITE: LegalDocument = {
         {
           type: "fields",
           fields: [
-            { label: "Adresse pour exercer vos droits", value: "[À COMPLÉTER]" },
+            { label: "Adresse pour exercer vos droits", value: CONTACT_POLITIQUE_CONTENU },
             { label: "Délai de réponse applicable", value: "[À COMPLÉTER]" },
             { label: "Autorité de contrôle compétente", value: "[À COMPLÉTER]" },
           ],
@@ -592,10 +629,6 @@ const CONFIDENTIALITE: LegalDocument = {
           type: "paragraph",
           text: "La présente politique peut être modifiée pour tenir compte de l'évolution du service, des prestataires utilisés ou de la réglementation applicable. La date de dernière mise à jour figure en tête de page.",
         },
-        {
-          type: "paragraph",
-          text: "En cas de modification substantielle des traitements, les utilisateurs disposant d'un compte en seront informés par les moyens appropriés avant son entrée en vigueur.",
-        },
       ],
     },
     {
@@ -611,16 +644,13 @@ const CONFIDENTIALITE: LegalDocument = {
           fields: [
             { value: "[NOM / DÉNOMINATION LÉGALE]" },
             { value: "[ADRESSE]" },
-            { value: "[E-MAIL]" },
+            { value: CONTACT_POLITIQUE_CONTENU },
           ],
         },
       ],
     },
   ],
 };
-
-/** Adresse des signalements et des demandes de réexamen, publiée par décision du 11 octobre 2026. */
-export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
 
 /*
  * Ce texte n'annonce que ce que la plateforme fait : retirer un contenu et
