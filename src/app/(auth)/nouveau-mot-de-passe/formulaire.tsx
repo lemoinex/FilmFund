@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 
-import { Field, Message, SubmitButton } from "@/components/ui/form";
+import { PasswordField } from "@/components/ui/champ-mot-de-passe";
+import { Message, SubmitButton } from "@/components/ui/form";
 import { definirNouveauMotDePasse, type EtatFormulaire } from "../actions";
 
 export function FormulaireNouveauMotDePasse() {
@@ -15,20 +16,16 @@ export function FormulaireNouveauMotDePasse() {
     <form action={action} className="space-y-5">
       {etat && "erreur" in etat ? <Message ton="erreur">{etat.erreur}</Message> : null}
 
-      <Field
+      <PasswordField
         label="Nouveau mot de passe"
         name="motDePasse"
-        type="password"
         autoComplete="new-password"
-        required
         aide="Au moins 8 caractères, mêlant lettres et chiffres."
       />
-      <Field
+      <PasswordField
         label="Confirmer le mot de passe"
         name="confirmation"
-        type="password"
         autoComplete="new-password"
-        required
       />
 
       <SubmitButton enCours={enCours}>Enregistrer le mot de passe</SubmitButton>
