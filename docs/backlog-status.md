@@ -98,6 +98,7 @@ réels).
 | PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | en production     | —             |
 | PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | en production     | —             |
 | PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | en production     | —             |
+| PF3b   | ARC : fiche d'un personnage proposée — écran sous chaque personnage, inscription à l'Assistant IA (sans migration)             | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3655,3 +3656,38 @@ d'un personnage, et `/projets` renvoie sans session à la connexion.
 
 **Non vu en production** : le redémarrage du worker ; tout appel réel. Sans écran, rien ne
 déclenche encore cette action depuis l'application : c'est le lot PF3b.
+
+PF3b, l'écran, sans migration. Dans l'étape « Personnages » de l'assistant de création, un
+encart sous chaque personnage qui a un champ vide, ou une demande en cours
+(`assistant/actions-fiche.ts`, `fiche-proposee.tsx`, `lecture-fiches.ts`, catalogue
+`LIVRABLE_FICHE_PERSONNAGE`). Il dit avant tout envoi ce qui part chez le fournisseur, scénario
+compris ; rien ne part sans devis affiché ni confirmation. Le navigateur ne désigne qu'un
+personnage : ni l'action, ni les champs, ni le modèle. Chaque champ proposé s'accepte tel quel
+ou corrigé, ou s'écarte, **un à un — il n'y a pas de « tout accepter »**. Les refus de la base
+sont dits en clair : personnage retiré, champ rempli depuis la demande, fiche déjà complète.
+**Pour un documentaire, ni encart ni lecture** : la page dit pourquoi, par la phrase du
+catalogue.
+
+L'Assistant IA l'annonce : vingt-sept demandes, et une troisième réserve au catalogue,
+`fiction`, qui tait la fiche à un documentaire — l'annuaire ne promet pas ce que la base
+refuse. L'exception du test du barème est retirée. « Ce qui attend » suit la dernière demande
+**de chaque personnage** (`cibleDe`), nomme le personnage et mène à lui ; un personnage retiré
+ne donne aucun lien. Sa lecture prend de la tâche le seul personnage désigné, et du personnage
+le seul nom — jamais sa fiche. L'assistant de création n'existe pas pour un lecteur : rien ne
+lui est annoncé.
+
+La lecture des fiches a son fichier, à part de la page : la dernière demande de chaque
+personnage parmi les cent dernières du projet, puis les champs des seules propositions
+ouvertes, huit au plus chacune.
+
+PF3b est validé localement le 11 octobre 2026 : vingt-quatre sabotages attrapés, un par un —
+dont l'encart montré à un documentaire, l'action ou des paramètres choisis par le navigateur,
+une écriture directe d'un champ, la réservation dès le premier clic, la demande absente du
+catalogue, la fiche annoncée à un documentaire, toutes les fiches sous une seule cible. Un
+test ne tombait pas, celui de la borne d'une correction : il a été resserré.
+
+**Non couvert** : aucun appel réel, et l'encart n'a été vu dans aucun navigateur — ni le
+parcours du devis à l'acceptation, ni le mobile, ni un lecteur d'écran. Un administrateur hors
+équipe voit l'entrée de l'annuaire, mais l'assistant de création lui répond comme une page
+absente : c'est déjà le cas des personnages à ajouter, et ce lot n'y touche pas. La recette
+demande un budget à autoriser — un dollar proposé.

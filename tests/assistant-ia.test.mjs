@@ -22,6 +22,7 @@ import {
   LIVRABLE_DECOUPAGE,
   LIVRABLE_DIALOGUE,
   LIVRABLE_EPISODES,
+  LIVRABLE_FICHE_PERSONNAGE,
   LIVRABLE_MATERIEL,
   LIVRABLE_PERSONNAGES,
   LIVRABLE_RECHERCHE,
@@ -55,6 +56,7 @@ describe("Assistant IA : le catalogue couvre ce que l'assistant sait faire", () 
       LIVRABLE_DECOUPAGE.action,
       LIVRABLE_MATERIEL.action,
       LIVRABLE_PERSONNAGES.action,
+      LIVRABLE_FICHE_PERSONNAGE.action,
       LIVRABLE_EPISODES.action,
       LIVRABLE_RECHERCHE.action,
       LIVRABLE_CONTEXTE.action,
@@ -63,7 +65,7 @@ describe("Assistant IA : le catalogue couvre ce que l'assistant sait faire", () 
     ];
     assert.deepEqual(DEMANDES.map((demande) => demande.action).sort(), [...attendues].sort());
     assert.equal(parAction.size, DEMANDES.length, "aucune action en double");
-    assert.equal(DEMANDES.length, 26);
+    assert.equal(DEMANDES.length, 27);
   });
 
   it("toute constante de livrable du catalogue des propositions est connue de ce test", () => {
@@ -80,6 +82,7 @@ describe("Assistant IA : le catalogue couvre ce que l'assistant sait faire", () 
       "LIVRABLE_DECOUPAGE",
       "LIVRABLE_DIALOGUE",
       "LIVRABLE_EPISODES",
+      "LIVRABLE_FICHE_PERSONNAGE",
       "LIVRABLE_MATERIEL",
       "LIVRABLE_PERSONNAGES",
       "LIVRABLE_RECHERCHE",
@@ -91,15 +94,8 @@ describe("Assistant IA : le catalogue couvre ce que l'assistant sait faire", () 
     const type = /export type BaremePublie = \{([\s\S]*?)\n\};/.exec(lire("src/lib/offre.ts"))[1];
     const colonnes = [...type.matchAll(/^\s+(\w+): number;/gm)].map((m) => m[1]).sort();
     assert.equal(colonnes.length, 23);
-    // La fiche d'un personnage a son prix depuis le lot PF3a, sans écran encore :
-    // elle entrera au catalogue avec son encart, au lot PF3b. Une demande que
-    // l'équipe ne peut pas encore faire ne s'y annonce pas.
-    const sansEcran = ["character_sheet"];
     const tarifs = [...new Set(DEMANDES.map((demande) => demande.tarif))].sort();
-    assert.deepEqual(
-      tarifs,
-      [...colonnes.filter((colonne) => !sansEcran.includes(colonne)), "image"].sort(),
-    );
+    assert.deepEqual(tarifs, [...colonnes, "image"].sort());
     assert.deepEqual(
       DEMANDES.filter((demande) => demande.tarif === "image").map((demande) => demande.action),
       [LIVRABLE_VIGNETTE.action],
@@ -192,6 +188,13 @@ describe("Assistant IA : chaque demande mène à son écran", () => {
     for (const action of ["shot_list", "storyboard_image"]) {
       assert.equal(parAction.get(action).chemin, "/storyboard", action);
     }
+    // La fiche se demande sous chaque personnage : pas d'ancre commune, la
+    // liste ouvre la page, et « ce qui attend » mène au personnage lui-même.
+    assert.equal(parAction.get("character_sheet").chemin, "/assistant/personnages");
+    assert.match(parAction.get("character_sheet").lieu, /sous le personnage/);
+    const etape = lire(`${PROJET}/assistant/[etape]/page.tsx`);
+    assert.ok(etape.includes("id={`personnage-${personnage.id}`}"));
+    assert.match(etape, /<FicheProposee/);
     // Ce qui part d'un passage sélectionné n'a pas d'adresse fixe : la liste
     // des documents, et la consigne d'en ouvrir un.
     for (const action of ["dialogue", ...Object.keys(LIVRABLES_RETOUCHE)]) {
@@ -218,9 +221,9 @@ describe("Assistant IA : ce qu'un projet montre", () => {
   const actions = (besoins) => besoins.flatMap((b) => b.demandes.map((d) => d.action));
 
   it("une série dont on gère le budget voit tout", () => {
-    const besoins = besoinsDuProjet({ serie: true, budget: true });
-    assert.equal(actions(besoins).length, 26);
-    assert.equal(decompteDemandes(besoins), "26 demandes");
+    const besoins = besoinsDuProjet({ serie: true, budget: true, documentaire: false });
+    assert.equal(actions(besoins).length, 27);
+    assert.equal(decompteDemandes(besoins), "27 demandes");
     assert.deepEqual(
       besoins.map((besoin) => besoin.cle),
       ["presenter", "recit", "reprendre", "documenter", "tournage", "chiffrer"],
@@ -228,27 +231,45 @@ describe("Assistant IA : ce qu'un projet montre", () => {
   });
 
   it("un film ne voit pas les épisodes ; sans le budget, « Chiffrer » disparaît", () => {
-    const film = besoinsDuProjet({ serie: false, budget: true });
+    const film = besoinsDuProjet({ serie: false, budget: true, documentaire: false });
     assert.ok(!actions(film).includes("episode_list"));
     assert.ok(actions(film).includes("budget_plan"));
-    assert.equal(actions(film).length, 25);
+    assert.equal(actions(film).length, 26);
 
-    const lecteur = besoinsDuProjet({ serie: true, budget: false });
+    const lecteur = besoinsDuProjet({ serie: true, budget: false, documentaire: false });
     assert.ok(!actions(lecteur).includes("budget_plan"));
     assert.ok(!lecteur.some((besoin) => besoin.cle === "chiffrer"));
-    assert.equal(decompteDemandes(besoinsDuProjet({ serie: false, budget: false })), "24 demandes");
+    assert.equal(
+      decompteDemandes(besoinsDuProjet({ serie: false, budget: false, documentaire: false })),
+      "25 demandes",
+    );
   });
 
-  it("seules ces deux demandes sont réservées, et le catalogue n'est pas modifié par le tri", () => {
+  it("un documentaire ne voit pas la fiche d'un personnage, et garde les personnages à ajouter", () => {
+    const documentaire = besoinsDuProjet({ serie: false, budget: true, documentaire: true });
+    assert.ok(!actions(documentaire).includes("character_sheet"));
+    assert.ok(actions(documentaire).includes("character_list"));
+    assert.equal(actions(documentaire).length, 25);
+    // Une série documentaire : les épisodes, toujours pas la fiche.
+    const serie = besoinsDuProjet({ serie: true, budget: true, documentaire: true });
+    assert.ok(actions(serie).includes("episode_list"));
+    assert.ok(!actions(serie).includes("character_sheet"));
+    // La base refuse ce devis : l'annuaire ne promet pas ce qu'elle refuse.
+    assert.match(LIVRABLE_FICHE_PERSONNAGE.refusDocumentaire, /documentaire/);
+    assert.match(parAction.get("character_sheet").effet, /aucun champ rempli n'est remplacé/);
+  });
+
+  it("seules ces trois demandes sont réservées, et le catalogue n'est pas modifié par le tri", () => {
     assert.deepEqual(
       DEMANDES.filter((demande) => demande.reserve).map(({ action, reserve }) => [action, reserve]),
       [
+        ["character_sheet", "fiction"],
         ["episode_list", "serie"],
         ["budget_plan", "budget"],
       ],
     );
-    besoinsDuProjet({ serie: false, budget: false });
-    assert.equal(BESOINS_ASSISTANT.flatMap((besoin) => besoin.demandes).length, 26);
+    besoinsDuProjet({ serie: false, budget: false, documentaire: true });
+    assert.equal(BESOINS_ASSISTANT.flatMap((besoin) => besoin.demandes).length, 27);
     assert.equal(decompteDemandes([{ demandes: [DEMANDES[0]] }]), "1 demande");
   });
 });
@@ -279,7 +300,7 @@ describe("Assistant IA : la page du projet", () => {
     assert.match(page, /const gereBudget = budget === true;/);
     assert.match(
       page,
-      /besoinsDuProjet\(\{ serie: estSerie\(projet\.format\), budget: gereBudget \}\)/,
+      /besoinsDuProjet\(\{ serie: estSerie\(projet\.format\), budget: gereBudget, documentaire: projet\.format === "documentaire", \}\)/,
     );
     assert.doesNotMatch(page, /searchParams|"use client"/);
   });

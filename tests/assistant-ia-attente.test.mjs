@@ -46,7 +46,12 @@ const aPlat = (source) =>
     .replace(/\s+/g, " ");
 
 const DEMANDES = BESOINS_ASSISTANT.flatMap((besoin) => besoin.demandes);
-const VIDE = { scenes: new Map(), documents: new Map(), scenarios: new Map() };
+const VIDE = {
+  personnages: new Map(),
+  scenes: new Map(),
+  documents: new Map(),
+  scenarios: new Map(),
+};
 const TOUT = { peutDemander: true, budget: true };
 const LECTEUR = { peutDemander: false, budget: false };
 
@@ -62,12 +67,19 @@ const tache = (action, state, autres = {}) => {
     scene: null,
     document: null,
     episode: null,
+    personnage: null,
     ...autres,
   };
 };
 
 describe("Ce qui attend : la cible d'une demande", () => {
-  it("chaque écran a sa cible : l'action, ou la scène, le document, l'épisode", () => {
+  it("chaque écran a sa cible : l'action, ou la scène, le document, l'épisode, le personnage", () => {
+    assert.equal(
+      cibleDe(tache("character_sheet", "queued", { personnage: "p1" })),
+      "character_sheet:p1",
+    );
+    // Les personnages à ajouter visent le projet, pas un personnage.
+    assert.equal(cibleDe(tache("character_list", "queued")), "character_list");
     assert.equal(cibleDe(tache("logline", "queued")), "logline");
     assert.equal(cibleDe(tache("research", "queued")), "recherche");
     assert.equal(cibleDe(tache("cultural_context", "queued")), "recherche");
@@ -249,6 +261,7 @@ describe("Ce qui attend : ce qu'un projet montre", () => {
       tache("screenplay", "queued"),
     ];
     const cibles = {
+      personnages: new Map(),
       scenes: new Map([
         ["s1", "La berge"],
         ["s2", "  "],
@@ -278,6 +291,35 @@ describe("Ce qui attend : ce qu'un projet montre", () => {
       lire(`${PROJET}/documents/[documentId]/retouches.tsx`),
       /id="assistant-retouches"/,
     );
+  });
+
+  it("la fiche d'un personnage mène à ce personnage ; chacun a sa dernière demande", () => {
+    const taches = [
+      tache("character_sheet", "succeeded", { personnage: "p1" }),
+      tache("character_sheet", "queued", { personnage: "p2" }),
+      tache("character_sheet", "succeeded", { personnage: "p1" }),
+      tache("character_sheet", "succeeded", { personnage: "p3" }),
+    ];
+    const cibles = {
+      ...VIDE,
+      personnages: new Map([
+        ["p1", "Awa"],
+        ["p2", "Sadio"],
+      ]),
+    };
+    const attentes = ceQuiAttend(taches, new Set(taches.map((t) => t.id)), cibles, TOUT);
+    assert.deepEqual(
+      attentes.map((a) => [a.id, a.nature, a.cible, a.chemin]),
+      [
+        [taches[0].id, "proposition", "Awa", "/assistant/personnages#personnage-p1"],
+        // Personnage retiré : la demande reste dite, sans lien mort.
+        [taches[3].id, "proposition", "Personnage retiré", null],
+        [taches[1].id, "en_file", "Sadio", "/assistant/personnages#personnage-p2"],
+      ],
+    );
+    assert.ok(attentes.every((a) => a.libelle === "Fiche d'un personnage"));
+    // L'assistant de création n'existe pas pour un lecteur : rien ne lui est annoncé.
+    assert.deepEqual(ceQuiAttend(taches, new Set(taches.map((t) => t.id)), cibles, LECTEUR), []);
   });
 
   it("une cible retirée ne donne aucun lien, et la page le dit", () => {
@@ -316,7 +358,7 @@ describe("Ce qui attend : la lecture et la page", () => {
   it("des tâches, seuls l'action, l'état, la date et la cible sont lus, de façon bornée", () => {
     assert.match(
       lecture,
-      /"id, action, state, created_at, scene:params->>scene, document:params->>document, episode:params->>episode",/,
+      /"id, action, state, created_at, scene:params->>scene, document:params->>document, episode:params->>episode, personnage:params->>character",/,
     );
     assert.doesNotMatch(lecture, /"[^"]*\bparams\b(?!->>)[^"]*"/);
     assert.doesNotMatch(lecture, /question|sequence|reason/);
@@ -337,10 +379,19 @@ describe("Ce qui attend : la lecture et la page", () => {
     assert.doesNotMatch(lecture, /ai_suggestion_/);
     assert.deepEqual(
       [...lecture.matchAll(/\.from\("(\w+)"\)/g)].map((m) => m[1]),
-      ["jobs", "ai_suggestions", "storyboard_scenes", "project_documents", "project_documents"],
+      [
+        "jobs",
+        "ai_suggestions",
+        "storyboard_scenes",
+        "project_documents",
+        "project_documents",
+        "project_characters",
+      ],
     );
+    // D'un personnage, seul le nom est lu : jamais sa fiche.
+    assert.match(lecture, /\.from\("project_characters"\) \.select\("id, name"\)/);
     // Chaque lecture est tenue au projet, et rien n'est écrit.
-    assert.equal(lecture.split('.eq("project_id", projetId)').length - 1, 5);
+    assert.equal(lecture.split('.eq("project_id", projetId)').length - 1, 6);
     assert.doesNotMatch(lecture, /\.(insert|update|delete|upsert|rpc)\(/);
   });
 
@@ -376,7 +427,7 @@ async function lireAttentes(compte, projetId, contexte) {
   const { data, error } = await compte.client
     .from("jobs")
     .select(
-      "id, action, state, created_at, scene:params->>scene, document:params->>document, episode:params->>episode",
+      "id, action, state, created_at, scene:params->>scene, document:params->>document, episode:params->>episode, personnage:params->>character",
     )
     .eq("project_id", projetId)
     .in("action", ACTIONS_ASSISTANT)
@@ -387,6 +438,7 @@ async function lireAttentes(compte, projetId, contexte) {
   const dernieres = dernieresParCible(taches);
   const reussies = dernieres.filter((t) => t.state === "succeeded").map((t) => t.id);
   const episodes = [...new Set(dernieres.map((t) => t.episode).filter(Boolean))];
+  const personnages = [...new Set(dernieres.map((t) => t.personnage).filter(Boolean))];
 
   const { data: propositions } = reussies.length
     ? await compte.client
@@ -405,12 +457,21 @@ async function lireAttentes(compte, projetId, contexte) {
         .in("episode_id", episodes)
     : { data: [] };
 
+  const { data: personnagesLus } = personnages.length
+    ? await compte.client
+        .from("project_characters")
+        .select("id, name")
+        .eq("project_id", projetId)
+        .in("id", personnages)
+    : { data: [] };
+
   return {
     taches,
     attentes: ceQuiAttend(
       taches,
       new Set((propositions ?? []).map((p) => p.job_id)),
       {
+        personnages: new Map((personnagesLus ?? []).map((p) => [p.id, p.name])),
         scenes: new Map(),
         documents: new Map(),
         scenarios: new Map(
@@ -619,5 +680,45 @@ describe("Ce qui attend : contre la base, sous chaque rôle", () => {
       [["Épisode retiré, ou scénario détaché", null]],
     );
     await porteur.client.rpc("annuler_travail", { p_job_id: sequence.id });
+  });
+
+  it("la fiche demandée pour un personnage se lit par lui, et se tait s'il est retiré", async () => {
+    const { data: personnage, error } = await porteur.client
+      .from("project_characters")
+      .insert({
+        project_id: projet.id,
+        name: "Awa",
+        role: "principal",
+        description: "Pêcheuse.",
+        position: 0,
+        created_by: porteur.id,
+      })
+      .select("id")
+      .single();
+    assert.ifError(error);
+
+    const fiche = await engager(porteur, projet.id, "character_sheet", "attente-fiche-1", {
+      character: personnage.id,
+    });
+    const lu = await lireAttentes(porteur, projet.id, TOUT);
+    assert.deepEqual(
+      lu.attentes.filter((a) => a.id === fiche.id).map((a) => [a.nature, a.cible, a.chemin]),
+      [["en_file", "Awa", `/assistant/personnages#personnage-${personnage.id}`]],
+    );
+    // Un lecteur n'ouvre pas l'assistant de création : la demande ne lui est pas dite.
+    assert.deepEqual(
+      (await lireAttentes(lecteur, projet.id, LECTEUR)).attentes.filter((a) => a.id === fiche.id),
+      [],
+    );
+
+    assert.ifError(
+      (await porteur.client.from("project_characters").delete().eq("id", personnage.id)).error,
+    );
+    const apres = await lireAttentes(porteur, projet.id, TOUT);
+    assert.deepEqual(
+      apres.attentes.filter((a) => a.id === fiche.id).map((a) => [a.cible, a.chemin]),
+      [["Personnage retiré", null]],
+    );
+    await porteur.client.rpc("annuler_travail", { p_job_id: fiche.id });
   });
 });

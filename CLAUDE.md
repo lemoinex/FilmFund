@@ -527,8 +527,8 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   réelle et part chez l'assistant : ne pas retirer cet avertissement.
 - Fiche d'un personnage proposée (lot PF3a, agent ARC, action
   `character_sheet`, profil `arc.fiche_personnage@1`, table
-  `ai_suggestion_character_fields`) : base et worker livrés, **sans écran ni
-  appel réel**. Sur le modèle des propositions structurées, mais une ligne
+  `ai_suggestion_character_fields`) : base et worker livrés, **sans appel
+  réel**. Sur le modèle des propositions structurées, mais une ligne
   est **un champ** de la fiche d'**un personnage existant**, désigné par la
   demande (`params.character`) et relu par la base au devis, au contexte, au
   dépôt et à l'acceptation. **Aucun chemin n'écrase un champ** : ARC ne
@@ -540,9 +540,19 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   fiches et les scénarios enregistrés, deux cent mille caractères au plus en
   tout ; ni budget, ni équipe. Ses consignes lui interdisent d'inventer et
   préfèrent un champ laissé vide : ne pas les affaiblir. 2 unités. Tenu à
-  part de `PROFILS_ARC_PERSONNAGES` (`PROFILS_ARC_FICHE`). Le catalogue de
-  l'Assistant IA ne l'annonce pas tant que l'écran n'existe pas (lot PF3b) :
-  l'y inscrire avec son encart, et retirer alors l'exception du test.
+  part de `PROFILS_ARC_PERSONNAGES` (`PROFILS_ARC_FICHE`).
+- Écran de la fiche proposée (lot PF3b, sans migration, sans appel réel) :
+  encart sous chaque personnage de l'étape « Personnages » qui a un champ
+  vide ou une demande en cours (`assistant/actions-fiche.ts`,
+  `fiche-proposee.tsx`, `lecture-fiches.ts`, catalogue
+  `LIVRABLE_FICHE_PERSONNAGE`). Il dit ce qui part chez le fournisseur,
+  scénario compris, avant tout envoi ; rien ne part sans devis affiché ni
+  confirmation. Le navigateur ne désigne qu'un personnage. Chaque champ se
+  décide seul, tel quel ou corrigé : **pas de « tout accepter »**, ne pas en
+  ajouter. **Pour un documentaire, ni encart ni lecture**, et la page dit
+  pourquoi ; l'Assistant IA ne l'y annonce pas (réserve `fiction` du
+  catalogue). « Ce qui attend » suit la dernière demande de chaque
+  personnage et ne lit de lui que son nom.
 - Fiches des personnages dans le dossier (lot PF2, sans IA, section
   `fiches_personnages`) : une section **à part** de la fiche du projet, que
   **l'écran laisse décochée** (`SECTIONS_NON_COCHEES`) — un dossier part chez
@@ -909,7 +919,7 @@ recommandations (« à améliorer ») sont configurables et traçables.
   bouton ; chaque demande garde son encart, son devis affiché et sa
   confirmation. Ne pas y ajouter de demande en texte libre ni de routage par
   un modèle sans décision : ce serait un appel payant de plus.
-- Le catalogue est `src/lib/assistant-ia.ts` : vingt-six demandes, rangées
+- Le catalogue est `src/lib/assistant-ia.ts` : vingt-sept demandes, rangées
   par besoin, chacune avec son écran et la colonne du barème qui dit son
   prix. `tests/assistant-ia.test.mjs` refuse qu'une action d'un livrable
   (`propositions.ts`) ou qu'un prix du barème y manque : **ajouter un
@@ -921,7 +931,8 @@ recommandations (« à améliorer ») sont configurables et traçables.
   montrent qu'au porteur, aux éditeurs et aux administrateurs — la règle de
   `peut_engager_unites`, que les comptes n'appellent pas — et la demande du
   budget qu'à qui le gère (`peut_gerer_budget`). Les épisodes ne se
-  proposent qu'à une série.
+  proposent qu'à une série, la fiche d'un personnage jamais à un
+  documentaire.
 - Ce qui attend (lot AS2, sans IA, sans migration) : livré, en tête de la
   page du projet — les propositions à décider, puis les demandes en file, en
   cours ou à rapprocher. **Calculé à la lecture, jamais stocké** : ni « lu »,
@@ -930,7 +941,7 @@ recommandations (« à améliorer ») sont configurables et traçables.
   bornée dans `assistant-ia/lecture.ts` : les cent dernières tâches du
   projet, puis l'existence de leurs propositions.
 - **La règle est celle des écrans : la dernière demande de chaque cible** —
-  l'action, ou la scène, le document, l'épisode (`cibleDe`). Une demande plus
+  l'action, ou la scène, le document, l'épisode, le personnage (`cibleDe`). Une demande plus
   récente, même annulée, cache la proposition qui la précède : ne pas lister
   toutes les propositions « proposées » de la base, aucun écran n'ouvrirait
   les plus anciennes. Le parent (`ai_suggestions`) dit seul si quelque chose
