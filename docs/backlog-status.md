@@ -96,7 +96,7 @@ réels).
 | DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
 | NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | en production     | —             |
 | PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | en production     | —             |
-| PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | validé localement | —             |
+| PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3591,3 +3591,14 @@ dossier, la base ne la connaissant plus.
 **Non couvert** : la fabrication par la file des tâches, du devis au fichier déposé, avec la
 section nouvelle — les fichiers ont été rendus directement ; l'écran sous session ; l'allure
 du PDF, à juger à l'œil.
+
+PF2 est en production depuis le 11 octobre 2026 (PR 193) ; migration poussée par l'utilisateur
+avant la fusion, après un essai à blanc qui n'annonçait qu'elle : soixante-seize migrations
+en base. Vérifié en base par lecture seule : la section est admise ; un dossier qui ne la
+demande pas porte les mêmes clés qu'avant, et le tableau des personnages ses trois colonnes ;
+`contenu_dossier` n'appelle pas la fonction des agents ; les droits des deux fonctions sont
+inchangés. **Aucun personnage n'a encore de fiche détaillée en production** : la section est
+vide pour tous les projets, et la case reste grisée tant qu'aucun champ n'est rempli.
+
+**Non vu en production** : la case à l'écran, et un dossier réellement fabriqué avec la
+section — il faut d'abord qu'un personnage ait une fiche.
