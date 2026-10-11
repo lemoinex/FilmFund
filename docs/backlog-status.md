@@ -92,7 +92,7 @@ réels).
 | SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | en production     | —             |
 | Z4     | Administration : les administrateurs lisent les équipes de projet ; le comptage « membres d'équipe » redevient juste           | en production     | —             |
 | DU1    | Durcissement : la garde des routes passe de `middleware` à `proxy`, la convention de Next 16 (sans IA)                         | en production     | —             |
-| DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | validé localement | —             |
+| DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | en production     | —             |
 | DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
@@ -3427,3 +3427,15 @@ session — la session qui tient d'une page à l'autre, une page d'administratio
 
 **Reste de l'audit, hors lot** : la protection contre les mots de passe compromis, à activer
 dans Supabase Auth par l'utilisateur ; les scripts en ligne, ci-dessus.
+
+DU2 est en production depuis le 11 octobre 2026 (PR 184, `3142101`), CI de `main` verte. Sur
+le site public, trente secondes après la fusion : les dix directives sont servies, avec
+l'origine du projet Supabase de production pour les images et les appels, et les trois autres
+en-têtes inchangés ; la politique accompagne aussi une redirection. La garde répond comme
+avant : `/tableau-de-bord` et `/administration/couts` renvoient sans session à la connexion,
+une adresse inexistante répond 404. **Non vu en production** : les écrans sous session avec la
+politique — le parcours de l'utilisateur a porté sur la prévisualisation.
+
+Le lot DU est livré en entier. Restent de l'audit du 5 octobre : la protection contre les
+mots de passe compromis, à activer dans Supabase Auth par l'utilisateur, et les scripts en
+ligne, à rouvrir avant la levée du mode privé.
