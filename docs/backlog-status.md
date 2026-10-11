@@ -95,7 +95,7 @@ réels).
 | DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | en production     | —             |
 | DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
 | NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | en production     | —             |
-| PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | validé localement | —             |
+| PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3538,3 +3538,23 @@ plus long que la base. Aucun appel réel à un fournisseur.
 **Non couvert** : l'écran sous session — le volet, l'affichage, l'avertissement documentaire,
 en 375, 768 et 1440 px — n'a pas été vu dans un navigateur ; aucune demande réelle n'a porté
 une fiche détaillée jusqu'à un agent, et rien ne dit encore ce qu'il en fait.
+
+PF1 est en production depuis le 11 octobre 2026 (PR 190, `e5dccf0`). **La migration a été
+poussée avant la fusion**, par l'utilisateur, après un essai à blanc qui n'annonçait qu'elle :
+le code lit des colonnes nouvelles, et les aurait cherchées en vain. Soixante-quinze migrations
+en base.
+
+Vérifié en base par lecture seule, avant la fusion : huit colonnes jamais nulles, vides par
+défaut ; les huit se modifient, un personnage ne change toujours pas de projet ; les cinq
+politiques d'avant, aucune nouvelle ; `personnage_pour_agent` appelable ni par un visiteur, ni
+par un compte, ni par le worker ; chacune des quatre fonctions de contexte l'appelle une fois
+et garde son mode et ses droits. **Les sept personnages existants sont transmis aux agents
+exactement comme avant** : l'invariant du lot, vérifié sur les données réelles.
+
+CI de la PR et CI de `main` vertes ; déploiement de production prêt. Sur le site public, la
+vitrine et la connexion répondent, `/projets` renvoie sans session à la connexion.
+
+**Non vu en production** : l'écran sous session — le volet « Fiche détaillée », l'affichage
+dans l'onglet « Fiche », l'avertissement pour un documentaire — ; le redémarrage du worker,
+qui suit la CI de `main` et n'a pas été contrôlé ; aucune demande réelle n'a porté une fiche
+détaillée jusqu'à un agent.
