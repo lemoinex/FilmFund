@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ClapperIcon } from "@/components/icons";
+import { LogoFilmFund } from "@/components/logo";
 
 export const metadata: Metadata = {
   title: "Page introuvable — FilmFund Africa",
@@ -28,7 +28,7 @@ export default function NotFound() {
       <header className="border-navy-line/60 border-b">
         <div className="mx-auto flex h-18 w-full max-w-7xl items-center px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-2.5 text-lg tracking-tight">
-            <ClapperIcon className="text-gold size-7" />
+            <LogoFilmFund className="size-7" />
             <span className="font-medium">
               filmfund<span className="text-gold font-semibold">Africa</span>
             </span>

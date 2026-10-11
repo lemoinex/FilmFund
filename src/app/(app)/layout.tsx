@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { ClapperIcon } from "@/components/icons";
+import { LogoFilmFund } from "@/components/logo";
 import { BoutonInstallation } from "@/components/installation";
 import { deconnexion } from "@/app/(auth)/actions";
 import { accesAutorise } from "@/lib/acces-prive";
@@ -80,7 +80,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const marque = (
     <Link href="/tableau-de-bord" className="flex items-center gap-2.5 tracking-tight">
-      <ClapperIcon className="text-gold size-7" />
+      <LogoFilmFund className="size-7" />
       <span className="font-medium">
         filmfund<span className="text-gold font-semibold">Africa</span>
       </span>

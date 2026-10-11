@@ -8,6 +8,7 @@ import {
   SparkIcon,
   StoryboardIcon,
 } from "@/components/icons";
+import { LogoFilmFund } from "@/components/logo";
 
 /*
  * Maquette de demonstration, construite en HTML et Tailwind : aucune capture
@@ -51,7 +52,7 @@ export function DashboardMockup() {
           {/* Navigation laterale, masquee sur mobile faute de place utile. */}
           <div className="border-navy-line hidden w-44 shrink-0 border-r p-3 sm:block lg:w-48">
             <div className="mb-4 flex items-center gap-2 px-2 py-1 text-[11px]">
-              <ClapperIcon className="text-gold size-4" />
+              <LogoFilmFund className="size-4" />
               <span>
                 filmfund<span className="text-gold">Africa</span>
               </span>

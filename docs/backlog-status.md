@@ -233,6 +233,14 @@ celle que l'outil compile. **Reste la validation sur appareil** : aucune install
 faite, ni sur Windows ni sur Android. **La clé et son mot de passe sont à sauvegarder hors du
 poste** : les perdre interdit toute mise à jour de l'application.
 
+Le même jour, le symbole de la marque fourni par l'utilisateur — le globe et la pellicule —
+remplace le clap doré partout où la marque s'affiche avec son nom : vitrine, pages de
+connexion, page 404, barre latérale de l'application (`src/components/logo.tsx`,
+`public/images/logo-symbole.png`, sur fond transparent). Il devient aussi l'icône d'onglet
+(`src/app/favicon.ico`, `src/app/icon.png`). Le clap reste l'icône du menu « Mes projets » et
+l'image d'un projet sans couverture. Les icônes d'installation gardent le logo complet, avec
+son texte. Non vu dans un navigateur : l'aperçu remis était une reconstitution.
+
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
 Le 4 octobre 2026, les cinq livrables de l'assistant d'écriture ont été produits en

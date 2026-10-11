@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ClapperIcon } from "@/components/icons";
+import { LogoFilmFund } from "@/components/logo";
 import { modePriveActif } from "@/lib/acces-prive";
 
 /*
@@ -29,7 +29,7 @@ export function Navbar() {
           className="flex shrink-0 items-center gap-2.5 text-lg tracking-tight"
           aria-label="FilmFund Africa, accueil"
         >
-          <ClapperIcon className="text-gold size-7" />
+          <LogoFilmFund className="size-7" />
           <span className="font-medium">
             filmfund<span className="text-gold font-semibold">Africa</span>
           </span>
