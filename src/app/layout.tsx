@@ -1,5 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+
+import { Actualisation } from "@/components/actualisation";
+import { versionDuBuild } from "@/lib/actualisation";
+import { COULEUR_APPLICATION, ICONE_APPLE, NOM_APPLICATION } from "@/lib/installation";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,6 +43,14 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     type: "website",
   },
+  // Installation : le manifest est servi par `app/manifest.ts`, Next le relie seul.
+  applicationName: NOM_APPLICATION,
+  appleWebApp: { capable: true, title: NOM_APPLICATION, statusBarStyle: "black-translucent" },
+  icons: { apple: ICONE_APPLE },
+};
+
+export const viewport: Viewport = {
+  themeColor: COULEUR_APPLICATION,
 };
 
 // Props typees explicitement plutot que via le type global `LayoutProps` : celui-ci
@@ -48,7 +61,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
-      <body className="bg-navy text-light flex min-h-full flex-col">{children}</body>
+      <body className="bg-navy text-light flex min-h-full flex-col">
+        {children}
+        {/* La version est celle du build qui rend cette page : elle ne bouge plus tant que la fenêtre reste ouverte. */}
+        <Actualisation version={versionDuBuild()} />
+      </body>
     </html>
   );
 }

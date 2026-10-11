@@ -28,6 +28,16 @@ supabase/.temp/
 supabase/.branches/
 supabase/.env
 
+# Android : clés de signature et paquets fabriqués, jamais dans Git
+*.keystore
+*.jks
+android/app/
+android/build/
+android/.gradle/
+android/*.apk
+android/*.aab
+android/*.idsig
+
 # Tests end-to-end
 playwright-report/
 test-results/

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.filmfund.twa",
+      "sha256_cert_fingerprints": [
+        "MODELE-NON-DEPLOYABLE-REMPLACER-PAR-L-EMPREINTE-DU-CERTIFICAT-REEL"
+      ]
+    }
+  }
+]
