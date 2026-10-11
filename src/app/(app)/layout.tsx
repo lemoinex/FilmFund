@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ClapperIcon } from "@/components/icons";
+import { BoutonInstallation } from "@/components/installation";
 import { deconnexion } from "@/app/(auth)/actions";
 import { accesAutorise } from "@/lib/acces-prive";
 import { DUREE_LIEN_SECONDES } from "@/lib/images";
@@ -73,6 +74,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           Se déconnecter
         </button>
       </form>
+      <BoutonInstallation />
     </div>
   );
 

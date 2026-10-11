@@ -1,0 +1,26 @@
+{
+  "packageId": "app.vercel.filmfund.twa",
+  "host": "filmfund.vercel.app",
+  "name": "FilmFund Africa",
+  "launcherName": "FilmFund",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#10141c",
+  "navigationColor": "#10141c",
+  "backgroundColor": "#10141c",
+  "startUrl": "/tableau-de-bord",
+  "webManifestUrl": "https://filmfund.vercel.app/manifest.webmanifest",
+  "iconUrl": "https://filmfund.vercel.app/icons/icon-512.png",
+  "maskableIconUrl": "https://filmfund.vercel.app/icons/icon-maskable-512.png",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "enableNotifications": false,
+  "fallbackType": "customtabs",
+  "shortcuts": [],
+  "features": {},
+  "signingKey": {
+    "path": "./filmfund.keystore",
+    "alias": "filmfund"
+  },
+  "generatorApp": "bubblewrap-cli"
+}

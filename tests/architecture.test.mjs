@@ -2001,7 +2001,13 @@ describe("Vignettes de BOARD", () => {
     const fichiers = [...fichiersDe("worker/src"), ...fichiersDe("src")];
     assert.ok(fichiers.length > 50, "lecture du dépôt");
     const appelants = fichiers.filter((fichier) => /\bfetch\(/.test(lire(fichier)));
-    assert.deepEqual(appelants, [PASSERELLE]);
+    // Une exception, nommée (lot IN1) : l'application ouverte lit la version du
+    // build. Un seul appel, vers une adresse relative de l'application
+    // elle-même — jamais vers un fournisseur ni vers une autre origine.
+    const ACTUALISATION = "src/components/actualisation.tsx";
+    assert.deepEqual(appelants, [PASSERELLE, ACTUALISATION]);
+    const appelsDeVersion = lire(ACTUALISATION).match(/\bfetch\([^)]*\)/g);
+    assert.deepEqual(appelsDeVersion, ['fetch("/api/version", { cache: "no-store" })']);
     const adresses = fichiers.filter((fichier) => /api\.openai\.com/.test(lire(fichier)));
     assert.deepEqual(adresses, [PASSERELLE]);
 

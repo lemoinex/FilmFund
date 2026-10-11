@@ -100,6 +100,7 @@ réels).
 | PF3a   | ARC : fiche d'un personnage proposée, champ par champ — base, profil, agent                                                    | en production     | —             |
 | PF3b   | ARC : fiche d'un personnage proposée — écran sous chaque personnage, inscription à l'Assistant IA (sans migration)             | en production     | —             |
 | PC1    | Politique de contenu et de protection des comptes : page légale publique, liée depuis les pages légales (sans IA)              | en production     | —             |
+| IN1    | Application installable (Windows par le navigateur, enveloppe Android préparée) et actualisation sûre du code et des données   | validé localement | —             |
 
 ## Version 1
 
@@ -185,6 +186,40 @@ lecteur réels. BOARD n'a produit aucune vignette : le compte OpenAI est sans cr
 Restent à décider avant l'ouverture publique : le prestataire de paiement, le service d'envoi
 d'e-mails, les scripts en ligne de la politique de sécurité de contenu, la protection contre les
 mots de passe compromis, la levée du mode privé.
+
+## Après la version 1 : application installable (lot IN1)
+
+Le 11 octobre 2026, sur une mission de l'utilisateur. Le détail, les commandes et le tableau
+des livrables sont dans `docs/installation-connectee-windows-android.md`.
+
+L'application installée **n'embarque rien** : une fenêtre dédiée sur Windows, une enveloppe TWA
+sur Android, qui ouvrent le service en ligne. Ni export statique, ni service worker, ni cache
+hors ligne. Livré localement, sans migration ni dépendance : un manifest et cinq icônes tirées
+du logo fourni ; un bouton d'installation qui ne s'affiche que si le navigateur le propose ;
+`/api/version`, qui rend le commit déployé sans cache ; un composant qui lit cette version et
+ne recharge qu'à un moment sûr — jamais pendant une saisie, ni dans les trente secondes qui
+suivent un geste, ni deux fois pour la même version ; une relecture des données au retour au
+premier plan et au retour du réseau, jamais pendant une saisie.
+
+Pour Android, la configuration de l'enveloppe est préparée, **non compilée** : ni Java, ni SDK,
+ni Bubblewrap sur le poste. L'association entre le site et l'application est une route qui
+répond 404 tant qu'aucune empreinte réelle n'est posée dans `ANDROID_CERT_SHA256` : aucun
+exemple n'est publié. Aucune clé de signature n'a été créée.
+
+IN1 est validé localement : trente-cinq tests, vingt et un sabotages attrapés un par un ; les
+adresses relues sur un serveur local de production ; dans un navigateur, le manifest lu, aucun
+service worker ni cache, et l'annonce « version disponible » affichée sans rechargement pendant
+une saisie.
+
+**Non fait** : aucun déploiement ; aucune installation sur Windows ni sur Android ; aucun APK ;
+le rechargement automatique n'a pas été observé dans un navigateur ; pas de temps réel — une
+donnée modifiée par un autre n'apparaît qu'au retour, à la navigation ou après une action. Les
+pages légales disent toujours « depuis un navigateur web » : à reprendre le jour où une
+application est réellement distribuée.
+
+Trouvé en chemin : un ancien serveur de test resté ouvert sur le port 3111 du poste, qui
+partage le dossier de build et y réécrit la page d'accueil avec son ancien code quand on
+l'interroge. Il n'est pas dans le dépôt ; à fermer.
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 

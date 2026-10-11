@@ -234,6 +234,20 @@ Livraison : branche, PR, CI verte, fusion, puis `supabase db push` précédé de
   d'une autre origine demande d'y ajouter cette origine, donc une décision.
   Les scripts en ligne restent admis, par décision du 10 octobre 2026.
 
+- Application installable (lot IN1, sans migration, sans dépendance) :
+  `docs/installation-connectee-windows-android.md`. **Elle n'embarque rien** :
+  une fenêtre ou une enveloppe Android qui ouvre le service en ligne. Ne pas
+  ajouter de service worker ni de cache hors ligne sans décision : une page
+  authentifiée ne doit pas rester en cache. Le manifest est `app/manifest.ts`,
+  ses réglages `src/lib/installation.ts`. `/api/version` rend le commit
+  déployé, sans cache ; `components/actualisation.tsx` ne recharge que sur la
+  règle de `src/lib/actualisation.ts` — jamais pendant une saisie, ni juste
+  après un geste, ni deux fois pour la même version — et ne relit les données
+  qu'aux mêmes conditions. `/.well-known/assetlinks.json` répond 404 tant
+  qu'aucune empreinte réelle n'est posée (`ANDROID_CERT_SHA256`) : **ne jamais
+  y publier un exemple, ni créer une clé de signature sans accord**.
+  L'identifiant du paquet Android ne change plus après une distribution.
+
 Une fonction est terminée si elle inclut : interface responsive, validation,
 données réelles ou mock explicitement limité, contrôle d’accès serveur/RLS si
 nécessaire, états loading/vide/erreur/succès, test ou contrôle manuel documenté.

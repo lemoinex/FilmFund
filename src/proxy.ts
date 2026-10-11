@@ -16,7 +16,10 @@ export const config = {
     /*
      * Toutes les routes sauf les fichiers statiques et les images : les
      * exclure évite un appel d'authentification inutile à chaque ressource.
+     * S'y ajoutent trois adresses publiques que lit l'application installée —
+     * la version du build, le manifest, l'association Android : elles ne
+     * portent ni session ni donnée, et ne doivent jamais être redirigées.
      */
-    "/((?!_next/static|_next/image|favicon.ico|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|images/|api/version$|manifest.webmanifest$|\\.well-known/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
