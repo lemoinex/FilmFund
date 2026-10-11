@@ -1,5 +1,44 @@
 # Rôles respectifs d’Anthropic et OpenAI — FilmFund Africa
 
+## État réel au 11 octobre 2026
+
+Ce document a été écrit avant la livraison des agents. Cette section dit ce
+qui est réellement en place ; **là où la suite s’en écarte, c’est elle qui
+fait foi**. La matrice est tenue par `tests/roles-fournisseurs.test.mjs`.
+
+| Rôle                                                     | Fournisseur | Modèle ou service                          | Où                               |
+| -------------------------------------------------------- | ----------- | ------------------------------------------ | -------------------------------- |
+| Écriture, analyse, propositions structurées, découpage   | Anthropic   | `claude-opus-5-5`, effort réglé par profil | 23 profils de texte              |
+| Synthèse d’une recherche, sur les seuls extraits fournis | Anthropic   | `claude-opus-5-5`                          | SCOUT, GRIOT, MATCH              |
+| Collecte des sources d’une recherche                     | Perplexity  | API de recherche (`/search`), sans modèle  | SCOUT, GRIOT, MATCH              |
+| Vignette de storyboard                                   | OpenAI      | `gpt-image-2.5-flare`, génération seule    | BOARD, profil `board.vignette@1` |
+
+Trois fournisseurs, et non deux : **Perplexity collecte, Anthropic
+synthétise** (décision du 6 octobre 2026). Le moteur rend des pages et ne
+rédige rien ; le modèle ne lit que leurs extraits.
+
+Ce que la suite de ce document dit et qui n’est plus vrai, ou pas encore :
+
+- **La couche unique** ne s’appelle ni `AIService` ni `AIProvider` : c’est la
+  passerelle du worker, `worker/src/ia/passerelle.ts`, seul fichier qui appelle
+  un fournisseur. Les profils versionnés sont dans `worker/src/ia/profils.ts`.
+- **Les clés ne sont pas des variables d’environnement.** Elles se posent
+  depuis Administration → Intégrations IA et vivent chiffrées dans le coffre de
+  la base ; il n’existe ni `ANTHROPIC_API_KEY`, ni `OPENAI_API_KEY`, ni
+  `AI_SECRETS_MASTER_KEY`.
+- **Le routage n’est pas une table `agentRouting`** : chaque profil porte son
+  fournisseur et son modèle. SCOUT, GRIOT et MATCH emploient deux fournisseurs.
+- **Aucune bascule entre fournisseurs.** Le seul repli est celui qu’Anthropic
+  applique de son côté, vers un autre de ses modèles, dans le même appel ; le
+  modèle réellement servi est enregistré.
+- **Non livré** : l’analyse d’images par OpenAI, la retouche d’une image, les
+  références visuelles, l’audio, un modèle léger pour les tâches simples.
+- **Un seul modèle de texte.** La distinction entre écriture courante et
+  analyse exigeante se fait aujourd’hui par l’effort du profil (faible, moyen,
+  élevé), pas par le modèle. Passer l’écriture courante sur un modèle moins
+  coûteux est une décision ouverte : elle demande une version nouvelle de
+  chaque profil concerné et une comparaison sur des cas réels.
+
 ## Décision d’architecture
 
 Anthropic et OpenAI ne sont pas des fournisseurs interchangeables appelés arbitrairement. FilmFund Africa utilise une couche serveur unique `AIService` / `AIProvider` qui centralise tous les appels IA, les permissions, les quotas, les coûts, les validations et les journaux non sensibles.
