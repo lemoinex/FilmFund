@@ -39,7 +39,7 @@ export function PlatformOverview() {
               De l&apos;idée au dossier de production
             </h2>
             <p className="text-ink-muted mt-6 max-w-lg text-base leading-relaxed text-pretty">
-              filmfundAfrica vous offre un espace de travail structuré pour développer vos projets,
+              FilmFund Africa vous offre un espace de travail structuré pour développer vos projets,
               créer vos documents professionnels et préparer vos pitchs, avec l&apos;appui de
               l&apos;intelligence artificielle.
             </p>

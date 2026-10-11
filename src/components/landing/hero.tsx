@@ -46,7 +46,7 @@ export function Hero() {
           </h1>
 
           <p className="text-light-muted mt-7 max-w-xl text-base leading-relaxed text-pretty sm:text-lg">
-            filmfundAfrica est une plateforme conçue pour accompagner les producteurs dans le
+            FilmFund Africa est une plateforme conçue pour accompagner les producteurs dans le
             développement et la structuration de projets cinématographiques et audiovisuels
             africains.
           </p>

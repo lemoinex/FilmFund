@@ -47,7 +47,7 @@ const MENTIONS_LEGALES: LegalDocument = {
   slug: "mentions-legales",
   title: "Mentions légales",
   description:
-    "Mentions légales de la plateforme filmfundAfrica : éditeur, hébergement, propriété intellectuelle, responsabilité et contact.",
+    "Mentions légales de la plateforme FilmFund Africa : éditeur, hébergement, propriété intellectuelle, responsabilité et contact.",
   updatedAt: null,
   sections: [
     {
@@ -268,7 +268,7 @@ const CONFIDENTIALITE: LegalDocument = {
   slug: "confidentialite",
   title: "Politique de confidentialité",
   description:
-    "Politique de confidentialité de filmfundAfrica : données traitées, finalités, destinataires, conservation, sécurité et droits des personnes.",
+    "Politique de confidentialité de FilmFund Africa : données traitées, finalités, destinataires, conservation, sécurité et droits des personnes.",
   updatedAt: null,
   sections: [
     {
@@ -444,7 +444,7 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "**Accès interne.** Les comptes disposant du rôle d'administrateur au sein de filmfundAfrica peuvent consulter les profils et les projets de l'ensemble des utilisateurs, et supprimer un projet. Cet accès sert à l'assistance, à la modération des contenus signalés et au traitement des demandes d'effacement. Il est limité aux personnes désignées par l'éditeur. Un administrateur ne peut pas modifier le contenu d'un projet dont il n'est pas le porteur.",
+          text: "**Accès interne.** Les comptes disposant du rôle d'administrateur au sein de FilmFund Africa peuvent consulter les profils et les projets de l'ensemble des utilisateurs, et supprimer un projet. Cet accès sert à l'assistance, à la modération des contenus signalés et au traitement des demandes d'effacement. Il est limité aux personnes désignées par l'éditeur. Un administrateur ne peut pas modifier le contenu d'un projet dont il n'est pas le porteur.",
         },
         {
           type: "fields",

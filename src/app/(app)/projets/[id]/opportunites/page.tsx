@@ -30,7 +30,7 @@ import { createClient } from "@/lib/supabase/server";
 import { OngletsProjet } from "../onglets";
 
 export const metadata: Metadata = {
-  title: "Opportunités du projet — filmfundAfrica",
+  title: "Opportunités du projet — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

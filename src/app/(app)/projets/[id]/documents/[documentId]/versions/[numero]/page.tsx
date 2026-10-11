@@ -11,7 +11,7 @@ import { FormulaireRestauration } from "../../../formulaires";
 import { auteurDeVersion } from "../auteur";
 
 export const metadata: Metadata = {
-  title: "Version d'un document — filmfundAfrica",
+  title: "Version d'un document — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

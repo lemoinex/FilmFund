@@ -18,7 +18,7 @@ import {
 } from "./formulaires";
 
 export const metadata: Metadata = {
-  title: "Plans et quotas — filmfundAfrica",
+  title: "Plans et quotas — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

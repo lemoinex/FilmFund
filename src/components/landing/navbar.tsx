@@ -27,7 +27,7 @@ export function Navbar() {
         <Link
           href="/#accueil"
           className="flex shrink-0 items-center gap-2.5 text-lg tracking-tight"
-          aria-label="filmfundAfrica, accueil"
+          aria-label="FilmFund Africa, accueil"
         >
           <ClapperIcon className="text-gold size-7" />
           <span className="font-medium">

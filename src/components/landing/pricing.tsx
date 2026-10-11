@@ -27,7 +27,7 @@ const QUESTIONS_FIXES = [
   {
     question: "Peut-on changer de plan ?",
     reponse:
-      "Oui : un changement de plan s'applique aussitôt. Pour l'instant, il est effectué par l'équipe filmfundAfrica.",
+      "Oui : un changement de plan s'applique aussitôt. Pour l'instant, il est effectué par l'équipe FilmFund Africa.",
   },
   {
     question: "Comment régler un plan payant ?",
@@ -38,7 +38,7 @@ const QUESTIONS_FIXES = [
 
 function questions(bareme: BaremePublie | null) {
   const uniteTexte =
-    "Les assistants d'écriture de filmfundAfrica arrivent prochainement. Chaque livrable généré comptera un nombre fixe d'unités selon son ampleur";
+    "Les assistants d'écriture de FilmFund Africa arrivent prochainement. Chaque livrable généré comptera un nombre fixe d'unités selon son ampleur";
 
   return [
     {

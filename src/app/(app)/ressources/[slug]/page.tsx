@@ -15,7 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Ressource — filmfundAfrica",
+  title: "Ressource — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

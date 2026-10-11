@@ -28,7 +28,7 @@ import { FormulaireEquipement, FormulaireReglages, type EquipementEditable } fro
 import { MaterielPropose } from "./lignes-proposees";
 
 export const metadata: Metadata = {
-  title: "Matériel — filmfundAfrica",
+  title: "Matériel — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

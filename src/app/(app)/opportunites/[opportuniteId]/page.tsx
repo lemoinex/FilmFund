@@ -18,7 +18,7 @@ import { ETAPES, FORMATS } from "@/lib/projets";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Opportunité — filmfundAfrica",
+  title: "Opportunité — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

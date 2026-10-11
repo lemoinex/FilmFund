@@ -29,7 +29,7 @@ import { EpisodesProposes } from "./episodes-proposes";
 import { FormulaireEpisode, type EpisodeEditable } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Épisodes — filmfundAfrica",
+  title: "Épisodes — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

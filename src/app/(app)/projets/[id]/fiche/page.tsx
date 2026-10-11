@@ -17,7 +17,7 @@ import { OngletsProjet } from "../onglets";
 import { Proposition, RafraichissementPropositions } from "../proposition";
 
 export const metadata: Metadata = {
-  title: "Fiche du projet — filmfundAfrica",
+  title: "Fiche du projet — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

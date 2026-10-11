@@ -24,7 +24,7 @@ import { supprimerCandidature } from "./actions";
 import { FormulaireCandidature, type CandidatureEditable } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Financements — filmfundAfrica",
+  title: "Financements — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

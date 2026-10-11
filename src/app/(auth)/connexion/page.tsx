@@ -6,8 +6,8 @@ import { modePriveActif } from "@/lib/acces-prive";
 import { FormulaireConnexion } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Connexion — filmfundAfrica",
-  description: "Accédez à votre espace de travail filmfundAfrica.",
+  title: "Connexion — FilmFund Africa",
+  description: "Accédez à votre espace de travail FilmFund Africa.",
   robots: { index: false, follow: false },
 };
 

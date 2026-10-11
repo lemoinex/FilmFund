@@ -22,7 +22,7 @@ import { OngletsProjet } from "./onglets";
 import { Proposition, RafraichissementPropositions } from "./proposition";
 
 export const metadata: Metadata = {
-  title: "Projet — filmfundAfrica",
+  title: "Projet — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

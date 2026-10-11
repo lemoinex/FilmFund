@@ -31,7 +31,7 @@ import { RattachementEpisode, type EpisodeRattachable } from "./rattachement";
 import { Retouches } from "./retouches";
 
 export const metadata: Metadata = {
-  title: "Document — filmfundAfrica",
+  title: "Document — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

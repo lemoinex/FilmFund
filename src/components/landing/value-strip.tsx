@@ -29,7 +29,7 @@ const VALUES = [
 
 export function ValueStrip() {
   return (
-    <section aria-label="Ce que propose filmfundAfrica" className="bg-navy-soft">
+    <section aria-label="Ce que propose FilmFund Africa" className="bg-navy-soft">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-x-8 gap-y-8 px-5 py-10 sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:py-12">
         {VALUES.map(({ Icon, title, description }) => (
           <div key={title} className="flex items-start gap-4">

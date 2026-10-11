@@ -35,7 +35,7 @@ export function VisionSection() {
             </h2>
             <p className="text-ink-muted mt-6 max-w-lg text-base leading-relaxed text-pretty">
               Nous croyons au potentiel des histoires africaines et en leur capacité à inspirer,
-              fédérer et transformer les imaginaires. filmfundAfrica est pensé pour accompagner des
+              fédérer et transformer les imaginaires. FilmFund Africa est pensé pour accompagner des
               projets plus inclusifs, plus divers et plus ambitieux.
             </p>
             <a

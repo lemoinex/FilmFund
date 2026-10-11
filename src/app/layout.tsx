@@ -20,9 +20,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "filmfundAfrica — Développement de projets cinématographiques africains",
+  title: "FilmFund Africa — Développement de projets cinématographiques africains",
   description:
-    "filmfundAfrica est une plateforme de développement et de structuration de projets cinématographiques et audiovisuels africains : écriture, documents professionnels, préproduction et gestion de projet.",
+    "FilmFund Africa est une plateforme de développement et de structuration de projets cinématographiques et audiovisuels africains : écriture, documents professionnels, préproduction et gestion de projet.",
   keywords: [
     "cinéma africain",
     "développement de projets cinématographiques",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     "storyboard",
   ],
   openGraph: {
-    title: "filmfundAfrica",
+    title: "FilmFund Africa",
     description:
       "Un espace de travail structuré pour développer et préparer vos projets cinématographiques et audiovisuels africains.",
     locale: "fr_FR",

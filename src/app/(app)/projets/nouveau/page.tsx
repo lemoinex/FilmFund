@@ -6,7 +6,7 @@ import { ETAPES_ASSISTANT } from "@/lib/assistant";
 import { FormulaireProjet } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Nouveau projet — filmfundAfrica",
+  title: "Nouveau projet — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FormulaireNouveauMotDePasse } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Nouveau mot de passe — filmfundAfrica",
+  title: "Nouveau mot de passe — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FormulairePonderations } from "./formulaire";
 
 export const metadata: Metadata = {
-  title: "Score de maturité — filmfundAfrica",
+  title: "Score de maturité — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 

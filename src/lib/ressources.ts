@@ -21,7 +21,7 @@ export const CATEGORIES_RESSOURCE = {
   ecriture: "Écriture et développement",
   dossier: "Dossier et financement",
   preproduction: "Préproduction",
-  plateforme: "Utilisation de filmfundAfrica",
+  plateforme: "Utilisation de FilmFund Africa",
 } as const;
 
 export type CategorieRessource = keyof typeof CATEGORIES_RESSOURCE;
@@ -115,7 +115,7 @@ export const RESSOURCES: readonly Ressource[] = [
     statut: "brouillon",
     langue: "fr",
     misAJourLe: null,
-    auteur: "filmfundAfrica",
+    auteur: "FilmFund Africa",
     sections: [
       {
         id: "a-quoi-elle-sert",
@@ -195,7 +195,7 @@ export const RESSOURCES: readonly Ressource[] = [
     statut: "brouillon",
     langue: "fr",
     misAJourLe: null,
-    auteur: "filmfundAfrica",
+    auteur: "FilmFund Africa",
     sections: [
       {
         id: "definition",
@@ -272,7 +272,7 @@ export const RESSOURCES: readonly Ressource[] = [
     statut: "brouillon",
     langue: "fr",
     misAJourLe: null,
-    auteur: "filmfundAfrica",
+    auteur: "FilmFund Africa",
     sections: [
       {
         id: "son-role",
@@ -334,7 +334,7 @@ export const RESSOURCES: readonly Ressource[] = [
     statut: "brouillon",
     langue: "fr",
     misAJourLe: null,
-    auteur: "filmfundAfrica",
+    auteur: "FilmFund Africa",
     sections: [
       {
         id: "avant-de-commencer",
@@ -428,7 +428,7 @@ export const RESSOURCES: readonly Ressource[] = [
     statut: "brouillon",
     langue: "fr",
     misAJourLe: null,
-    auteur: "filmfundAfrica",
+    auteur: "FilmFund Africa",
     sections: [
       {
         id: "comment-s-en-servir",

@@ -9,7 +9,7 @@ import { FormulaireCle } from "./formulaire";
 import { FormulairePlafond } from "./formulaire-plafond";
 
 export const metadata: Metadata = {
-  title: "Intégrations IA — filmfundAfrica",
+  title: "Intégrations IA — FilmFund Africa",
   robots: { index: false, follow: false },
 };
 
