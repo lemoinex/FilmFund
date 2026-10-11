@@ -1309,36 +1309,61 @@ export type Database = {
       };
       project_characters: {
         Row: {
+          age: string;
+          appearance: string;
+          arc: string;
           created_at: string;
           created_by: string | null;
           description: string;
+          goal: string;
           id: string;
           name: string;
+          obstacle: string;
+          occupation: string;
           position: number;
           project_id: string;
+          relations: string;
           role: string;
+          traits: string;
           updated_at: string;
+          personnage_pour_agent: Json | null;
         };
         Insert: {
+          age?: string;
+          appearance?: string;
+          arc?: string;
           created_at?: string;
           created_by?: string | null;
           description?: string;
+          goal?: string;
           id?: string;
           name: string;
+          obstacle?: string;
+          occupation?: string;
           position?: number;
           project_id: string;
+          relations?: string;
           role?: string;
+          traits?: string;
           updated_at?: string;
         };
         Update: {
+          age?: string;
+          appearance?: string;
+          arc?: string;
           created_at?: string;
           created_by?: string | null;
           description?: string;
+          goal?: string;
           id?: string;
           name?: string;
+          obstacle?: string;
+          occupation?: string;
           position?: number;
           project_id?: string;
+          relations?: string;
           role?: string;
+          traits?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -3825,6 +3850,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      personnage_pour_agent: {
+        Args: { p_personnage: Database["public"]["Tables"]["project_characters"]["Row"] };
+        Returns: Json;
       };
       peut_editer_contenu: { Args: { p_project_id: string }; Returns: boolean };
       peut_engager_unites: { Args: { p_project_id: string }; Returns: boolean };

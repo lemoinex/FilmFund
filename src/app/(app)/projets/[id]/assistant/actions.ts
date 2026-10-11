@@ -13,11 +13,15 @@ import {
 } from "@/lib/assistant";
 import { ERREURS_EPISODE, messageEpisode } from "@/lib/episodes";
 import {
+  CHAMPS_FICHE_PERSONNAGE,
   MAX_PERSONNAGES,
   normaliserFiche,
+  normaliserFichePersonnage,
   normaliserPersonnage,
   type ChampFiche,
   type Fiche,
+  type FichePersonnage,
+  type SaisiePersonnage,
 } from "@/lib/fiche";
 import { LIMITE_DU_PLAN } from "@/lib/plans";
 import { CODES_PAYS } from "@/lib/profils";
@@ -176,12 +180,25 @@ export async function enregistrerEtape(
   );
 }
 
-function lirePersonnage(formData: FormData) {
-  return normaliserPersonnage({
+/** Le personnage et sa fiche détaillée, tels que le formulaire les envoie. */
+function lirePersonnage(
+  formData: FormData,
+): { personnage: SaisiePersonnage & FichePersonnage } | Erreur {
+  const lu = normaliserPersonnage({
     name: String(formData.get("name") ?? ""),
     role: String(formData.get("role") ?? ""),
     description: String(formData.get("description") ?? ""),
   });
+  if ("erreur" in lu) return lu;
+
+  const detail = normaliserFichePersonnage(
+    Object.fromEntries(
+      CHAMPS_FICHE_PERSONNAGE.map(({ cle }) => [cle, String(formData.get(cle) ?? "")]),
+    ),
+  );
+  if ("erreur" in detail) return detail;
+
+  return { personnage: { ...lu.personnage, ...detail.fiche } };
 }
 
 function revaliderPersonnages(projetId: string) {

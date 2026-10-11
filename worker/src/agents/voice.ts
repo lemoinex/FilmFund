@@ -10,6 +10,7 @@
  * La mécanique de l'appel est celle de WEAVER : provision, appel, coût
  * confirmé, dépôt. Seul son contexte lui est propre.
  */
+import { ecrirePersonnage } from "./personnage.ts";
 import {
   lireContexteDialogue,
   livrerProposition,
@@ -59,14 +60,7 @@ export function composerContexteDialogue(contexte: ContexteDialogue, objectif: s
     [
       "<personnages>",
       ...(personnages.length
-        ? personnages.map((personnage) =>
-            [
-              `- ${personnage.nom} (${lisible(personnage.role)})`,
-              personnage.description.trim() ? `  ${personnage.description.trim()}` : null,
-            ]
-              .filter(Boolean)
-              .join("\n"),
-          )
+        ? personnages.map((personnage) => ecrirePersonnage(personnage))
         : [ABSENT]),
       "</personnages>",
     ].join("\n"),

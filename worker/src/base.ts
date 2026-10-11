@@ -185,8 +185,23 @@ export async function lireContexte(base: Base, attemptId: string): Promise<Fiche
   };
 }
 
-/** Personnage d'un projet, tel que la base le remet au worker. */
-export type Personnage = { nom: string; role: string; description: string };
+/**
+ * Personnage d'un projet, tel que la base le remet au worker. Les champs de
+ * la fiche détaillée ne sont présents que s'ils sont remplis.
+ */
+export type Personnage = {
+  nom: string;
+  role: string;
+  description: string;
+  age?: string;
+  occupation?: string;
+  apparence?: string;
+  objectif?: string;
+  obstacle?: string;
+  arc?: string;
+  traits?: string;
+  liens?: string;
+};
 
 /** Document finalisé d'un projet, tel que la base le remet au worker. */
 export type DocumentProjet = { type: string; titre: string; contenu: string };

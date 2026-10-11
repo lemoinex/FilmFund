@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { FicheDetaillee } from "@/components/ui/fiche-personnage";
 import { Message } from "@/components/ui/form";
 import { etapeDe, type CleEtape } from "@/lib/assistant";
 import { decompteEpisodes, estSerie } from "@/lib/episodes";
@@ -67,7 +68,9 @@ export default async function FichePage({
     supabase.rpc("peut_gerer_budget", { p_project_id: id }),
     supabase
       .from("project_characters")
-      .select("id, name, role, description")
+      .select(
+        "id, name, role, description, age, occupation, appearance, goal, obstacle, arc, traits, relations",
+      )
       .eq("project_id", id)
       .order("position")
       .order("created_at"),
@@ -193,6 +196,7 @@ export default async function FichePage({
                       {personnage.description}
                     </p>
                   ) : null}
+                  <FicheDetaillee personnage={personnage} />
                 </li>
               ))}
             </ul>

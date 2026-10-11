@@ -95,6 +95,7 @@ réels).
 | DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | en production     | —             |
 | DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
 | NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | en production     | —             |
+| PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3493,3 +3494,47 @@ site public, une minute après la fusion : la vitrine, la connexion et les menti
 portent le nouveau nom dans leur titre, sans aucune occurrence de l'ancien, logo en place ;
 `/tableau-de-bord` renvoie toujours sans session à la connexion. **Non vu en production** : les
 pages sous session, et les propriétés d'un export réellement fabriqué.
+
+Lot PF, fiches de personnages détaillées, cadré le 11 octobre 2026. Un personnage tenait en
+trois champs : un nom, un rôle, une description libre. Décisions de l'utilisateur : huit champs
+de plus, tous facultatifs — âge, occupation, apparence physique, objectif, obstacle, arc,
+traits, liens — ; **l'arc est un texte, pas une structure** ; **les agents lisent la fiche tout
+de suite** ; le score de maturité reste tel quel. Trois lots : PF1, la fiche saisie à la main ;
+PF2, la fiche dans les exports ; PF3, l'assistant qui la propose — ces deux derniers à décider.
+
+PF1 : huit colonnes sur `project_characters`, bornées par la base, l'âge et l'occupation sur
+une ligne. La description reste, aucun personnage saisi n'est touché. **Aucune politique
+nouvelle** : les droits sont ceux des personnages, et les huit colonnes rejoignent la liste de
+celles qui se modifient — un personnage ne change toujours ni de projet ni d'auteur.
+
+Quatre fonctions transmettaient les personnages en détail aux agents — celles de la rédaction,
+des dialogues, des épisodes et des personnages proposés —, chacune par sa propre ligne. Elles
+passent par une seule fonction, `personnage_pour_agent`, que ni les comptes ni le worker
+n'appellent eux-mêmes. **Un champ vide n'est pas transmis : un personnage sans fiche détaillée
+part exactement comme avant, clé pour clé.** Les consignes des agents ne changent pas, aucun
+profil n'est republié. La migration ne recopie pas ces quatre fonctions : elle remplace, dans
+leur définition en place, la seule ligne des personnages, et s'arrête si elle ne s'y trouve
+pas exactement une fois. Leurs droits et leur mode suivent, vérifiés par le test.
+
+Côté worker, WEAVER, SCRIPT, VOICE et ARC écrivaient un personnage par le même bloc recopié
+quatre fois : une fonction partagée (`worker/src/agents/personnage.ts`) le remplace. Le coût
+suit seul : la provision est calculée sur le message réellement envoyé.
+
+Écran : un volet « Fiche détaillée », replié tant que rien n'y est saisi, dans le formulaire
+d'un personnage ; les champs remplis s'affichent dans l'assistant et dans l'onglet « Fiche ».
+**Pour un documentaire, l'écran dit avant la saisie que la fiche décrit une personne réelle et
+part chez l'assistant avec le reste du dossier.**
+
+Hors de ce lot : les exports, le score de maturité et les statistiques ne lisent pas la fiche
+détaillée ; les personnages proposés par ARC naissent sans elle ; FIELD ne reçoit toujours
+qu'un nombre de personnages.
+
+PF1 est validé localement le 11 octobre 2026 : lint, typage, format et build ; suite complète
+de l'API à 1 855 tests (16 de plus), 1 024 tests SQL (15 de plus). Cinq sabotages à chaud
+attrapés un par un : une borne retirée, un champ vide transmis aux agents, le droit de
+modifier une colonne retiré, le worker écrivant les champs vides, l'écran admettant un arc
+plus long que la base. Aucun appel réel à un fournisseur.
+
+**Non couvert** : l'écran sous session — le volet, l'affichage, l'avertissement documentaire,
+en 375, 768 et 1440 px — n'a pas été vu dans un navigateur ; aucune demande réelle n'a porté
+une fiche détaillée jusqu'à un agent, et rien ne dit encore ce qu'il en fait.

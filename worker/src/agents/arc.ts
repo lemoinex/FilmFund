@@ -11,6 +11,7 @@
  * propres à ce livrable, et elles seules : le contexte qu'il lit, et la
  * lecture de sa réponse, contrôlée ici avant de l'être encore par la base.
  */
+import { ecrirePersonnage } from "./personnage.ts";
 import {
   lireContextePersonnages,
   livrerPropositionPersonnages,
@@ -87,14 +88,7 @@ export function composerContextePersonnages(
     [
       "<personnages_deja_saisis>",
       ...(personnages.length
-        ? personnages.map((personnage) =>
-            [
-              `- ${personnage.nom} (${lisible(personnage.role)})`,
-              personnage.description.trim() ? `  ${personnage.description.trim()}` : null,
-            ]
-              .filter(Boolean)
-              .join("\n"),
-          )
+        ? personnages.map((personnage) => ecrirePersonnage(personnage))
         : ["(aucun)"]),
       "</personnages_deja_saisis>",
     ].join("\n"),
