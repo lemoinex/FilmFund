@@ -91,9 +91,9 @@ réels).
 | SE4    | Séries : les épisodes dans le dossier exporté — la saison, et l'épisode de chaque scénario (sans IA)                           | en production     | —             |
 | SE5    | FRAME : la scène d'un épisode — le découpage lit le scénario de cet épisode                                                    | en production     | —             |
 | Z4     | Administration : les administrateurs lisent les équipes de projet ; le comptage « membres d'équipe » redevient juste           | en production     | —             |
-| DU1    | Durcissement : la garde des routes passe de `middleware` à `proxy`, la convention de Next 16 (sans IA)                         | validé localement | —             |
+| DU1    | Durcissement : la garde des routes passe de `middleware` à `proxy`, la convention de Next 16 (sans IA)                         | en production     | —             |
 | DU2    | Durcissement : politique de sécurité de contenu sur toutes les réponses (sans IA)                                              | validé localement | —             |
-| DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | validé localement | —             |
+| DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3402,11 +3402,28 @@ postée renvoient à la connexion avec leur destination, une adresse inexistante
 Dans un navigateur, la vitrine et la page de connexion chargent polices, styles et images
 sans rien de bloqué, console vide.
 
-**Non couvert** : aucune page sous session n'a été vue avec la politique — images par lien
-signé, dépôt d'une photo ou d'une couverture, vignette proposée. Les tests ne voient pas ce
-qu'un navigateur refuse : ce parcours reste à faire, console ouverte, en local ou sur la
-prévisualisation. Sur une prévisualisation Vercel, la barre d'outils de Vercel, servie d'une
-autre origine, sera bloquée par la politique : attendu, sans effet sur l'application.
+Les tests ne voient pas ce qu'un navigateur refuse : le parcours sous session a été fait par
+l'utilisateur le 10 octobre 2026, sur la prévisualisation de la PR 184, console ouverte. Cinq
+points lui étaient demandés — couvertures du tableau de bord, photo de profil et dépôt d'une
+photo, couverture d'un projet et dépôt d'une image, image d'une scène du storyboard,
+téléchargement d'un export — : il a déclaré que tout fonctionne. La console n'a montré qu'un
+blocage, attendu : `https://vercel.live/_next-live/feedback/feedback.js`, la barre d'outils
+que Vercel injecte dans ses prévisualisations, servie d'une autre origine et absente de la
+production. Aucune capture n'accompagne ce parcours ; la vignette proposée par BOARD n'en
+faisait pas partie.
+
+DU3 est en production depuis le 10 octobre 2026 (PR 185, `890c279`) ; migration poussée par
+l'utilisateur le même jour, après un essai à blanc qui n'annonçait qu'elle. Vérifié en base
+par lecture seule : soixante-quatorze migrations, quatre-vingt-onze clés étrangères dans
+`public`, **aucune sans index** — elles étaient vingt-neuf —, aucun index invalide.
+
+DU1 est en production depuis le 10 octobre 2026 (PR 186, `e77d073`), CI de `main` verte.
+Avant la fusion, sur la prévisualisation, où le proxy tourne chez Vercel sous Node.js :
+`/tableau-de-bord` et `/administration/couts` renvoient sans session à la connexion, avec
+leur destination. Après, sur le site public, une fois le déploiement de production prêt : les
+mêmes, `/profil` et une action postée sur `/projets` renvoient à la connexion ; une adresse
+inexistante répond 404 ; la vitrine répond 200. **Non vu en production** : la garde sous
+session — la session qui tient d'une page à l'autre, une page d'administration qui s'ouvre.
 
 **Reste de l'audit, hors lot** : la protection contre les mots de passe compromis, à activer
 dans Supabase Auth par l'utilisateur ; les scripts en ligne, ci-dessus.
