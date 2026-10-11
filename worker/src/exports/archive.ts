@@ -14,8 +14,16 @@
  */
 import JSZip from "jszip";
 
+import { CHAMPS_FICHE } from "../agents/personnage.ts";
+
 import { rendreDocx } from "./docx.ts";
-import { libelle, type ContenuDossier, type Dossier, type Section } from "./dossier.ts";
+import {
+  libelle,
+  type ContenuDossier,
+  type Dossier,
+  type FichePersonnage,
+  type Section,
+} from "./dossier.ts";
 import {
   ANGLES,
   CADRAGES,
@@ -25,6 +33,7 @@ import {
   MOMENTS,
   MOUVEMENTS,
   POSTES,
+  ROLES_PERSONNAGE,
   STATUTS_ETAPE,
   STATUTS_FINANCEMENT,
   TYPES_FINANCEMENT,
@@ -151,6 +160,23 @@ function feuillePlanning(planning: NonNullable<ContenuDossier["planning"]>): Feu
 }
 
 /** La saison : numéro et durée restent des nombres, pour trier et sommer. */
+/** Une ligne par personnage, une colonne par champ de sa fiche ; un champ vide reste vide. */
+function feuillePersonnages(fiches: readonly FichePersonnage[]): FeuilleXlsx {
+  return {
+    nom: "Personnages",
+    colonnes: [
+      { titre: "Nom", largeur: 28 },
+      { titre: "Rôle", largeur: 14 },
+      ...CHAMPS_FICHE.map(([, titre]) => ({ titre, largeur: 44 })),
+    ],
+    lignes: fiches.map((fiche) => [
+      texte(fiche.nom),
+      texte(libelle(ROLES_PERSONNAGE, fiche.role)),
+      ...CHAMPS_FICHE.map(([cle]) => texte(fiche[cle]?.trim() ?? "")),
+    ]),
+  };
+}
+
 function feuilleEpisodes(episodes: NonNullable<ContenuDossier["episodes"]>): FeuilleXlsx {
   return {
     nom: "Épisodes",
@@ -239,7 +265,11 @@ function pieces(dossier: Dossier, contenu: ContenuDossier): Piece[] {
   const word = (sections: Section[]) => () => rendreDocx({ ...dossier, sections });
   const liste: Piece[] = [];
 
-  const presentation = [...retenues("synthese"), ...retenues("fiche_projet")];
+  const presentation = [
+    ...retenues("synthese"),
+    ...retenues("fiche_projet"),
+    ...retenues("fiches_personnages"),
+  ];
   if (presentation.length) {
     liste.push({ chemin: "presentation.docx", fabriquer: word(presentation) });
   }
@@ -255,6 +285,13 @@ function pieces(dossier: Dossier, contenu: ContenuDossier): Piece[] {
   });
 
   const { episodes, budget, financements, planning, decoupage, materiel } = contenu;
+  const fiches = contenu.fiches_personnages;
+  if (fiches && retenues("fiches_personnages").length) {
+    liste.push({
+      chemin: "personnages.xlsx",
+      fabriquer: () => rendreXlsx(feuillePersonnages(fiches)),
+    });
+  }
   if (episodes && retenues("episodes").length) {
     liste.push({ chemin: "episodes.xlsx", fabriquer: () => rendreXlsx(feuilleEpisodes(episodes)) });
   }

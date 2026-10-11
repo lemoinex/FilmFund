@@ -6,6 +6,9 @@
  * elle dessine ce que ce plan décrit ; c'est donc ici que se lit, et se
  * teste, ce qu'un dossier contient.
  */
+import { CHAMPS_FICHE } from "../agents/personnage.ts";
+import type { Personnage } from "../base.ts";
+
 import {
   ANGLES,
   CADRAGES,
@@ -29,6 +32,9 @@ import { estMisEnForme } from "./mise-en-forme.ts";
  * Ce que `contexte_export()` remet : de quoi dresser la page de garde
  * (`fiche`), puis les seules sections demandées.
  */
+/** La fiche détaillée d'un personnage, telle que la base la remet. */
+export type FichePersonnage = Omit<Personnage, "description">;
+
 export type ContenuDossier = {
   demande: { sections: string[]; documents: string[] };
   fiche: { titre: string; format: string; etape: string };
@@ -48,6 +54,11 @@ export type ContenuDossier = {
     public: string;
     personnages: { nom: string; role: string; description: string }[];
   };
+  /**
+   * Les seuls personnages dont un champ de fiche est rempli ; seuls ces
+   * champs-là sont présents. La description reste dans `fiche_projet`.
+   */
+  fiches_personnages?: FichePersonnage[];
   /** La saison d'une série, dans l'ordre de ses numéros ; vide pour un autre format. */
   episodes?: { numero: number; titre: string; duree: number | null; resume: string }[];
   /** `episode` : le numéro de l'épisode dont un scénario est celui ; absent sinon. */
@@ -129,6 +140,7 @@ export type Bloc =
 export type OrigineSection =
   | "synthese"
   | "fiche_projet"
+  | "fiches_personnages"
   | "episodes"
   | "document"
   | "budget"
@@ -280,6 +292,35 @@ function sectionFiche(fiche: NonNullable<ContenuDossier["fiche_projet"]>): Conte
   texte("Public cible", fiche.public);
 
   return blocs.length ? { titre: "Fiche du projet", blocs } : null;
+}
+
+/**
+ * Les fiches détaillées : pour chaque personnage, son nom et son rôle, puis
+ * ses champs remplis. Un champ vide n'est pas écrit, et un personnage dont la
+ * base n'a remis aucun champ est omis.
+ */
+function sectionFichesPersonnages(fiches: readonly FichePersonnage[]): Contenu | null {
+  const blocs: Bloc[] = [];
+  for (const fiche of fiches) {
+    const lignes: Ligne[] = CHAMPS_FICHE.flatMap(([cle, titre]) => {
+      const valeur = fiche[cle]?.trim();
+      return valeur ? [{ cellules: [titre, valeur] }] : [];
+    });
+    if (lignes.length) {
+      blocs.push(
+        { type: "intertitre", texte: `${fiche.nom} · ${libelle(ROLES_PERSONNAGE, fiche.role)}` },
+        {
+          type: "tableau",
+          colonnes: [
+            { titre: "Repère", largeur: 0.3 },
+            { titre: "Détail", largeur: 0.7 },
+          ],
+          lignes,
+        },
+      );
+    }
+  }
+  return blocs.length ? { titre: "Fiches des personnages", blocs } : null;
 }
 
 function sectionBudget(budget: NonNullable<ContenuDossier["budget"]>): Contenu | null {
@@ -573,6 +614,9 @@ export function composerDossier(contenu: ContenuDossier, etabliLe: Date): Dossie
   }
   if (contenu.fiche_projet) {
     ajouter("fiche_projet", sectionFiche(contenu.fiche_projet));
+  }
+  if (contenu.fiches_personnages) {
+    ajouter("fiches_personnages", sectionFichesPersonnages(contenu.fiches_personnages));
   }
   if (contenu.episodes) {
     ajouter("episodes", sectionEpisodes(contenu.episodes));

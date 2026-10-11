@@ -8,8 +8,11 @@
  */
 import type { Personnage } from "../base.ts";
 
-/** Champs de la fiche détaillée, dans l'ordre où un agent les lit. */
-const CHAMPS_FICHE = [
+/**
+ * Champs de la fiche détaillée, dans l'ordre où un agent les lit — et où un
+ * dossier exporté les présente (lot PF2).
+ */
+export const CHAMPS_FICHE = [
   ["age", "Âge"],
   ["occupation", "Occupation"],
   ["apparence", "Apparence physique"],

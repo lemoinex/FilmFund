@@ -96,6 +96,7 @@ réels).
 | DU3    | Durcissement : un index pour chaque clé étrangère qui n'en avait pas (sans IA)                                                 | en production     | —             |
 | NP1    | Nom de la plateforme : « FilmFund Africa » dans tous les textes lus, logo et consignes des agents inchangés (sans IA)          | en production     | —             |
 | PF1    | Personnages : fiche détaillée — huit champs facultatifs, saisis à la main, lus par les agents (sans appel réel)                | en production     | —             |
+| PF2    | Exports : section « Fiches des personnages », à la demande, en PDF, en Word et dans le ZIP (sans IA)                           | validé localement | —             |
 
 ## Recette de WEAVER : I1, I1b, I2a et I2b
 
@@ -3558,3 +3559,35 @@ vitrine et la connexion répondent, `/projets` renvoie sans session à la connex
 dans l'onglet « Fiche », l'avertissement pour un documentaire — ; le redémarrage du worker,
 qui suit la CI de `main` et n'a pas été contrôlé ; aucune demande réelle n'a porté une fiche
 détaillée jusqu'à un agent.
+
+PF2, la fiche détaillée dans les exports, cadré et approuvé le 11 octobre 2026. Décisions de
+l'utilisateur : **une section nouvelle**, « Fiches des personnages », à part de la fiche du
+projet, et un classeur de plus dans le ZIP. Un dossier part souvent chez un tiers, et la fiche
+dit l'apparence, les traits et les liens d'un personnage — une personne réelle dans un
+documentaire : **l'écran laisse la section décochée**, seule à l'être, et le dit pour un
+documentaire.
+
+La base admet la section et la remplit des seuls personnages dont un champ de fiche est
+rempli, cinquante au plus, avec leurs seuls champs remplis ; la description n'y est pas
+redite. Aucun n'en a : la section est vide, et le dossier l'omet. **Rien ne change pour un
+dossier qui ne la demande pas** : le tableau des personnages garde ses trois colonnes, et
+l'empreinte des dossiers déjà fabriqués ne bouge pas. En PDF et en Word, chaque personnage a
+son nom, son rôle et un tableau de ses champs ; dans le ZIP, les fiches entrent dans la
+présentation, et un classeur `personnages.xlsx` porte une ligne par personnage.
+
+Un défaut évité à l'écriture : `contenu_dossier` s'exécute aussi sous les droits du compte,
+pour reconnaître un dossier identique, alors que `personnage_pour_agent` est fermée aux
+comptes. L'y appeler aurait fait refuser tout export portant la section. Les champs sont donc
+écrits dans `contenu_dossier`, et un test tient les deux écritures égales. La fonction courte,
+`parametres_export`, est redéfinie en entier ; la longue reçoit son seul bloc, dans sa
+définition en place.
+
+PF2 est validé localement le 11 octobre 2026 : lint, typage, format et build ; suite complète de
+l'API à 1 881 tests (12 de plus), 1 034 tests SQL (10 de plus) ; un PDF, un Word
+et une archive réellement fabriqués par le code du worker, relus ; quatre sabotages attrapés —
+le worker écrivant les champs vides, la case cochée d'office, la section entrant dans tout
+dossier, la base ne la connaissant plus.
+
+**Non couvert** : la fabrication par la file des tâches, du devis au fichier déposé, avec la
+section nouvelle — les fichiers ont été rendus directement ; l'écran sous session ; l'allure
+du PDF, à juger à l'œil.

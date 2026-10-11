@@ -291,7 +291,12 @@ describe("Épisodes dans le dossier : ce que l'écran propose", () => {
 
   it("la section est celle de la base, placée à l'ouverture du dossier", () => {
     assert.equal(SECTIONS.episodes.libelle, "Épisodes");
-    assert.deepEqual(SECTIONS_D_OUVERTURE, ["synthese", "fiche_projet", "episodes"]);
+    assert.deepEqual(SECTIONS_D_OUVERTURE, [
+      "synthese",
+      "fiche_projet",
+      "fiches_personnages",
+      "episodes",
+    ]);
     assert.deepEqual(SECTIONS_DE_SERIE, ["episodes"]);
     assert.ok(ORDRE_SECTIONS.includes("episodes"));
     const types = ["scenario", "note_intention"];
@@ -299,8 +304,9 @@ describe("Épisodes dans le dossier : ce que l'écran propose", () => {
       sections: ["episodes", "synthese"],
       documents: ["scenario"],
     });
-    // La liste de la base, telle que la migration du lot l'écrit.
-    const migration = lire("supabase/migrations/20261010180000_exports_episodes.sql");
+    // La liste de la base, dans sa dernière définition : celle du lot PF2,
+    // qui y a ajouté les fiches des personnages.
+    const migration = lire("supabase/migrations/20261011220000_exports_fiches_personnages.sql");
     const enBase = /if not v_sections <@ array\[([\s\S]*?)\]/.exec(migration)[1];
     assert.deepEqual(
       [...enBase.matchAll(/'(\w+)'/g)].map((m) => m[1]).sort(),

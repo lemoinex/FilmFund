@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { ORDRE_TYPES, TYPES_DOCUMENT } from "@/lib/documents";
 import { estSerie } from "@/lib/episodes";
 import {
+  AVERTISSEMENT_FICHES_DOCUMENTAIRE,
+  SECTIONS_NON_COCHEES,
   ACTIONS_EXPORT,
   detailFiche,
   estFormatExport,
@@ -20,6 +22,7 @@ import {
   SECTIONS_DE_SERIE,
   type SectionExport,
 } from "@/lib/exports";
+import { fichePersonnageRemplie, MAX_PERSONNAGES } from "@/lib/fiche";
 import { createClient } from "@/lib/supabase/server";
 
 import { OngletsProjet } from "../onglets";
@@ -127,6 +130,17 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
 
   const fiche = detailFiche(projet, personnages ?? 0);
 
+  // Les personnages dont un champ de fiche est rempli : ceux que la section
+  // « Fiches des personnages » ferait partir. Bornée comme la base la borne.
+  const { data: detailles } = await supabase
+    .from("project_characters")
+    .select("age, occupation, appearance, goal, obstacle, arc, traits, relations")
+    .eq("project_id", id)
+    .limit(MAX_PERSONNAGES);
+  const fiches = (detailles ?? []).filter(
+    (personnage) => fichePersonnageRemplie(personnage).length > 0,
+  ).length;
+
   // Chaque case dit ce qu'elle apporterait, et ce qui n'y entre jamais.
   const contenuDes: Record<SectionExport, { detail: string; disponible: boolean }> = {
     synthese: {
@@ -145,6 +159,17 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     fiche_projet: {
       detail: fiche ?? "La fiche est encore vide",
       disponible: fiche !== null,
+    },
+    fiches_personnages: {
+      detail: fiches
+        ? [
+            `${compte(fiches, "fiche détaillée", "fiches détaillées", "")} : les champs remplis de chaque personnage`,
+            projet.format === "documentaire" ? AVERTISSEMENT_FICHES_DOCUMENTAIRE : "",
+          ]
+            .filter(Boolean)
+            .join(". ")
+        : "Aucune fiche détaillée pour l'instant",
+      disponible: fiches > 0,
     },
     budget: {
       detail: !budget
@@ -184,6 +209,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     code,
     libelle: SECTIONS[code].libelle,
     ...contenuDes[code],
+    decochee: SECTIONS_NON_COCHEES.includes(code),
   });
   const options: OptionExport[] = [
     // La saison ne se propose qu'à une série : un autre format n'a pas d'épisodes.

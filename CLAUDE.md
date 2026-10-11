@@ -524,9 +524,22 @@ produit : les réaliser par migrations additives, sans renommer l’existant.
   exactement comme avant.** Ajouter un champ, c'est l'ajouter aux trois
   endroits, que `tests/fiche-personnage.test.mjs` tient égaux. Pour un
   documentaire, l'écran dit avant la saisie que la fiche décrit une personne
-  réelle et part chez l'assistant : ne pas retirer cet avertissement. Les
-  exports ne lisent pas la fiche détaillée, et l'assistant ne la remplit
-  pas : ce sont d'autres lots (PF2, PF3), non décidés.
+  réelle et part chez l'assistant : ne pas retirer cet avertissement.
+  L'assistant ne remplit pas la fiche : c'est le lot PF3, cadré le 11 octobre
+  2026 et non livré.
+- Fiches des personnages dans le dossier (lot PF2, sans IA, section
+  `fiches_personnages`) : une section **à part** de la fiche du projet, que
+  **l'écran laisse décochée** (`SECTIONS_NON_COCHEES`) — un dossier part chez
+  un tiers, et la fiche dit l'apparence, les traits et les liens d'un
+  personnage. Ne pas la cocher d'office, ni la fondre dans « Fiche du
+  projet ». Elle porte les seuls personnages dont un champ est rempli, avec
+  leurs seuls champs remplis, sans la description ; vide, elle est omise.
+  **Un dossier qui ne la demande pas garde exactement sa forme**, et son
+  empreinte. Un classeur de plus dans le ZIP (`personnages.xlsx`).
+  `contenu_dossier` s'exécute aussi sous les droits du compte : elle écrit
+  les champs elle-même et **n'appelle pas `personnage_pour_agent`**, fermée
+  aux comptes ; `supabase/tests/exports_fiches_personnages.test.sql` tient
+  les deux écritures égales.
 - Séries : concept, univers, personnages, arcs, saison, épisodes, pilote.
 - Épisodes d'une série (lot SE1, sans IA) : livrés — table `project_episodes`,
   règles dans `src/lib/episodes.ts`, page `projets/[id]/episodes/`, ouverte

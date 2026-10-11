@@ -15,6 +15,7 @@
 export const SECTIONS = {
   synthese: { libelle: "Synthèse" },
   fiche_projet: { libelle: "Fiche du projet" },
+  fiches_personnages: { libelle: "Fiches des personnages" },
   episodes: { libelle: "Épisodes" },
   budget: { libelle: "Budget prévisionnel" },
   financements: { libelle: "Plan de financement" },
@@ -35,11 +36,24 @@ export const ORDRE_SECTIONS = Object.keys(SECTIONS) as SectionExport[];
 export const SECTIONS_D_OUVERTURE: readonly SectionExport[] = [
   "synthese",
   "fiche_projet",
+  "fiches_personnages",
   "episodes",
 ];
 
 /** Sections qu'un projet ne se voit proposer que s'il est une série. */
 export const SECTIONS_DE_SERIE: readonly SectionExport[] = ["episodes"];
+
+/**
+ * Sections que l'écran laisse décochées : elles ne partent dans un dossier que
+ * si on les demande. Les fiches détaillées disent l'apparence, les traits et
+ * les liens d'un personnage — une personne réelle, dans un documentaire —, et
+ * un dossier part souvent chez un tiers (lot PF2).
+ */
+export const SECTIONS_NON_COCHEES: readonly SectionExport[] = ["fiches_personnages"];
+
+/** Dit sous la case des fiches détaillées, pour un documentaire. */
+export const AVERTISSEMENT_FICHES_DOCUMENTAIRE =
+  "Ces fiches décrivent des personnes réelles : ne les joignez qu'à un dossier dont le destinataire doit les lire.";
 
 /**
  * Formats d'un dossier. Le format est l'action même de la tâche — la base
