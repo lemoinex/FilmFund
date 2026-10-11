@@ -46,7 +46,8 @@ export type LegalDocument = {
 /**
  * Adresse publiée par décision du 11 octobre 2026 : signalements et réexamens
  * de la politique de contenu, contact et exercice des droits de la politique
- * de confidentialité. Les mentions légales gardent leurs champs à compléter.
+ * de confidentialité, signalements et contact des mentions légales. Le reste
+ * de l'identité de l'éditeur reste à compléter : ne pas l'inventer.
  */
 export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
 
@@ -55,7 +56,7 @@ const MENTIONS_LEGALES: LegalDocument = {
   title: "Mentions légales",
   description:
     "Mentions légales de la plateforme FilmFund Africa : éditeur, hébergement, propriété intellectuelle, responsabilité et contact.",
-  updatedAt: null,
+  updatedAt: "11 octobre 2026",
   sections: [
     {
       id: "editeur",
@@ -74,7 +75,7 @@ const MENTIONS_LEGALES: LegalDocument = {
               value: "[RCCM / NUMÉRO D'IDENTIFICATION FISCALE / AUTRE, À COMPLÉTER]",
             },
             { label: "Numéro de téléphone", value: "[À COMPLÉTER]" },
-            { label: "E-mail de contact", value: "[À COMPLÉTER]" },
+            { label: "E-mail de contact", value: CONTACT_POLITIQUE_CONTENU },
             { label: "Directeur ou directrice de la publication", value: "[NOM, À COMPLÉTER]" },
           ],
         },
@@ -90,19 +91,24 @@ const MENTIONS_LEGALES: LegalDocument = {
       blocks: [
         {
           type: "paragraph",
-          text: "La plateforme est susceptible d'être hébergée ou déployée au moyen de prestataires d'infrastructure cloud, notamment :",
+          text: "La plateforme est hébergée et déployée au moyen des prestataires d'infrastructure suivants :",
         },
         {
           type: "list",
           items: [
             "Vercel Inc., pour l'hébergement et le déploiement de l'interface web ;",
-            "Supabase Inc. et/ou ses sous-traitants, pour les services de base de données, authentification, stockage de fichiers et services associés ;",
-            "Railway Corp. et/ou ses sous-traitants, lorsqu'un service applicatif, un traitement asynchrone ou une tâche planifiée le nécessite.",
+            "Supabase Inc., pour la base de données, l'authentification et le stockage de fichiers ;",
+            "Railway Corp., pour les traitements asynchrones.",
           ],
         },
         {
-          type: "paragraph",
-          text: "Les fournisseurs, régions d'hébergement et coordonnées pertinentes doivent être mis à jour dans la présente page avant la mise en production, selon la configuration effectivement utilisée.",
+          type: "fields",
+          fields: [
+            {
+              label: "Régions d'hébergement et coordonnées des prestataires",
+              value: "[À COMPLÉTER]",
+            },
+          ],
         },
       ],
     },
@@ -117,6 +123,14 @@ const MENTIONS_LEGALES: LegalDocument = {
         {
           type: "paragraph",
           text: "FilmFund Africa n'est pas un organisme de financement, un producteur, un distributeur, un cabinet juridique, un cabinet comptable ou un conseil financier. La plateforme ne garantit pas l'obtention d'un financement, d'une sélection, d'une subvention, d'un partenariat, d'une diffusion ou d'un résultat commercial.",
+        },
+        {
+          type: "paragraph",
+          text: "La plateforme comprend un assistant fondé sur des modèles d'intelligence artificielle. Ce qu'il propose reste une suggestion, que l'utilisateur accepte, corrige ou écarte : elle peut être inexacte ou incomplète, et n'engage ni FilmFund Africa ni un résultat.",
+        },
+        {
+          type: "paragraph",
+          text: "La plateforme est en accès privé : l'inscription est fermée, et seuls les comptes ouverts par l'éditeur peuvent se connecter.",
         },
       ],
     },
@@ -162,7 +176,7 @@ const MENTIONS_LEGALES: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "FilmFund Africa peut suspendre ou supprimer l'accès à un contenu ou à un compte lorsqu'elle dispose d'éléments raisonnables indiquant une violation des présentes règles, sous réserve des obligations légales applicables.",
+          text: "FilmFund Africa peut retirer un contenu ou suspendre un compte lorsqu'elle dispose d'éléments raisonnables indiquant une violation des présentes règles, sous réserve des obligations légales applicables. La politique de contenu précise ces règles et la manière de demander un réexamen.",
         },
       ],
     },
@@ -231,7 +245,7 @@ const MENTIONS_LEGALES: LegalDocument = {
         },
         {
           type: "fields",
-          fields: [{ value: "[E-MAIL DE CONTACT / SECURITY EMAIL À COMPLÉTER]" }],
+          fields: [{ value: CONTACT_POLITIQUE_CONTENU }],
         },
         { type: "paragraph", text: "Merci d'indiquer, dans la mesure du possible :" },
         {
@@ -262,7 +276,7 @@ const MENTIONS_LEGALES: LegalDocument = {
           fields: [
             { value: "[NOM / DÉNOMINATION LÉGALE]" },
             { value: "[ADRESSE]" },
-            { value: "[E-MAIL]" },
+            { value: CONTACT_POLITIQUE_CONTENU },
             { value: "[TÉLÉPHONE, SI APPLICABLE]" },
           ],
         },
