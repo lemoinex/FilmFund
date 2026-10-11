@@ -919,6 +919,7 @@ describe("Livrables des agents", () => {
     const { executeursArc } = await import("../worker/src/agents/arc.ts");
     const {
       PROFILS_ARC,
+      PROFILS_ARC_FICHE,
       PROFILS_ARC_PERSONNAGES,
       PROFILS_IA,
       PROFILS_RETOUCHE,
@@ -942,6 +943,7 @@ describe("Livrables des agents", () => {
     assert.deepEqual(Object.keys(executeursArc({}, vide)), [
       ...Object.keys(PROFILS_ARC),
       ...Object.keys(PROFILS_ARC_PERSONNAGES),
+      ...Object.keys(PROFILS_ARC_FICHE),
     ]);
     // Aucun profil n'est oublié par un agent, et aucun n'est servi deux fois.
     assert.deepEqual(
@@ -2859,18 +2861,20 @@ describe("Personnages proposés par ARC", () => {
 
   it("le registre sert ARC, et le barème de l'écran connaît son prix", async () => {
     const { executeursArc } = await import("../worker/src/agents/arc.ts");
-    const { PROFILS_ARC, PROFILS_ARC_PERSONNAGES } = await import("../worker/src/ia/profils.ts");
+    const { PROFILS_ARC, PROFILS_ARC_FICHE, PROFILS_ARC_PERSONNAGES } =
+      await import("../worker/src/ia/profils.ts");
     const vide = async () => ({});
     assert.deepEqual(Object.keys(executeursArc({}, vide)), [
       ...Object.keys(PROFILS_ARC),
       ...Object.keys(PROFILS_ARC_PERSONNAGES),
+      ...Object.keys(PROFILS_ARC_FICHE),
     ]);
     assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursArc\(base, fournisseur\)/);
     assert.match(lire("src/lib/plans.ts"), /cle: "character_list"/);
     assert.match(lire("src/lib/offre.ts"), /bareme\.character_list/);
     assert.match(
       lire("src/lib/offre.ts"),
-      /dramatic_analysis, character_list, episode_list, budget_plan/,
+      /dramatic_analysis, character_list, character_sheet, episode_list, budget_plan/,
     );
   });
 });
@@ -3106,7 +3110,7 @@ describe("Épisodes proposés par SCRIPT", () => {
     assert.match(lire("worker/src/registre.ts"), /\.\.\.executeursScript\(base, fournisseur\)/);
     assert.match(lire("src/lib/plans.ts"), /cle: "episode_list"/);
     assert.match(lire("src/lib/offre.ts"), /bareme\.episode_list/);
-    assert.match(lire("src/lib/offre.ts"), /character_list, episode_list, budget_plan/);
+    assert.match(lire("src/lib/offre.ts"), /character_sheet, episode_list, budget_plan/);
     assert.equal(LIBELLES_ACTION.episode_list, "Épisodes");
   });
 

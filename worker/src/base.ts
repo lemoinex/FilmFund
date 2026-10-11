@@ -701,6 +701,65 @@ export async function livrerPropositionPersonnages(
   }
 }
 
+/** Champ de fiche proposé, tel que le worker le dépose : contrôlé de nouveau par la base. */
+export type ChampPropose = { field: string; value: string };
+
+/**
+ * Ce qu'ARC lit pour compléter une fiche (lot PF3a) : le projet, son concept,
+ * sa vision, tous les personnages avec leurs fiches, le personnage à
+ * compléter, ses champs vides, et le scénario enregistré — coupé au-delà de
+ * sa borne, ce que le contexte dit.
+ */
+export type ContexteFichePersonnage = {
+  action: string;
+  projet: ContexteRedaction["projet"];
+  contexte: ContexteRedaction["contexte"];
+  vision: ContexteRedaction["vision"];
+  personnages: ContexteRedaction["personnages"];
+  personnage: Personnage;
+  champs_vides: string[];
+  scenario: string;
+  scenario_coupe: boolean;
+};
+
+/**
+ * Contexte de la tâche de fiche en cours ; null si l'essai ne nous appartient
+ * plus, ou si la demande ne tient plus — personnage retiré, fiche complétée
+ * entre-temps. Rien ne part alors chez le fournisseur.
+ */
+export async function lireContexteFichePersonnage(
+  base: Base,
+  attemptId: string,
+): Promise<ContexteFichePersonnage | null> {
+  const { rows } = await base.query("select public.contexte_fiche_personnage($1) as contexte", [
+    attemptId,
+  ]);
+  return rows[0]?.contexte ?? null;
+}
+
+/**
+ * Dépose les champs proposés et conclut l'essai. Faux : l'essai ne nous
+ * appartenait plus, rien n'a été déposé.
+ */
+export async function livrerPropositionFiche(
+  base: Base,
+  attemptId: string,
+  champs: readonly ChampPropose[],
+): Promise<boolean> {
+  try {
+    await base.query("select public.livrer_proposition_fiche($1, $2::jsonb)", [
+      attemptId,
+      JSON.stringify(champs),
+    ]);
+    return true;
+  } catch (erreur) {
+    if (codeDe(erreur) === ESSAI_PERDU) {
+      return false;
+    }
+    throw erreur;
+  }
+}
+
 /** Épisode proposé, tel que le worker le dépose : contrôlé de nouveau par la base. */
 export type EpisodePropose = {
   title: string;

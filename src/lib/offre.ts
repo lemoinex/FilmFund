@@ -133,6 +133,7 @@ export type BaremePublie = {
   pitch_oral: number;
   dramatic_analysis: number;
   character_list: number;
+  character_sheet: number;
   episode_list: number;
   budget_plan: number;
   schedule_plan: number;
@@ -167,6 +168,7 @@ export function uniteTexteEnMots(bareme: BaremePublie): string {
       : `${n(bareme.pitch_extended)} pour un pitch développé, ${n(bareme.pitch_oral)} pour un pitch oral`,
     `${n(bareme.dramatic_analysis)} pour une analyse dramaturgique`,
     `${n(bareme.character_list)} pour une liste de personnages`,
+    `${n(bareme.character_sheet)} pour la fiche d'un personnage`,
     `${n(bareme.episode_list)} pour une liste d'épisodes`,
     `${n(bareme.budget_plan)} pour un budget prévisionnel`,
     `${n(bareme.schedule_plan)} pour un planning prévisionnel`,
@@ -209,7 +211,7 @@ export async function lireBareme(
     const { data, error } = await clientPublic(url, clePubliable)
       .from("text_unit_rate_versions")
       .select(
-        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, character_list, episode_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage",
+        "version_number, logline, synopsis_short, synopsis_standard, synopsis_detailed, intention_note, direction_note, pitch_extended, pitch_oral, dramatic_analysis, character_list, character_sheet, episode_list, budget_plan, schedule_plan, shot_list, gear_list, research, cultural_context, treatment, bible, screenplay_per_sequence, dialogue_per_scene, text_edit_per_passage",
       )
       .order("version_number", { ascending: false })
       .limit(1)

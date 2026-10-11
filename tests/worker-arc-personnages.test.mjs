@@ -20,6 +20,7 @@ import { traiterUnTravail } from "../worker/src/boucle.ts";
 import {
   PROFIL_PERSONNAGES,
   PROFILS_ARC,
+  PROFILS_ARC_FICHE,
   PROFILS_ARC_PERSONNAGES,
   PROFILS_FIELD,
   PROFILS_FRAME,
@@ -629,6 +630,7 @@ describe("ARC : proposition de personnages", () => {
     assert.deepEqual(Object.keys(executeursArc(base, fournisseur)), [
       ...Object.keys(PROFILS_ARC),
       ...Object.keys(PROFILS_ARC_PERSONNAGES),
+      ...Object.keys(PROFILS_ARC_FICHE),
     ]);
   });
 });

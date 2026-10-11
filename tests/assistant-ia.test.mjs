@@ -90,9 +90,16 @@ describe("Assistant IA : le catalogue couvre ce que l'assistant sait faire", () 
   it("chaque prix du barème publié est celui d'une demande, et l'image a son quota", () => {
     const type = /export type BaremePublie = \{([\s\S]*?)\n\};/.exec(lire("src/lib/offre.ts"))[1];
     const colonnes = [...type.matchAll(/^\s+(\w+): number;/gm)].map((m) => m[1]).sort();
-    assert.equal(colonnes.length, 22);
+    assert.equal(colonnes.length, 23);
+    // La fiche d'un personnage a son prix depuis le lot PF3a, sans écran encore :
+    // elle entrera au catalogue avec son encart, au lot PF3b. Une demande que
+    // l'équipe ne peut pas encore faire ne s'y annonce pas.
+    const sansEcran = ["character_sheet"];
     const tarifs = [...new Set(DEMANDES.map((demande) => demande.tarif))].sort();
-    assert.deepEqual(tarifs, [...colonnes, "image"].sort());
+    assert.deepEqual(
+      tarifs,
+      [...colonnes.filter((colonne) => !sansEcran.includes(colonne)), "image"].sort(),
+    );
     assert.deepEqual(
       DEMANDES.filter((demande) => demande.tarif === "image").map((demande) => demande.action),
       [LIVRABLE_VIGNETTE.action],

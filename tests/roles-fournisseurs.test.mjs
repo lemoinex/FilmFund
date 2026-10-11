@@ -46,6 +46,7 @@ const MODELE_IMAGE = "gpt-image-2.5-flare";
 /** La matrice des rôles : chaque profil, à sa place. */
 const ECRITURE_ET_ANALYSE = [
   "arc.analyse@1",
+  "arc.fiche_personnage@1",
   "arc.personnages@1",
   "field.budget@1",
   "field.planning@1",

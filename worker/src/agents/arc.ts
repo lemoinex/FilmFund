@@ -13,16 +13,22 @@
  */
 import { ecrirePersonnage } from "./personnage.ts";
 import {
+  lireContexteFichePersonnage,
   lireContextePersonnages,
+  livrerPropositionFiche,
   livrerPropositionPersonnages,
   type Base,
+  type ChampPropose,
+  type ContexteFichePersonnage,
   type ContextePersonnages,
   type PersonnagePropose,
 } from "../base.ts";
 import type { Executeur } from "../executeurs.ts";
 import type { Fournisseur } from "../ia/passerelle.ts";
 import {
+  CHAMPS_FICHE_PERSONNAGE,
   PROFILS_ARC,
+  PROFILS_ARC_FICHE,
   PROFILS_ARC_PERSONNAGES,
   ROLES_PERSONNAGE,
   type ProfilStructure,
@@ -166,6 +172,143 @@ export function lirePersonnages(texte: string, max: number): PersonnagePropose[]
   return personnages;
 }
 
+/** Bornes d'un champ de fiche, telles que la base les contrôle au dépôt. */
+const BORNES_FICHE: Readonly<Record<string, { max: number; ligne: boolean }>> = {
+  age: { max: 60, ligne: true },
+  occupation: { max: 160, ligne: true },
+  apparence: { max: 600, ligne: false },
+  objectif: { max: 600, ligne: false },
+  obstacle: { max: 600, ligne: false },
+  arc: { max: 800, ligne: false },
+  traits: { max: 600, ligne: false },
+  liens: { max: 600, ligne: false },
+};
+
+/**
+ * Ce qui est transmis au fournisseur pour compléter une fiche : le projet, son
+ * concept, tous les personnages, la vision, le scénario, puis le personnage à
+ * compléter, ses champs vides et l'objectif — en dernier, après la donnée.
+ */
+export function composerContexteFiche(contexte: ContexteFichePersonnage, objectif: string): string {
+  const { projet, personnages, vision, personnage: aCompleter } = contexte;
+  const blocs = [
+    [
+      "<projet>",
+      champ("Titre", projet.titre),
+      champ("Format", lisible(projet.format)),
+      champ("Étape", lisible(projet.etape)),
+      champ("Genre", projet.genre && lisible(projet.genre)),
+      champ("Pays de production", projet.pays?.join(", ")),
+      champ("Langues", projet.langues),
+      champ("Durée en minutes", projet.duree),
+      "</projet>",
+    ].join("\n"),
+    [
+      "<contexte>",
+      champ("Pitch", contexte.contexte.pitch),
+      champ("Synopsis court", contexte.contexte.synopsis_court),
+      champ("Synopsis", contexte.contexte.synopsis),
+      champ("Thème", contexte.contexte.theme),
+      champ("Enjeux", contexte.contexte.enjeux),
+      "</contexte>",
+    ].join("\n"),
+    [
+      "<personnages>",
+      ...personnages.map((autre) => ecrirePersonnage(autre)),
+      "</personnages>",
+    ].join("\n"),
+    [
+      "<vision>",
+      champ("Vision artistique", vision.artistique),
+      champ("Objectifs", vision.objectifs),
+      champ("Public cible", vision.public),
+      "</vision>",
+    ].join("\n"),
+    [
+      "<scenario>",
+      contexte.scenario.trim() || "(aucun scénario enregistré)",
+      // Dit à l'agent plutôt que tu : il n'a pas lu la fin.
+      ...(contexte.scenario_coupe
+        ? ["(le scénario est coupé ici : la suite n'est pas transmise)"]
+        : []),
+      "</scenario>",
+    ].join("\n"),
+    ["<personnage_a_completer>", ecrirePersonnage(aCompleter), "</personnage_a_completer>"].join(
+      "\n",
+    ),
+    ["<champs_a_proposer>", contexte.champs_vides.join(", "), "</champs_a_proposer>"].join("\n"),
+  ];
+  return [...blocs, objectif].join("\n\n");
+}
+
+/**
+ * Remet la réponse en champs de fiche. Null si ce n'en est pas : JSON
+ * illisible, liste vide ou trop longue, champ inconnu, texte vide ou hors
+ * bornes — une proposition à moitié valide ne se dépose pas.
+ *
+ * Un champ rendu deux fois n'est gardé qu'une : la première. Le worker ne
+ * trie pas les champs demandés : la base ne dépose que ceux qui sont encore
+ * vides au moment du dépôt, et refait ces contrôles.
+ */
+export function lireChampsFiche(texte: string): ChampPropose[] | null {
+  let reponse: unknown;
+  try {
+    reponse = JSON.parse(texte);
+  } catch {
+    return null;
+  }
+  const bruts = (reponse as { lines?: unknown } | null)?.lines;
+  if (!Array.isArray(bruts) || bruts.length < 1 || bruts.length > CHAMPS_FICHE_PERSONNAGE.length) {
+    return null;
+  }
+
+  const vus = new Set<string>();
+  const champs: ChampPropose[] = [];
+  for (const brut of bruts) {
+    if (typeof brut !== "object" || brut === null) {
+      return null;
+    }
+    const { field, value } = brut as Record<string, unknown>;
+    if (
+      typeof field !== "string" ||
+      typeof value !== "string" ||
+      !Object.hasOwn(BORNES_FICHE, field)
+    ) {
+      return null;
+    }
+    const { max, ligne } = BORNES_FICHE[field];
+    const valeur = ligne
+      ? value.replace(/\s+/g, " ").trim()
+      : value.replace(/\r\n?/g, "\n").replace(/\t/g, " ").trim();
+    if (
+      valeur.length < 1 ||
+      valeur.length > max ||
+      /[\u0000-\u0009\u000b-\u001f\u007f]/.test(valeur)
+    ) {
+      return null;
+    }
+    if (vus.has(field)) {
+      continue;
+    }
+    vus.add(field);
+    champs.push({ field, value: valeur });
+  }
+  return champs;
+}
+
+function executeurFiche(base: Base, fournisseur: Fournisseur, profil: ProfilStructure): Executeur {
+  return creerExecuteur<ChampPropose[]>(base, fournisseur, {
+    profil,
+    preparer: async (attemptId) => {
+      const contexte = await lireContexteFichePersonnage(base, attemptId);
+      return contexte ? composerContexteFiche(contexte, profil.objectif) : null;
+    },
+    lire: (texte) => lireChampsFiche(texte),
+    deposer: (attemptId, champs) => livrerPropositionFiche(base, attemptId, champs),
+    inexploitable: "La réponse du fournisseur n'est pas une fiche de personnage exploitable.",
+  });
+}
+
 function executeurPersonnages(
   base: Base,
   fournisseur: Fournisseur,
@@ -192,6 +335,7 @@ const FABRIQUES: Readonly<
   Record<string, (base: Base, fournisseur: Fournisseur, profil: ProfilStructure) => Executeur>
 > = {
   character_list: executeurPersonnages,
+  character_sheet: executeurFiche,
 };
 
 /** Ce qu'ARC sait exécuter, avec ce fournisseur : ses textes, puis ses lignes. */
@@ -202,8 +346,9 @@ export function executeursArc(
   return {
     ...executeursDeProfils(base, fournisseur, PROFILS_ARC),
     ...Object.fromEntries(
-      Object.entries(PROFILS_ARC_PERSONNAGES).flatMap(([action, profil]) =>
-        FABRIQUES[action] ? [[action, FABRIQUES[action](base, fournisseur, profil)]] : [],
+      Object.entries({ ...PROFILS_ARC_PERSONNAGES, ...PROFILS_ARC_FICHE }).flatMap(
+        ([action, profil]) =>
+          FABRIQUES[action] ? [[action, FABRIQUES[action](base, fournisseur, profil)]] : [],
       ),
     ),
   };

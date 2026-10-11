@@ -27,6 +27,7 @@ export const LIBELLES_ACTION: Readonly<Record<string, string>> = {
   pitch_oral: "Pitch oral",
   dramatic_analysis: "Analyse dramaturgique",
   character_list: "Personnages",
+  character_sheet: "Fiche de personnage",
   episode_list: "Épisodes",
   treatment: "Traitement",
   bible: "Bible",
