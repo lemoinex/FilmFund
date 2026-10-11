@@ -1,15 +1,22 @@
 /**
  * Mentions légales : ce que la page dit du service tel qu'il est.
  *
- * Le texte parlait d'un hébergement « susceptible » d'exister et d'une mise
- * en production à venir. Ces tests refusent qu'il y revienne. Ils tiennent
- * aussi ce qu'il ne doit pas inventer : l'identité de l'éditeur reste à
- * compléter tant qu'elle n'est pas fournie. Module pur : ni base, ni serveur.
+ * Le texte vient du document remis par l'utilisateur le 11 octobre 2026. Ces
+ * tests tiennent ce qu'il a fourni — éditeur, siège, directeur de la
+ * publication, administrateurs — et refusent qu'on invente le reste : forme
+ * juridique, adresse précise, immatriculation. Module pur : ni base, ni serveur.
  */
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
-import { CONTACT_POLITIQUE_CONTENU, getLegalDocument } from "../src/lib/legal-content.ts";
+import {
+  ADMINISTRATEURS,
+  CONTACT_POLITIQUE_CONTENU,
+  EDITEUR,
+  getLegalDocument,
+  SIEGE_EDITEUR,
+  TELEPHONE_EDITEUR,
+} from "../src/lib/legal-content.ts";
 
 const mentions = getLegalDocument("mentions-legales");
 
@@ -31,6 +38,43 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.equal(mentions.updatedAt, "11 octobre 2026");
   });
 
+  it("nomment l'éditeur, son siège et ses coordonnées, tels que l'utilisateur les a donnés", () => {
+    assert.equal(
+      EDITEUR,
+      "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé",
+    );
+    assert.equal(SIEGE_EDITEUR, "ElMan, Yaoundé, Cameroun");
+    for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {
+      assert.ok(section("editeur").includes(valeur), valeur);
+      assert.ok(section("droit-applicable").includes(valeur), valeur);
+    }
+  });
+
+  it("n'inventent ni forme juridique, ni adresse précise, ni immatriculation", () => {
+    const editeur = section("editeur");
+    assert.match(editeur, /Forme juridique\nNon définie à ce jour/);
+    assert.match(editeur, /RCCM et NIU seront ajoutés après immatriculation/);
+    assert.match(editeur, /Adresse précise\n\[À COMPLÉTER\]/);
+    assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\.|ElMan & Sessua/);
+  });
+
+  it("nomment le directeur de la publication", () => {
+    const directeur = section("directeur-publication");
+    assert.match(directeur, /Directeur de la publication\nNGOOH Cédric Hervé/);
+    assert.match(directeur, /Fondateur et représentant de la startup/);
+  });
+
+  it("nomment les deux administrateurs, et personne d'autre", () => {
+    assert.deepEqual(
+      ADMINISTRATEURS.map((administrateur) => administrateur.nom),
+      ["NGOOH Cédric Hervé", "Romaric Sessua"],
+    );
+    for (const administrateur of ADMINISTRATEURS) {
+      assert.ok(section("administration").includes(administrateur.nom));
+      assert.ok(section("administration").includes(administrateur.contact));
+    }
+  });
+
   it("nomment les trois hébergeurs en service, sans conditionnel", () => {
     const hebergement = section("hebergement");
     for (const nom of ["Vercel Inc.", "Supabase Inc.", "Railway Corp."]) {
@@ -38,6 +82,13 @@ describe("Mentions légales : le service tel qu'il est", () => {
     }
     assert.match(hebergement, /La plateforme est hébergée et déployée/);
     assert.doesNotMatch(texte, /susceptible d'être hébergée|avant la mise en production/);
+  });
+
+  it("disent où sont la base de données et les fichiers, et rien des autres traitements", () => {
+    const hebergement = section("hebergement");
+    assert.match(hebergement, /Hébergement de la base de données et des fichiers\nIrlande/);
+    assert.match(hebergement, /Région des traitements asynchrones\n\[À COMPLÉTER\]/);
+    assert.match(hebergement, /Coordonnées des prestataires\n\[À COMPLÉTER\]/);
   });
 
   it("disent que la plateforme est en accès privé", () => {
@@ -63,15 +114,8 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.doesNotMatch(section("signalement"), /À COMPLÉTER/);
   });
 
-  it("donnent l'adresse de contact de l'éditeur, aux deux endroits où elle se demande", () => {
-    assert.ok(section("editeur").includes(CONTACT_POLITIQUE_CONTENU));
-    assert.ok(section("droit-applicable").includes(CONTACT_POLITIQUE_CONTENU));
-  });
-
-  it("n'inventent pas le reste de l'identité de l'éditeur", () => {
-    assert.match(section("editeur"), /\[DÉNOMINATION LÉGALE \/ NOM DE L'ENTREPRENEUR\]/);
-    assert.match(section("editeur"), /Forme juridique\n\[À COMPLÉTER\]/);
-    assert.match(section("droit-applicable"), /\[NOM \/ DÉNOMINATION LÉGALE\]/);
+  it("disent le droit applicable", () => {
+    assert.match(section("droit-applicable"), /régies par le droit camerounais/);
   });
 
   it("ne garantissent toujours aucun financement", () => {

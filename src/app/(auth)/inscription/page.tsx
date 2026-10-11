@@ -56,6 +56,10 @@ export default function InscriptionPage() {
 
       <p className="text-light-muted mt-4 text-xs leading-relaxed">
         En créant un compte, vous acceptez les{" "}
+        <Link href="/conditions-utilisation" className="underline underline-offset-2">
+          conditions générales d&apos;utilisation
+        </Link>
+        , les{" "}
         <Link href="/mentions-legales" className="underline underline-offset-2">
           mentions légales
         </Link>

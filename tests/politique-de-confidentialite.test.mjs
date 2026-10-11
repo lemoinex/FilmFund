@@ -3,12 +3,19 @@
  *
  * Le texte a longtemps décrit un site de présentation sans compte ni
  * prestataire. Ces tests refusent qu'il y revienne, et qu'il taise à qui
- * partent les contenus d'un projet. Module pur : ni base, ni serveur.
+ * partent les contenus d'un projet. Ils tiennent aussi ce que l'utilisateur a
+ * fourni le 11 octobre 2026, et ce qui reste à compléter. Module pur.
  */
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
-import { CONTACT_POLITIQUE_CONTENU, getLegalDocument } from "../src/lib/legal-content.ts";
+import {
+  ADMINISTRATEURS,
+  CONTACT_POLITIQUE_CONTENU,
+  EDITEUR,
+  getLegalDocument,
+  SIEGE_EDITEUR,
+} from "../src/lib/legal-content.ts";
 
 const politique = getLegalDocument("confidentialite");
 
@@ -41,6 +48,22 @@ describe("Politique de confidentialité : le service tel qu'il est", () => {
     assert.doesNotMatch(texte, /envisagés|\(prévu\)|n'est configuré ni en service/);
   });
 
+  it("nomme le responsable du traitement, son siège et son contact", () => {
+    const responsable = section("responsable");
+    for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU]) {
+      assert.ok(responsable.includes(valeur), valeur);
+      assert.ok(section("contact").includes(valeur), valeur);
+    }
+    assert.match(responsable, /Délégué à la protection des données\nNon désigné/);
+  });
+
+  it("cite le cadre légal fourni, et dit qu'il reste à faire valider", () => {
+    const cadre = section("cadre-juridique");
+    assert.match(cadre, /loi n° 2010\/012 du 21 décembre 2010/);
+    assert.match(cadre, /loi n° 2024\/017 du 23 décembre 2024/);
+    assert.match(cadre, /Références légales ci-dessus\n\[À FAIRE VALIDER PAR UN JURISTE\]/);
+  });
+
   it("nomme les trois prestataires d'hébergement en service", () => {
     const destinataires = section("destinataires");
     for (const nom of ["Vercel Inc.", "Supabase Inc.", "Railway Corp."]) {
@@ -55,11 +78,47 @@ describe("Politique de confidentialité : le service tel qu'il est", () => {
     }
     assert.match(destinataires, /Rien n'est transmis sans une demande de l'utilisateur/);
     assert.match(destinataires, /il reçoit la seule question posée/);
+    assert.match(section("systemes"), /toujours depuis le serveur, jamais depuis le navigateur/);
+  });
+
+  it("dit où sont la base de données et les fichiers, sans l'étendre aux autres traitements", () => {
+    const destinataires = section("destinataires");
+    assert.match(destinataires, /Localisation de la base de données et des fichiers\nIrlande/);
+    assert.match(destinataires, /Localisation des autres traitements[^\n]*\n\[À COMPLÉTER\]/);
+    assert.match(section("transferts"), /hors du Cameroun, notamment aux États-Unis/);
+  });
+
+  it("range les dossiers exportés en base, pas dans le stockage", () => {
+    const [base, stockage] = ["base de données —", "stockage —"].map((repere) =>
+      section("systemes")
+        .split("\n")
+        .find((ligne) => ligne.includes(repere)),
+    );
+    assert.match(base, /dossiers exportés/);
+    assert.doesNotMatch(stockage, /export/);
   });
 
   it("ne dit pas qu'un administrateur ne peut pas modifier un projet", () => {
     assert.doesNotMatch(texte, /ne peut pas modifier/);
-    assert.match(section("destinataires"), /les actions d'administration sont journalisées/);
+    assert.match(
+      section("destinataires"),
+      /Les actions d'administration sensibles sont journalisées/,
+    );
+  });
+
+  it("nomme les deux administrateurs et laisse à préciser ce qui n'est pas décidé", () => {
+    const administrateurs = section("administrateurs");
+    for (const administrateur of ADMINISTRATEURS) {
+      assert.ok(administrateurs.includes(administrateur.nom));
+      assert.ok(administrateurs.includes(administrateur.contact));
+    }
+    assert.match(administrateurs, /Responsabilités de Romaric Sessua\n\[À PRÉCISER\]/);
+    assert.match(administrateurs, /À CHOISIR\]/);
+  });
+
+  it("dit où sont les clés des fournisseurs d'IA : en base, chiffrées", () => {
+    assert.match(section("administrateurs"), /conservées chiffrées dans la base de données/);
+    assert.match(section("acces"), /une clé enregistrée n'est jamais réaffichée/);
   });
 
   it("annonce les cookies de session, et aucun autre", () => {
@@ -68,18 +127,26 @@ describe("Politique de confidentialité : le service tel qu'il est", () => {
   });
 
   it("n'annonce que la durée que la plateforme applique", () => {
-    assert.match(section("conservation"), /supprimé trente jours après sa fabrication/);
+    const conservation = section("conservation");
+    assert.match(conservation, /supprimé trente jours après sa fabrication/);
+    assert.match(conservation, /Dossiers exportés\n30 jours/);
+    for (const domaine of [
+      "Profils et rôles",
+      "Projets et production",
+      "Journal d'administration",
+    ]) {
+      assert.ok(conservation.includes(`${domaine}\n[À COMPLÉTER]`), domaine);
+    }
+    assert.doesNotMatch(conservation, /\d+ mois/);
   });
 
-  it("donne l'adresse de contact, aux trois endroits où elle se demande", () => {
-    for (const id of ["responsable", "droits", "contact"]) {
-      assert.ok(section(id).includes(CONTACT_POLITIQUE_CONTENU), id);
-    }
-    assert.doesNotMatch(section("contact"), /\[E-MAIL\]/);
+  it("donne l'adresse pour exercer ses droits, sans délai inventé", () => {
+    assert.ok(section("droits").includes(CONTACT_POLITIQUE_CONTENU));
+    assert.match(section("droits"), /Délai de réponse\n\[À COMPLÉTER\]/);
   });
 
   it("ne promet aucune notification des changements", () => {
-    assert.doesNotMatch(section("modifications"), /informés/);
+    assert.doesNotMatch(section("modifications"), /informés|notifi/);
   });
 
   it("ne revendique aucune certification, et dit toujours qu'aucun paiement n'existe", () => {

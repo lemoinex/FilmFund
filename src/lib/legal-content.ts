@@ -5,10 +5,9 @@
  * parcourir : ajouter, supprimer ou réordonner une section se fait ici, sans
  * toucher à un composant.
  *
- * Cette séparation prépare l'édition par un administrateur : au Lot 2, il
- * suffira de remplacer `getLegalDocument` par une lecture en base de données,
- * sans modifier les pages ni les composants de rendu. Voir la note en fin de
- * fichier.
+ * Les textes viennent du document « Mentions légales, CGU et confidentialité »
+ * remis par l'utilisateur le 11 octobre 2026, ramené à ce que la plateforme
+ * fait : voir la note qui précède les documents.
  */
 
 /** Bloc de contenu à l'intérieur d'une section. */
@@ -26,7 +25,7 @@ export type LegalSectionContent = {
 };
 
 export type LegalDocument = {
-  slug: "mentions-legales" | "confidentialite" | "politique-de-contenu";
+  slug: "mentions-legales" | "conditions-utilisation" | "confidentialite" | "politique-de-contenu";
   title: string;
   description: string;
   /** Date de dernière mise à jour, ou null tant qu'elle n'est pas arrêtée. */
@@ -36,58 +35,101 @@ export type LegalDocument = {
 
 /*
  * Conventions d'écriture des textes ci-dessous :
- * - « [TEXTE ENTRE CROCHETS MAJUSCULES] » est rendu comme un champ à compléter,
- *   surligné et annoncé aux lecteurs d'écran ;
+ * - « [TEXTE ENTRE CROCHETS] » est rendu comme un champ à compléter, surligné
+ *   et annoncé aux lecteurs d'écran ;
  * - « **texte** » est rendu en gras.
  * Aucune autre syntaxe n'est interprétée : le contenu reste du texte simple,
- * donc sûr à stocker en base et à afficher sans risque d'injection HTML.
+ * donc sûr à afficher sans risque d'injection HTML.
  */
 
-/**
- * Adresse publiée par décision du 11 octobre 2026 : signalements et réexamens
- * de la politique de contenu, contact et exercice des droits de la politique
- * de confidentialité, signalements et contact des mentions légales. Le reste
- * de l'identité de l'éditeur reste à compléter : ne pas l'inventer.
+/*
+ * Identité et coordonnées, données par l'utilisateur le 11 octobre 2026 et
+ * publiées par sa décision : deux noms, deux adresses et un numéro lisibles de
+ * tout visiteur. Ne rien y ajouter qui n'ait été fourni : la forme juridique,
+ * l'adresse précise et l'immatriculation ne sont pas connues.
  */
 export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
+export const EDITEUR =
+  "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé";
+export const TELEPHONE_EDITEUR = "(+237) 674 581 693";
+export const SIEGE_EDITEUR = "ElMan, Yaoundé, Cameroun";
+export const ADMINISTRATEURS = [
+  { nom: "NGOOH Cédric Hervé", contact: CONTACT_POLITIQUE_CONTENU },
+  { nom: "Romaric Sessua", contact: "romaricsessua@gmail.com" },
+] as const;
+
+/*
+ * Ces textes n'annoncent que ce que la plateforme fait. Le document d'origine
+ * portait sept engagements sans rien derrière, retirés avec l'accord de
+ * l'utilisateur : applications Android et Windows, mode maintenance et arrêt
+ * d'urgence de l'IA, vitrine modifiable par l'administration, double
+ * authentification, notification des changements, suppression des contenus à
+ * la clôture d'un compte, clés des fournisseurs en variables d'environnement.
+ * Les tests des pages légales refusent leur retour : y ajouter un engagement,
+ * c'est d'abord livrer ce qu'il décrit.
+ */
 
 const MENTIONS_LEGALES: LegalDocument = {
   slug: "mentions-legales",
   title: "Mentions légales",
   description:
-    "Mentions légales de la plateforme FilmFund Africa : éditeur, hébergement, propriété intellectuelle, responsabilité et contact.",
+    "Mentions légales de la plateforme FilmFund Africa : éditeur, directeur de la publication, hébergement, propriété intellectuelle, responsabilité et contact.",
   updatedAt: "11 octobre 2026",
   sections: [
     {
       id: "editeur",
-      title: "1. Éditeur de la plateforme",
+      title: "1. Éditeur du service",
       blocks: [
-        { type: "paragraph", text: "Le site et la plateforme FilmFund Africa sont édités par :" },
+        {
+          type: "paragraph",
+          text: "FilmFund Africa (ci-après « le Service ») est un espace en ligne destiné aux équipes de cinéma, de l'idée du film au dossier structuré pour le financement et la production.",
+        },
         {
           type: "fields",
           fields: [
-            { value: "[DÉNOMINATION LÉGALE / NOM DE L'ENTREPRENEUR]" },
-            { label: "Forme juridique", value: "[À COMPLÉTER]" },
-            { label: "Capital social", value: "[À COMPLÉTER, SI APPLICABLE]" },
-            { label: "Siège social / adresse professionnelle", value: "[À COMPLÉTER]" },
+            { label: "Éditeur", value: EDITEUR },
             {
-              label: "Immatriculation",
-              value: "[RCCM / NUMÉRO D'IDENTIFICATION FISCALE / AUTRE, À COMPLÉTER]",
+              label: "Forme juridique",
+              value:
+                "Non définie à ce jour : la structure est en cours de création. Les numéros RCCM et NIU seront ajoutés après immatriculation.",
             },
-            { label: "Numéro de téléphone", value: "[À COMPLÉTER]" },
+            { label: "Siège", value: SIEGE_EDITEUR },
+            { label: "Adresse précise", value: "[À COMPLÉTER]" },
             { label: "E-mail de contact", value: CONTACT_POLITIQUE_CONTENU },
-            { label: "Directeur ou directrice de la publication", value: "[NOM, À COMPLÉTER]" },
+            { label: "Téléphone", value: TELEPHONE_EDITEUR },
+            { label: "Adresse du Service", value: "https://filmfund.vercel.app" },
           ],
         },
         {
           type: "paragraph",
-          text: "Ci-après désigné « FilmFund Africa », « nous », « notre » ou « nos ».",
+          text: "Ci-après désigné « FilmFund Africa », « l'éditeur », « nous », « notre » ou « nos ».",
+        },
+      ],
+    },
+    {
+      id: "directeur-publication",
+      title: "2. Directeur de la publication",
+      blocks: [
+        {
+          type: "fields",
+          fields: [
+            { label: "Directeur de la publication", value: "NGOOH Cédric Hervé" },
+            { label: "Qualité", value: "Fondateur et représentant de la startup" },
+            {
+              label: "Contact",
+              value: `${CONTACT_POLITIQUE_CONTENU} — ${TELEPHONE_EDITEUR} — ${SIEGE_EDITEUR}`,
+            },
+          ],
+        },
+        {
+          type: "paragraph",
+          text: "Le directeur de la publication est responsable du contenu éditorial publié par l'éditeur : pages publiques, textes et visuels. Il est la personne à qui adresser toute demande de retrait de contenu illicite, tout droit de réponse et toute notification de contenu litigieux.",
         },
       ],
     },
     {
       id: "hebergement",
-      title: "2. Hébergement",
+      title: "3. Hébergement et infrastructure",
       blocks: [
         {
           type: "paragraph",
@@ -105,16 +147,35 @@ const MENTIONS_LEGALES: LegalDocument = {
           type: "fields",
           fields: [
             {
-              label: "Régions d'hébergement et coordonnées des prestataires",
-              value: "[À COMPLÉTER]",
+              label: "Hébergement de la base de données et des fichiers",
+              value: "Irlande (région « West EU » de Supabase)",
             },
+            { label: "Région des traitements asynchrones", value: "[À COMPLÉTER]" },
+            { label: "Coordonnées des prestataires", value: "[À COMPLÉTER]" },
           ],
         },
       ],
     },
     {
+      id: "administration",
+      title: "4. Administration du Service",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "L'administration du Service est confiée à deux administrateurs nommés. Leurs prérogatives sont décrites dans la politique de confidentialité.",
+        },
+        {
+          type: "fields",
+          fields: ADMINISTRATEURS.map((administrateur) => ({
+            label: administrateur.nom,
+            value: administrateur.contact,
+          })),
+        },
+      ],
+    },
+    {
       id: "objet",
-      title: "3. Objet de la plateforme",
+      title: "5. Objet de la plateforme",
       blocks: [
         {
           type: "paragraph",
@@ -136,25 +197,25 @@ const MENTIONS_LEGALES: LegalDocument = {
     },
     {
       id: "propriete-intellectuelle",
-      title: "4. Propriété intellectuelle",
+      title: "6. Propriété intellectuelle",
       blocks: [
         {
           type: "paragraph",
-          text: "Sauf indication contraire, les éléments accessibles sur la plateforme — notamment les textes, logos, éléments graphiques, interfaces, mises en page, bases de données, logiciels, marques, contenus éditoriaux et éléments visuels — sont protégés par les règles applicables de propriété intellectuelle et appartiennent à FilmFund Africa ou à ses concédants de licence.",
+          text: "La marque, le logo, l'interface, le code, la direction artistique et les textes du Service sont la propriété de l'éditeur ou de ses concédants de licence, sauf mention contraire.",
         },
         {
           type: "paragraph",
-          text: "Toute reproduction, représentation, adaptation, extraction, distribution ou exploitation, totale ou partielle, non autorisée de ces éléments est interdite, sauf autorisation écrite préalable de FilmFund Africa ou disposition légale impérative contraire.",
+          text: "Toute reproduction, représentation, adaptation, extraction, distribution ou exploitation, totale ou partielle, non autorisée de ces éléments est interdite, sauf autorisation écrite préalable de l'éditeur ou disposition légale impérative contraire.",
         },
         {
           type: "paragraph",
-          text: "Les contenus téléversés ou créés par les utilisateurs restent la propriété de leurs titulaires de droits. L'utilisateur garantit disposer des droits, autorisations et consentements nécessaires pour importer, publier, partager ou traiter ces contenus via la plateforme.",
+          text: "Les contenus créés ou téléversés par les utilisateurs — scénarios, personnages, storyboards, budgets, plannings — restent leur propriété, dans les conditions de l'article 7 des conditions générales d'utilisation.",
         },
       ],
     },
     {
       id: "contenus-utilisateurs",
-      title: "5. Contenus des utilisateurs",
+      title: "7. Contenus des utilisateurs",
       blocks: [
         {
           type: "paragraph",
@@ -162,49 +223,27 @@ const MENTIONS_LEGALES: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "L'utilisateur s'engage à ne pas utiliser la plateforme pour :",
-        },
-        {
-          type: "list",
-          items: [
-            "porter atteinte aux droits de tiers, notamment aux droits d'auteur, droits voisins, droits à l'image, droits des marques ou droits relatifs à la vie privée ;",
-            "diffuser des contenus illicites, diffamatoires, frauduleux, haineux, discriminatoires ou violents ;",
-            "introduire des virus, logiciels malveillants ou codes destinés à perturber la plateforme ;",
-            "accéder sans autorisation à un compte, un projet, un fichier ou une donnée ;",
-            "utiliser la plateforme à des fins contraires aux lois applicables.",
-          ],
-        },
-        {
-          type: "paragraph",
-          text: "FilmFund Africa peut retirer un contenu ou suspendre un compte lorsqu'elle dispose d'éléments raisonnables indiquant une violation des présentes règles, sous réserve des obligations légales applicables. La politique de contenu précise ces règles et la manière de demander un réexamen.",
+          text: "FilmFund Africa peut retirer un contenu ou suspendre un compte lorsqu'elle dispose d'éléments raisonnables indiquant une violation des règles applicables, sous réserve des obligations légales. La politique de contenu précise ces règles et la manière de demander un réexamen.",
         },
       ],
     },
     {
       id: "liens-externes",
-      title: "6. Liens externes",
+      title: "8. Liens externes",
       blocks: [
         {
           type: "paragraph",
           text: "La plateforme peut contenir des liens vers des sites ou services tiers. FilmFund Africa ne contrôle pas ces ressources externes et ne saurait être responsable de leur contenu, disponibilité, sécurité, pratiques de confidentialité ou conditions d'utilisation.",
         },
-        {
-          type: "paragraph",
-          text: "L'utilisateur est invité à consulter les politiques et conditions applicables sur les sites tiers concernés.",
-        },
       ],
     },
     {
       id: "disponibilite",
-      title: "7. Disponibilité et sécurité",
+      title: "9. Disponibilité et sécurité",
       blocks: [
         {
           type: "paragraph",
           text: "FilmFund Africa met en œuvre des mesures raisonnables pour maintenir la sécurité, l'intégrité et la disponibilité de la plateforme. Toutefois, aucun service numérique ne peut garantir une disponibilité continue, l'absence totale d'erreur ou l'absence de risque de sécurité.",
-        },
-        {
-          type: "paragraph",
-          text: "FilmFund Africa peut faire évoluer, limiter, interrompre temporairement ou modifier tout ou partie de la plateforme, notamment pour des raisons de maintenance, de sécurité, d'amélioration ou de conformité.",
         },
         {
           type: "paragraph",
@@ -213,45 +252,22 @@ const MENTIONS_LEGALES: LegalDocument = {
       ],
     },
     {
-      id: "responsabilite",
-      title: "8. Limitation de responsabilité",
-      blocks: [
-        {
-          type: "paragraph",
-          text: "Dans les limites autorisées par la loi applicable, FilmFund Africa ne peut être tenue responsable :",
-        },
-        {
-          type: "list",
-          items: [
-            "des décisions prises par les utilisateurs à partir des informations, modèles, suggestions ou outils proposés ;",
-            "de la perte, altération ou indisponibilité de contenus due à un événement hors de son contrôle raisonnable ;",
-            "des actes, omissions, contenus ou services de tiers ;",
-            "d'une perte de financement, de chance, de revenu, de clientèle, d'opportunité ou de données indirectement liée à l'utilisation de la plateforme.",
-          ],
-        },
-        {
-          type: "paragraph",
-          text: "Aucune disposition des présentes mentions légales ne vise à exclure une responsabilité qui ne pourrait être exclue ou limitée en vertu de la loi applicable.",
-        },
-      ],
-    },
-    {
       id: "signalement",
-      title: "9. Signalement",
+      title: "10. Signalement de contenu illicite",
       blocks: [
         {
           type: "paragraph",
-          text: "Pour signaler un contenu illicite, une atteinte à vos droits ou un problème de sécurité, contactez-nous à :",
+          text: "Tout contenu manifestement illicite, toute atteinte à vos droits ou tout problème de sécurité peut être signalé à :",
         },
+        { type: "fields", fields: [{ value: CONTACT_POLITIQUE_CONTENU }] },
         {
-          type: "fields",
-          fields: [{ value: CONTACT_POLITIQUE_CONTENU }],
+          type: "paragraph",
+          text: "L'éditeur s'engage à examiner le signalement dans un délai raisonnable et à retirer ou rendre inaccessible tout contenu dont l'illicéité est établie. Merci d'indiquer, dans la mesure du possible :",
         },
-        { type: "paragraph", text: "Merci d'indiquer, dans la mesure du possible :" },
         {
           type: "list",
           items: [
-            "l'URL ou l'emplacement du contenu concerné ;",
+            "l'emplacement du contenu concerné ;",
             "la nature du signalement ;",
             "les éléments permettant de comprendre votre demande ;",
             "vos coordonnées afin que nous puissions vous répondre.",
@@ -261,11 +277,11 @@ const MENTIONS_LEGALES: LegalDocument = {
     },
     {
       id: "droit-applicable",
-      title: "10. Droit applicable et contact",
+      title: "11. Droit applicable et contact",
       blocks: [
         {
           type: "paragraph",
-          text: "Les présentes mentions légales sont soumises au droit applicable au lieu d'établissement de l'éditeur, sous réserve des règles impératives applicables aux utilisateurs.",
+          text: "Les présentes mentions légales sont régies par le droit camerounais, sous réserve des règles impératives applicables aux utilisateurs situés dans d'autres juridictions.",
         },
         {
           type: "paragraph",
@@ -274,11 +290,187 @@ const MENTIONS_LEGALES: LegalDocument = {
         {
           type: "fields",
           fields: [
-            { value: "[NOM / DÉNOMINATION LÉGALE]" },
-            { value: "[ADRESSE]" },
+            { value: EDITEUR },
+            { value: SIEGE_EDITEUR },
             { value: CONTACT_POLITIQUE_CONTENU },
-            { value: "[TÉLÉPHONE, SI APPLICABLE]" },
+            { value: TELEPHONE_EDITEUR },
           ],
+        },
+      ],
+    },
+  ],
+};
+
+const CONDITIONS_UTILISATION: LegalDocument = {
+  slug: "conditions-utilisation",
+  title: "Conditions générales d'utilisation",
+  description:
+    "Conditions générales d'utilisation de FilmFund Africa : accès, rôles, fonctionnalités d'intelligence artificielle, obligations, propriété des contenus, responsabilité et droit applicable.",
+  updatedAt: "11 octobre 2026",
+  sections: [
+    {
+      id: "objet",
+      title: "Article 1 — Objet",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Les présentes conditions générales d'utilisation (ci-après « CGU ») encadrent l'accès au Service FilmFund Africa et son utilisation, depuis un navigateur web.",
+        },
+      ],
+    },
+    {
+      id: "acces",
+      title: "Article 2 — Accès au Service et comptes",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            "L'accès est actuellement restreint : les inscriptions publiques et l'ajout libre de membres sont désactivés. L'accès est réservé aux comptes préenregistrés par les administrateurs.",
+            `L'utilisateur s'engage à fournir des informations exactes, à garder ses identifiants confidentiels et à signaler toute compromission à ${CONTACT_POLITIQUE_CONTENU}.`,
+            "L'éditeur peut suspendre un compte en cas de violation des CGU, après en avoir averti son titulaire, sauf urgence ou obligation légale.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "roles",
+      title: "Article 3 — Rôles et droits d'accès",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Le Service distingue les rôles suivants, détaillés dans la politique de confidentialité :",
+        },
+        {
+          type: "list",
+          items: [
+            `administrateur : ${ADMINISTRATEURS.map((administrateur) => administrateur.nom).join(" et ")} uniquement ;`,
+            "membre de projet — porteur, éditeur ou lecteur : accès limité aux projets auxquels il est rattaché ;",
+            "visiteur : accès aux seules pages publiques.",
+          ],
+        },
+        {
+          type: "paragraph",
+          text: "Toute tentative d'élévation de privilèges ou de contournement des contrôles d'accès est interdite et peut donner lieu à des poursuites.",
+        },
+      ],
+    },
+    {
+      id: "service",
+      title: "Article 4 — Description du Service et fonctionnalités d'IA",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            "Le Service propose notamment : contenus créatifs, storyboard, calendrier, budget, recherche de financements, exports de dossiers.",
+            "Les fonctionnalités d'intelligence artificielle utilisent des fournisseurs tiers : Anthropic pour l'écriture et l'analyse, OpenAI pour les images de storyboard, Perplexity pour la recherche externe.",
+            "Les propositions de l'assistant sont des suggestions modifiables. Elles ne remplacent pas silencieusement un contenu : chacune est acceptée ou écartée explicitement, et les documents gardent leurs versions.",
+            "Les informations de financement — sources, dates limites, critères — sont fournies avec leur provenance et leur statut de vérification. Elles peuvent être incomplètes ou obsolètes. L'utilisateur doit les vérifier auprès de l'organisme concerné avant toute candidature. L'éditeur ne garantit l'obtention d'aucun financement.",
+            "Les contenus générés par intelligence artificielle peuvent contenir des erreurs. L'utilisateur reste responsable de leur validation et de leur usage.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "disponibilite",
+      title: "Article 5 — Disponibilité du Service",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "L'éditeur peut interrompre temporairement tout ou partie du Service, notamment pour des raisons de maintenance, de sécurité ou de conformité.",
+        },
+        {
+          type: "paragraph",
+          text: "Les demandes à l'assistant sont limitées par un plafond mensuel de dépenses, fixé par l'éditeur. Lorsqu'il est atteint, les nouvelles demandes sont refusées jusqu'au mois suivant ; les fonctions manuelles du Service restent disponibles.",
+        },
+      ],
+    },
+    {
+      id: "obligations",
+      title: "Article 6 — Obligations de l'utilisateur",
+      blocks: [
+        { type: "paragraph", text: "L'utilisateur s'interdit notamment :" },
+        {
+          type: "list",
+          items: [
+            "de téléverser des contenus illicites, diffamatoires ou portant atteinte aux droits de tiers ;",
+            "de transmettre des données sensibles sans nécessité ;",
+            "de tenter d'accéder aux données d'autres projets ;",
+            "de perturber le Service ;",
+            "d'extraire massivement des données ;",
+            "de saisir dans les zones de texte libre des informations qu'il n'a pas le droit de partager.",
+          ],
+        },
+        {
+          type: "paragraph",
+          text: "La politique de contenu précise les contenus interdits et la manière de signaler un contenu.",
+        },
+      ],
+    },
+    {
+      id: "propriete",
+      title: "Article 7 — Propriété intellectuelle des contenus",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            "L'utilisateur conserve l'intégralité des droits sur les contenus qu'il crée ou téléverse.",
+            "Il concède à l'éditeur une licence limitée, non exclusive, pour héberger, reproduire et traiter ces contenus aux seules fins de fournir le Service, y compris leur transmission aux fournisseurs d'intelligence artificielle pour exécuter une demande.",
+            "L'éditeur n'utilise pas les contenus des utilisateurs pour entraîner ses propres modèles.",
+            "Un dossier exporté pèse 5 Mo au plus et se conserve 30 jours.",
+          ],
+        },
+        {
+          type: "fields",
+          fields: [
+            {
+              label: "Usage des contenus par les fournisseurs d'intelligence artificielle",
+              value: "[À CONFIRMER SELON LEURS CONDITIONS CONTRACTUELLES]",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "responsabilite",
+      title: "Article 8 — Responsabilité",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            "Le Service est fourni « en l'état », sans garantie de disponibilité continue. L'éditeur est tenu à une obligation de moyens.",
+            "L'éditeur n'est pas responsable des décisions prises sur la base de contenus générés par intelligence artificielle, des interruptions imputables aux prestataires tiers, ni des pertes résultant d'une mauvaise conservation des identifiants.",
+            "Rien n'exclut la responsabilité de l'éditeur dans les cas où la loi l'interdit.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "donnees-personnelles",
+      title: "Article 9 — Données personnelles",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Le traitement des données personnelles est décrit dans la politique de confidentialité, qui fait partie intégrante des CGU.",
+        },
+      ],
+    },
+    {
+      id: "modification",
+      title: "Article 10 — Modification des CGU",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "L'éditeur peut modifier les CGU. La date de dernière mise à jour figure en tête de page.",
+        },
+      ],
+    },
+    {
+      id: "droit-applicable",
+      title: "Article 11 — Droit applicable et litiges",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Les CGU sont régies par le droit camerounais. À défaut de résolution amiable, les tribunaux compétents de Yaoundé sont seuls compétents, sous réserve des règles impératives applicables aux consommateurs ou aux utilisateurs situés dans d'autres juridictions.",
         },
       ],
     },
@@ -289,7 +481,7 @@ const CONFIDENTIALITE: LegalDocument = {
   slug: "confidentialite",
   title: "Politique de confidentialité",
   description:
-    "Politique de confidentialité de FilmFund Africa : données traitées, finalités, destinataires, conservation, sécurité et droits des personnes.",
+    "Politique de confidentialité de FilmFund Africa : données traitées, systèmes, accès, finalités, destinataires, conservation, sécurité et droits des personnes.",
   updatedAt: "11 octobre 2026",
   sections: [
     {
@@ -304,10 +496,6 @@ const CONFIDENTIALITE: LegalDocument = {
           type: "paragraph",
           text: "**La plateforme est en service, en accès privé.** L'inscription est fermée : seuls les comptes ouverts par l'éditeur peuvent se connecter. Le site de présentation reste consultable sans compte ; il ne comporte ni formulaire, ni outil de mesure d'audience, ni traceur publicitaire.",
         },
-        {
-          type: "paragraph",
-          text: "Les sections 4 et 7 concernent tous les visiteurs. Les sections 5 et suivantes concernent les titulaires d'un compte.",
-        },
       ],
     },
     {
@@ -315,19 +503,12 @@ const CONFIDENTIALITE: LegalDocument = {
       title: "2. Responsable du traitement",
       blocks: [
         {
-          type: "paragraph",
-          text: "Le responsable du traitement des données décrites dans la présente politique est :",
-        },
-        {
           type: "fields",
           fields: [
-            { value: "[DÉNOMINATION LÉGALE / NOM DE L'ENTREPRENEUR]" },
-            { label: "Adresse", value: "[À COMPLÉTER]" },
-            { label: "E-mail de contact", value: CONTACT_POLITIQUE_CONTENU },
-            {
-              label: "Délégué à la protection des données, le cas échéant",
-              value: "[À COMPLÉTER OU SANS OBJET]",
-            },
+            { label: "Responsable du traitement", value: EDITEUR },
+            { label: "Siège", value: SIEGE_EDITEUR },
+            { label: "Contact données personnelles", value: CONTACT_POLITIQUE_CONTENU },
+            { label: "Délégué à la protection des données", value: "Non désigné" },
           ],
         },
         {
@@ -338,22 +519,21 @@ const CONFIDENTIALITE: LegalDocument = {
     },
     {
       id: "cadre-juridique",
-      title: "3. Cadre juridique applicable",
+      title: "3. Cadre légal",
       blocks: [
         {
           type: "paragraph",
-          text: "Le cadre juridique applicable au traitement des données dépend du lieu d'établissement du responsable du traitement et de la résidence des personnes concernées.",
+          text: "Le traitement est effectué conformément au droit camerounais applicable, notamment la loi n° 2010/012 du 21 décembre 2010 relative à la cybersécurité et à la cybercriminalité et la loi n° 2024/017 du 23 décembre 2024 relative à la protection des données à caractère personnel. Pour les utilisateurs situés dans l'Union européenne, les droits prévus par le règlement général sur la protection des données (RGPD) sont également garantis.",
         },
         {
           type: "fields",
           fields: [
-            { label: "Réglementation de référence", value: "[À COMPLÉTER]" },
-            { label: "Autorité de contrôle compétente", value: "[À COMPLÉTER]" },
+            {
+              label: "Références légales ci-dessus",
+              value: "[À FAIRE VALIDER PAR UN JURISTE]",
+            },
+            { label: "Autorité de protection des données compétente", value: "[À COMPLÉTER]" },
           ],
-        },
-        {
-          type: "paragraph",
-          text: "Ces éléments restent à déterminer avec un conseil juridique.",
         },
       ],
     },
@@ -368,19 +548,13 @@ const CONFIDENTIALITE: LegalDocument = {
         {
           type: "list",
           items: [
-            "adresse IP de connexion et informations transmises par le navigateur (type de navigateur, système d'exploitation, page demandée, date et heure) ;",
-            "journaux techniques générés automatiquement par l'hébergeur à des fins de fonctionnement, de sécurité et de diagnostic.",
+            "adresse IP de connexion et informations transmises par le navigateur (type d'appareil et de navigateur, page demandée, date et heure) ;",
+            "journaux techniques et journaux d'erreurs générés automatiquement par l'hébergeur à des fins de fonctionnement, de sécurité et de diagnostic.",
           ],
         },
         {
           type: "paragraph",
           text: "Ces données ne sont pas utilisées pour identifier les visiteurs, ne sont pas recoupées avec d'autres sources et ne font l'objet d'aucun profilage.",
-        },
-        {
-          type: "fields",
-          fields: [
-            { label: "Durée de conservation des journaux techniques", value: "[À COMPLÉTER]" },
-          ],
         },
       ],
     },
@@ -395,13 +569,17 @@ const CONFIDENTIALITE: LegalDocument = {
         {
           type: "list",
           items: [
-            "données de compte : adresse e-mail, mot de passe conservé sous forme non lisible par le prestataire d'authentification, nom affiché ;",
+            "données de compte : adresse e-mail, mot de passe conservé sous forme non lisible par le prestataire d'authentification, nom affiché, rôle ;",
             "données de profil renseignées volontairement : prénom, nom, pays, ville, profession, type de profil, photo ;",
             "contenus de projet créés ou importés : fiche du projet, personnages, documents et leurs versions, storyboard et images, budget, financements, planning, matériel, fichiers joints ;",
             "données relatives aux équipes : membres d'un projet, rôles et invitations ;",
             "demandes adressées à l'assistant IA : la demande, la proposition reçue, la décision prise et les unités consommées ;",
             "journal des actions d'administration et données d'usage nécessaires au fonctionnement et à la sécurité du service.",
           ],
+        },
+        {
+          type: "paragraph",
+          text: "Le Service ne vise pas à collecter de données sensibles ni de données de mineurs.",
         },
         {
           type: "paragraph",
@@ -414,37 +592,48 @@ const CONFIDENTIALITE: LegalDocument = {
       ],
     },
     {
-      id: "finalites",
-      title: "6. Finalités et bases légales",
+      id: "systemes",
+      title: "6. Systèmes et données hébergées",
       blocks: [
-        {
-          type: "paragraph",
-          text: "Les traitements poursuivent les finalités suivantes :",
-        },
         {
           type: "list",
           items: [
-            "fournir le service : création de compte, accès à l'espace de travail, conservation des projets ;",
-            "assurer la sécurité du service, prévenir la fraude et les usages abusifs ;",
-            "répondre aux demandes d'assistance et aux signalements ;",
-            "respecter les obligations légales applicables ;",
-            "améliorer le service, sur la base de données agrégées ne permettant pas d'identifier une personne.",
+            "Vercel — hébergement et diffusion de l'interface web : journaux de requêtes (adresse IP, navigateur) ;",
+            "Supabase, authentification — gestion des comptes et des sessions : adresse e-mail, identifiant, mot de passe non lisible, dates de connexion ;",
+            "Supabase, base de données — données des profils, des projets et de leur production, dossiers exportés, journal d'administration, sous un contrôle d'accès par rôle appliqué à chaque ligne ;",
+            "Supabase, stockage — images de storyboard, photos de profil et fichiers téléversés, dans un espace privé ;",
+            "Railway — traitements asynchrones : fabrication des dossiers exportés et demandes à l'assistant IA, avec des données de traitement transitoires et des journaux ;",
+            "Anthropic, OpenAI et Perplexity — fournisseurs d'intelligence artificielle : les éléments envoyés pour exécuter une demande, toujours depuis le serveur, jamais depuis le navigateur.",
           ],
         },
+      ],
+    },
+    {
+      id: "finalites",
+      title: "7. Finalités et bases légales",
+      blocks: [
+        { type: "paragraph", text: "Les traitements poursuivent les finalités suivantes :" },
         {
           type: "fields",
           fields: [
             {
-              label: "Bases légales retenues pour chaque finalité",
-              value: "[À COMPLÉTER AVEC UN CONSEIL JURIDIQUE]",
+              label: "Fourniture du Service, gestion des comptes",
+              value: "Exécution du contrat ou consentement",
             },
+            {
+              label: "Sécurité, prévention des abus, journalisation",
+              value: "Intérêt légitime ou obligation légale",
+            },
+            { label: "Fonctionnalités d'intelligence artificielle", value: "Exécution du contrat" },
+            { label: "Communications de service", value: "Intérêt légitime" },
+            { label: "Respect des obligations légales", value: "Obligation légale" },
           ],
         },
       ],
     },
     {
       id: "cookies",
-      title: "7. Cookies et mesure d'audience",
+      title: "8. Cookies et traceurs",
       blocks: [
         {
           type: "paragraph",
@@ -452,17 +641,13 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "Les seuls cookies déposés sont ceux strictement nécessaires à la connexion et au maintien de la session des titulaires d'un compte.",
-        },
-        {
-          type: "paragraph",
-          text: "Si de tels outils devaient être mis en place, cette politique serait mise à jour au préalable et un mécanisme de recueil du consentement serait proposé lorsque la réglementation applicable l'exige.",
+          text: "Les seuls cookies déposés sont ceux strictement nécessaires à la connexion et au maintien de la session des titulaires d'un compte. Tout traceur non essentiel ne serait déposé qu'avec le consentement de l'utilisateur.",
         },
       ],
     },
     {
       id: "destinataires",
-      title: "8. Destinataires et prestataires",
+      title: "9. Destinataires et prestataires",
       blocks: [
         {
           type: "paragraph",
@@ -470,16 +655,7 @@ const CONFIDENTIALITE: LegalDocument = {
         },
         {
           type: "paragraph",
-          text: "**Accès interne.** Les comptes disposant du rôle d'administrateur au sein de FilmFund Africa peuvent consulter les comptes, les profils et les projets de l'ensemble des utilisateurs, y intervenir, suspendre un compte et supprimer un projet. Cet accès sert à l'assistance, à la modération des contenus signalés et au traitement des demandes d'effacement. Il est limité aux personnes désignées par l'éditeur, et les actions d'administration sont journalisées.",
-        },
-        {
-          type: "fields",
-          fields: [
-            {
-              label: "Personnes disposant du rôle d'administrateur",
-              value: "[À COMPLÉTER]",
-            },
-          ],
+          text: "**Accès interne.** Les comptes disposant du rôle d'administrateur peuvent consulter les comptes, les profils et les projets de l'ensemble des utilisateurs, y intervenir, suspendre un compte et supprimer un projet. Cet accès sert à l'assistance, à la modération des contenus signalés et au traitement des demandes d'effacement. Les actions d'administration sensibles sont journalisées.",
         },
         {
           type: "paragraph",
@@ -512,10 +688,14 @@ const CONFIDENTIALITE: LegalDocument = {
         {
           type: "fields",
           fields: [
-            { label: "Localisation de l'hébergement et des données", value: "[À COMPLÉTER]" },
             {
-              label: "Qualité de sous-traitant et garanties contractuelles",
-              value: "[À COMPLÉTER AVEC UN CONSEIL JURIDIQUE]",
+              label: "Localisation de la base de données et des fichiers",
+              value: "Irlande (région « West EU » de Supabase)",
+            },
+            {
+              label:
+                "Localisation des autres traitements (interface, traitements asynchrones, fournisseurs d'IA)",
+              value: "[À COMPLÉTER]",
             },
           ],
         },
@@ -523,36 +703,99 @@ const CONFIDENTIALITE: LegalDocument = {
     },
     {
       id: "transferts",
-      title: "9. Transferts hors du pays d'établissement",
+      title: "10. Transferts hors du Cameroun",
       blocks: [
         {
           type: "paragraph",
-          text: "Le recours à des prestataires établis à l'étranger peut impliquer un transfert de données hors du pays d'établissement du responsable du traitement.",
+          text: "Certains de ces prestataires sont établis hors du Cameroun, notamment aux États-Unis. Les transferts sont encadrés par les garanties contractuelles disponibles.",
         },
         {
           type: "fields",
           fields: [
-            { label: "Pays de destination", value: "[À COMPLÉTER]" },
-            { label: "Garanties encadrant les transferts", value: "[À COMPLÉTER]" },
+            {
+              label: "Déclaration ou autorisation auprès de l'autorité de protection compétente",
+              value: "[À COMPLÉTER, SI REQUISE]",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "acces",
+      title: "11. Qui accède à quoi",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            "pages publiques : lecture par tous ;",
+            "comptes : un membre lit et modifie son propre profil ; les administrateurs lisent les comptes et peuvent en suspendre un ;",
+            "données d'un projet : aucun accès pour un visiteur ; lecture ou écriture pour ses membres, selon leur rôle ; lecture et intervention pour les administrateurs ;",
+            "journal d'administration : lecture par les seuls administrateurs ;",
+            "clés des fournisseurs d'intelligence artificielle : saisie et remplacement par les seuls administrateurs ; une clé enregistrée n'est jamais réaffichée ;",
+            "plans, quotas et plafond mensuel de dépenses de l'assistant : consultation et ajustement par les seuls administrateurs.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "administrateurs",
+      title: "12. Gestion des rôles des administrateurs",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Deux comptes administrateurs nommés sont préenregistrés. Aucun autre compte ne peut obtenir ce rôle par inscription ; toute attribution passe par une action explicite et journalisée.",
+        },
+        {
+          type: "fields",
+          fields: ADMINISTRATEURS.map((administrateur) => ({
+            label: administrateur.nom,
+            value: administrateur.contact,
+          })),
+        },
+        {
+          type: "paragraph",
+          text: "NGOOH Cédric Hervé, directeur de la publication, est le responsable éditorial et légal : il arbitre les demandes d'exercice de droits, les signalements de contenu et les incidents de sécurité, et valide les changements de rôles.",
+        },
+        {
+          type: "fields",
+          fields: [
+            { label: "Responsabilités de Romaric Sessua", value: "[À PRÉCISER]" },
+            {
+              label:
+                "Actions sensibles (rôles, clés des fournisseurs d'IA, suppression de données)",
+              value: "[EXÉCUTABLES PAR CHACUN OU AVEC L'ACCORD DE L'AUTRE — À CHOISIR]",
+            },
+          ],
+        },
+        {
+          type: "list",
+          items: [
+            "sécurité des comptes administrateurs : mots de passe uniques, révision trimestrielle des accès, révocation immédiate en cas de départ ou de compromission ;",
+            "traçabilité : les actions d'administration sensibles sont horodatées et rattachées à leur auteur dans le journal d'administration ;",
+            "continuité : en cas d'indisponibilité de l'un des administrateurs, l'autre dispose des droits nécessaires pour maintenir le Service et traiter les urgences ;",
+            "secrets techniques : les clés des fournisseurs d'intelligence artificielle sont conservées chiffrées dans la base de données ; aucun secret n'est exposé au navigateur.",
           ],
         },
       ],
     },
     {
       id: "conservation",
-      title: "10. Durées de conservation",
+      title: "13. Durées de conservation",
       blocks: [
         {
           type: "paragraph",
-          text: "Les données sont conservées pour la durée nécessaire aux finalités pour lesquelles elles sont traitées, puis supprimées ou archivées conformément à la réglementation applicable.",
+          text: "Les données sont conservées pour la durée nécessaire aux finalités pour lesquelles elles sont traitées, puis supprimées ou anonymisées, hors obligations légales de conservation.",
         },
         {
           type: "fields",
           fields: [
-            { label: "Données de compte", value: "[À COMPLÉTER]" },
-            { label: "Contenus de projet", value: "[À COMPLÉTER]" },
-            { label: "Journaux techniques et de sécurité", value: "[À COMPLÉTER]" },
-            { label: "Demandes d'assistance et signalements", value: "[À COMPLÉTER]" },
+            { label: "Profils et rôles", value: "[À COMPLÉTER]" },
+            { label: "Projets et production", value: "[À COMPLÉTER]" },
+            { label: "Versions et validations", value: "[À COMPLÉTER]" },
+            { label: "Quotas et usage de l'assistant", value: "[À COMPLÉTER]" },
+            { label: "Journal d'administration", value: "[À COMPLÉTER]" },
+            { label: "Journaux techniques", value: "[À COMPLÉTER]" },
+            { label: "Dossiers exportés", value: "30 jours" },
           ],
         },
         {
@@ -567,15 +810,11 @@ const CONFIDENTIALITE: LegalDocument = {
     },
     {
       id: "securite",
-      title: "11. Sécurité",
+      title: "14. Sécurité",
       blocks: [
         {
           type: "paragraph",
-          text: "FilmFund Africa met en œuvre des mesures techniques et organisationnelles raisonnables visant à protéger les données contre la perte, l'altération, la divulgation ou l'accès non autorisé.",
-        },
-        {
-          type: "paragraph",
-          text: "Aucun service numérique ne peut toutefois garantir une sécurité absolue. Les utilisateurs sont invités à protéger leurs identifiants et à conserver leurs propres copies de sauvegarde de leurs contenus importants.",
+          text: "FilmFund Africa met en œuvre des mesures techniques et organisationnelles raisonnables visant à protéger les données contre la perte, l'altération, la divulgation ou l'accès non autorisé. Aucun service numérique ne peut toutefois garantir une sécurité absolue.",
         },
         {
           type: "paragraph",
@@ -585,48 +824,43 @@ const CONFIDENTIALITE: LegalDocument = {
           type: "list",
           items: [
             "l'accès à la plateforme est réservé aux comptes autorisés, et les échanges avec le site sont chiffrés ;",
+            "les données sont chiffrées au repos par les prestataires d'hébergement ;",
             "les données d'un projet ne sont accessibles qu'à son équipe et aux administrateurs, par des règles appliquées dans la base de données ;",
             "les fichiers sont conservés dans un espace de stockage privé, sans adresse publique ;",
-            "les clés d'accès aux fournisseurs d'intelligence artificielle sont conservées chiffrées ;",
-            "les actions d'administration sont journalisées.",
+            "les clés d'accès aux fournisseurs d'intelligence artificielle sont conservées chiffrées, et les appels à ces fournisseurs partent du seul serveur ;",
+            "les actions d'administration sensibles sont journalisées.",
           ],
+        },
+        {
+          type: "fields",
+          fields: [{ label: "Fréquence des sauvegardes", value: "[À COMPLÉTER]" }],
+        },
+        {
+          type: "paragraph",
+          text: "En cas de violation de données, l'éditeur informe l'autorité compétente et les personnes concernées dans les délais légaux.",
         },
       ],
     },
     {
       id: "droits",
-      title: "12. Vos droits",
+      title: "15. Vos droits",
       blocks: [
         {
           type: "paragraph",
-          text: "Sous réserve du cadre juridique applicable et des conditions qu'il prévoit, vous pouvez notamment disposer des droits suivants sur vos données :",
-        },
-        {
-          type: "list",
-          items: [
-            "droit d'accès et d'obtention d'une copie ;",
-            "droit de rectification des données inexactes ou incomplètes ;",
-            "droit à l'effacement, dans les cas prévus par la réglementation applicable ;",
-            "droit à la limitation du traitement ;",
-            "droit d'opposition, notamment pour des motifs tenant à votre situation particulière ;",
-            "droit à la portabilité de certaines données ;",
-            "droit de retirer votre consentement à tout moment, lorsque le traitement repose sur celui-ci ;",
-            "droit d'introduire une réclamation auprès de l'autorité de contrôle compétente.",
-          ],
+          text: "Vous disposez d'un droit d'accès, de rectification, d'effacement, d'opposition, de limitation et de portabilité, ainsi que du droit de retirer votre consentement. Vous pouvez saisir l'autorité de protection des données compétente en cas de désaccord.",
         },
         {
           type: "fields",
           fields: [
             { label: "Adresse pour exercer vos droits", value: CONTACT_POLITIQUE_CONTENU },
-            { label: "Délai de réponse applicable", value: "[À COMPLÉTER]" },
-            { label: "Autorité de contrôle compétente", value: "[À COMPLÉTER]" },
+            { label: "Délai de réponse", value: "[À COMPLÉTER]" },
           ],
         },
       ],
     },
     {
       id: "mineurs",
-      title: "13. Mineurs",
+      title: "16. Mineurs",
       blocks: [
         {
           type: "paragraph",
@@ -637,7 +871,7 @@ const CONFIDENTIALITE: LegalDocument = {
     },
     {
       id: "modifications",
-      title: "14. Modifications de la présente politique",
+      title: "17. Modifications de la présente politique",
       blocks: [
         {
           type: "paragraph",
@@ -647,7 +881,7 @@ const CONFIDENTIALITE: LegalDocument = {
     },
     {
       id: "contact",
-      title: "15. Contact",
+      title: "18. Contact",
       blocks: [
         {
           type: "paragraph",
@@ -656,9 +890,10 @@ const CONFIDENTIALITE: LegalDocument = {
         {
           type: "fields",
           fields: [
-            { value: "[NOM / DÉNOMINATION LÉGALE]" },
-            { value: "[ADRESSE]" },
+            { value: EDITEUR },
+            { value: SIEGE_EDITEUR },
             { value: CONTACT_POLITIQUE_CONTENU },
+            { value: TELEPHONE_EDITEUR },
           ],
         },
       ],
@@ -666,12 +901,6 @@ const CONFIDENTIALITE: LegalDocument = {
   ],
 };
 
-/*
- * Ce texte n'annonce que ce que la plateforme fait : retirer un contenu et
- * suspendre un compte. Il ne promet ni le refus des mots de passe divulgués,
- * ni une notification des changements — rien de cela n'est en service. Y
- * ajouter un engagement, c'est d'abord livrer la protection qu'il décrit.
- */
 const POLITIQUE_CONTENU: LegalDocument = {
   slug: "politique-de-contenu",
   title: "Politique de contenu et de protection des comptes",
@@ -795,19 +1024,12 @@ const POLITIQUE_CONTENU: LegalDocument = {
 
 const DOCUMENTS: Record<LegalDocument["slug"], LegalDocument> = {
   "mentions-legales": MENTIONS_LEGALES,
+  "conditions-utilisation": CONDITIONS_UTILISATION,
   confidentialite: CONFIDENTIALITE,
   "politique-de-contenu": POLITIQUE_CONTENU,
 };
 
-/**
- * Renvoie un document légal par son identifiant d'URL.
- *
- * Point d'extension pour l'édition par un administrateur : cette fonction est
- * le seul endroit que les pages interrogent. Lorsque la base de données sera
- * en place, elle lira la version publiée du document en base et retombera sur
- * la version ci-dessus si aucune n'existe encore. Les pages et les composants
- * de rendu n'auront pas à changer.
- */
+/** Renvoie un document légal par son identifiant d'URL : le seul endroit que les pages interrogent. */
 export function getLegalDocument(slug: LegalDocument["slug"]): LegalDocument {
   return DOCUMENTS[slug];
 }

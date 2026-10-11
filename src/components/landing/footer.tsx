@@ -16,14 +16,14 @@ const NAV_LINKS = [
 
 const LEGAL_LINKS = [
   { href: "/mentions-legales", label: "Mentions légales" },
+  { href: "/conditions-utilisation", label: "Conditions d'utilisation" },
   { href: "/confidentialite", label: "Politique de confidentialité" },
   { href: "/politique-de-contenu", label: "Politique de contenu" },
 ];
 
 /*
  * Pas d'icones sociales : aucun compte n'existe a ce jour, et un lien mort
- * vaut moins qu'une absence. Les conditions d'utilisation s'ajouteront ici
- * quand cette page sera ecrite.
+ * vaut moins qu'une absence.
  */
 export function Footer() {
   const year = new Date().getFullYear();
