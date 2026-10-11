@@ -30,6 +30,8 @@ export type OptionExport = {
   detail: string;
   /** Faux : rien à exporter pour cette case, qui reste décochée. */
   disponible: boolean;
+  /** Vrai : la case n'est pas cochée d'office, même si elle a de quoi exporter. */
+  decochee?: boolean;
 };
 
 type Demande =
@@ -59,7 +61,12 @@ export function SelectionExport({
   const [enCours, demarrer] = useTransition();
   const [erreur, setErreur] = useState<string | null>(null);
   const [coches, setCoches] = useState<ReadonlySet<string>>(
-    () => new Set(options.filter((option) => option.disponible).map((option) => option.code)),
+    () =>
+      new Set(
+        options
+          .filter((option) => option.disponible && !option.decochee)
+          .map((option) => option.code),
+      ),
   );
   const [demande, setDemande] = useState<Demande | null>(null);
   const [format, setFormat] = useState<FormatExport>("pdf");
