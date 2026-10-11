@@ -99,10 +99,12 @@ export type Ressource = {
 };
 
 /*
- * Les cinq premiers contenus sont des BROUILLONS, rédigés pour la plateforme
- * le 8 octobre 2026 et proposés à la validation : aucun n'était écrit dans la
- * spécification d'origine. Publier, c'est passer `statut` à « publie » et
- * dater `misAJourLe`, après relecture.
+ * Les cinq premiers contenus ont été rédigés pour la plateforme le 8 octobre
+ * 2026 : aucun n'était écrit dans la spécification d'origine. Relus par
+ * l'utilisateur, ils sont publiés depuis le 11 octobre 2026, sur sa décision.
+ *
+ * Un contenu nouveau naît en brouillon. Publier, c'est passer `statut` à
+ * « publie » et dater `misAJourLe`, après relecture — jamais d'office.
  */
 export const RESSOURCES: readonly Ressource[] = [
   {
@@ -112,9 +114,9 @@ export const RESSOURCES: readonly Ressource[] = [
       "Ce qu'une logline doit dire en une ou deux phrases, et une méthode pour écrire la vôtre.",
     categorie: "ecriture",
     type: "guide",
-    statut: "brouillon",
+    statut: "publie",
     langue: "fr",
-    misAJourLe: null,
+    misAJourLe: "2026-10-11",
     auteur: "FilmFund Africa",
     sections: [
       {
@@ -192,9 +194,9 @@ export const RESSOURCES: readonly Ressource[] = [
       "Ce qui distingue un synopsis d'un résumé, ce qu'il doit couvrir, et dans quel ordre l'écrire.",
     categorie: "ecriture",
     type: "guide",
-    statut: "brouillon",
+    statut: "publie",
     langue: "fr",
-    misAJourLe: null,
+    misAJourLe: "2026-10-11",
     auteur: "FilmFund Africa",
     sections: [
       {
@@ -269,9 +271,9 @@ export const RESSOURCES: readonly Ressource[] = [
       "Ce que la note d'intention ajoute au synopsis, les questions auxquelles elle répond, et comment la construire.",
     categorie: "ecriture",
     type: "guide",
-    statut: "brouillon",
+    statut: "publie",
     langue: "fr",
-    misAJourLe: null,
+    misAJourLe: "2026-10-11",
     auteur: "FilmFund Africa",
     sections: [
       {
@@ -331,9 +333,9 @@ export const RESSOURCES: readonly Ressource[] = [
       "Les points à contrôler avant de déposer un dossier, du règlement de l'appel jusqu'à l'envoi.",
     categorie: "dossier",
     type: "checklist",
-    statut: "brouillon",
+    statut: "publie",
     langue: "fr",
-    misAJourLe: null,
+    misAJourLe: "2026-10-11",
     auteur: "FilmFund Africa",
     sections: [
       {
@@ -425,9 +427,9 @@ export const RESSOURCES: readonly Ressource[] = [
       "Les points à vérifier entre la fin de l'écriture et le premier jour de tournage, par domaine.",
     categorie: "preproduction",
     type: "checklist",
-    statut: "brouillon",
+    statut: "publie",
     langue: "fr",
-    misAJourLe: null,
+    misAJourLe: "2026-10-11",
     auteur: "FilmFund Africa",
     sections: [
       {
