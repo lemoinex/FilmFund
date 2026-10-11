@@ -125,9 +125,35 @@ passe divulgués, ni la révocation de sessions, ni une notification des changem
 sont pas en service ; `tests/politique-de-contenu.test.mjs` refuse leur retour — y ajouter un
 engagement, c'est d'abord livrer la protection qu'il décrit. Vérifié sur le site public après
 la fusion : la page répond, porte son titre, sa date et son adresse, et la vitrine comme la
-connexion y mènent. Non fait : une relecture par un conseil juridique. La politique de
-confidentialité, elle, dit encore que le site n'a ni compte ni prestataire en service : à
-reprendre.
+connexion y mènent. Non fait : une relecture par un conseil juridique.
+
+Deux correctifs de la version 1 ont suivi le même jour, sans migration : les deux autres pages
+légales décrivaient encore un service qui n'existait pas.
+
+- **Politique de confidentialité** (PR 201, `55b4b8b`). Elle parlait d'un site de présentation
+  sans compte, de prestataires « envisagés », et disait qu'un administrateur ne peut pas
+  modifier un projet. Elle dit maintenant : la plateforme en service en accès privé ; les
+  données réellement traitées pour un compte ; Vercel, Supabase et Railway en service ;
+  **l'assistant IA, qui manquait** — les éléments d'un projet partent chez Anthropic, la
+  description d'une scène chez OpenAI, la seule question chez Perplexity, et rien sans une
+  demande confirmée après son devis — ; les droits réels des administrateurs ; les cookies de
+  session ; la seule durée appliquée, trente jours pour un dossier exporté ; cinq mesures de
+  sécurité en place. La promesse d'informer les utilisateurs avant tout changement est
+  retirée : aucun service d'e-mail ne la tient.
+- **Mentions légales** (PR 202, `55259f7`). L'hébergement n'y est plus « susceptible »
+  d'exister. Elles disent l'accès privé, ce qu'est une proposition de l'assistant — une
+  suggestion que l'utilisateur accepte, corrige ou écarte, qui peut être inexacte —, les seules
+  mesures qui existent, et renvoient à la politique de contenu.
+
+Les trois pages sont datées du 11 octobre 2026 et portent la même adresse de contact, par
+décision de l'utilisateur. **Aucun fait juridique n'a été inventé** : l'identité de l'éditeur,
+le cadre juridique, les bases légales, la localisation des données et les durées de
+conservation restent des champs à compléter, visibles comme tels, et
+`tests/mentions-legales.test.mjs` refuse qu'on les remplisse d'office. Chaque page a son test
+(`tests/politique-de-confidentialite.test.mjs`), éprouvé par dix sabotages. Vérifié sur le site
+public après chaque fusion : les deux pages portent le nouveau texte, et les phrases fausses
+n'y sont plus. Non fait : une relecture par un conseil juridique, à prévoir avant l'ouverture
+publique ; aucune page n'a été vue dans un navigateur.
 
 **La version 1 est construite, pas éprouvée en entier.** Hors PC1, les trente-six lots « en production »
 n'ont pas été vus sous session, ou n'ont fait aucun appel réel, ou ne peuvent pas s'exercer à
