@@ -41,7 +41,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
   it("nomment l'éditeur, son siège et ses coordonnées, tels que l'utilisateur les a donnés", () => {
     assert.equal(
       EDITEUR,
-      "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric Sessua",
+      "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric SESSUA",
     );
     assert.equal(SIEGE_EDITEUR, "ElMan, Yaoundé, Cameroun");
     for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {
@@ -55,7 +55,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.match(editeur, /Forme juridique\nNon définie à ce jour/);
     assert.match(editeur, /RCCM et NIU seront ajoutés après immatriculation/);
     assert.match(editeur, /Adresse précise\n\[À COMPLÉTER\]/);
-    assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\.|ElMan & Sessua/);
+    assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\.|ElMan & (Sessua|SESSUA)/);
   });
 
   it("nomment le directeur de la publication", () => {
@@ -67,7 +67,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
   it("nomment les deux administrateurs, et personne d'autre", () => {
     assert.deepEqual(
       ADMINISTRATEURS.map((administrateur) => administrateur.nom),
-      ["NGOOH Cédric Hervé", "Romaric Sessua"],
+      ["NGOOH Cédric Hervé", "Romaric SESSUA"],
     );
     for (const administrateur of ADMINISTRATEURS) {
       assert.ok(section("administration").includes(administrateur.nom));

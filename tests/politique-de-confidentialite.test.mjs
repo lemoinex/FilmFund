@@ -112,7 +112,7 @@ describe("Politique de confidentialité : le service tel qu'il est", () => {
       assert.ok(administrateurs.includes(administrateur.nom));
       assert.ok(administrateurs.includes(administrateur.contact));
     }
-    assert.match(administrateurs, /Responsabilités de Romaric Sessua\n\[À PRÉCISER\]/);
+    assert.match(administrateurs, /Responsabilités de Romaric SESSUA\n\[À PRÉCISER\]/);
     assert.match(administrateurs, /À CHOISIR\]/);
   });
 

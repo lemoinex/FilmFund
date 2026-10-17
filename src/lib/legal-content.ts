@@ -52,12 +52,12 @@ export type LegalDocument = {
 export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
 export const CONTACT_ROMARIC = "romaricsessua@gmail.com";
 export const EDITEUR =
-  "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric Sessua";
+  "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric SESSUA";
 export const TELEPHONE_EDITEUR = "(+237) 674 581 693";
 export const SIEGE_EDITEUR = "ElMan, Yaoundé, Cameroun";
 export const ADMINISTRATEURS = [
   { nom: "NGOOH Cédric Hervé", contact: CONTACT_POLITIQUE_CONTENU },
-  { nom: "Romaric Sessua", contact: CONTACT_ROMARIC },
+  { nom: "Romaric SESSUA", contact: CONTACT_ROMARIC },
 ] as const;
 
 /*
@@ -762,7 +762,7 @@ const CONFIDENTIALITE: LegalDocument = {
         {
           type: "fields",
           fields: [
-            { label: "Responsabilités de Romaric Sessua", value: "[À PRÉCISER]" },
+            { label: "Responsabilités de Romaric SESSUA", value: "[À PRÉCISER]" },
             {
               label:
                 "Actions sensibles (rôles, clés des fournisseurs d'IA, suppression de données)",
