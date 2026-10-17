@@ -475,7 +475,7 @@ const CONDITIONS_UTILISATION: LegalDocument = {
       blocks: [
         {
           type: "paragraph",
-          text: "Les CGU sont régies par le droit camerounais. À défaut de résolution amiable, les tribunaux compétents de Yaoundé sont seuls compétents, sous réserve des règles impératives applicables aux consommateurs ou aux utilisateurs situés dans d'autres juridictions.",
+          text: "Les CGU sont régies par le droit camerounais. À défaut de résolution amiable, les litiges relèvent des tribunaux camerounais compétents, sous réserve des règles impératives applicables aux consommateurs ou aux utilisateurs situés dans d'autres juridictions.",
         },
       ],
     },

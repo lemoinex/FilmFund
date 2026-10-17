@@ -99,7 +99,9 @@ describe("Conditions générales d'utilisation : le texte publié", () => {
 
   it("disent le droit applicable et les tribunaux compétents", () => {
     assert.match(article("droit-applicable"), /régies par le droit camerounais/);
-    assert.match(article("droit-applicable"), /tribunaux compétents de Yaoundé/);
+    assert.match(article("droit-applicable"), /relèvent des tribunaux camerounais compétents/);
+    // Décision du 17 octobre 2026 : la clause ne désigne plus de ville.
+    assert.doesNotMatch(texteDuDocument("conditions-utilisation"), /Yaoundé/);
   });
 
   it("donnent le siège, les deux adresses et le téléphone de l'éditeur", () => {
