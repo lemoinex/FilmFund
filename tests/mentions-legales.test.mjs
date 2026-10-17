@@ -12,6 +12,7 @@ import { describe, it } from "node:test";
 import {
   ADMINISTRATEURS,
   CONTACT_POLITIQUE_CONTENU,
+  CONTACT_ROMARIC,
   EDITEUR,
   getLegalDocument,
   SIEGE_EDITEUR,
@@ -39,15 +40,21 @@ describe("Mentions légales : le service tel qu'il est", () => {
   });
 
   it("nomment l'éditeur, son siège et ses coordonnées, tels que l'utilisateur les a donnés", () => {
-    assert.equal(
-      EDITEUR,
-      "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric SESSUA",
-    );
-    assert.equal(SIEGE_EDITEUR, "ElMan, Yaoundé, Cameroun");
+    assert.equal(EDITEUR, "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA");
+    assert.equal(SIEGE_EDITEUR, "ElMan & Sessua, Yaoundé, Cameroun");
     for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {
       assert.ok(section("editeur").includes(valeur), valeur);
-      assert.ok(section("droit-applicable").includes(valeur), valeur);
     }
+  });
+
+  it("donnent le contact de la section 11 dans la formulation de l'utilisateur", () => {
+    const contact = mentions.sections
+      .find((candidate) => candidate.id === "droit-applicable")
+      .blocks.find((bloc) => bloc.type === "fields");
+    assert.deepEqual(
+      contact.fields.map((champ) => champ.value),
+      [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, CONTACT_ROMARIC, TELEPHONE_EDITEUR],
+    );
   });
 
   it("n'inventent ni forme juridique, ni adresse précise, ni immatriculation", () => {
@@ -55,7 +62,9 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.match(editeur, /Forme juridique\nNon définie à ce jour/);
     assert.match(editeur, /RCCM et NIU seront ajoutés après immatriculation/);
     assert.match(editeur, /Adresse précise\n\[À COMPLÉTER\]/);
-    assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\.|ElMan & (Sessua|SESSUA)/);
+    assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\./);
+    // Le siège ne s'écrit qu'à partir de la constante : aucune ancienne forme.
+    assert.doesNotMatch(texte, /ElMan, Yaoundé|startup en cours de création/);
   });
 
   it("nomment le directeur de la publication", () => {
