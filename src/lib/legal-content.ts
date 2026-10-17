@@ -291,9 +291,13 @@ const MENTIONS_LEGALES: LegalDocument = {
         },
         {
           type: "fields",
+          // Formulation donnée par l'utilisateur le 17 octobre 2026 pour ce seul
+          // bloc : les sections 1 et 2 gardent l'éditeur et le siège ci-dessus.
           fields: [
-            { value: EDITEUR },
-            { value: SIEGE_EDITEUR },
+            {
+              value: "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA",
+            },
+            { value: "ElMan & Sessua, Yaoundé, Cameroun" },
             { value: CONTACT_POLITIQUE_CONTENU },
             { value: CONTACT_ROMARIC },
             { value: TELEPHONE_EDITEUR },

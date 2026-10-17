@@ -12,6 +12,7 @@ import { describe, it } from "node:test";
 import {
   ADMINISTRATEURS,
   CONTACT_POLITIQUE_CONTENU,
+  CONTACT_ROMARIC,
   EDITEUR,
   getLegalDocument,
   SIEGE_EDITEUR,
@@ -46,8 +47,23 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.equal(SIEGE_EDITEUR, "ElMan, Yaoundé, Cameroun");
     for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {
       assert.ok(section("editeur").includes(valeur), valeur);
-      assert.ok(section("droit-applicable").includes(valeur), valeur);
     }
+  });
+
+  it("donnent le contact de la section 11 dans la formulation de l'utilisateur", () => {
+    const contact = mentions.sections
+      .find((candidate) => candidate.id === "droit-applicable")
+      .blocks.find((bloc) => bloc.type === "fields");
+    assert.deepEqual(
+      contact.fields.map((champ) => champ.value),
+      [
+        "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA",
+        "ElMan & Sessua, Yaoundé, Cameroun",
+        CONTACT_POLITIQUE_CONTENU,
+        CONTACT_ROMARIC,
+        TELEPHONE_EDITEUR,
+      ],
+    );
   });
 
   it("n'inventent ni forme juridique, ni adresse précise, ni immatriculation", () => {
@@ -55,7 +71,10 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.match(editeur, /Forme juridique\nNon définie à ce jour/);
     assert.match(editeur, /RCCM et NIU seront ajoutés après immatriculation/);
     assert.match(editeur, /Adresse précise\n\[À COMPLÉTER\]/);
-    assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\.|ElMan & (Sessua|SESSUA)/);
+    assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\./);
+    // « ElMan & Sessua » n'est admis qu'au contact de la section 11.
+    assert.doesNotMatch(editeur, /ElMan & /);
+    assert.doesNotMatch(section("directeur-publication"), /ElMan & /);
   });
 
   it("nomment le directeur de la publication", () => {
