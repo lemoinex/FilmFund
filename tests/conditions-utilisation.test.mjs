@@ -11,7 +11,14 @@ import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
-import { ADMINISTRATEURS, getLegalDocument } from "../src/lib/legal-content.ts";
+import {
+  ADMINISTRATEURS,
+  CONTACT_POLITIQUE_CONTENU,
+  CONTACT_ROMARIC,
+  getLegalDocument,
+  SIEGE_EDITEUR,
+  TELEPHONE_EDITEUR,
+} from "../src/lib/legal-content.ts";
 
 const PAGES = [
   "mentions-legales",
@@ -38,10 +45,10 @@ const article = (id) => texteDe(cgu.sections.find((candidate) => candidate.id ==
 const lire = (chemin) => readFileSync(new URL(`../${chemin}`, import.meta.url), "utf8");
 
 describe("Conditions générales d'utilisation : le texte publié", () => {
-  it("portent leur titre, leur date et leurs onze articles", () => {
+  it("portent leur titre, leur date et leurs douze articles", () => {
     assert.equal(cgu.title, "Conditions générales d'utilisation");
-    assert.equal(cgu.updatedAt, "11 octobre 2026");
-    assert.equal(cgu.sections.length, 11);
+    assert.equal(cgu.updatedAt, "17 octobre 2026");
+    assert.equal(cgu.sections.length, 12);
     cgu.sections.forEach((section, rang) => {
       assert.ok(section.title.startsWith(`Article ${rang + 1} — `), section.title);
     });
@@ -93,6 +100,17 @@ describe("Conditions générales d'utilisation : le texte publié", () => {
   it("disent le droit applicable et les tribunaux compétents", () => {
     assert.match(article("droit-applicable"), /régies par le droit camerounais/);
     assert.match(article("droit-applicable"), /tribunaux compétents de Yaoundé/);
+  });
+
+  it("donnent le siège, les deux adresses et le téléphone de l'éditeur", () => {
+    const contact = cgu.sections
+      .find((candidate) => candidate.id === "contact")
+      .blocks.find((bloc) => bloc.type === "fields");
+    assert.deepEqual(contact.fields, [
+      { label: "Siège", value: SIEGE_EDITEUR },
+      { label: "Contact", value: `${CONTACT_POLITIQUE_CONTENU} / ${CONTACT_ROMARIC}` },
+      { label: "Téléphone", value: TELEPHONE_EDITEUR },
+    ]);
   });
 });
 

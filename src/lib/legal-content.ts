@@ -46,8 +46,9 @@ export type LegalDocument = {
  * Identité et coordonnées, données par l'utilisateur le 11 octobre 2026 et
  * publiées par sa décision : deux noms, deux adresses et un numéro lisibles de
  * tout visiteur. Le second représentant est ajouté le 17 octobre 2026, sur sa
- * demande ; le même jour, le siège devient « ElMan & Sessua » et l'éditeur
- * perd « startup en cours de création », partout. Ne rien y ajouter qui n'ait
+ * demande ; le même jour, l'éditeur perd « startup en cours de création », le
+ * siège devient « SESSUA Entertainment », partout, et les conditions
+ * d'utilisation reçoivent un article de contact. Ne rien y ajouter qui n'ait
  * été fourni : la forme juridique, l'adresse précise et l'immatriculation ne
  * sont pas connues.
  */
@@ -55,7 +56,7 @@ export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
 export const CONTACT_ROMARIC = "romaricsessua@gmail.com";
 export const EDITEUR = "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA";
 export const TELEPHONE_EDITEUR = "(+237) 674 581 693";
-export const SIEGE_EDITEUR = "ElMan & Sessua, Yaoundé, Cameroun";
+export const SIEGE_EDITEUR = "SESSUA Entertainment, Yaoundé, Cameroun";
 export const ADMINISTRATEURS = [
   { nom: "NGOOH Cédric Hervé", contact: CONTACT_POLITIQUE_CONTENU },
   { nom: "Romaric SESSUA", contact: CONTACT_ROMARIC },
@@ -309,8 +310,8 @@ const CONDITIONS_UTILISATION: LegalDocument = {
   slug: "conditions-utilisation",
   title: "Conditions générales d'utilisation",
   description:
-    "Conditions générales d'utilisation de FilmFund Africa : accès, rôles, fonctionnalités d'intelligence artificielle, obligations, propriété des contenus, responsabilité et droit applicable.",
-  updatedAt: "11 octobre 2026",
+    "Conditions générales d'utilisation de FilmFund Africa : accès, rôles, fonctionnalités d'intelligence artificielle, obligations, propriété des contenus, responsabilité, droit applicable et contact.",
+  updatedAt: "17 octobre 2026",
   sections: [
     {
       id: "objet",
@@ -475,6 +476,24 @@ const CONDITIONS_UTILISATION: LegalDocument = {
         {
           type: "paragraph",
           text: "Les CGU sont régies par le droit camerounais. À défaut de résolution amiable, les tribunaux compétents de Yaoundé sont seuls compétents, sous réserve des règles impératives applicables aux consommateurs ou aux utilisateurs situés dans d'autres juridictions.",
+        },
+      ],
+    },
+    {
+      id: "contact",
+      title: "Article 12 — Contact",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Pour toute question relative au Service ou aux présentes CGU, contactez :",
+        },
+        {
+          type: "fields",
+          fields: [
+            { label: "Siège", value: SIEGE_EDITEUR },
+            { label: "Contact", value: `${CONTACT_POLITIQUE_CONTENU} / ${CONTACT_ROMARIC}` },
+            { label: "Téléphone", value: TELEPHONE_EDITEUR },
+          ],
         },
       ],
     },
