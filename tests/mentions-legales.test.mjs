@@ -41,7 +41,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
 
   it("nomment l'éditeur, son siège et ses coordonnées, tels que l'utilisateur les a donnés", () => {
     assert.equal(EDITEUR, "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA");
-    assert.equal(SIEGE_EDITEUR, "ElMan & Sessua, Yaoundé, Cameroun");
+    assert.equal(SIEGE_EDITEUR, "SESSUA Entertainment, Yaoundé, Cameroun");
     for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {
       assert.ok(section("editeur").includes(valeur), valeur);
     }
@@ -64,7 +64,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.match(editeur, /Adresse précise\n\[À COMPLÉTER\]/);
     assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\./);
     // Le siège ne s'écrit qu'à partir de la constante : aucune ancienne forme.
-    assert.doesNotMatch(texte, /ElMan, Yaoundé|startup en cours de création/);
+    assert.doesNotMatch(texte, /ElMan|startup en cours de création/);
   });
 
   it("nomment le directeur de la publication", () => {
