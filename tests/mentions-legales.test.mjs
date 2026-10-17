@@ -41,7 +41,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
 
   it("nomment l'éditeur, son siège et ses coordonnées, tels que l'utilisateur les a donnés", () => {
     assert.equal(EDITEUR, "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA");
-    assert.equal(SIEGE_EDITEUR, "SESSUA Entertainment, Yaoundé, Cameroun");
+    assert.equal(SIEGE_EDITEUR, "SESSUA Entertainment, Douala, Cameroun");
     for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {
       assert.ok(section("editeur").includes(valeur), valeur);
     }

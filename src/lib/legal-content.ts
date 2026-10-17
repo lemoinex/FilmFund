@@ -47,7 +47,7 @@ export type LegalDocument = {
  * publiées par sa décision : deux noms, deux adresses et un numéro lisibles de
  * tout visiteur. Le second représentant est ajouté le 17 octobre 2026, sur sa
  * demande ; le même jour, l'éditeur perd « startup en cours de création », le
- * siège devient « SESSUA Entertainment », partout, et les conditions
+ * siège devient « SESSUA Entertainment, Douala », partout, et les conditions
  * d'utilisation reçoivent un article de contact. Ne rien y ajouter qui n'ait
  * été fourni : la forme juridique, l'adresse précise et l'immatriculation ne
  * sont pas connues.
@@ -56,7 +56,7 @@ export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
 export const CONTACT_ROMARIC = "romaricsessua@gmail.com";
 export const EDITEUR = "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA";
 export const TELEPHONE_EDITEUR = "(+237) 674 581 693";
-export const SIEGE_EDITEUR = "SESSUA Entertainment, Yaoundé, Cameroun";
+export const SIEGE_EDITEUR = "SESSUA Entertainment, Douala, Cameroun";
 export const ADMINISTRATEURS = [
   { nom: "NGOOH Cédric Hervé", contact: CONTACT_POLITIQUE_CONTENU },
   { nom: "Romaric SESSUA", contact: CONTACT_ROMARIC },
