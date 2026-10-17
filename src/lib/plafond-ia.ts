@@ -21,7 +21,7 @@ const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", t
  * Y1, décidé avec l'utilisateur le 8 octobre 2026 : un garde-fou contre une
  * faute de frappe, pas une limite de la base.
  */
-export const PLAFOND_USD = { min: 0, max: 50 } as const;
+export const PLAFOND_USD = { min: 0, max: 200 } as const;
 
 /**
  * Reste, en dollars, sous lequel l'écran prévient. Un choix du lot : avant

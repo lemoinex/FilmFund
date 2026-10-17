@@ -73,14 +73,14 @@ describe("Plafond d'IA : lecture de la saisie", () => {
     }
   });
 
-  it("tient la borne de l'écran : cinquante dollars, pas un centime de plus", () => {
-    assert.deepEqual(PLAFOND_USD, { min: 0, max: 50 });
-    for (const saisie of ["50,01", "51", "100", "9999"]) {
+  it("tient la borne de l'écran : deux cents dollars, pas un centime de plus", () => {
+    assert.deepEqual(PLAFOND_USD, { min: 0, max: 200 });
+    for (const saisie of ["200,01", "201", "300", "9999"]) {
       const lu = lirePlafond(saisie);
       assert.ok("erreur" in lu, saisie);
-      assert.match(lu.erreur, /de 0 à 50 dollars depuis cet écran/, saisie);
+      assert.match(lu.erreur, /de 0 à 200 dollars depuis cet écran/, saisie);
     }
-    assert.deepEqual(lirePlafond("50,00"), { plafond: 50 });
+    assert.deepEqual(lirePlafond("200,00"), { plafond: 200 });
   });
 });
 
