@@ -46,14 +46,14 @@ export type LegalDocument = {
  * Identité et coordonnées, données par l'utilisateur le 11 octobre 2026 et
  * publiées par sa décision : deux noms, deux adresses et un numéro lisibles de
  * tout visiteur. Le second représentant est ajouté le 17 octobre 2026, sur sa
- * demande, et le siège devient « ElMan & Sessua » le même jour, partout. Ne
- * rien y ajouter qui n'ait été fourni : la forme juridique,
- * l'adresse précise et l'immatriculation ne sont pas connues.
+ * demande ; le même jour, le siège devient « ElMan & Sessua » et l'éditeur
+ * perd « startup en cours de création », partout. Ne rien y ajouter qui n'ait
+ * été fourni : la forme juridique, l'adresse précise et l'immatriculation ne
+ * sont pas connues.
  */
 export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
 export const CONTACT_ROMARIC = "romaricsessua@gmail.com";
-export const EDITEUR =
-  "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric SESSUA";
+export const EDITEUR = "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA";
 export const TELEPHONE_EDITEUR = "(+237) 674 581 693";
 export const SIEGE_EDITEUR = "ElMan & Sessua, Yaoundé, Cameroun";
 export const ADMINISTRATEURS = [
@@ -292,12 +292,8 @@ const MENTIONS_LEGALES: LegalDocument = {
         },
         {
           type: "fields",
-          // Formulation donnée par l'utilisateur le 17 octobre 2026 pour ce seul
-          // bloc : la section 1 garde « startup en cours de création ».
           fields: [
-            {
-              value: "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA",
-            },
+            { value: EDITEUR },
             { value: SIEGE_EDITEUR },
             { value: CONTACT_POLITIQUE_CONTENU },
             { value: CONTACT_ROMARIC },
