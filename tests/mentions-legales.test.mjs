@@ -44,7 +44,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
       EDITEUR,
       "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric SESSUA",
     );
-    assert.equal(SIEGE_EDITEUR, "ElMan, Yaoundé, Cameroun");
+    assert.equal(SIEGE_EDITEUR, "ElMan & Sessua, Yaoundé, Cameroun");
     for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {
       assert.ok(section("editeur").includes(valeur), valeur);
     }
@@ -58,7 +58,7 @@ describe("Mentions légales : le service tel qu'il est", () => {
       contact.fields.map((champ) => champ.value),
       [
         "FilmFund Africa, représentée par NGOOH Cédric Hervé et Romaric SESSUA",
-        "ElMan & Sessua, Yaoundé, Cameroun",
+        SIEGE_EDITEUR,
         CONTACT_POLITIQUE_CONTENU,
         CONTACT_ROMARIC,
         TELEPHONE_EDITEUR,
@@ -72,9 +72,8 @@ describe("Mentions légales : le service tel qu'il est", () => {
     assert.match(editeur, /RCCM et NIU seront ajoutés après immatriculation/);
     assert.match(editeur, /Adresse précise\n\[À COMPLÉTER\]/);
     assert.doesNotMatch(texte, /SARL|SAS\b|S\.A\./);
-    // « ElMan & Sessua » n'est admis qu'au contact de la section 11.
-    assert.doesNotMatch(editeur, /ElMan & /);
-    assert.doesNotMatch(section("directeur-publication"), /ElMan & /);
+    // Le siège ne s'écrit qu'à partir de la constante : aucune ancienne forme.
+    assert.doesNotMatch(texte, /ElMan, Yaoundé/);
   });
 
   it("nomment le directeur de la publication", () => {
