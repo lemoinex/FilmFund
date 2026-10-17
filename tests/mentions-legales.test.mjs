@@ -35,13 +35,13 @@ const texte = mentions.sections.map(texteDe).join("\n");
 
 describe("Mentions légales : le service tel qu'il est", () => {
   it("sont datées", () => {
-    assert.equal(mentions.updatedAt, "11 octobre 2026");
+    assert.equal(mentions.updatedAt, "17 octobre 2026");
   });
 
   it("nomment l'éditeur, son siège et ses coordonnées, tels que l'utilisateur les a donnés", () => {
     assert.equal(
       EDITEUR,
-      "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé",
+      "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric Sessua",
     );
     assert.equal(SIEGE_EDITEUR, "ElMan, Yaoundé, Cameroun");
     for (const valeur of [EDITEUR, SIEGE_EDITEUR, CONTACT_POLITIQUE_CONTENU, TELEPHONE_EDITEUR]) {

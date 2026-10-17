@@ -34,7 +34,7 @@ const texte = politique.sections.map(texteDe).join("\n");
 
 describe("Politique de confidentialité : le service tel qu'il est", () => {
   it("est datée", () => {
-    assert.equal(politique.updatedAt, "11 octobre 2026");
+    assert.equal(politique.updatedAt, "17 octobre 2026");
   });
 
   it("dit que la plateforme est en service, en accès privé", () => {

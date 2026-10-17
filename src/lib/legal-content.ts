@@ -45,17 +45,19 @@ export type LegalDocument = {
 /*
  * Identité et coordonnées, données par l'utilisateur le 11 octobre 2026 et
  * publiées par sa décision : deux noms, deux adresses et un numéro lisibles de
- * tout visiteur. Ne rien y ajouter qui n'ait été fourni : la forme juridique,
+ * tout visiteur. Le second représentant est ajouté le 17 octobre 2026, sur sa
+ * demande. Ne rien y ajouter qui n'ait été fourni : la forme juridique,
  * l'adresse précise et l'immatriculation ne sont pas connues.
  */
 export const CONTACT_POLITIQUE_CONTENU = "cedrichervex@gmail.com";
+export const CONTACT_ROMARIC = "romaricsessua@gmail.com";
 export const EDITEUR =
-  "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé";
+  "FilmFund Africa, startup en cours de création, représentée par NGOOH Cédric Hervé et Romaric Sessua";
 export const TELEPHONE_EDITEUR = "(+237) 674 581 693";
 export const SIEGE_EDITEUR = "ElMan, Yaoundé, Cameroun";
 export const ADMINISTRATEURS = [
   { nom: "NGOOH Cédric Hervé", contact: CONTACT_POLITIQUE_CONTENU },
-  { nom: "Romaric Sessua", contact: "romaricsessua@gmail.com" },
+  { nom: "Romaric Sessua", contact: CONTACT_ROMARIC },
 ] as const;
 
 /*
@@ -74,7 +76,7 @@ const MENTIONS_LEGALES: LegalDocument = {
   title: "Mentions légales",
   description:
     "Mentions légales de la plateforme FilmFund Africa : éditeur, directeur de la publication, hébergement, propriété intellectuelle, responsabilité et contact.",
-  updatedAt: "11 octobre 2026",
+  updatedAt: "17 octobre 2026",
   sections: [
     {
       id: "editeur",
@@ -293,6 +295,7 @@ const MENTIONS_LEGALES: LegalDocument = {
             { value: EDITEUR },
             { value: SIEGE_EDITEUR },
             { value: CONTACT_POLITIQUE_CONTENU },
+            { value: CONTACT_ROMARIC },
             { value: TELEPHONE_EDITEUR },
           ],
         },
@@ -482,7 +485,7 @@ const CONFIDENTIALITE: LegalDocument = {
   title: "Politique de confidentialité",
   description:
     "Politique de confidentialité de FilmFund Africa : données traitées, systèmes, accès, finalités, destinataires, conservation, sécurité et droits des personnes.",
-  updatedAt: "11 octobre 2026",
+  updatedAt: "17 octobre 2026",
   sections: [
     {
       id: "objet",
