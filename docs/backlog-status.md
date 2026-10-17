@@ -178,6 +178,28 @@ délai de réponse, l'autorité de protection, la répartition des rôles entre 
 les deux lois camerounaises citées portent la mention « à faire valider par un juriste », que
 personne n'a levée. Dix-neuf sabotages attrapés.
 
+Correctifs du 17 octobre 2026, sans migration, sur décision de l'utilisateur : l'identité de
+l'éditeur change dans les pages légales. Elle n'est écrite qu'à un endroit
+(`src/lib/legal-content.ts`), que les pages lisent.
+
+- **Second représentant** (PR 211, `eefd1d5`) : Romaric SESSUA, avec son adresse, au contact
+  des mentions légales et de la politique de confidentialité, datées du 17 octobre 2026.
+- **Éditeur** (PR 212, `4ed7587`) : « FilmFund Africa, représentée par NGOOH Cédric Hervé et
+  Romaric SESSUA » — « startup en cours de création » est retiré partout. La forme juridique
+  reste « non définie à ce jour », et le directeur de la publication « fondateur et
+  représentant de la startup ».
+- **Siège** (PR 213, `63f8a93`, puis PR 214, `c2cc14e`) : « SESSUA Entertainment, Douala,
+  Cameroun », partout où il est cité — il n'est plus à Yaoundé.
+- **Conditions d'utilisation** (PR 213 et 214) : un article 12, « Contact » — siège, les deux
+  adresses, le téléphone —, et une clause de juridiction qui ne nomme plus de ville : les
+  litiges relèvent des « tribunaux camerounais compétents ». Datées du 17 octobre 2026.
+
+Les tests des pages légales fixent ces valeurs ; ils refusent le retour de « startup en cours
+de création » et d'ElMan dans les mentions légales, et de Yaoundé dans les conditions
+d'utilisation. Vérifié sur le site public après la fusion de la PR 214 : les trois pages
+portent le siège à Douala, et plus aucune ne nomme Yaoundé. Non fait : une relecture par un
+conseil juridique ; aucune page n'a été vue dans un navigateur.
+
 **La version 1 est construite, pas éprouvée en entier.** Hors PC1, les trente-six lots « en production »
 n'ont pas été vus sous session, ou n'ont fait aucun appel réel, ou ne peuvent pas s'exercer à
 deux administrateurs — la suspension d'un compte, le changement de rôle, un éditeur et un
